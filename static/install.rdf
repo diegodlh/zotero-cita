@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+    <Description about="urn:mozilla:install-manifest">
+        <em:id>zotero-wikicite@wikidata.org</em:id>
+        <em:name>WikiCite Plugin for Zotero</em:name>
+        <em:version>0.0.1</em:version>
+        <em:multiprocessCompatible>true</em:multiprocessCompatible>
+        <em:updateURL></em:updateURL>
+
+        <em:localized>
+            <Description>
+                <em:locale>en-US</em:locale>
+                <em:name>WikiCite Plugin for Zotero</em:name>
+                <em:description>Add citations support to Zotero, sync to WikiCite, and visualize</em:description>
+            </Description>
+        </em:localized>
+
+        <em:creator>Diego de la Hera</em:creator>
+        <em:optionsURL>chrome://wikicite/content/preferences.html</em:optionsURL>
+        <em:type>2</em:type> <!-- type=extension -->
+        <em:iconURL>chrome://wikicite/skin/wikicite.png</em:iconURL>
+        <em:icon64URL>chrome://wikicite/skin/wikicite64.png</em:icon64URL>
+        <em:bootstrap>true</em:bootstrap>
+
+        <em:translator>es: Diego de la Hera</em:translator>
+        
+        <!-- Or requires Zotero Standalone -->
+        <em:targetApplication>
+            <Description>
+                <em:id>zotero@chnm.gmu.edu</em:id>
+                <em:minVersion>5.0</em:minVersion>
+                <em:maxVersion>*</em:maxVersion>
+            </Description>
+        </em:targetApplication>
+
+        <!-- Or requires Juris-M -->
+        <em:targetApplication>
+          <Description>
+            <em:id>juris-m@juris-m.github.io</em:id>
+            <em:minVersion>4.0</em:minVersion>
+            <em:maxVersion>*</em:maxVersion>
+          </Description>
+        </em:targetApplication>
+
+
+        <em:localized>
+            <Description>
+                <em:locale>es</em:locale>
+                <em:name>Plugin WikiCite para Zotero</em:name>
+                <em:description>Soporte para citas e integración con WikiCite</em:description>
+            </Description>
+        </em:localized>
+    </Description>
+</RDF>
