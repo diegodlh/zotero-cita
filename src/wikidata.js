@@ -1,4 +1,27 @@
+import WBK from 'wikibase-sdk';
+import Wikicite from './wikicite';
+
+// Fixme: Wikibase instance and Sparql Endpoint should be
+// specified in the plugin preferences, to support other
+// Wikibase instances.
+const WBK_INSTANCE = 'https://www.wikidata.org';
+const WBK_SPARQL = 'https://query.wikidata.org/sparql';
+
+// Fixme: have it as a global variable like this,
+// or as an instance variable like below? Pros and cons of each?
+// This isn't redeclared each time the module is imported, is it?
+const wdk = WBK({
+    instance: WBK_INSTANCE,
+    sparqlEndpoint: WBK_SPARQL
+})
+
 export default class {
+    constructor() {
+        this.wdk = WBK({
+          instance: WBK_INSTANCE,
+          sparqlEndpoint: WBK_SPARQL
+      })
+    }
     static getQID(items, approximate, getCitations=true) {
         // maybe it's better to provide items instead of itemIDs
         // in case I want to use this for targetItems (which don't
@@ -34,8 +57,67 @@ export default class {
         return qid
     }
 
-    static getCitations(sourceQID) {
-        // return an array of citations, or map (one per source QID requested)
+    /**
+     * Gets "cites work" (P2860) values from Wikidata for one or more entities
+     * @param {Array} sourceQIDs - Array of one or more entity QIDs
+     * @returns {Promise} Citations map { entityQID: [cites work QIDs]... }
+     */
+    static async getCitations(sourceQIDs) {
+        // Fixme: alternatively, use the SPARQL endpoint to get more than 50
+        // entities per request, and to get only the claims I'm interested in
+        // (i.e., P2860).
+        const urls = wdk.getManyEntities({
+            ids: sourceQIDs,
+            props: ['claims'],
+            format: 'json'
+        });
+        const citations = new Map();
+        while (urls.length) {
+            const url = urls.shift();
+            try {
+                const xmlhttp = await Zotero.HTTP.request('GET', url);
+                // Fixme: handle entities undefined
+                const entities = JSON.parse(xmlhttp.response).entities;
+                for (const id of Object.keys(entities)) {
+                    const entity = entities[id];
+                    const entityCitations = new Set();
+                    if (entity.claims && entity.claims.P2860) {
+                        for (const claim of entity.claims.P2860) {
+                            if (claim.mainsnak) {
+                                entityCitations.add(claim.mainsnak.datavalue.value.id);
+                            }
+                        }
+                    }
+                    citations[id] = [...entityCitations];
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        return citations;
+    }
+
+    /**
+     * Returns Zotero items using metadata retrieved from Wikidata for the QIDs provided
+     * @param {Array} qids - Array of one or more QIDs to fetch metadata for
+     * @returns {Promise} - Map of QIDs and their corresponding Zotero item
+     */
+    static async getItems(qids) {
+        const itemMap = new Map(
+            qids.map((qid) => [qid, undefined])
+        );
+        const translate = new Zotero.Translate.Search();
+        translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
+        translate.search = qids.map((qid) => ({extra: `qid: ${qid}`}));
+        // Fixme: handle "no items returned from any translator" error
+        const items = await translate.translate({libraryID: false});
+        for (const item of items) {
+            // Fixme: the item returned is not a regular unsaved Zotero item
+            // but rather one of those translator items, without getField methods, etc
+            const qid = Wikicite.getExtraField(item, 'qid').values[0];
+            itemMap[qid] = item;
+        }
+        return itemMap;
     }
 
     static addCitations(sourceQID, targetQID) {

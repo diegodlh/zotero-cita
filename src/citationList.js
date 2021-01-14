@@ -2,7 +2,10 @@ import Citation from './citation';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
+import Citations from './citations';
 
+
+// Fixme: consider renaming to SourceItem or similar, and inheriting from Zotero.Item
 class CitationList {
     // When I thought of this originally, I wasn't giving the source item to the citation creator
     // but then I understood it made sense I passed some reference to the source object
@@ -88,14 +91,15 @@ class CitationList {
     //     this.sourceItem.saveTx();
     // }
 
-    // get sourceQID() {
-    //     return Wikicite.getExtraField(this.sourceItem, 'qid').values[0];
-    // }
+    get qid() {
+        // Fixme: check that the QID is a valid QID
+        return Wikicite.getExtraField(this.sourceItem, 'qid').values[0];
+    }
 
-    // set sourceQID(qid) {
-    //     Wikicite.setExtraField(this.sourceItem, 'qid', qid);
-    //     this.sourceItem.saveTx();
-    // }
+    set qid(qid) {
+        Wikicite.setExtraField(this.sourceItem, 'qid', qid);
+        this.sourceItem.saveTx();
+    }
 
     openEditor(citation) { // always provide a citation (maybe an empty one)
         // return a promise fullfilled or rejected when the editor is closed/saved
@@ -146,6 +150,7 @@ class CitationList {
         }
     }
 
+    // Fixme: change name to addCitation
     add(citation) {
         // before adding a citation to the CitationList, make sure
         // there isn't another citation for the same target
@@ -154,6 +159,8 @@ class CitationList {
         this.citations.push(citation);
         // this.updateCitationLabels();  //deprecated
         // return if successful (index of new citation?)
+
+        // also check if we can link to an item in the Zotero library
     }
 
     // edit(index, citation) {
@@ -260,14 +267,19 @@ class CitationList {
     }
 
     syncWithWikidata(citationIndex) {
-        alert('Getting citations from Wikidata not yet supported');
-        // Alternatively, do this for the citationIndex provided
+        if (citationIndex !== undefined) {
+            // Alternatively, do this for the citationIndex provided
+            alert('Syncing individual citations with Wikidata not yet supported');
+        } else {
+            Citations.syncItemCitationsWithWikidata([this]);
+        }
         // fail if no QID for itemID
         // call the Wikidata api
         // call this.add multiple times
         // do something similar than crossref to check if citation retrieved already exists
 
-        // offer to automatically link to zotero items
+        // offer to automatically link to zotero items: this should be handled by the
+        // this.addCitation method
     }
 
     getFromPDF(method, fetchDOIs, fetchQIDs) {

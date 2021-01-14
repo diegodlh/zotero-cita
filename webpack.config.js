@@ -21,7 +21,10 @@ module.exports = {
     ]
   },
   resolve: {
-    extensions: ['*', '.js', '.jsx']
+    extensions: ['*', '.js', '.jsx'],
+    fallback: {
+      'querystring': false
+    }
   },
   optimization: {
     minimize: false
@@ -37,6 +40,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: "static", to: "." },
+        { from: "translators", to: "./chrome/content/translators"},
         { from: "LICENSE.md", to: "." }
       ]
     })

@@ -1,5 +1,6 @@
 import CitationList from './citationList';
 import Wikicite from './wikicite';
+import Wikidata from './wikidata';
 
 // Fixme: Consider moving these as static methods of the CitationList class
 // These are methods used to run batch actions on multiple items, where
@@ -57,13 +58,17 @@ export default class {
         // saves items
     }
 
-    static syncItemCitationsWithWikidata(items) {
+    /**
+     * Sync source item citations with Wikidata.
+     * @param {Array} sourceItems - One or more source items to sync citations for.
+     */
+    // Fixme: what about getting CitationList/SourceItem objects directly
+    // instead of Zotero items? This way, I can reuse the the SourceItems
+    // instantiated by the method calling this method.
+    static async syncItemCitationsWithWikidata(sourceItems) {
         // Fixme: consider changing name of CitationList class
         // to something more descriptive of the item. For example,
         // SourceItem, or CitingItem
-        const sourceItems = items.map(
-            (item) => new CitationList(item)
-        );
         const noQidItems = sourceItems.filter(
             (sourceItem) => !sourceItem.qid
         );
@@ -77,14 +82,9 @@ export default class {
         let qids = sourceItems.map(
             (sourceItem) => sourceItem.qid
         );
-        qids = new Set(qids);
+        qids = [...new Set(qids)];
 
-        // this should return an array, or a map. One entry per source
-        // item, identified with its QID.
-        // Within each, an array of QIDs cited by the source QID in wikidata
-        const remoteCitedQids = Wikidata.getCitations(qids);
-        // Make sure I don't get two citations for the same item
-        // with the same QID. I have to solve this in Wikidata module
+        const remoteCitedQidMap = await Wikidata.getCitations(qids);
 
         const remoteOnlyCitations = {
             // zotero_id: qid
@@ -100,14 +100,15 @@ export default class {
         }
 
         for (const sourceItem of sourceItems) {
-            const itemId = sourceItem.item.id;
+            const itemId = sourceItem.sourceItem.id;
             // Fixme: maybe I don't need to initilize them like this
             remoteOnlyCitations[itemId] = [];
             bothSidesCitations[itemId] = [];
             localOnlyCitations[itemId] = [];
             noQidCitationCount[itemId] = 0;
 
-            const remoteCitedQids = remoteCitedQids[sourceItem.qid];
+            const remoteCitedQids = remoteCitedQidMap[sourceItem.qid];
+
             let localCitedQids = new Set();
             for (const citation of sourceItem.citations) {
                 const qid = Wikicite.getExtraField(
@@ -119,14 +120,9 @@ export default class {
                     noQidCitationCount[itemId] += 1;
                 }
             }
-            sourceItem.citations.map(
-                (citation) => Wikicite.getExtraField(
-                    citation.item, 'qid'
-                ).values[0]
-            );
-            localCitedQids = new Set(localCitedQids);
+
             for (const remoteCitedQid of remoteCitedQids) {
-                if (localCitedQids.includes(remoteCitedQid)) {
+                if (localCitedQids.has(remoteCitedQid)) {
                     bothSidesCitations[itemId].push(remoteCitedQid);
                 } else {
                     remoteOnlyCitations[itemId].push(remoteCitedQid);
@@ -142,7 +138,7 @@ export default class {
         // Fixme: apart from one day implementing possible duplicates
         // here I have to check other UUIDs too (not only QID)
         // and if they overlap, send them to localFlag instead
-        const localAddCitations = remotOnlyCitations;
+        const localAddCitations = remoteOnlyCitations;
         // Fixme: keep only does that have to be flagged
         // Include those that will be added to wikidata now
         const localFlagCitations = bothSidesCitations;
@@ -164,11 +160,14 @@ export default class {
         // XX citations would be removed
         // YY Wikidata entities will be updated:
         // YY citations would be added
+        // Use Services.prompt?
 
-        const downloadQids = null // concat and set values of localAddCitations
+        const downloadQids = Object.values(localAddCitations).reduce(
+            (acc, curr) => acc.concat(curr), []
+        )
 
         // this should return zotero items
-        const citationMetadata = Wikidata.getMetadata(downloadQids)
+        const targetItems = await Wikidata.getItems(downloadQids);
 
         Wikidata.addCitations([
             {
@@ -213,7 +212,7 @@ export default class {
                 // SourceItem.removeOci(supplier, targetUuid)
             }
             for (const localUnflagCitation of localUnflagCitations[itemKey]) {
-                ...
+                console.log(`Zotero item ${itemKey}: removing Wikidata OCI for target item with QID ${localUnflagCitation}.`)
             }
             for (const localDeleteCitation of localDeleteCitations[itemKey]) {
                 const targetQid = localRemoveCitation
@@ -224,36 +223,36 @@ export default class {
         }
 
 
-        // check which of the items provided have QID
-        // in principle only citations with target QID should be uploaded
-        // alternatively, Wikidata.getQID may be called for each target item
-        // to try and get QID, but I think this may be too much for batch?
-        // maybe it could be a tick in a confirmation dialog
-        // "try to get QID for citation targets before syncing to wikidata"
-        // do this only for items with qid
-        let { values: sourceQIDs } = items.map(item => Wikicite.getExtraField(item, 'qid'));
-        let remoteCitations = this.getCitations(sourceQIDs[0]);
-        for (let item of items) {
-            // get remote citations for this specific item from remoteCitations
-            let localCitations = new CitationList(item);
-            // check which of the local citations is not a remote citation too
-            // identified by qid-to-qid links
-            // use this.addCitations() to send citations to Wikidata
-            // update the localCitations citations to include suppliers = wikidata, and save
+        // // check which of the items provided have QID
+        // // in principle only citations with target QID should be uploaded
+        // // alternatively, Wikidata.getQID may be called for each target item
+        // // to try and get QID, but I think this may be too much for batch?
+        // // maybe it could be a tick in a confirmation dialog
+        // // "try to get QID for citation targets before syncing to wikidata"
+        // // do this only for items with qid
+        // let { values: sourceQIDs } = items.map(item => Wikicite.getExtraField(item, 'qid'));
+        // let remoteCitations = this.getCitations(sourceQIDs[0]);
+        // for (let item of items) {
+        //     // get remote citations for this specific item from remoteCitations
+        //     let localCitations = new CitationList(item);
+        //     // check which of the local citations is not a remote citation too
+        //     // identified by qid-to-qid links
+        //     // use this.addCitations() to send citations to Wikidata
+        //     // update the localCitations citations to include suppliers = wikidata, and save
 
-            // also, there will be some local citations with wikidata in the suppliers,
-            // but this citation may be missing in remote citations
-            // this means it was deleted from Wikidata.
-            // ask user if they want to remove them locally too
-            // maybe return a list of these at the end, and have the caller of this method
-            // ask the user and delete them if user says yes
-            // like one by one, or selection, or yes/yes to all, etc
+        //     // also, there will be some local citations with wikidata in the suppliers,
+        //     // but this citation may be missing in remote citations
+        //     // this means it was deleted from Wikidata.
+        //     // ask user if they want to remove them locally too
+        //     // maybe return a list of these at the end, and have the caller of this method
+        //     // ask the user and delete them if user says yes
+        //     // like one by one, or selection, or yes/yes to all, etc
 
-            // now of the remote citations that are not available locally,
-            // use some CitationList method to check if a similar citation
-            // exists already
-        }
-        let localCitations = items.map(item => CitationList(item));
+        //     // now of the remote citations that are not available locally,
+        //     // use some CitationList method to check if a similar citation
+        //     // exists already
+        // }
+        // let localCitations = items.map(item => CitationList(item));
     }
 
     // maybe i don't need a batch method for getting from PDF
