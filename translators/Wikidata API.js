@@ -20,7 +20,8 @@
 */
 
 function detectSearch(items) {
-	return (filterQuery(items).length > 0);
+	const { qids, dois } = filterQuery(items);
+	return (qids.length > 0 || dois.length > 0);
 }
 
 // based on Zotero.Utilities.cleanDOI
