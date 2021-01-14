@@ -4,6 +4,12 @@ import ReactDOM from 'react-dom';
 import Wikicite from './wikicite';
 import WikiciteChrome from './wikiciteChrome';
 
+const TRANSLATORS_PATH = 'chrome://wikicite/content/translators/'
+const TRANSLATOR_LABELS = [
+    'Wikidata API',
+    'Wikidata JSON'
+];
+
 /* global window, document, Components, MutationObserver*/
 /* global Zotero, ZoteroPane */
 Components.utils.import('resource://zotero/config.js');
@@ -72,6 +78,8 @@ const zoteroOverlay = {
             { attributes: true }
         );
         this.switcherObserver = observer;
+
+        this.installTranslators();
     },
 
     unload: function() {
@@ -86,6 +94,59 @@ const zoteroOverlay = {
         document.getElementById('zotero-items-splitter').removeEventListener('mousemove', updateCitationsBoxSize, false);
         document.getElementById('zotero-items-splitter').removeEventListener('command', updateCitationsBoxSize, false);
         this.switcherObserver.disconnect();
+
+        this.uninstallTranslators();
+    },
+
+    /******************************************/
+    // Translators
+    /******************************************/
+    // based on Better BibTex translators
+
+    installTranslators: async function() {
+        // Wait until Zotero.Translators is ready
+        await Zotero.Schema.schemaUpdatePromise;
+        for (const label of TRANSLATOR_LABELS) {
+            this.installTranslator(label);
+        }
+        Zotero.Translators.reinit();
+    },
+
+    uninstallTranslators: function() {
+        for (const label of TRANSLATOR_LABELS) {
+            this.uninstallTranslator(label);
+        }
+        Zotero.Translators.reinit();
+    },
+
+    installTranslator: async function(label) {
+        const header = JSON.parse(
+            Zotero.File.getContentsFromURL(
+                `${TRANSLATORS_PATH}${label}.json`
+            )
+        );
+        const code = Zotero.File.getContentsFromURL(
+            `${TRANSLATORS_PATH}${label}.js`
+        );
+        try {
+            await Zotero.Translators.save(header, code);
+        } catch (err) {
+            console.log(`Failed to install translator ${label}: ${err}`);
+            this.uninstallTranslator(label);
+        }
+    },
+
+    uninstallTranslator: function(label) {
+        try {
+          const fileName = Zotero.Translators.getFileNameFromLabel(label)
+          const destFile = Zotero.getTranslatorsDirectory()
+          destFile.append(fileName)
+          if (destFile.exists()) {
+            destFile.remove(false)
+          }
+        } catch (err) {
+          console.log(`Failed to remove translator ${label}: ${err}`)
+        }
     },
 
     /******************************************/
