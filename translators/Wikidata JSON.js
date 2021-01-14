@@ -1,16 +1,3 @@
-{
-	"translatorID": "3599d5a3-75c7-4fd5-b8e7-4976ce464e55",
-	"label": "Wikidata JSON",
-	"creator": "Diego de la Hera",
-	"target": "json",
-	"minVersion": "4.0.27",
-	"maxVersion": "",
-	"priority": 100,
-	"inRepository": true,
-	"translatorType": 1,
-	"lastUpdated": "2021-01-11 22:40:29"
-}
-
 /*
 	***** BEGIN LICENSE BLOCK *****
 
@@ -229,38 +216,43 @@ function updateItems(items, claims, labels={}) {
 		const item = items[id];
 		const itemClaims = claims[id];
 		pendingClaims[id] = [];
-		for (claim of itemClaims) {
-			const property = claim.mainsnak.property;
-			let value;
-			if (claim.mainsnak.datatype === 'wikibase-item') {
-				const valueId = claim.mainsnak.datavalue.value.id;
-				if (labels[valueId]) {
-					value = labels[valueId];
+		if (itemClaims.length) {
+			console.log(`Updating item for ${id}`);
+			for (const claim of itemClaims) {
+				const property = claim.mainsnak.property;
+				let value;
+				if (claim.mainsnak.datatype === 'wikibase-item') {
+					const valueId = claim.mainsnak.datavalue.value.id;
+					if (labels[valueId]) {
+						value = labels[valueId];
+					} else {
+						pendingClaims[id].push(claim);
+						if (wikibaseItems.size < 50) {
+							wikibaseItems.add(claim.mainsnak.datavalue.value.id);
+						}
+					}
 				} else {
-					pendingClaims[id].push(claim);
-					if (wikibaseItems.size < 50) {
-						wikibaseItems.add(claim.mainsnak.datavalue.value.id);
+					switch (claim.mainsnak.datatype) {
+						case 'monolingualtext':
+							value = claim.mainsnak.datavalue.value.text;
+							break
+						case 'time':
+							value = claim.mainsnak.datavalue.value.time;
+							break
+						default:
+							value = claim.mainsnak.datavalue.value;
 					}
 				}
-			} else {
-				switch (claim.mainsnak.datatype) {
-					case 'monolingualtext':
-						value = claim.mainsnak.datavalue.value.text;
-						break
-					case 'time':
-						value = claim.mainsnak.datavalue.value.time;
-						break
-					default:
-						value = claim.mainsnak.datavalue.value;
+				if (value) {
+					console.log(`${id} - ${property}: ${value}`)
+					updateItem(item, claim, value);
 				}
 			}
-			if (value) {
-				console.log(`${id} - ${property}: ${value}`)
-				updateItem(item, claim, value);
+			if (!pendingClaims[id].length) {
+				console.log(`Completing item for ${id}`);
+				item.complete();  //??
 			}
 		}
-		console.log(`Updating item for ${id}`);
-		item.complete();  //??
 	}
 	if (wikibaseItems.size > 0) {
 		const lang = 'en'; //Zotero.locale.split('-')[0]
@@ -270,7 +262,7 @@ function updateItems(items, claims, labels={}) {
 			languages: [lang]
 		})
 		console.log(url);
-		ZU.doGet(url, data => updateItems(items, claims, parseLabels(data, lang)));
+		ZU.doGet(url, data => updateItems(items, pendingClaims, parseLabels(data, lang)));
 	} else {
 		if (Object.values(pendingClaims).some(
 			pendingItemClaims => pendingItemClaims.length > 0)
