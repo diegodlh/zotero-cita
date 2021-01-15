@@ -3,7 +3,7 @@
 
 	Copyright © 2021 Diego de la Hera
 	Copyright © 2017 Philipp Zumstein
-	
+
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -22,42 +22,42 @@
 
 //see also https://github.com/UB-Mannheim/zotkat/blob/master/Wikidata%20QuickStatements.js
 var typeMapping = {
-	"Q838948" : "artwork",
-	"Q30070318" : "audioRecording",
-	"Q686822" : "bill",
-	"Q17928402" : "blogPost",
-	"Q571" : "book",
-	"Q3331189" : "book", // Edition
-	"Q47461344" : "book", // written work
-	"Q1980247" : "bookSection",
-	"Q2334719" : "case",
-	"Q40056" : "computerProgram",
-	"Q23927052" : "conferencePaper",
-	"Q30070414" : "dictionaryEntry",
-	"Q49848" : "document",
-	"Q30070439" : "email",
-	"Q17329259" : "encyclopediaArticle",
-	"Q11424" : "film",
-	"Q7216866" : "forumPost",
-	"Q30070550" : "hearing",
-	"Q30070565" : "instantMessage",
-	"Q178651" : "interview",
-	"Q13442814" : "journalArticle",
-	"Q133492" : "letter",
-	"Q30070590" : "magazineArticle",
-	"Q87167" : "manuscript",
-	"Q4006" : "map",
-	"Q5707594" : "newspaperArticle",
-	"Q253623" : "patent",
-	"Q24634210" : "podcast",
-	"Q604733" : "presentation",
-	"Q1555508" : "radioBroadcast",
-	"Q10870555" : "report",
-	"Q820655" : "statute",
-	"Q1266946" : "thesis",
-	"Q15416" : "tvBroadcast",
-	"Q30070675" : "videoRecording",
-	"Q36774" : "webpage"
+	"Q838948": "artwork",
+	"Q30070318": "audioRecording",
+	"Q686822": "bill",
+	"Q17928402": "blogPost",
+	"Q571": "book",
+	"Q3331189": "book", // Edition
+	"Q47461344": "book", // written work
+	"Q1980247": "bookSection",
+	"Q2334719": "case",
+	"Q40056": "computerProgram",
+	"Q23927052": "conferencePaper",
+	"Q30070414": "dictionaryEntry",
+	"Q49848": "document",
+	"Q30070439": "email",
+	"Q17329259": "encyclopediaArticle",
+	"Q11424": "film",
+	"Q7216866": "forumPost",
+	"Q30070550": "hearing",
+	"Q30070565": "instantMessage",
+	"Q178651": "interview",
+	"Q13442814": "journalArticle",
+	"Q133492": "letter",
+	"Q30070590": "magazineArticle",
+	"Q87167": "manuscript",
+	"Q4006": "map",
+	"Q5707594": "newspaperArticle",
+	"Q253623": "patent",
+	"Q24634210": "podcast",
+	"Q604733": "presentation",
+	"Q1555508": "radioBroadcast",
+	"Q10870555": "report",
+	"Q820655": "statute",
+	"Q1266946": "thesis",
+	"Q15416": "tvBroadcast",
+	"Q30070675": "videoRecording",
+	"Q36774": "webpage"
 };
 
 //see also https://www.wikidata.org/wiki/Template:Bibliographical_properties
@@ -69,7 +69,7 @@ var mapping = {
 	'P356': 'DOI',
 	'P407': 'language',
 	'P1433': 'publicationTitle',
-	'P921': 'tagString', 
+	'P921': 'tagString',
 	'P50': 'creator',
 	'P2093': 'creator',
 	'P98': 'creator',
@@ -84,7 +84,7 @@ var mapping = {
 	'P433': 'issue',
 	'P304': 'pages',
 	'P179': 'series',
-	'P212':	'ISBN',
+	'P212': 'ISBN',
 	'P957': 'ISBN',
 	'P236': 'ISSN',
 	'P136': 'genre',
@@ -95,14 +95,14 @@ var mapping = {
 
 //creators with no special role here are treated as contributor
 var creatorMapping = {
-	'wdt:P50': 'author',
-	'wdt:P2093': 'author',
-	'wdt:P98': 'editor',
-	'wdt:P655': 'translator',
-	'wdt:P110': 'illustrator',
-	'wdt:P57': 'director',
-	'wdt:P58': 'scriptwriter',
-	'wdt:P162': 'producer'
+	'P50': 'author',
+	'P2093': 'author',
+	'P98': 'editor',
+	'P655': 'translator',
+	'P110': 'illustrator',
+	'P57': 'director',
+	'P58': 'scriptwriter',
+	'P162': 'producer'
 };
 
 // copied from CSL JSON
@@ -146,7 +146,7 @@ function getEntitiesUrl({
 	format='json',
 	languagefallback=true
 }) {
-	baseUrl = 'https://www.wikidata.org/w/api.php?';
+	const baseUrl = 'https://www.wikidata.org/w/api.php?';
 
 	if (!Array.isArray(ids)) ids = [ids];
 	if (!Array.isArray(languages)) languages = [languages];
@@ -192,7 +192,7 @@ function doImport() {
 	for (const entity of entities) {
 		const types = getEntityTypes(entity);
 		if (types.length > 0) {
-			console.log(`Creating new item for ${entity.id}`);
+			// console.log(`Creating new item for ${entity.id}`);
 			const item = new Zotero.Item(types[0]);
 			item.extra = `qid: ${entity.id}`;
 			items[entity.id] = item;
@@ -217,40 +217,71 @@ function updateItems(items, claims, labels={}) {
 		const itemClaims = claims[id];
 		pendingClaims[id] = [];
 		if (itemClaims.length) {
-			console.log(`Updating item for ${id}`);
+			// console.log(`Updating item for ${id}`);
 			for (const claim of itemClaims) {
-				const property = claim.mainsnak.property;
+				const datavalue = claim.mainsnak.datavalue;
+				const valuetype = datavalue.type;
 				let value;
-				if (claim.mainsnak.datatype === 'wikibase-item') {
-					const valueId = claim.mainsnak.datavalue.value.id;
+				if (valuetype === 'wikibase-entityid') {
+					const valueId = datavalue.value.id;
 					if (labels[valueId]) {
 						value = labels[valueId];
 					} else {
 						pendingClaims[id].push(claim);
 						if (wikibaseItems.size < 50) {
-							wikibaseItems.add(claim.mainsnak.datavalue.value.id);
+							wikibaseItems.add(datavalue.value.id);
 						}
 					}
 				} else {
-					switch (claim.mainsnak.datatype) {
-						case 'monolingualtext':
-							value = claim.mainsnak.datavalue.value.text;
-							break
+					switch (valuetype) {
+						case 'string':
+							value = datavalue.value;
+							break;
 						case 'time':
-							value = claim.mainsnak.datavalue.value.time;
-							break
+							value = datavalue.value.time;
+							break;
+						case 'globecoordinate':
+							value = `${datavalue.value.latitude}, ${datavalue.value.longitude}`;
+							break;
+						case 'quantity':
+							value = datavalue.value.amount;
+							break;
+						case 'monolingualtext':
+							value = datavalue.value.text;
+							break;
 						default:
-							value = claim.mainsnak.datavalue.value;
+							console.error('Unknown datavalue type', valuetype);
 					}
 				}
 				if (value) {
-					console.log(`${id} - ${property}: ${value}`)
+					// console.log(`${id} - ${property}: ${value}`)
 					updateItem(item, claim, value);
 				}
 			}
 			if (!pendingClaims[id].length) {
-				console.log(`Completing item for ${id}`);
-				item.complete();  //??
+				// console.log(`Completing item for ${id}`);
+				if (item.title && item.subtitle) {
+					item.title += ': ' + item.subtitle;
+					delete item.subtitle;
+				}
+				if (item.creatorsArray) {
+					item.creatorsArray.sort((a, b) => (
+						a.seriesOrdinal - b.seriesOrdinal
+					));
+					for (const aut of item.creatorsArray) {
+						item.creators.push(ZU.cleanAuthor(aut.value, aut.func));
+					}
+					delete item.creatorsArray;
+				}
+				//in Zotero we cannot allow multiple DOIs
+				if (item.DOI) {
+					item.DOI = [
+						...item.DOI.preferred,
+						...item.DOI.normal,
+						...item.DOI.deprecated
+					][0];
+				}
+				item.complete();
 			}
 		}
 	}
@@ -261,13 +292,13 @@ function updateItems(items, claims, labels={}) {
 			props: ['labels'],
 			languages: [lang]
 		})
-		console.log(url);
-		ZU.doGet(url, data => updateItems(items, pendingClaims, parseLabels(data, lang)));
+		// console.log(url);
+		ZU.doGet(url, (data) => updateItems(items, pendingClaims, parseLabels(data, lang)));
 	} else {
 		if (Object.values(pendingClaims).some(
-			pendingItemClaims => pendingItemClaims.length > 0)
+			(pendingItemClaims) => pendingItemClaims.length > 0)
 		) {
-			console.log('Unexpected pending claims with empty wikibaseItems array!');
+			console.error('Unexpected pending claims with empty wikibaseItems array!');
 		}
 	}
 }
@@ -283,8 +314,30 @@ function parseLabels(data, lang) {
 
 function updateItem(item, claim, value) {
 	const property = claim.mainsnak.property;
-	switch (property) {
-		case 'P1476':
-			item.title = value;
+	const zprop = mapping[property];
+	if (zprop === 'creator') {
+		let seriesOrdinal = 0;
+		if (claim.qualifiers && claim.qualifiers.P1545) {
+			seriesOrdinal = claim.qualifiers.P1545[0].datavalue.value;
+		}
+		var func = creatorMapping[property] || 'contributor';
+		if (!item.creatorsArray) item.creatorsArray = [];
+		item.creatorsArray.push(
+			{value, func, seriesOrdinal}
+		);
+	} else if (zprop === 'DOI') {
+		const rank = claim.rank;
+		if (!item[zprop]) item[zprop] = {
+			'preferred': [],
+			'normal': [],
+			'deprecated': []
+		};
+		item[zprop][rank].push(value);
+	} else if (zprop === 'tagString') {
+		item.tags.push(value);
+	} else if (item[zprop]) {
+		item[zprop] += ', ' + value;
+	} else {
+		item[zprop] = value;
 	}
 }
