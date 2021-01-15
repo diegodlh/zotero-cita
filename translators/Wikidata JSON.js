@@ -20,6 +20,12 @@
 	***** END LICENSE BLOCK *****
 */
 
+// Fixme: append these upon translator installation, as done by BBT plugin
+const LOCALE = 'en';
+const INSTANCE_OF = 'P31';
+const TITLE = 'P1476';
+const SERIES_ORDINAL = 'P1545';
+
 //see also https://github.com/UB-Mannheim/zotkat/blob/master/Wikidata%20QuickStatements.js
 var typeMapping = {
 	"Q838948": "artwork",
@@ -123,8 +129,8 @@ function parseInput() {
 
 function getEntityTypes(entity) {
 	const types = new Set();
-	if (entity.claims && entity.claims.P31) {
-		for (const claim of entity.claims.P31) {
+	if (entity.claims && entity.claims[INSTANCE_OF]) {
+		for (const claim of entity.claims[INSTANCE_OF]) {
 			if (
 				claim.mainsnak &&
 				claim.mainsnak.datavalue &&
@@ -193,16 +199,49 @@ function doImport() {
 		const types = getEntityTypes(entity);
 		if (types.length > 0) {
 			// console.log(`Creating new item for ${entity.id}`);
+			let hasTitle = false;
 			const item = new Zotero.Item(types[0]);
+			if (entity.labels && entity.labels[LOCALE]) {
+				item.title = entity.labels[LOCALE].value;
+			}
 			item.extra = `qid: ${entity.id}`;
 			items[entity.id] = item;
 			claims[entity.id] = [];
 			for (const property of Object.keys(entity.claims)) {
 				if (Object.keys(mapping).includes(property)) {
+					if (property === TITLE) hasTitle = true;
 					for (const claim of entity.claims[property]) {
 						claims[entity.id].push(claim);
 					}
 				}
+			}
+			if (!hasTitle) {
+				// if no "title" claims available for the entity
+				let dataValue;
+				if (entity.labels && entity.labels[LOCALE]) {
+					// if entity label was provided, use it as "title" claim
+					dataValue = {
+						type: 'monolingualtext',
+						value: {
+							text: entity.labels[LOCALE].value
+						}
+					}
+				} else {
+					// otherwise, give item id as "title" claim to be handled
+					// by the updateItems method
+					dataValue = {
+						type: 'wikibase-entityid',
+						value: {
+							id: entity.id
+						}
+					}
+				}
+				claims[entity.id].push({
+					mainsnak: {
+						property: TITLE,
+						datavalue: dataValue
+					}
+				});
 			}
 		}
 	}
@@ -286,7 +325,7 @@ function updateItems(items, claims, labels={}) {
 		}
 	}
 	if (wikibaseItems.size > 0) {
-		const lang = 'en'; //Zotero.locale.split('-')[0]
+		const lang = LOCALE;
 		const url = getEntitiesUrl({
 			ids: [...wikibaseItems],
 			props: ['labels'],
@@ -317,8 +356,8 @@ function updateItem(item, claim, value) {
 	const zprop = mapping[property];
 	if (zprop === 'creator') {
 		let seriesOrdinal = 0;
-		if (claim.qualifiers && claim.qualifiers.P1545) {
-			seriesOrdinal = claim.qualifiers.P1545[0].datavalue.value;
+		if (claim.qualifiers && claim.qualifiers[SERIES_ORDINAL]) {
+			seriesOrdinal = claim.qualifiers[SERIES_ORDINAL][0].datavalue.value;
 		}
 		var func = creatorMapping[property] || 'contributor';
 		if (!item.creatorsArray) item.creatorsArray = [];
