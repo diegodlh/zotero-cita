@@ -346,7 +346,7 @@ function parseLabels(data, lang) {
 	const labels = {};
 	const entities = JSON.parse(data).entities;
 	for (const entity of Object.values(entities)) {
-		labels[entity.id] = entity.labels[lang].value
+		labels[entity.id] = entity.labels[lang] ? entity.labels[lang].value : entity.id;
 	}
 	return labels;
 }
