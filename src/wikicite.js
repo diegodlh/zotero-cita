@@ -110,6 +110,11 @@ export default {
         return this._bundle.GetStringFromName(name)
     },
 
+    formatString: function(name, params) {
+        if (!Array.isArray(params)) params = [params];
+        return this._bundle.formatStringFromName(name, params, params.length);
+    }
+
     // // Return citation and bibliography labels for list of items provided
     // getItemLabels: function(items) {
     //     // This method is nice, but slow

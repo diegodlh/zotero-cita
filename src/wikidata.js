@@ -110,10 +110,17 @@ export default class {
         translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
         translate.search = qids.map((qid) => ({extra: `qid: ${qid}`}));
         // Fixme: handle "no items returned from any translator" error
-        const items = await translate.translate({libraryID: false});
-        for (const item of items) {
-            // Fixme: the item returned is not a regular unsaved Zotero item
-            // but rather one of those translator items, without getField methods, etc
+        const jsonItems = await translate.translate({libraryID: false});
+        for (const jsonItem of jsonItems) {
+            // delete irrelevant fields to avoid warnings in Item#fromJSON
+            delete jsonItem['notes'];
+            delete jsonItem['seeAlso'];
+            delete jsonItem['attachments'];
+
+            // convert JSON item returned by translator into full Zotero item
+            const item = new Zotero.Item();
+            item.fromJSON(jsonItem);
+
             const qid = Wikicite.getExtraField(item, 'qid').values[0];
             itemMap[qid] = item;
         }
