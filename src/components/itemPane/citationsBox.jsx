@@ -127,14 +127,14 @@ function CitationsBox(props) {
         props.citationList.save();
     }
 
-    function handleCitationDelete(index) {
+    async function handleCitationDelete(index) {
         let sync = false;
         const citation = citations[index];
         if (citation.suppliers.includes('wikidata')) {
             // ask user if they want to remove link remotely as well
             sync = true;
         }
-        props.citationList.delete(index, sync);
+        await props.citationList.delete(index, sync);
         props.citationList.save();
     }
 

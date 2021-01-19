@@ -3,6 +3,9 @@ import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 import Citation from './citation';
 
+/* global Services */
+/* global window */
+
 // Fixme: Consider moving these as static methods of the CitationList class
 // These are methods used to run batch actions on multiple items, where
 // a third party is called and it may be more efficient to call it once, instead
@@ -67,6 +70,10 @@ export default class {
     // instead of Zotero items? This way, I can reuse the the SourceItems
     // instantiated by the method calling this method.
     static async syncItemCitationsWithWikidata(sourceItems) {
+        const progressWin = new Zotero.ProgressWindow({ closeOnClick: false });
+        progressWin.changeHeadline('Sync citations with Wikidata');
+        progressWin.show();
+        const progress = {};
         // Fixme: consider changing name of CitationList class
         // to something more descriptive of the item. For example,
         // SourceItem, or CitingItem
@@ -85,7 +92,11 @@ export default class {
         );
         qids = [...new Set(qids)];
 
+        progress['citations'] = new progressWin.ItemProgress(
+            null, 'Fetching citations...'
+        )
         const remoteCitedQidMap = await Wikidata.getCitations(qids);
+        progress['citations'].setText('Citations fetched')
 
         // local citation actions arrays
         const localAddCitations = {};
@@ -217,6 +228,10 @@ export default class {
 
         if (!localItemsToUpdate.size && !remoteEntitiesToUpdate.size) {
             // no local items or remote entities to update: abort
+            progress['done'] = new progressWin.ItemProgress(
+                null, 'All up to data'
+            )
+            progressWin.startCloseTimer(1000);
             return
         }
 
@@ -278,7 +293,7 @@ export default class {
                 'wikicite.wikidata.confirm.message.unchanged',
                 [
                     unchangedCitationsCount,
-                    Objects.values(noQidCitationsCounts).reduce(
+                    Object.values(noQidCitationsCounts).reduce(
                         (sum, noQidCitationsCount) => sum + noQidCitationsCount,
                         0
                     )
@@ -296,6 +311,10 @@ export default class {
 
         if (!confirmed) {
             // user cancelled
+            progress['cancelled'] = new progressWin.ItemProgress(
+                null, 'Sync cancelled'
+            )
+            progressWin.startCloseTimer(1000);
             return;
         }
 
@@ -303,8 +322,12 @@ export default class {
             (acc, curr) => acc.concat(curr), []
         )
 
-        // this should return zotero items
+        progress['metadata'] = new progressWin.ItemProgress(
+            null, 'Fetching citations metadata...'
+        )
+        // Fixme: maybe keep fields supported by editor only?
         const targetItems = await Wikidata.getItems(downloadQids);
+        progress['metadata'].setText('Citations metadata fetched')
 
         // Wikidata.addCitations([
         //     {
@@ -323,8 +346,7 @@ export default class {
             // as a getter. How would this affect the React components?
             const itemId = sourceItem.sourceItem.id;
             const sourceQid = sourceItem.sourceItem.qid;
-            for (const localAddCitation of localAddCitations[itemId]) {
-                const targetQid = localAddCitation;
+            for (const targetQid of localAddCitations[itemId]) {
                 const targetItem = targetItems[targetQid];
                 // const oci = calculateOCI(sourceQid, targetQid);
                 // use SourceItem.addCitation to make sure
@@ -359,6 +381,7 @@ export default class {
             //     SourceItem.removeCitation(citationIndex);
             // }
             sourceItem.save()
+            progressWin.startCloseTimer(1000);
         }
 
 
@@ -396,4 +419,5 @@ export default class {
 
     // maybe i don't need a batch method for getting from PDF
     // because I don't think I want (or even can) call with multiple pdfs
+    // But I may want to use Zotero.ProgressQueue to keep track of what is going on
 }

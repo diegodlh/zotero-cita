@@ -1,6 +1,8 @@
 import WBK from 'wikibase-sdk';
 import Wikicite from './wikicite';
 
+/* global Zotero */
+
 // Fixme: Wikibase instance and Sparql Endpoint should be
 // specified in the plugin preferences, to support other
 // Wikibase instances.
@@ -106,6 +108,8 @@ export default class {
         const itemMap = new Map(
             qids.map((qid) => [qid, undefined])
         );
+        // Fixme: if called too early, it will fail!
+        await Zotero.Schema.schemaUpdatePromise;
         const translate = new Zotero.Translate.Search();
         translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
         translate.search = qids.map((qid) => ({extra: `qid: ${qid}`}));

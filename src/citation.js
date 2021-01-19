@@ -1,3 +1,5 @@
+import Wikicite from './wikicite';
+
 // Shouldn't the citation know about the CitationList it belongs to
 // so that it can update her details herself?
 
@@ -32,6 +34,8 @@ class Citation {
         // if item has key, retrieve actual Zotero item
         if (item.key) {
             this.item = Zotero.Items.getByLibraryAndKey(this.source.libraryID, item.key);
+        } else if (item instanceof Zotero.Item) {
+            this.item = item;
         } else {
             if (!item.itemType) {
                 // use a default item type if it was not provided in the target item literal
@@ -81,20 +85,23 @@ class Citation {
     // this.place; // for books?
 
     get qid() {
-        const qid = Wikicite.getExtraField(this.item.getField('extra'), 'qid').values[0];
+        const qid = Wikicite.getExtraField(this.item, 'qid').values[0];
         return qid;
     }
+
     set qid(qid) {
-        let extra = Wikicite.setExtraField(this.item.getField('extra'), 'qid', [qid]);
+        let extra = Wikicite.setExtraField(this.item, 'qid', [qid]);
         this.item.setField('extra', extra);
     }
+
     // OpenCitations Corpus Internal Identifier
     get occ() {
-        const occ = Wikicite.getExtraField(this.item.getField('extra'), 'occ').values[0];
+        const occ = Wikicite.getExtraField(this.item, 'occ').values[0];
         return occ;
     }
+
     set occ(occ) {
-        let extra = Wikicite.setExtraField(this.item.getField('extra'), 'occ', [occ]);
+        let extra = Wikicite.setExtraField(this.item, 'occ', [occ]);
         this.item.setField('extra', extra);
     }
     // other uids may be useful to lookup in wikidata
