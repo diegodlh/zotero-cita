@@ -1,6 +1,8 @@
+import Progress from './progress';
 import WBK from 'wikibase-sdk';
 import Wikicite from './wikicite';
 
+/* global Services */
 /* global Zotero */
 
 // Fixme: Wikibase instance and Sparql Endpoint should be
@@ -24,29 +26,105 @@ export default class {
           sparqlEndpoint: WBK_SPARQL
       })
     }
-    static getQID(items, approximate, getCitations=true) {
-        // maybe it's better to provide items instead of itemIDs
-        // in case I want to use this for targetItems (which don't
-        // have a zotero item id)
 
-        // get QID for item (if not available already)
-        // batch call or multiple calls to Wikidata api?
-        
-        // in principle maybe just items with DOI
-        // later, maybe with title too
-        // if no DOI: "Fetching QID for items without DOI not yet supported"
-        // "Please, fill in the DOI field, or enter the QID manually".
+    // items must be item wrappers
+    static async getQID(items, create=false) { //, approximate, getCitations=true) {
+        const progress = new Progress();
+        if (!Array.isArray(items)) items = [items];
+        let identifiers = items.reduce((identifiers, item) => {
+            if (!item.qid) {
+                const cleanDoi = Zotero.Utilities.cleanDOI(item.doi);
+                const cleanIsbn = Zotero.Utilities.cleanISBN(item.isbn);
+                if (cleanDoi) {
+                    identifiers.push(cleanDoi.toUpperCase());
+                } else if (cleanIsbn) {
+                    identifiers.push(cleanIsbn);
+                }
+            }
+            return identifiers;
+        }, []);
+        identifiers = [...new Set(identifiers)];
+        if (identifiers.length) {
+            const identifierString = identifiers.map(
+                (identifier) => `"${identifier}"`
+            ).join(" ");
+            const sparql = `
+SELECT ?item ?itemLabel ?doi ?isbn WHERE {
+    VALUES ?identifier { ${identifierString} }.
+    ?item (wdt:P356|wdt:P212|wdt:P957) ?identifier.
+    OPTIONAL {
+        ?item wdt:P356 ?doi.
+    }
+    OPTIONAL {
+        ?item wdt:P212 ?isbn
+    }    
+    OPTIONAL {
+        ?item wdt:P957 ?isbn
+    }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
+}
+            `
+            const url = wdk.sparqlQuery(sparql);
+            progress.newLine('loading', 'Fetching QIDs');
+            const xmlhttp = await Zotero.HTTP.request('GET', url);
+            const results = JSON.parse(xmlhttp.response).results;
+            if (results && results.bindings && results.bindings.length) {
+                progress.updateLine('done', 'QIDs fetched successfully')
+                for (const item of items.filter((item) => !item.qid)) {
+                    let matches;
+                    if (item.doi) {
+                        matches = results.bindings.filter(
+                            (binding) => binding.doi.value === item.doi.toUpperCase()
+                        );
+                    } else if (item.isbn) {
+                        matches = results.bindings.filter(
+                            (binding) => binding.isbn.value === item.isbn
+                        );
+                    }
+                    if (matches.length) {
+                        const qids = matches.map(
+                            (match) => match.item.value.split('/').slice(-1)[0]
+                        );
+                        // if multiple entities found, choose the oldest one
+                        item.qid = qids.sort()[0];
+                    }
+                }
+            } else {
+                progress.updateLine('error', 'No Wikidata entries were found');
+            }
+        } else {
+            progress.newLine('error', 'No valid unique identifiers provided')
+        }
+        // Fixme: approximate search should be available for all items for which a
+        // qid could not be returned before trying to create a new entity
+        if (items.filter((item) => !item.qid).length) {
+            Services.prompt.alert(
+                null,
+                'Title query unsupported',
+                'QID could not be fetched for some items, and title query not yet supported'
+            );
+            // approximate parameter to use fields other than UIDs
+            // this should either use MediaWiki API's wbsearchentities or query actions
+            // see https://stackoverflow.com/questions/37170179/wikidata-api-wbsearchentities-why-are-results-not-the-same-in-python-than-in-wi
+            // but as I understand one Api call would be made for each query, I would limit
+            // this to single item searches (i.e. not item arrays)
+            // if (items.length < 2) {}
+            // https://www.wikidata.org/w/api.php?action=wbsearchentities&search=social interaction and conceptual change&format=json&language=en
+            // I may have to show confirmation dialogs for user to confirm
+            // but maybe this is intrusive for automatic runs (install, or new item)
+            // maybe additional option too?
+        }
 
-        // I may have to show confirmation dialogs for user to confirm
-        // but maybe this is intrusive for automatic runs (install, or new item)
-        // maybe additional option too?
-        // approximate parameter to use fields other than UIDs
-
-        // can I ask for cites work properties at the same time? maybe with getCitations boolean parameter?
-        // or have separate call later?
         // handle offer create new one if not found
         // maybe just send them to the webpage, idk
-        // call setExtraField for each of them to set QID
+        if (create) {
+            Services.prompt.alert(
+                window,
+                'Unsupported',
+                'Creating new entities in Wikidata not yet supported'
+            )
+        }
+        progress.close();
     }
 
     /**

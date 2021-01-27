@@ -60,4 +60,6 @@
 	 width: 100px;
 	 font-family: inherit;
 }
- 
+img.light {
+	filter: opacity(50%);
+}

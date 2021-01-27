@@ -2,7 +2,7 @@ import React, {
     useEffect,
     useState
 } from 'react';
-import CitationList from '../citationList';
+import SourceItemWrapper from '../sourceItemWrapper';
 import CitationsBox from '../components/itemPane/citationsBox.jsx';
 import PropTypes from 'prop-types';
 
@@ -14,31 +14,31 @@ function CitationsBoxContainer(props) {
     // fix: where to get citations from (extra field or note) should be configurable
     // therefore, it may be better to have two separate functions
 
-    // Option 1, include citationList in component's internal state.
-    // Con: The component will re-render every time the citationList is reinstantiated.
-    const [citationList, setCitationList] = useState(
+    // Option 1, include sourceItem in component's internal state.
+    // Con: The component will re-render every time the sourceItem is reinstantiated.
+    const [sourceItem, setSourceItem] = useState(
         // If the initial state is the result of an expensive computation,
         // one may provide a function instead, which will be executed only on the initial render.
-        () => new CitationList(props.item)
+        () => new SourceItemWrapper(props.item)
     );
 
-    // Option 2, set citationList as an instance-like variable with useRef.
-    // Con: The component will not notice when citationList is reinstantiated.
-    // And passing citationList.current as useEffect dependency is bad idea
+    // Option 2, set sourceItem as an instance-like variable with useRef.
+    // Con: The component will not notice when sourceItem is reinstantiated.
+    // And passing sourceItem.current as useEffect dependency is bad idea
     // https://github.com/facebook/react/issues/14387#issuecomment-503616820
-    // const citationList = useRef(
-    //   new CitationList(props.item)
+    // const sourceItem = useRef(
+    //   new SourceItemWrapper(props.item)
     // );
 
-    // Option 3, set citationList as an instance-like variable with useCallback.
+    // Option 3, set sourceItem as an instance-like variable with useCallback.
     // Pro: A callback should run when the ref is updated. The callback would update the state.
     // https://github.com/facebook/react/issues/14387#issuecomment-503616820
     // Con: Doesn't seem to work as expected - the ref lacks a `current` property.
-    // const citationList = useCallback((citationList) => {
+    // const sourceItem = useCallback((sourceItem) => {
     //   console.log('Running callback...');
-    //   setCitations(citationList.citations);
+    //   setCitations(sourceItem.citations);
     // }, []);
-    // citationList.current = new CitationList(props.item);
+    // sourceItem.current = new SourceItemWrapper(props.item);
 
     // I don't need a create button next to wikicite field
     // I only have a fetch button. If when fetching no item is found
@@ -68,22 +68,22 @@ function CitationsBoxContainer(props) {
                 if (type === 'item' && action === 'modify') {
                     console.log('Modified item observer has been triggered...');
                     if (ids.includes(props.item.id)) {
-                        // This may cause two re-renders: one when citationList is reset,
-                        // and another after citationList-dependent useEffect run above is run.
-                        setCitationList(new CitationList(props.item));
+                        // This may cause two re-renders: one when sourceItem is reset,
+                        // and another after sourceItem-dependent useEffect run above is run.
+                        setSourceItem(new SourceItemWrapper(props.item));
 
-                        // If citationList is a ref, state must be updated from here,
-                        // because including citationList.current in a useEffect dependency array won't work
+                        // If sourceItem is a ref, state must be updated from here,
+                        // because including sourceItem.current in a useEffect dependency array won't work
                         // https://github.com/facebook/react/issues/14387#issuecomment-503616820
                         // However, this would cause multiple component re-renders
                         // https://stackoverflow.com/questions/59163378/react-hooks-skip-re-render-on-multiple-consecutive-setstate-calls
-                        // setCitations(citationList.current.citations);
+                        // setCitations(sourceItem.current.citations);
                         // setDoi(props.item.getField('DOI'));
                         // setOcc(Wikicite.getExtraField(props.item.getField('extra'), 'occ'));
                         // setQid(Wikicite.getExtraField(props.item.getField('extra'), 'qid'));
                     } else if (false) {
                         // I have to check if the target item of one of the linked citations has been modified
-                        setCitationList(new CitationList(props.item));
+                        setSourceItem(new SourceItemWrapper(props.item));
                     }
                 }
             }
@@ -97,8 +97,8 @@ function CitationsBoxContainer(props) {
     }, [props.item]);
 
     useEffect(() => {
-        window.WikiciteChrome.zoteroOverlay.setCitationList(citationList);
-    }, [citationList]);
+        window.WikiciteChrome.zoteroOverlay.setSourceItem(sourceItem);
+    }, [sourceItem]);
 
     function handleItemPopup(event) {
         const itemPopupMenu = document.getElementById('citations-box-item-menu');
@@ -114,7 +114,7 @@ function CitationsBoxContainer(props) {
 
     return <CitationsBox
         editable={props.editable}
-        citationList={citationList}
+        sourceItem={sourceItem}
         onItemPopup={handleItemPopup}
         onCitationPopup={handleCitationPopup}
     />;

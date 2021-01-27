@@ -1,7 +1,9 @@
-import CitationList from './citationList';
+import Citation from './citation';
+import SourceItemWrapper from './sourceItemWrapper';
+import OCI from './oci';
+import Progress from './progress';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
-import Citation from './citation';
 
 /* global Services */
 /* global window */
@@ -25,7 +27,7 @@ export default class {
 
     static getItemQids(items, includingCitations=false, overwrite=false) {
         const sourceItems = items.map(
-            (item) => new CitationList(item)
+            (item) => new SourceItemWrapper(item)
         );
         const unique_ids = [];
         const id_mappings = {
@@ -66,50 +68,53 @@ export default class {
      * Sync source item citations with Wikidata.
      * @param {Array} sourceItems - One or more source items to sync citations for.
      */
-    // Fixme: what about getting CitationList/SourceItem objects directly
-    // instead of Zotero items? This way, I can reuse the the SourceItems
-    // instantiated by the method calling this method.
     static async syncItemCitationsWithWikidata(sourceItems) {
-        const progressWin = new Zotero.ProgressWindow({ closeOnClick: false });
-        progressWin.changeHeadline('Sync citations with Wikidata');
-        progressWin.show();
-        const progress = {};
-        // Fixme: consider changing name of CitationList class
-        // to something more descriptive of the item. For example,
-        // SourceItem, or CitingItem
         const noQidItems = sourceItems.filter(
             (sourceItem) => !sourceItem.qid
         );
-
         // noQidItems.length items do not have a QID
         // would you like to try and get one for them before
         // proceeding?
-        // this may be a promise and the rest of the code is
-        // run when the promise is fullfilled
+        // this may be an await and the rest of the code later
 
-        let qids = sourceItems.map(
-            (sourceItem) => sourceItem.qid
+        let qids = sourceItems.reduce(
+            (qids, sourceItem) => {
+                const qid = sourceItem.qid;
+                if (qid) qids.push(sourceItem.qid);
+                return qids;
+            }, []
         );
         qids = [...new Set(qids)];
 
-        progress['citations'] = new progressWin.ItemProgress(
-            null, 'Fetching citations...'
-        )
-        const remoteCitedQidMap = await Wikidata.getCitations(qids);
-        progress['citations'].setText('Citations fetched')
+        const progress = new Progress('loading', 'Fetching citations...');
+
+        let remoteCitedQidMap;
+        try {
+            // get a map of citingQid -> citedQids
+            remoteCitedQidMap = await Wikidata.getCitations(qids);
+            progress.updateLine('done', 'Citations fetched');
+        } catch {
+            progress.updateLine('error', 'Fetching citations failed');
+            progress.close();
+            return;
+        }
 
         // local citation actions arrays
-        const localAddCitations = {};
-        const localFlagCitations = {};
-        const localUnflagCitations = {};
-        const localDeleteCitations = {};
+        const localAddCitations = {};  // these citations will be added locally
+        const localFlagCitations = {};  // Wikidata OCI will be added to these
+        const localUnflagCitations = {};  // Wikidata OCI will be removed from these
+        const localDeleteCitations = {};  // these citations will be removed locally
 
         // remote citation actions arrays
-        const remoteAddCitations = {};
+        const remoteAddCitations = {};  // these citations will be added remotely
 
-        // special citation arrays
+        //// special citation arrays
+        // orphaned citations
+        // citations that have a wikidata oci
+        // but which are no longer available in wikidata
         const orphanedCitations = {};
-        const noQidCitationsCounts = {};
+        // no qid citations count
+        // number of local citations for which the target item qid is unknown
 
         // local citation actions counters
         let localAddCitationsCount = 0;
@@ -122,13 +127,19 @@ export default class {
 
         // special counters
         let orphanedCitationsCount = 0;
-        let unchangedCitationsCount = 0;
+
+        // citations which already have a Wikidata OCI
+        let syncedCitationsCount = 0;
+        // citations for which their target item qids are unknown
+        let noQidCitationsCount = 0;
+        // citations with an invalid Wikidata OCI
+        let invalidOciCount = 0;
 
         const localItemsToUpdate = new Set();
         const remoteEntitiesToUpdate = new Set();
 
         for (const sourceItem of sourceItems) {
-            const itemId = sourceItem.sourceItem.id;
+            const itemId = sourceItem.item.id;
 
             // Initialize action arrays
             localAddCitations[itemId] = [];
@@ -136,47 +147,68 @@ export default class {
             remoteAddCitations[itemId] = [];
             orphanedCitations[itemId] = [];
 
-            noQidCitationsCounts[itemId] = 0;
-
             const remoteCitedQids = remoteCitedQidMap[sourceItem.qid];
 
             let localCitedQids = new Set();
+            // first iterate over local citations
             for (const citation of sourceItem.citations) {
-                const localCitedQid = Wikicite.getExtraField(
-                    citation.item, 'qid'
-                ).values[0]
+                const localCitedQid = citation.target.qid;
+                const wikidataOci = citation.ocis.filter(
+                    (oci) => oci.supplier === 'wikidata'
+                )[0];
+                // First check if the citation has an invalid wikidata oci.
+                // These citations will be ignored (i.e., they won't be
+                // unflagged nor will they be marked as orphaned).
+                // No new citation will be created either for the target item
+                // referred to by the oci.
+                // User must fix the inconsistency first: revert the source or
+                // target item qid change, or remove the citation.
+                if (wikidataOci && !wikidataOci.valid) {
+                    // local citation has a wikidata oci, but it is invalid
+                    // i.e., it corresponds to another source or target qid
+                    invalidOciCount += 1;
+
+                    // add the invalid oci's target qid to the array of local cited qids
+                    // because we don't want to create a new local citation for this
+                    // target item
+                    localCitedQids.add(wikidataOci.citedId);
+                    continue;
+                }
                 if (localCitedQid) {
                     localCitedQids.add(localCitedQid);
                     if (remoteCitedQids.includes(localCitedQid)) {
-                        // Fixme: change
-                        if (citation.suppliers.includes('wikidata')) {
-                            unchangedCitationsCount += 1;
+                        // the citation exists in Wikidata as well
+                        if (wikidataOci) {
+                            // the citation already has a valid up-to-date wikidata oci
+                            syncedCitationsCount += 1;
                         } else {
+                            // the citation doesn't have a wikidata oci yet
                             localFlagCitations[itemId].push(localCitedQid);
                             localFlagCitationsCount += 1;
                             localItemsToUpdate.add(itemId);
                         }
                     } else {
-                        // Fixme: change
-                        if (citation.suppliers.includes('wikidata')) {
+                        // the citations does not exist in Wikidata
+                        if (wikidataOci) {
+                            // the citation has a valid Wikidata oci
+                            // hence, it existed in Wikidata before
                             orphanedCitations[itemId].push(localCitedQid);
                             orphanedCitationsCount += 1;
                         } else {
+                            // the citation doesn't have a Wikidata OCI yet
                             remoteAddCitations[itemId].push(localCitedQid);
                             remoteAddCitationsCount += 1;
-                            remoteEntitiesToUpdate.add(sourceItem.sourceItem.qid);
+                            remoteEntitiesToUpdate.add(sourceItem.item.qid);
                         }
                     }
                 } else {
-                    noQidCitationsCounts[itemId] += 1;
-                    unchangedCitationsCount += 1;
+                    // the citation target item's qid is unknown
+                    noQidCitationsCount += 1;
                 }
             }
+            // then iterate over remote Wikidata citations
             for (const remoteCitedQid of remoteCitedQids) {
                 if (!localCitedQids.has(remoteCitedQid)) {
-                    // Fixme: apart from one day implementing possible duplicates
-                    // here I have to check other UUIDs too (not only QID)
-                    // and if they overlap, send them to localFlag instead
                     localAddCitations[itemId].push(remoteCitedQid);
                     localAddCitationsCount += 1;
                     localItemsToUpdate.add(itemId);
@@ -191,7 +223,7 @@ export default class {
                 window,
                 Wikicite.getString('wikicite.wikidata.orphaned.title'),
                 Wikicite.formatString(
-                    'wikicite.wikidata.orphaned.message', orphanedCount
+                    'wikicite.wikidata.orphaned.message', orphanedCitationsCount
                 ),
                 orphanedActions.length,
                 orphanedActions.map((orphanedAction) => Wikicite.getString(
@@ -228,10 +260,8 @@ export default class {
 
         if (!localItemsToUpdate.size && !remoteEntitiesToUpdate.size) {
             // no local items or remote entities to update: abort
-            progress['done'] = new progressWin.ItemProgress(
-                null, 'All up to data'
-            )
-            progressWin.startCloseTimer(1000);
+            progress.newLine('done', 'All up to date');
+            progress.close();
             return
         }
 
@@ -247,6 +277,10 @@ export default class {
                 ) +
                 ':'
             );
+            // Fixme: this number (and the localFlagCitationsCount) is approximate,
+            // because the sourceItem.addCitations() method run below may find
+            // an already existing local citation for the same target item and flag
+            // and flag it instead of creating a new one
             if (localAddCitationsCount > 0) {
                 confirmMsg += '\n\t' + Wikicite.formatString(
                     'wikicite.wikidata.confirm.message.localAdd',
@@ -288,17 +322,47 @@ export default class {
                 );
             }
         }
+        // local citations that will not be changed
+        const unchangedCitationsCount = (
+            syncedCitationsCount +
+            noQidCitationsCount +
+            invalidOciCount
+        );
         if (unchangedCitationsCount) {
-            confirmMsg += '\n\n' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.unchanged',
-                [
-                    unchangedCitationsCount,
-                    Object.values(noQidCitationsCounts).reduce(
-                        (sum, noQidCitationsCount) => sum + noQidCitationsCount,
-                        0
-                    )
-                ]
+            confirmMsg += (
+                '\n\n' +
+                Wikicite.formatString(
+                    'wikicite.wikidata.confirm.message.unchanged',
+                    unchangedCitationsCount
+                )
             );
+            if (syncedCitationsCount) {
+                confirmMsg += (
+                    '\n\t' +
+                    Wikicite.formatString(
+                        'wikicite.wikidata.confirm.message.synced',
+                        syncedCitationsCount
+                    )
+                );
+            }
+            if (noQidCitationsCount) {
+                confirmMsg += (
+                    '\n\t' +
+                    Wikicite.formatString(
+                        'wikicite.wikidata.confirm.message.noqid',
+                        noQidCitationsCount
+                    )
+                );
+            }
+            if (invalidOciCount) {
+                confirmMsg += (
+                    '\n\t' +
+                    Wikicite.formatString(
+                        'wikicite.wikidata.confirm.message.invalidOci',
+                        invalidOciCount
+                    )
+                );
+            }
         }
         confirmMsg += '\n\n' + Wikicite.getString(
             'wikicite.wikidata.confirm.message.footer'
@@ -311,23 +375,21 @@ export default class {
 
         if (!confirmed) {
             // user cancelled
-            progress['cancelled'] = new progressWin.ItemProgress(
-                null, 'Sync cancelled'
-            )
-            progressWin.startCloseTimer(1000);
+            progress.newLine('error', 'Sync cancelled');
+            progress.close();
             return;
         }
 
+        // create an array of QIDs whose metadata must be downloaded
         const downloadQids = Object.values(localAddCitations).reduce(
-            (acc, curr) => acc.concat(curr), []
-        )
+            (qids, citedQids) => qids.concat(citedQids)
+        );
 
-        progress['metadata'] = new progressWin.ItemProgress(
-            null, 'Fetching citations metadata...'
-        )
+        progress.newLine('loading', 'Fetching citations metadata...');
+
         // Fixme: maybe keep fields supported by editor only?
         const targetItems = await Wikidata.getItems(downloadQids);
-        progress['metadata'].setText('Citations metadata fetched')
+        progress.updateLine('done', 'Citations metadata fetched')
 
         // Wikidata.addCitations([
         //     {
@@ -339,27 +401,20 @@ export default class {
         // ])  // do not proceed if this fails
 
         for (const sourceItem of sourceItems) {
-            // Fixme: some time may have passed since I instantiated
-            // these sourceItems. The citations could have changed locally
-            // should I instantiate them again, or always on the fly
-            // or maybe I should reconsider having the citations property
-            // as a getter. How would this affect the React components?
-            const itemId = sourceItem.sourceItem.id;
-            const sourceQid = sourceItem.sourceItem.qid;
-            for (const targetQid of localAddCitations[itemId]) {
+            const newCitations = [];
+            for (const targetQid of localAddCitations[sourceItem.item.id]) {
                 const targetItem = targetItems[targetQid];
-                // const oci = calculateOCI(sourceQid, targetQid);
-                // use SourceItem.addCitation to make sure
-                // there never are duplicate UUIDs
+                const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
                 const citation = new Citation(
                     {
                         item: targetItem,
-                        suppliers: ['wikidata'] //oci: [oci]
+                        ocis: [oci]
                     },
                     sourceItem
                 );
-                sourceItem.add(citation)
+                newCitations.push(citation)
             }
+            sourceItem.addCitations(newCitations);
             // for (const localFlagCitation of localFlagCitations[itemKey]) {
             //     const targetQid = localFlagCitation;
             //     const oci = calculateOCI(sourceQid, targetQid);
@@ -380,8 +435,7 @@ export default class {
             //     const citationIndex = sourceItem.citations.// find citation index
             //     SourceItem.removeCitation(citationIndex);
             // }
-            sourceItem.save()
-            progressWin.startCloseTimer(1000);
+            progress.close();
         }
 
 

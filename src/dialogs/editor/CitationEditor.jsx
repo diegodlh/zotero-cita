@@ -12,15 +12,13 @@ const Zotero = Components.classes['@zotero.org/Zotero;1']
 	.wrappedJSObject
 
 const {citation, usedUUIDs} = window.arguments[0];
-const item = citation.item;
+const item = citation.target.item;
 const sourceItem = citation.source;
 const retVals = window.arguments[1];
 
-// Citation editor only edits metadata of the cited item
-// It doesn't edit data about the citation (i.e., the link from source to target)
-// It does provide though a shortcut to link to a Zotero item
-// because this overrides data about the cited item itself
-
+// Fixme: as a Citation Editor (not a target item editor)
+// consider providing at least some read only information about the citation
+// such as label of the source item, OCIs, and Zotero link status
 const CitationEditor = () => {
 	const [itemType, setItemType] = useState(
 		Zotero.ItemTypes.getName(item.itemTypeID)
@@ -76,6 +74,10 @@ const CitationEditor = () => {
 	function getQID() {
 		// eslint-disable-next-line no-alert
 		window.alert('Getting QID not yet supported!');
+		// Fixme: can't simply call fetchQid, because that would
+		// automatically save the target item, and that's not
+		// how the citation editor works
+		// citation.target.fetchQid();
 	}
 
 	function onCancel() {

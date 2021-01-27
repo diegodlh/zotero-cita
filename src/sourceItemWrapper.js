@@ -1,28 +1,79 @@
 import Citation from './citation';
+import ItemWrapper from './itemWrapper';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 import Citations from './citations';
 
+/* global Zotero */
 
-// Fixme: consider renaming to SourceItem or similar, and inheriting from Zotero.Item
-class CitationList {
+class SourceItemWrapper extends ItemWrapper {
     // When I thought of this originally, I wasn't giving the source item to the citation creator
     // but then I understood it made sense I passed some reference to the source object
     // given that the citation is a link between two objects (according to the OC model)
     // so check if any methods here make sense to be moved to the Citation class instead
 
     constructor(item) {
+        super(item, item.saveTx.bind(item));
+        this._citations = [];
+        this.updateCitations(false);
+    }
+
+    get citations() {
+        return this._citations;
+    }
+
+    set citations(citations) {
+        const t0 = performance.now()
+        // replacer function for JSON.stringify
+        function replacer(key, value) {
+            if (!value) {
+                // do not include property if value is null or undefined
+                return undefined;
+            }
+            return value;
+        }
+        const jsonCitations = citations.map(
+            (citation) => {
+                let json = JSON.stringify(
+                    citation,
+                    replacer,
+                    1  // insert 1 whitespace into the output JSON
+                );
+                json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
+                json = json.replace(/\n/g, ""); // remove line-breaks
+                return json;
+            }
+        );
+        Wikicite.setExtraField(this.item, 'citation', jsonCitations);
+        this.saveHandler();
+        this._citations = citations;
+        console.log(`Saving citations to source item took ${performance.now() - t0}`);
+    }
+
+    get corruptCitations() {
+        const t0 = performance.now();
+        const corruptCitations = Wikicite.getExtraField(this.item, 'corrupt-citation').values;
+        console.log(`Getting corrupt citations from source item took ${performance.now() - t0}`)
+        return corruptCitations;
+    }
+
+    set corruptCitations(corruptCitations) {
+        const t0 = performance.now()
+        Wikicite.setExtraField(this.item, 'corrupt-citation', corruptCitations);
+        this.saveHandler();
+        console.log(`Saving corrupt citations to source item took ${performance.now() - t0}`)
+    }
+
+    updateCitations(compare=true) {
         // Constructs a Citation List by harvesting all Citation elements in
         // an item's extra field value.
-        // const t0 = performance.now();
-        this.sourceItem = item; // this is a reference to the source item, the parent of the citation list
-        let rawCitations = Wikicite.getExtraField(this.sourceItem, 'citation').values;
-        // Fixme: make sure the citation is formatted appropriately!
+        const t0 = performance.now();
+        let rawCitations = Wikicite.getExtraField(this.item, 'citation').values;
         const corruptCitations = [];
-        this.citations = rawCitations.reduce((citations, rawCitation, index) => {
+        const citations = rawCitations.reduce((citations, rawCitation, index) => {
             try {
-                const citation = new Citation(JSON.parse(rawCitation), this.sourceItem);
+                const citation = new Citation(JSON.parse(rawCitation), this);
                 if (citation) {
                     citations.push(citation)
                 }
@@ -33,72 +84,22 @@ class CitationList {
             }
             return citations;
         }, []);
-        if (corruptCitations.length) {
-            // if corrupt citations were found
-            // append to any previous corrupt citations
-            const prevCorruptCitations = Wikicite.getExtraField(item, 'corrupt-citation').values;
-            const newCorruptCitations = prevCorruptCitations.concat(corruptCitations);
-            // update the corrupt-citation extra field
-            Wikicite.setExtraField(this.sourceItem, 'corrupt-citation', newCorruptCitations);
-            // and save healthy citations to the source item
-            this.save();
+        if (compare) {
+            // Fixme: consider running further checks
+            if (this._citations.length !== citations) {
+                console.log('Number of citations changed')
+            }
         }
-        // const t1 = performance.now();
-        // this.updateCitationLabels();
-        // const t2 = performance.now();
-        // console.log(`Instantiating citation list took ${t2-t0}ms, ${t2-t1} of which where needed to update citation labels`);
+        this._citations = citations;
+        if (corruptCitations.length) {
+            this.citations = this._citations;
+            this.corruptCitations = this.corruptCitations.concat(corruptCitations);
+        }
+        console.log(`Getting citations from source item took ${performance.now() - t0}`)
     }
 
-    // Alternatively, do not instantiate source item citations upon construction of the CitatioList,
-    // but rather "get" them from the source item each time they are requested.
-    // Pro: the CitationList does not become obsolete when the source item is updated
-    // Con: if citations are requested too frequently, it may be costly
-    // Or, I may also have a updateCitations method that would update the this.citations property
-    // Maybe I could be listening to changes on the item and run the update then
-
-    // get citations() {
-    //     console.log('Getting citations from source item');
-    //     const rawCitations = Wikicite.getExtrafield(this.sourceItem.getField('extra'), 'citation').values;
-    //     const citations = rawCitations.reduce((citations, rawCitation) => {
-    //       const citation = new Citation(JSON.parse(rawCitation), this.sourceItem);
-    //       if (citation) {
-    //         citations.push(citation)
-    //       }
-    //       return citations;
-    //     }, []);
-    //     return citations;
-    // }
-
-    // set citations(citations) {
-
-    // }
-
-    // get source.doi() {
-    //     return this.sourceItem.getField('DOI');
-    // }
-
-    // set sourceDOI(doi) {
-    //     this.sourceItem.setField('DOI', doi);
-    //     this.sourceItem.saveTx();
-    // }
-
-    // get sourceOCC() {
-    //     return Wikicite.getExtraField(this.sourceItem, 'occ').values[0];
-    // }
-
-    // set sourceOCC(occ) {
-    //     Wikicite.setExtraField(this.sourceItem, 'occ', occ);
-    //     this.sourceItem.saveTx();
-    // }
-
-    get qid() {
-        // Fixme: check that the QID is a valid QID
-        return Wikicite.getExtraField(this.sourceItem, 'qid').values[0];
-    }
-
-    set qid(qid) {
-        Wikicite.setExtraField(this.sourceItem, 'qid', qid);
-        this.sourceItem.saveTx();
+    saveCitations() {
+        this.citations = this._citations;
     }
 
     openEditor(citation) { // always provide a citation (maybe an empty one)
@@ -112,37 +113,11 @@ class CitationList {
         // if I'm adding a citation which already exists for the source item
     }
 
-    /**
-     Save citations to source item.
-     */
-    save() {
-        // replacer function for JSON.stringify
-        function replacer(key, value) {
-            if (!value) {
-                // do not include property if value is null or undefined
-                return undefined;
-            }
-            return value;
-        }
-        const citations = this.citations.map(
-            (citation) => {
-                let json = JSON.stringify(
-                    citation,
-                    replacer,
-                    1  // insert 1 whitespace into the output JSON
-                );
-                json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
-                json = json.replace(/\n/g, ""); // remove line-breaks
-                return json;
-            }
-        );
-        Wikicite.setExtraField(this.sourceItem, 'citation', citations);
-        // Fixme: Do I need an await for saveTx, here and anywhere else used?
-        this.sourceItem.saveTx();
-    }
+    // Fixme: add "citation" to the name of all these methods below
+    // or create a separate "citation" namespace
 
     async new() {
-        let citation = new Citation({item: {itemType: 'journalArticle'}, suppliers: []}, this.sourceItem);
+        let citation = new Citation({item: {itemType: 'journalArticle'}, ocis: []}, this);
         let newCitation = await this.openEditor(citation);
         // if this.source.qid && newCitation.item.qid, offer to sync to Wikidata?
         if (this.add(newCitation)) {
@@ -150,13 +125,15 @@ class CitationList {
         }
     }
 
-    // Fixme: change name to addCitation
-    add(citation) {
-        // before adding a citation to the CitationList, make sure
-        // there isn't another citation for the same target
+    addCitations(citations) {
+        // Fixme: apart from one day implementing possible duplicates
+        // here I have to check other UUIDs too (not only QID)
+        // and if they overlap, add the new OCIs provided only
+
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself
-        this.citations.push(citation);
+        this.updateCitations();
+        this.citations = this.citations.concat(citations);
         // this.updateCitationLabels();  //deprecated
         // return if successful (index of new citation?)
 
@@ -169,10 +146,26 @@ class CitationList {
     // }
 
     async delete(index, sync) {
+        this.updateCitations();
         if (sync) {
             let citation = this.citations[index];
-            if (citation.suppliers.includes('wikidata')) {
-                await Wikidata.deleteCitations([[this.sourceItem.qid, citation.qid]]);
+            const wikidataOci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0]
+            if (wikidataOci && wikidataOci.valid) {
+                const progressWin = new Zotero.ProgressWindow({ closeOnClick: false });
+                let progress;
+                progressWin.changeHeadline(
+                    'Wikicite'
+                );
+                progressWin.show();
+                progress = new progressWin.ItemProgress(
+                    'chrome://zotero/skin/arrow_refresh.png',
+                    'Deleting citation from Wikidata...'
+                );
+                progress.setProgress(100);
+                await Wikidata.deleteCitations([[this.qid, citation.target.qid]]);
+                progress.setError();
+                progress.setText('Deleting citations from Wikidata not yet supported');
+                progressWin.startCloseTimer(3000);
                 // handle result and fail if citation could not be deleted remotely
                 // do not fail if it couldn't be deleted because it doesn't exist
             } else {
@@ -182,7 +175,9 @@ class CitationList {
                 return
             }
         }
-        this.citations.splice(index, 1);
+        const newCitations = this.citations;
+        newCitations.splice(index, 1);
+        this.citations = newCitations;
         // this.updateCitationLabels();  //deprecated
     }
 
@@ -201,9 +196,9 @@ class CitationList {
             if (skip === i) {
                 return;
             }
-            const doi = citation.item.getField('DOI');
-            const qid = Wikicite.getExtraField(citation.item, 'qid').values[0];
-            const occ = Wikicite.getExtraField(citation.item, 'occ').values[0];
+            const doi = citation.target.doi;
+            const qid = citation.target.qid;
+            const occ = citation.target.occ;
             if (doi) {
                 usedUUIDs.doi.push(doi);
             }
@@ -231,7 +226,7 @@ class CitationList {
         // I think it is too trivial to have one Class method
         // be careful this method will not update this instance of CitationList
         // because it creates its own instances for each item provided
-        Wikidata.syncCitations(this.sourceItem);
+        Wikidata.syncCitations(this.item);
     }
 
     // Fixme: maybe the methods below may take an optional index number
@@ -312,4 +307,4 @@ class CitationList {
     }
 }
 
-export default CitationList;
+export default SourceItemWrapper;

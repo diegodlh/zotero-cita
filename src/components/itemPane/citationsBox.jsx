@@ -5,12 +5,16 @@ import React, {
 } from 'react';
 import { Button } from '../button';
 import Citation from '../../citation';
-import CitationList from '../../citationList';
+import SourceItemWrapper from '../../sourceItemWrapper';
 import { IntlProvider } from 'react-intl';
+import OCI from '../../oci';
 import PropTypes from 'prop-types';
 import UuidTableRow from './uuidTableRow';
 import Wikicite from '../../wikicite';
+import ZoteroButton from './zoteroButton';
+import WikidataButton from './wikidataButton';
 
+/* global Services */
 /* global window */
 /* global Zotero */
 
@@ -24,21 +28,17 @@ function CitationsBox(props) {
     const removeStr = Zotero.getString('general.remove');
 
     useEffect(() => {
-        setCitations(props.citationList.citations);
-        setDoi(props.citationList.sourceItem.getField('DOI'));
+        setCitations(props.sourceItem.citations);
+        setDoi(props.sourceItem.doi);
         // Fixme: to avoid parsing the extra field twice, consider redefining
         // Wikicite.getExtraField to allow multiple fieldnames as input
         // and return a fieldName: [values]} object instead
-        setOcc(
-            Wikicite.getExtraField(props.citationList.sourceItem, 'occ').values[0] ?? ''
-        );
-        setQid(
-            Wikicite.getExtraField(props.citationList.sourceItem, 'qid').values[0] ?? ''
-        );
+        setOcc(props.sourceItem.occ ?? '');
+        setQid(props.sourceItem.qid ?? '');
         setHasAttachments(
-            Boolean(props.citationList.sourceItem.getAttachments().length)
+            Boolean(props.sourceItem.item.getAttachments().length)
         );
-    }, [props.citationList]);
+    }, [props.sourceItem]);
 
     /**
      * Opens the citation editor window.
@@ -67,9 +67,9 @@ function CitationsBox(props) {
             item: {
                 itemType: 'journalArticle'  // Fixme: maybe replace with a const
             },
-            suppliers: []
-        }, props.citationList.sourceItem);
-        const item = openEditor(citation, props.citationList.getUsedUUIDs());
+            ocis: []
+        }, props.sourceItem);
+        const item = openEditor(citation, props.sourceItem.getUsedUUIDs());
         if (!item) {
             // Fixme: move console.log to wikicite debug
             console.log('Edit cancelled by user.');
@@ -80,15 +80,14 @@ function CitationsBox(props) {
         ) {
             console.log('Source and target items have QIDs! Offer syncing to Wikidata.')
         }
-        citation.item = item;
+        citation.target.item = item;
 
-        props.citationList.add(citation);
 
         // Make sure the component updates even before changes are saved to the item
         // setCitations(
-        //   // citationList.citations  // this doesn't work because citationList.citation object's reference hasn't changed
-        //   // () => citationList.citations  // works only one time per render - possibly because the function itself doesn't change
-        //   [...citationList.citations]  // works
+        //   // sourceItem.citations  // this doesn't work because sourceItem.citation object's reference hasn't changed
+        //   // () => sourceItem.citations  // works only one time per render - possibly because the function itself doesn't change
+        //   [...sourceItem.citations]  // works
         // );
         // Problem is if I do this [...citations], the citations passed down to CitationsBox
         // are not the citations of the CitationsList here. Therefore, if I implement methods
@@ -96,8 +95,9 @@ function CitationsBox(props) {
 
         // This will save changes to the item's extra field
         // The modified item observer above will be triggered.
-        // This will update the citationList ref, and the component's state.
-        props.citationList.save();
+        // This will update the sourceItem ref, and the component's state.
+        props.sourceItem.addCitations(citation);
+        // props.sourceItem.save();
         // Unexpectedly, this also triggers the zotero-items-tree `select` event
         // which in turn runs zoteroOverlay's refreshCitationsPaneMethod.
         // However, as props.item will not have changed, component will not update.
@@ -107,7 +107,7 @@ function CitationsBox(props) {
         const citation = citations[index];
         const item = openEditor(
             citation,
-            props.citationList.getUsedUUIDs(index)
+            props.sourceItem.getUsedUUIDs(index)
         );
         // Fixme: I don't like that I'm repeating code from addCitation
         // tagsBox has a single updateTags method instead
@@ -121,46 +121,108 @@ function CitationsBox(props) {
         ) {
             console.log('Source and target items have QIDs! Offer syncing to Wikidata.')
         }
-        citation.item = item;
+        citation.target.item = item;
 
-        props.citationList.citations[index] = citation;
-        props.citationList.save();
+        const newCitations = props.sourceItem.citations;
+        newCitations[index] = citation;
+        props.sourceItem.citations = newCitations;
     }
 
     async function handleCitationDelete(index) {
         let sync = false;
         const citation = citations[index];
-        if (citation.suppliers.includes('wikidata')) {
-            // ask user if they want to remove link remotely as well
-            sync = true;
+        if (citation.ocis.some((oci) => oci.supplier === 'wikidata')) {
+            // Fixme: offer to remember user choice
+            // get this from preferences: remembered "delete remote too" choice
+            // const remember = {value: false};
+            const bttnFlags = (
+                (Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_NO) +
+                (Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_CANCEL) +
+                (Services.prompt.BUTTON_POS_2 * Services.prompt.BUTTON_TITLE_YES) +
+                Services.prompt.BUTTON_POS_2_DEFAULT
+            );
+            const response = Services.prompt.confirmEx(
+                window,
+                Wikicite.getString('wikicite.citationsPane.delete.remote.title'),
+                Wikicite.getString('wikicite.citationsPane.delete.remote.message'),
+                bttnFlags,
+                "", "", "",
+                undefined,  // Wikicite.getString('wikicite.citationsPane.delete.remote.remember'),
+                {}  // remember
+            );
+            switch (response) {
+                case 0:
+                    // no
+                    sync = false;
+                    break
+                case 1:
+                    // cancel
+                    return;
+                case 2:
+                    // yes
+                    sync = true;
+                    break
+            }
         }
-        await props.citationList.delete(index, sync);
-        props.citationList.save();
+        await props.sourceItem.delete(index, sync);
     }
 
     function handleCitationMove(index, shift) {
-        const citation = props.citationList.citations.splice(index, 1)[0];
+        const newCitations = props.sourceItem.citations;
+        const citation = newCitations.splice(index, 1)[0];
         const newIndex = index + shift;
-        props.citationList.citations.splice(newIndex, 0, citation);
-        props.citationList.save();
+        newCitations.splice(newIndex, 0, citation);
+        props.sourceItem.citations = newCitations;
+    }
+
+    function handleCitationSync(index) {
+        const citation = citations[index];
+        const syncable = citation.source.qid && citation.target.qid;
+        const oci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0];
+        if (oci) {
+            if (oci.valid) {
+                OCI.goTo(oci);
+            } else {
+                // oci is invalid, i.e., citing or cited id do not match with
+                // local source or target id
+                Services.prompt.alert(
+                    window,
+                    Wikicite.getString('wikicite.oci.mismatch.title'),
+                    Wikicite.formatString(
+                        'wikicite.oci.mismatch.message',
+                        [
+                            oci.supplier.charAt(0).toUpperCase() + oci.supplier.slice(1),
+                            oci.idType.toUpperCase(),
+                            oci.citingId,
+                            oci.citedId
+                        ]
+                    )
+                );
+            }
+        } else if (syncable) {
+            props.sourceItem.syncWithWikidata(index);
+        } else {
+            Services.prompt.alert(
+                window,
+                'Citation cannot be synced',
+                'Both citing and cited items must have a QID'
+            );
+        }
     }
 
     function handleDoiCommit(newDoi) {
         // setDoi(newDoi);
-        props.citationList.sourceItem.setField('DOI', newDoi);
-        props.citationList.sourceItem.saveTx();
+        props.sourceItem.doi = newDoi;
     }
 
     function handleOccCommit(newOcc) {
         // setOcc(newOcc);
-        Wikicite.setExtraField(props.citationList.sourceItem, 'occ', newOcc);
-        props.citationList.sourceItem.saveTx();
+        props.sourceItem.occ = newOcc;
     }
 
     function handleQidCommit(newQid) {
         // setQid(newQid);
-        Wikicite.setExtraField(props.citationList.sourceItem, 'qid', newQid);
-        props.citationList.sourceItem.saveTx();
+        props.sourceItem.qid = newQid;
     }
 
     function handleDoiFetch() {
@@ -172,7 +234,7 @@ function CitationsBox(props) {
     }
 
     function handleQidFetch() {
-        alert('Fetching QID not yet supported');
+        props.sourceItem.fetchQid();
     }
 
     function renderCount() {
@@ -194,21 +256,13 @@ function CitationsBox(props) {
     }
 
     function renderCitationRow(citation, index) {
-        let item = citation.item;
+        let item = citation.target.item;
         const itemType = Zotero.ItemTypes.getName(item.itemTypeID);
-        let linked = false;
-        if (item.key) {
-            //Fixme: Handle error
-            item = Zotero.Items.getByLibraryAndKey(item.libraryID, item.key);
-            linked = true;
-        }
-        let syncable = qid && item.qid;
-        let synced = citation.suppliers.wikidata;
 
         const isFirstCitation = index === 0;
         const isLastCitation = index === citations.length - 1;
 
-        const label = citation.getLabel();
+        const label = citation.target.getLabel();
         return (
             <li
                 className="citation"
@@ -234,30 +288,13 @@ function CitationsBox(props) {
                 {props.editable && (
                     // https://github.com/babel/babel-sublime/issues/368
                 <>
-                    <button>
-                        <img
-                            title={
-                                linked ?
-                                'Go to linked Zotero item' :
-                                'Link to Zotero item'
-                            }
-                            src={`chrome://zotero/skin/zotero-new-z-16px.png`}
-                        />
-                    </button>
-                    <button>
-                        <img
-                            title={
-                                // eslint-disable-next-line no-nested-ternary
-                                syncable ? (
-                                    synced ?
-                                    'Go to source item Wikidata entry' : // alternatively, go to OCI
-                                    'Upload to Wikidata'
-                                ) :
-                                'Both source and target items must have QID to sync to Wikidata'
-                            }
-                            src={`chrome://wikicite/skin/wikidata.png`}
-                        />
-                    </button>
+                    <ZoteroButton
+                        citation={citation}
+                    />
+                    <WikidataButton
+                        citation={citation}
+                        onClick={() => handleCitationSync(index)}
+                    />
                     <button
                         disabled={ isFirstCitation }
                         onClick={() => handleCitationMove(index, -1)}
@@ -382,11 +419,11 @@ function CitationsBox(props) {
                 </table>
                 {/*<div className="citations-box-footer-buttons" style={{display: "flex"}}>
                     <button
-                        onClick={() => props.citationList.getFromPDF()}
+                        onClick={() => props.sourceItem.getFromPDF()}
                         disabled={!hasAttachments}
                     >Extract from attachments</button>
                     <button
-                        onClick={() => props.citationList.exportToCroci()}
+                        onClick={() => props.sourceItem.exportToCroci()}
                         disabled={!doi}
                     >Export to CROCI</button>
                 </div>*/}
@@ -397,7 +434,7 @@ function CitationsBox(props) {
 
 CitationsBox.propTypes = {
     editable: PropTypes.bool,
-    citationList: PropTypes.instanceOf(CitationList),
+    sourceItem: PropTypes.instanceOf(SourceItemWrapper),
     onItemPopup: PropTypes.func,
     onCitationPopup: PropTypes.func
 };

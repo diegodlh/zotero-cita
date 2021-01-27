@@ -288,49 +288,49 @@ const zoteroOverlay = {
         itemWikidataSync.setAttribute('id', 'item-menu-wikidata-sync');
         itemWikidataSync.setAttribute('label', 'Sync citations with Wikidata');
         itemWikidataSync.addEventListener(
-            'command', () => this._citationList.syncWithWikidata()
+            'command', () => this._sourceItem.syncWithWikidata()
         );
 
         const itemCrossrefGet = doc.createElement('menuitem');
         itemCrossrefGet.setAttribute('id', 'item-menu-crossref-get');
         itemCrossrefGet.setAttribute('label', 'Get citations from Crossref');
         itemCrossrefGet.addEventListener(
-            'command', () => this._citationList.getFromCrossref()
+            'command', () => this._sourceItem.getFromCrossref()
         );
 
         const itemOccGet = doc.createElement('menuitem');
         itemOccGet.setAttribute('id', 'item-menu-occ-get');
         itemOccGet.setAttribute('label', 'Get citations from OpenCitations Corpus');
         itemOccGet.addEventListener(
-            'command', () => this._citationList.getFromOCC()
+            'command', () => this._sourceItem.getFromOCC()
         );
 
         const itemPdfExtract = doc.createElement('menuitem');
         itemPdfExtract.setAttribute('id', 'item-menu-pdf-extract');
         itemPdfExtract.setAttribute('label', 'Extract citations from attachments');
         itemPdfExtract.addEventListener(
-            'command', () => this._citationList.getFromPDF()
+            'command', () => this._sourceItem.getFromPDF()
         );
 
         const itemBibTexImport = doc.createElement('menuitem');
         itemBibTexImport.setAttribute('id', 'item-menu-bibtex-import');
         itemBibTexImport.setAttribute('label', 'Import citations from BibTeX');
         itemBibTexImport.addEventListener(
-            'command', () => this._citationList.getFromBibTeX()
+            'command', () => this._sourceItem.getFromBibTeX()
         );
 
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'item-menu-bibtex-export');
         itemBibTexExport.setAttribute('label', 'Export citations to BibTeX');
         itemBibTexExport.addEventListener(
-            'command', () => this._citationList.exportToBibTeX()
+            'command', () => this._sourceItem.exportToBibTeX()
         );
 
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'item-menu-croci-export');
         itemCrociExport.setAttribute('label', 'Export citations to CROCI');
         itemCrociExport.addEventListener(
-            'command', () => this._citationList.exportToCroci()
+            'command', () => this._sourceItem.exportToCroci()
         );
 
         itemMenu.appendChild(itemWikidataSync);
@@ -356,21 +356,21 @@ const zoteroOverlay = {
         citationWikidataSync.setAttribute('id', 'citation-menu-wikidata-sync');
         citationWikidataSync.setAttribute('label', 'Sync citation with Wikidata');
         citationWikidataSync.addEventListener(
-            'command', () => this._citationList.syncWithWikidata(this._citationIndex)
+            'command', () => this._sourceItem.syncWithWikidata(this._citationIndex)
         );
 
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'citation-menu-bibtex-export');
         itemBibTexExport.setAttribute('label', 'Export cited item as BibTeX');
         itemBibTexExport.addEventListener(
-            'command', () => this._citationList.exportToBibTeX(this._citationIndex)
+            'command', () => this._sourceItem.exportToBibTeX(this._citationIndex)
         );
 
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'citation-menu-croci-export');
         itemCrociExport.setAttribute('label', 'Export citation to CROCI');
         itemCrociExport.addEventListener(
-            'command', () => this._citationList.exportToCroci(this._citationIndex)
+            'command', () => this._sourceItem.exportToCroci(this._citationIndex)
         );
 
         // Fixme: but OCI has two more suppliers: Dryad and CROCI
@@ -440,8 +440,7 @@ const zoteroOverlay = {
                             key={"citationsBox-" + item.id}
                             item={item}
                             editable={ZoteroPane.collectionsView.editable}
-                            onCitationList={this.handleCitationList}
-                            // onCitationList={this.citationListHandler}
+                            onSourceItem={this.handleSourceItem}
                             // citationIndexRef={this._citationIndex}
                             // In principle I don't need a ref; I may have to use it if I need to force blur
                             // ref={_citationsBox}
@@ -458,26 +457,25 @@ const zoteroOverlay = {
     },
 
     // Fixme: make zoteroOverlay a class and this a getter/setter property
-    setCitationList: function(citationList) {
-        this._citationList = citationList;
+    setSourceItem: function(sourceItem) {
+        this._sourceItem = sourceItem;
     },
 
     setCitationIndex: function(citationIndex) {
         this._citationIndex = citationIndex;
     },
 
-    _citationList: undefined,
+    _sourceItem: undefined,
     _citationIndex: undefined,
 
     handleItemPopupShowing: function(document) {
-        const citationList = this._citationList;
-        const sourceItem = citationList.sourceItem;
+        const sourceItem = this._sourceItem;
 
-        const hasAttachments = Boolean(sourceItem.getAttachments().length);
-        const hasCitations = Boolean(citationList.citations.length);
-        const sourceDoi = sourceItem.getField('DOI');
-        const sourceOcc = Wikicite.getExtraField(citationList.sourceItem, 'occ').values[0];
-        const sourceQid = Wikicite.getExtraField(citationList.sourceItem, 'qid').values[0];
+        const hasAttachments = Boolean(sourceItem.item.getAttachments().length);
+        const hasCitations = Boolean(sourceItem.citations.length);
+        const sourceDoi = sourceItem.doi;
+        const sourceOcc = sourceItem.occ;
+        const sourceQid = sourceItem.qid;
 
         const itemWikidataSync = document.getElementById('item-menu-wikidata-sync');
         const itemCrossrefGet = document.getElementById('item-menu-crossref-get');
@@ -499,23 +497,18 @@ const zoteroOverlay = {
     handleCitationPopupShowing: function(doc) {
         console.log(`Showing citation popup for citation #${this._citationIndex}`);
 
-        const citationList = this._citationList;
-        const sourceItem = citationList.sourceItem;
-        const citation = citationList.citations[this._citationIndex];
-        const targetItem = citation.item;
+        const sourceItem = this._sourceItem;
+        const citation = sourceItem.citations[this._citationIndex];
+        const targetItem = citation.target;
 
-        const sourceDoi = sourceItem.getField('DOI');
-        const sourceQid = Wikicite.getExtraField(sourceItem, 'qid').values[0];
+        const ociSuppliers = citation.ocis.map((oci) => oci.supplier);
 
-        const targetDoi = targetItem.getField('DOI');
-        const targetQid = Wikicite.getExtraField(targetItem, 'qid').values[0];
-
-        doc.getElementById('citation-menu-wikidata-sync').disabled = !sourceQid || !targetQid;
+        doc.getElementById('citation-menu-wikidata-sync').disabled = !sourceItem.qid || !targetItem.qid;
         doc.getElementById('item-menu-bibtex-export').disabled = false;
-        doc.getElementById('citation-menu-croci-export').disabled = !sourceDoi || !targetDoi;
-        doc.getElementById('citation-menu-oci-crossref').disabled = !citation.suppliers.crossref;
-        doc.getElementById('citation-menu-oci-occ').disabled = !citation.suppliers.occ;
-        doc.getElementById('citation-menu-oci-wikidata').disabled = !citation.suppliers.wikidata;
+        doc.getElementById('citation-menu-croci-export').disabled = !sourceItem.doi || !targetItem.doi;
+        doc.getElementById('citation-menu-oci-crossref').disabled = !ociSuppliers.includes('crossref');
+        doc.getElementById('citation-menu-oci-occ').disabled = !ociSuppliers.includes('occ');
+        doc.getElementById('citation-menu-oci-wikidata').disabled = !ociSuppliers.includes('wikidata');
     },
 
     /**
