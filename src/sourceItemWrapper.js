@@ -129,6 +129,7 @@ class SourceItemWrapper extends ItemWrapper {
         // Fixme: apart from one day implementing possible duplicates
         // here I have to check other UUIDs too (not only QID)
         // and if they overlap, add the new OCIs provided only
+        // Issue #25
 
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself

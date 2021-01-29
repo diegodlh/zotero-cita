@@ -27,6 +27,8 @@ export default class {
       })
     }
 
+    // Fixme: add title query support. This is needed before
+    // upload to Wikidata is implemented. Rethink flow and progress windows.
     // items must be item wrappers
     static async getQID(items, create=false) { //, approximate, getCitations=true) {
         const progress = new Progress();
@@ -65,19 +67,39 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 }
             `
             const url = wdk.sparqlQuery(sparql);
-            progress.newLine('loading', 'Fetching QIDs');
-            const xmlhttp = await Zotero.HTTP.request('GET', url);
-            const results = JSON.parse(xmlhttp.response).results;
-            if (results && results.bindings && results.bindings.length) {
-                progress.updateLine('done', 'QIDs fetched successfully')
+            progress.newLine(
+                'loading',
+                Wikicite.getString(
+                    'wikicite.wikidata.progress.qid.fetch.loading'
+                )
+            );
+            let bindings;
+            try {
+                const xmlhttp = await Zotero.HTTP.request('GET', url);
+                bindings = JSON.parse(xmlhttp.response).results.bindings;
+            } catch {
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.qid.fetch.error'
+                    )
+                );
+            }
+            if (bindings.length) {
+                progress.updateLine(
+                    'done',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.qid.fetch.done'
+                    )
+                );
                 for (const item of items.filter((item) => !item.qid)) {
                     let matches;
                     if (item.doi) {
-                        matches = results.bindings.filter(
+                        matches = bindings.filter(
                             (binding) => binding.doi.value === item.doi.toUpperCase()
                         );
                     } else if (item.isbn) {
-                        matches = results.bindings.filter(
+                        matches = bindings.filter(
                             (binding) => binding.isbn.value === item.isbn
                         );
                     }
@@ -90,7 +112,12 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     }
                 }
             } else {
-                progress.updateLine('error', 'No Wikidata entries were found');
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.qid.fetch.zero'
+                    )
+                );
             }
         } else {
             progress.newLine('error', 'No valid unique identifiers provided')
@@ -186,7 +213,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         const itemMap = new Map(
             qids.map((qid) => [qid, undefined])
         );
-        // Fixme: if called too early, it will fail!
+        // this seems to fix that Zotero.Translate.Search() would fail if called
+        // too early
         await Zotero.Schema.schemaUpdatePromise;
         const translate = new Zotero.Translate.Search();
         translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
