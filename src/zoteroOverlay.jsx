@@ -1,6 +1,8 @@
+import Citations from './citations';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 import WikiciteChrome from './wikiciteChrome';
 
@@ -153,15 +155,13 @@ const zoteroOverlay = {
     // Functions for item tree batch actions
     /******************************************/
     // Fixme: Consider using the Citations class methods instead
-    getFromWikidata: function() {
-        // get items selected
-        // filter items which have qid
-        // generate a batch call to wikidata api
-        // reconcile remote and local data
-        // confirm local changes
-        // confirm remote changes
-        // batch upload changes to wikidata
-        alert('Batch getting citations from Wikidata not yet supported.');
+    syncWithWikidata: function() {
+        const items = ZoteroPane.getSelectedItems().map(
+            (item) => new SourceItemWrapper(item)
+        );
+        if (items.length) {
+            Citations.syncItemCitationsWithWikidata(items);
+        }
     },
 
     getFromCrossref: function() {
@@ -579,7 +579,7 @@ const zoteroOverlay = {
     // Create Zotero item menu items as children of menuPopup
     createMenuItems: function(menuName, menuPopup, IDPrefix, elementsAreRoot, doc) {
         const menuFunctions = [
-            'getFromWikidata',
+            'syncWithWikidata',
             'getFromCrossref',
             'getFromOCC',
             'getFromAttachments',

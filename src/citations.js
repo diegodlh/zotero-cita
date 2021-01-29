@@ -77,6 +77,8 @@ export default class {
         // proceeding?
         // this may be an await and the rest of the code later
 
+        sourceItems = sourceItems.filter((sourceItem) => sourceItem.qid);
+
         let qids = sourceItems.reduce(
             (qids, sourceItem) => {
                 const qid = sourceItem.qid;

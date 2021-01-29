@@ -139,6 +139,7 @@ const CitationEditor = () => {
 			Wikicite.setExtraField(itemOut, 'qid', qid);
 			Wikicite.setExtraField(itemOut, 'occ', occ);
 		}
+		// Fixme: return the item wrapper
 		retVals.item = itemOut;
 		window.close()
 	}

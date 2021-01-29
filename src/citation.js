@@ -121,6 +121,7 @@ class Citation {
         // I need access to the parent CitationList
     }
 
+    // link the citation target item to an item in the zotero library
     linkToZoteroItem() {
         // Adapted from Zotero's bindings/relatedbox.xml
         const io = {singleSelection: true, dataOut: null};

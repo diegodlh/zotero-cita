@@ -144,6 +144,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 
         // handle offer create new one if not found
         // maybe just send them to the webpage, idk
+        // issue #33
         if (create) {
             Services.prompt.alert(
                 window,
