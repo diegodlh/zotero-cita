@@ -384,14 +384,12 @@ const zoteroOverlay = {
         ociPopup.setAttribute('id', 'citation-menu-oci-submenu-popup');
         ociMenu.appendChild(ociPopup);
 
-        // Fixme: remove!!
-        const unsupportedOci = 'Seeing citation in OpenCitations not yet supported';
-
         const ociCrossref = doc.createElement('menuitem');
         ociCrossref.setAttribute('id', 'citation-menu-oci-crossref');
         ociCrossref.setAttribute('label', 'Crossref supplier');
         ociCrossref.addEventListener(
-            'command', () => alert(unsupportedOci)
+            'command',
+            () => this._sourceItem.citations[this._citationIndex].resolveOCI('crossref')
         );
         ociPopup.appendChild(ociCrossref);
 
@@ -399,7 +397,8 @@ const zoteroOverlay = {
         ociOcc.setAttribute('id', 'citation-menu-oci-occ');
         ociOcc.setAttribute('label', 'OCC supplier');
         ociOcc.addEventListener(
-            'command', () => alert(unsupportedOci)
+            'command',
+            () => this._sourceItem.citations[this._citationIndex].resolveOCI('occ')
         );
         ociPopup.appendChild(ociOcc);
 
@@ -407,7 +406,8 @@ const zoteroOverlay = {
         ociWikidata.setAttribute('id', 'citation-menu-oci-wikidata');
         ociWikidata.setAttribute('label', 'Wikidata supplier');
         ociWikidata.addEventListener(
-            'command', () => alert(unsupportedOci)
+            'command',
+            () => this._sourceItem.citations[this._citationIndex].resolveOCI('wikidata')
         );
         ociPopup.appendChild(ociWikidata);
 

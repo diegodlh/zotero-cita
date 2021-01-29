@@ -181,7 +181,7 @@ function CitationsBox(props) {
         const oci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0];
         if (oci) {
             if (oci.valid) {
-                OCI.goTo(oci);
+                citation.resolveOCI('wikidata');
             } else {
                 // oci is invalid, i.e., citing or cited id do not match with
                 // local source or target id

@@ -188,6 +188,13 @@ class Citation {
             });
         }
     }
+
+    resolveOCI(supplier) {
+        const oci = this.ocis.filter((oci) => oci.supplier === supplier)[0];
+        if (oci) {
+            OCI.resolve(oci.oci);
+        }
+    }
 }
 
 export default Citation;

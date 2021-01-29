@@ -126,20 +126,17 @@ export default class {
 		return encodedId;
 	}
 
-	static goTo(oci) {
-		// link to the generator (instead of the resolved URL), so the resolutor can generate the entry (?)
-	    // next to each citation, I may provide these links as icons
-	    // icons are clickable (grey if provider is unavailable yet) to export as CROCI, or sync to wikidata for individual citations
-	    // if click when grey, offer to upload
-	    // if clieck when colored, go to the OCI resolver
-	    // they are grey but not clickable if either soource or target dont' have DOI or QID; respectively
-	    // makes no sense to export to CROCI if already in COCI, I think
-	    // for OCC no link is provided
-		Services.prompt.alert(
-			window,
-			'Opening in OpenCitations not yet supported',
-			'Going to OCI not yet supported'
-		);
+	/**
+     * Resolve OCI with OCI Resolution Service
+     * @param {String} oci - OCI to resolve
+ 	*/
+	static resolve(oci) {
+		if (this.parseOci(oci)) {
+			Zotero.launchURL(
+				'https://opencitations.net/oci?oci=' +
+				oci
+			);
+		}
 	}
 
 	// constructor({supplier, oci, citingId, citedId } = {}) {
