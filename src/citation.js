@@ -190,6 +190,27 @@ class Citation {
         }
     }
 
+    unlinkFromZoteroItem() {
+        const linkedItem = Zotero.Items.getByLibraryAndKey(
+            this.source.item.libraryID,
+            this.zotero
+        );
+        if (linkedItem) {
+            if (this.source.item.removeRelatedItem(linkedItem)) {
+                this.source.item.saveTx({
+                    skipDateModifiedUpdate: true
+                });
+            }
+            if (linkedItem.removeRelatedItem(this.source.item)) {
+                linkedItem.saveTx({
+                    skipDateModifiedUpdate: true
+                });
+            }
+        }
+        this.zotero = undefined;
+        this.source.saveCitations();
+    }
+
     resolveOCI(supplier) {
         const oci = this.ocis.filter((oci) => oci.supplier === supplier)[0];
         if (oci) {
