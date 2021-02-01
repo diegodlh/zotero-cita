@@ -72,12 +72,23 @@ export default class {
         const noQidItems = sourceItems.filter(
             (sourceItem) => !sourceItem.qid
         );
-        // noQidItems.length items do not have a QID
-        // would you like to try and get one for them before
-        // proceeding?
-        // this may be an await and the rest of the code later
+
+        if (noQidItems.length) {
+            Services.prompt.alert(
+                window,
+                Wikicite.getString('wikicite.wikidata.ignored.title'),
+                Wikicite.formatString(
+                    'wikicite.wikidata.ignored.message',
+                    noQidItems.length
+                )
+            );
+        }
 
         sourceItems = sourceItems.filter((sourceItem) => sourceItem.qid);
+
+        if (!sourceItems.length) {
+            return;
+        }
 
         let qids = sourceItems.reduce(
             (qids, sourceItem) => {
