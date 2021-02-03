@@ -94,6 +94,14 @@ class Citation {
         // I may limit author types to author and editor
     }
 
+    addOCI(oci) {
+        Services.prompt.alert(null, 'Unsupported', 'Adding OCI to citation not yet supported');
+    }
+
+    removeOCI(supplier) {
+        Services.prompt.alert(null, 'Unsupported', 'Removing OCI from citation not yet supported');
+    }
+
     /**
      * Return a JSON object to save to the source item extra field.
      */

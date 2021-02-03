@@ -506,25 +506,55 @@ export default class {
                 )
             );
             for (const sourceItem of sourceItems) {
-                const newCitations = [];
-                for (const targetQid of localAddCitations[sourceItem.item.id]) {
-                    const targetItem = targetItems[targetQid];
-                    const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
-                    const citation = new Citation(
-                        {
-                            item: targetItem,
-                            ocis: [oci]
-                        },
-                        sourceItem
-                    );
-                    newCitations.push(citation)
+                if (!localItemsToUpdate.has(sourceItem.item.id)) {
+                    // item not in the list of items to update; skip
+                    continue;
                 }
-                // Fixme: the number of localAddCitations and localFlagCitations
-                // shown in the confirmation message above may be wrong, as the
-                // addCitations method below may find duplicate citations and 
-                // decide to flag them instead of creating new ones.
-                // Use this info to show a message to the user (see #26)
-                sourceItem.addCitations(newCitations);
+
+                sourceItem.startBatch();
+
+                // citations to add
+                const addCitations = localAddCitations[sourceItem.item.id];
+                if (addCitations.length) {
+                    const newCitations = [];
+                    for (const targetQid of addCitations) {
+                        const targetItem = targetItems[targetQid];
+                        const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
+                        const citation = new Citation(
+                            {
+                                item: targetItem,
+                                ocis: [oci]
+                            },
+                            sourceItem
+                        );
+                        newCitations.push(citation)
+                    }
+                    // Fixme: the number of localAddCitations and localFlagCitations
+                    // shown in the confirmation message above may be wrong, as the
+                    // addCitations method below may find duplicate citations and 
+                    // decide to flag them instead of creating new ones.
+                    // Use this info to show a message to the user (see #26)
+                    sourceItem.addCitations(newCitations);
+                }
+
+                // citations to flag
+                const flagCitations = localFlagCitations[sourceItem.item.id];
+                if (flagCitations.length) {
+                    for (const targetQid of flagCitations) {
+                        const citations = sourceItem.getCitations(targetQid, 'qid');
+                        if (citations.length === 1) {
+                            const citation = citations[0];
+                            citation.addOCI(
+                                OCI.getOci('wikidata', sourceItem.qid, targetQid)
+                            );
+                        } else if (citations.length > 1) {
+                            console.log('More than one citations matching for QID ' + targetQid);
+                        } else {
+                            console.error('No matching citations for QID ' + targetQid);
+                        }
+                    }
+                }
+
                 // for (const localFlagCitation of localFlagCitations[itemKey]) {
                 //     const targetQid = localFlagCitation;
                 //     const oci = calculateOCI(sourceQid, targetQid);
@@ -545,6 +575,7 @@ export default class {
                 //     const citationIndex = sourceItem.citations.// find citation index
                 //     SourceItem.removeCitation(citationIndex);
                 // }
+                sourceItem.endBatch();
             }
             progress.updateLine(
                 'done',

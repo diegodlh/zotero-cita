@@ -16,6 +16,7 @@ class SourceItemWrapper extends ItemWrapper {
     constructor(item) {
         super(item, item.saveTx.bind(item));
         this._citations = [];
+        this._batch = false;
         this.updateCitations(false);
     }
 
@@ -92,7 +93,7 @@ class SourceItemWrapper extends ItemWrapper {
         }
         this._citations = citations;
         if (corruptCitations.length) {
-            this.citations = this._citations;
+            this.saveCitations();
             this.corruptCitations = this.corruptCitations.concat(corruptCitations);
         }
         console.log(`Getting citations from source item took ${performance.now() - t0}`)
@@ -100,6 +101,23 @@ class SourceItemWrapper extends ItemWrapper {
 
     saveCitations() {
         this.citations = this._citations;
+    }
+
+    /* Disble automatic citation update and saving for batch editing
+     *
+     */
+    startBatch() {
+        // update citations before beginning
+        this.updateCitations();
+        this._batch = true;
+    }
+
+    /*
+     * Re-enable automatic citation update and saving after batch editing
+     */
+    endBatch() {
+        this.saveCitations();
+        this._batch = false;
     }
 
     openEditor(citation) { // always provide a citation (maybe an empty one)
@@ -125,7 +143,31 @@ class SourceItemWrapper extends ItemWrapper {
         }
     }
 
-    addCitations(citations) {
+    /*
+     * Return citations matching the id provided.
+     * @param {String} id - ID must be matched.
+     * @param {String} idType - One of: index, doi, isbn, occ, qid
+     * @return {Array} citations - Array of matching citations.
+     */
+    getCitations(id, idType) {
+        if (!this._batch) this.updateCitations();
+        const citations = [];
+        if (idType === 'index') {
+            citations.push(this.citations[id]);
+        } else {
+            citations.push(
+                ...this.citations.filter(
+                    (citation) => citation.target[idType] === id
+                )
+            );
+        }
+        return citations;
+    }
+
+    /*
+     * @param {Boolean} batch - Do not update or save citations at the beginning and at the end.
+     */
+    addCitations(citations, batch=false) {
         // Fixme: apart from one day implementing possible duplicates
         // here I have to check other UUIDs too (not only QID)
         // and if they overlap, add the new OCIs provided only
@@ -133,8 +175,9 @@ class SourceItemWrapper extends ItemWrapper {
 
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself
-        this.updateCitations();
-        this.citations = this.citations.concat(citations);
+        if (!this._batch) this.updateCitations();
+        this._citations.concat(citations);
+        if (!this._batch) this.saveCitations();
         // this.updateCitationLabels();  //deprecated
         // return if successful (index of new citation?)
 
@@ -147,7 +190,7 @@ class SourceItemWrapper extends ItemWrapper {
     // }
 
     async delete(index, sync) {
-        this.updateCitations();
+        if (!this._batch) this.updateCitations();
         if (sync) {
             let citation = this.citations[index];
             const wikidataOci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0]
@@ -176,9 +219,8 @@ class SourceItemWrapper extends ItemWrapper {
                 return
             }
         }
-        const newCitations = this.citations;
-        newCitations.splice(index, 1);
-        this.citations = newCitations;
+        this._citations.splice(index, 1);
+        if (!this._batch) this.saveCitations();
         // this.updateCitationLabels();  //deprecated
     }
 
