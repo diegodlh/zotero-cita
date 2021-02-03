@@ -399,7 +399,7 @@ export default class {
                 confirmMsg += (
                     '\n\t' +
                     Wikicite.formatString(
-                        'wikicite.wikidata.confirm.message.noqid',
+                        'wikicite.wikidata.confirm.message.noQid',
                         noQidCitationsCount
                     )
                 );
