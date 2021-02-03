@@ -16,10 +16,9 @@ function ZoteroButton(props) {
             const item = Zotero.Items.getByLibraryAndKey(libraryID, key);
 
             const bttnFlags = (
-                (Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_IS_STRING)
-                + (Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_CANCEL)
-                + (Services.prompt.BUTTON_POS_2 * Services.prompt.BUTTON_TITLE_IS_STRING)
-                // + Services.prompt.BUTTON_POS_2_DEFAULT
+                (Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_IS_STRING) +
+                (Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_CANCEL) +
+                (Services.prompt.BUTTON_POS_2 * Services.prompt.BUTTON_TITLE_IS_STRING)
             );
             const response = Services.prompt.confirmEx(
                 window,
