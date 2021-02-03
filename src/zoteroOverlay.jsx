@@ -13,6 +13,7 @@ const TRANSLATOR_LABELS = [
 ];
 
 /* global window, document, Components, MutationObserver*/
+/* global Services */
 /* global Zotero, ZoteroPane */
 Components.utils.import('resource://zotero/config.js');
 
@@ -27,6 +28,13 @@ function debug(msg, err) {
 
 // needed as a separate function, because zoteroOverlay.refreshZoteroPopup refers to `this`, and a bind would make it
 // two separate functions in add/remove eventlistener
+function refreshItemSubmenu() {
+    zoteroOverlay.refreshZoteroPopup('item', document);
+}
+function refreshCollectionSubmenu() {
+    zoteroOverlay.refreshZoteroPopup('collection', document);
+}
+
 function refreshCitationsPane(event) {
     // if (event.target !== 'zotero-view-item') {
     //     zoteroOverlay.refreshCitationsPane(document, event.target);
@@ -53,6 +61,14 @@ const zoteroOverlay = {
     /******************************************/
     init: function() {
         this.fullOverlay();
+
+        // refresh item and collection submenus each time they show
+        document.getElementById('zotero-itemmenu').addEventListener(
+            'popupshowing', refreshItemSubmenu, false
+        );
+        document.getElementById('zotero-collectionmenu').addEventListener(
+            'popupshowing', refreshCollectionSubmenu, false
+        );
 
         // document.getElementById('zotero-view-tabbox').addEventListener('select', refreshCitationsPane, false);
         document.getElementById('zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
@@ -89,7 +105,14 @@ const zoteroOverlay = {
         toolsPopup.removeEventListener('popupshowing',
             zoteroOverlay.prefsSeparatorListener, false)
 
-        document.getElementById('zotero-view-tabbox').removeEventListener('select', refreshCitationsPane, false)
+        document.getElementById('zotero-itemmenu').removeEventListener(
+            'popupshowing', refreshItemSubmenu, false
+        );
+        document.getElementById('zotero-collectionmenu').removeEventListener(
+            'popupshowing', refreshCollectionSubmenu, false
+        );
+
+        document.getElementById('zotero-editpane-tabs').removeEventListener('select', refreshCitationsPane, false)
         document.getElementById('zotero-items-tree').removeEventListener('select', refreshCitationsPane, false)
 
         window.removeEventListener('resize', updateCitationsBoxSize);
@@ -155,16 +178,36 @@ const zoteroOverlay = {
     // Functions for item tree batch actions
     /******************************************/
     // Fixme: Consider using the Citations class methods instead
-    syncWithWikidata: function() {
-        const items = ZoteroPane.getSelectedItems().map(
-            (item) => new SourceItemWrapper(item)
-        );
+    getSelectedItems: async function(menuName) {
+        let items;
+        switch (menuName) {
+            case 'item': {
+                items = ZoteroPane.getSelectedItems()
+                break;
+            }
+            case 'collection': {
+                const collectionTreeRow = ZoteroPane.getCollectionTreeRow();
+                if (collectionTreeRow.isCollection()) {
+                    const collection = ZoteroPane.getSelectedCollection();
+                    items = collection.getChildItems();
+                } else if (collectionTreeRow.isLibrary()) {
+                    const libraryID = ZoteroPane.getSelectedLibraryID();
+                    items = await Zotero.Items.getAll(libraryID);
+                }
+                break;
+            }
+        }
+        return items.map((item) => new SourceItemWrapper(item));
+    },
+
+    syncWithWikidata: async function(menuName) {
+        const items = await this.getSelectedItems(menuName);
         if (items.length) {
             Citations.syncItemCitationsWithWikidata(items);
         }
     },
 
-    getFromCrossref: function() {
+    getFromCrossref: function(menuName) {
         // get items selected
         // filter items with doi
         // generate batch call to crossref
@@ -172,11 +215,11 @@ const zoteroOverlay = {
         alert('Batch getting citations from Crossref not yet supported.');
     },
 
-    getFromOCC: function() {
+    getFromOCC: function(menuName) {
         alert('Batch getting citations from OpenCitations Corpus not yet supported.');
     },
 
-    getFromAttachments: function() {
+    getFromAttachments: function(menuName) {
         // I don't think there's a need to batch call the extractor here
         // get selected items
         // filter by items with attachments
@@ -186,7 +229,22 @@ const zoteroOverlay = {
         alert('Batch extracting citations from attachments not yet supported.');
     },
 
-    localCitationNetwork: function() {
+    addAsCitations: function(menuName) {
+        // Add items selected as citation target items of one or more source items
+        // 1. open selectItemsDialog.xul; allow one or more item selection
+        // 2. create citation objects for each of the target items selected
+        // 3. for each of the source items selected, wrap it into a SourceItemWrapper
+        // 4. run addCitations and pass it the citation objects created above
+        // 5. finally, link citations to the Zotero items
+        // see #39
+        Services.prompt.alert(
+            null,
+            'Unsupported',
+            'Adding items as citations to other items not yet supported.'
+        );
+    },
+
+    localCitationNetwork: function(menuName) {
         // This should be available for collections too
         // I guess the ones above too
         // At least two items selected?
@@ -208,8 +266,8 @@ const zoteroOverlay = {
         menuPopup = doc.getElementById('menu_ToolsPopup')
         zoteroOverlay.prefsMenuItem(doc, menuPopup)
         // add wikicite submenu to item and collection menus
-        zoteroOverlay.zoteroPopup('item', doc)
-        // zoteroOverlay.zoteroPopup('collection', doc)
+        zoteroOverlay.zoteroPopup('item', doc);
+        zoteroOverlay.zoteroPopup('collection', doc);
 
         // Add Citations tab to item pane
         var itemPaneTabbox = doc.getElementById('zotero-view-tabbox');
@@ -544,36 +602,74 @@ const zoteroOverlay = {
         }
 
         var wikiciteSeparator = doc.createElement('menuseparator');
-        var wikiciteSeparatorID = `wikicite-${menuName}menu-separator`;
+        var wikiciteSeparatorID = `wikicite-${menuName}submenu-separator`;
         wikiciteSeparator.setAttribute('id', wikiciteSeparatorID);
         zoteroMenu.appendChild(wikiciteSeparator);
         WikiciteChrome.registerXUL(wikiciteSeparatorID, doc);
 
         // Wikicite submenu
         var wikiciteSubmenu = doc.createElement('menu');
-        var wikiciteSubmenuID = `wikicite-${menuName}menu-submenu`;
+        var wikiciteSubmenuID = `wikicite-${menuName}submenu`;
         wikiciteSubmenu.setAttribute('id', wikiciteSubmenuID);
         wikiciteSubmenu.setAttribute(
             'label',
-            Wikicite.getString(`wikicite.${menuName}menu.wikicite`)
+            Wikicite.getString(`wikicite.submenu.label`)
         )
         zoteroMenu.appendChild(wikiciteSubmenu);
         WikiciteChrome.registerXUL(wikiciteSubmenuID, doc);
 
         // Wikicite submenu popup
         var wikiciteSubmenuPopup = doc.createElement('menupopup');
-        wikiciteSubmenuPopup.setAttribute('id', `wikicite-${menuName}menu-submenupopup`);
+        wikiciteSubmenuPopup.setAttribute('id', `wikicite-${menuName}submenu-popup`);
         wikiciteSubmenu.appendChild(wikiciteSubmenuPopup);
 
-        this.createMenuItems(menuName, wikiciteSubmenuPopup, `wikicite-wikicite${menuName}menu-`,
-                                 false, doc);
+        this.createMenuItems(
+            menuName,
+            wikiciteSubmenuPopup,
+            `wikicite-${menuName}submenu-`,
+            false,
+            doc
+        );
 
-        // this.refreshZoteroPopup(menuName, doc);
+        this.refreshZoteroPopup(menuName, doc);
     },
 
     refreshZoteroPopup: function(menuName, doc) {
-        // Update what actions are available and which aren't
-        // for a given set of items selected
+        let showSubmenu = true;
+
+        if (menuName === 'collection') {
+            // Show collection submenu for collections and libraries only
+            const collectionTreeRow = ZoteroPane.getCollectionTreeRow();
+            if (
+                collectionTreeRow &&
+                !collectionTreeRow.isCollection() &&
+                !collectionTreeRow.isLibrary()
+            ) {
+                showSubmenu = false;
+            }
+        }
+
+        if (menuName === 'item') {
+            const items = ZoteroPane.getSelectedItems();
+            // Show item submenu for regular items only
+            if (!items.some((item) => item.isRegularItem())) {
+                showSubmenu = false;
+            }
+            // Disable "Show local citation network" if only one item is selected
+            if (items.length > 1) {
+                // For some reason it only works with setAttribute()
+                doc.getElementById('wikicite-itemsubmenu-localCitationNetwork').setAttribute(
+                    'disabled', false
+                );
+            } else {
+                doc.getElementById('wikicite-itemsubmenu-localCitationNetwork').setAttribute(
+                    'disabled', true
+                );
+            }
+        }
+
+        doc.getElementById(`wikicite-${menuName}submenu-separator`).hidden = !showSubmenu;
+        doc.getElementById(`wikicite-${menuName}submenu`).hidden = !showSubmenu;
     },
 
     // Create Zotero item menu items as children of menuPopup
@@ -583,10 +679,16 @@ const zoteroOverlay = {
             'getFromCrossref',
             'getFromOCC',
             'getFromAttachments',
+            'addAsCitations',
             'localCitationNetwork'
         ]
         for (const functionName of menuFunctions) {
-            // debug(functionName)
+            if (menuName === 'collection' && functionName === 'addAsCitations') {
+                // Fixme: find better way to decide what actions belong to which menu
+                // Also consider merging zotero-item, zotero-collection, and wikicite-item
+                // menus
+                continue;
+            }
             const menuFunc = this.zoteroMenuItem(menuName, functionName, IDPrefix, doc);
             menuPopup.appendChild(menuFunc);
             if (elementsAreRoot) {
@@ -601,15 +703,15 @@ const zoteroOverlay = {
         menuFunc.setAttribute('id', IDPrefix + functionName);
         menuFunc.setAttribute(
             'label',
-            Wikicite.getString(`wikicite.${menuName}menu.${functionName}`)
+            Wikicite.getString(`wikicite.submenu.${functionName}`)
         )
         menuFunc.addEventListener('command',
             function(event) {
                 event.stopPropagation()
-                zoteroOverlay[functionName]()
+                zoteroOverlay[functionName](menuName)
             }, false)
         return menuFunc;
-    },
+    }
 
     // /******************************************/
     // // Zotero item selection and sorting
