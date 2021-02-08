@@ -1,9 +1,9 @@
+import Citations from './citations';
 import Citation from './citation';
 import ItemWrapper from './itemWrapper';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
-import Citations from './citations';
 
 /* global Zotero */
 

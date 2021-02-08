@@ -49,37 +49,7 @@ class Citation {
         this.target = new ItemWrapper(item, this.source.item.saveTx);
 
         this.ocis = [];
-        this.ocis = [...new Set(ocis)].map((oci) => {
-            const { citingId, citedId, idType, supplier } = OCI.parseOci(oci);
-            // recalculate OCI and compare against OCI given
-            let newOci = '';
-            try {
-                switch (idType) {
-                    case 'doi':
-                        newOci = OCI.getOci(supplier, this.source.doi, this.target.doi);
-                        break;
-                    case 'qid':
-                        newOci = OCI.getOci(supplier, this.source.qid, this.target.qid);
-                        break;
-                }
-            } catch {
-                //
-            }
-            let valid;
-            if (oci === newOci) {
-                valid = true;
-            } else {
-                valid = false;
-            }
-            return {
-                citingId: citingId,
-                citedId: citedId,
-                idType: idType,
-                oci: oci,
-                supplier: supplier,
-                valid: valid
-            }
-        });
+        ocis.forEach((oci) => this.addOCI(oci));
 
         // zotero item key the target item of this citation is linked to
         this.zotero = zotero;
@@ -95,11 +65,53 @@ class Citation {
     }
 
     addOCI(oci) {
-        Services.prompt.alert(null, 'Unsupported', 'Adding OCI to citation not yet supported');
+        const { citingId, citedId, idType, supplier } = OCI.parseOci(oci);
+
+        // if source or target items do not have pid of type idType,
+        // use the one derived from the oci provided
+        if (!this.source[idType]) this.source[idType] = citingId;
+        if (!this.target[idType]) this.target[idType] = citedId;
+
+        // recalculate OCI and compare against OCI given
+        let newOci = '';
+        try {
+            newOci = OCI.getOci(supplier, this.source[idType], this.target[idType]);
+        } catch {
+            //
+        }
+        let valid;
+        if (oci === newOci) {
+            valid = true;
+        } else {
+            valid = false;
+        }
+
+        // overwrite pre-existing oci of the same supplier
+        if (this.getOCI(supplier)) {
+            console.log('Overwritting OCI of supplier ' + supplier);
+            this.removeOCI(supplier);
+        }
+
+        this.ocis.push({
+            citingId: citingId,
+            citedId: citedId,
+            idType: idType,
+            oci: oci,
+            supplier: supplier,
+            valid: valid
+        });
+    }
+
+    getOCI(supplier) {
+        const ocis = this.ocis.filter((oci) => oci.supplier === supplier);
+        if (ocis.length > 1) {
+            throw new Error('Unexpected multiple OCIs for supplier ' + supplier);
+        }
+        return ocis[0];
     }
 
     removeOCI(supplier) {
-        Services.prompt.alert(null, 'Unsupported', 'Removing OCI from citation not yet supported');
+        this.ocis = this.ocis.filter((oci) => oci.supplier !== supplier);
     }
 
     /**
@@ -220,7 +232,7 @@ class Citation {
     }
 
     resolveOCI(supplier) {
-        const oci = this.ocis.filter((oci) => oci.supplier === supplier)[0];
+        const oci = this.getOCI(supplier);
         if (oci) {
             OCI.resolve(oci.oci);
         }

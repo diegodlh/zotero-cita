@@ -131,7 +131,7 @@ function CitationsBox(props) {
     async function handleCitationDelete(index) {
         let sync = false;
         const citation = citations[index];
-        if (citation.ocis.some((oci) => oci.supplier === 'wikidata')) {
+        if (citation.getOCI('wikidata')) {
             // Fixme: offer to remember user choice
             // get this from preferences: remembered "delete remote too" choice
             // const remember = {value: false};
@@ -178,7 +178,7 @@ function CitationsBox(props) {
     function handleCitationSync(index) {
         const citation = citations[index];
         const syncable = citation.source.qid && citation.target.qid;
-        const oci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0];
+        const oci = citation.getOCI('wikidata');
         if (oci) {
             if (oci.valid) {
                 citation.resolveOCI('wikidata');

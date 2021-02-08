@@ -5,7 +5,7 @@ import React from 'react';
 function WikidataButton(props) {
     const citation = props.citation;
     const syncable = citation.source.qid && citation.target.qid;
-    const oci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0];
+    const oci = citation.getOCI('wikidata');
     let title;
     let imgSrc = 'chrome://wikicite/skin/wikidata-';
     if (oci) {

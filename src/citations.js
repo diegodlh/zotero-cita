@@ -178,9 +178,7 @@ export default class {
             // first iterate over local citations
             for (const citation of sourceItem.citations) {
                 const localCitedQid = citation.target.qid;
-                const wikidataOci = citation.ocis.filter(
-                    (oci) => oci.supplier === 'wikidata'
-                )[0];
+                const wikidataOci = citation.getOCI('wikidata');
                 // First check if the citation has an invalid wikidata oci.
                 // These citations will be ignored (i.e., they won't be
                 // unflagged nor will they be marked as orphaned).
@@ -542,13 +540,12 @@ export default class {
                 if (flagCitations.length) {
                     for (const targetQid of flagCitations) {
                         const citations = sourceItem.getCitations(targetQid, 'qid');
-                        if (citations.length === 1) {
-                            const citation = citations[0];
-                            citation.addOCI(
-                                OCI.getOci('wikidata', sourceItem.qid, targetQid)
-                            );
-                        } else if (citations.length > 1) {
-                            console.log('More than one citations matching for QID ' + targetQid);
+                        if (citations.length) {
+                            for (const citation of citations) {
+                                citation.addOCI(
+                                    OCI.getOci('wikidata', sourceItem.qid, targetQid)
+                                );
+                            }
                         } else {
                             console.error('No matching citations for QID ' + targetQid);
                         }
