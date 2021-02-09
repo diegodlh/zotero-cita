@@ -169,6 +169,8 @@ export default class {
             // Initialize action arrays
             localAddCitations[itemId] = [];
             localFlagCitations[itemId] = [];
+            localUnflagCitations[itemId] = [];
+            localDeleteCitations[itemId] = [];
             remoteAddCitations[itemId] = [];
             orphanedCitations[itemId] = [];
 
@@ -269,7 +271,7 @@ export default class {
                     // keep local citation, but remove outdated Wikidata OCI
                     for (const itemId of Object.keys(orphanedCitations)) {
                         localUnflagCitations[itemId].push(...orphanedCitations[itemId]);
-                        localItemsToUpdate.add(itemId);
+                        localItemsToUpdate.add(Number(itemId));
                     }
                     localUnflagCitationsCount += orphanedCitationsCount;
                     break;
@@ -277,7 +279,7 @@ export default class {
                     // remove local citation because it no longer exists in Wikidata
                     for (const itemId of Object.keys(orphanedCitations)) {
                         localDeleteCitations[itemId].push(...orphanedCitations[itemId]);
-                        localItemsToUpdate.add(itemId);
+                        localItemsToUpdate.add(Number(itemId));
                     }
                     localDeleteCitationsCount += orphanedCitationsCount;
                     break;
@@ -509,6 +511,8 @@ export default class {
                     continue;
                 }
 
+                // begin batch session so citations are not updated nor saved
+                // until operations are over
                 sourceItem.startBatch();
 
                 // citations to add
@@ -552,26 +556,29 @@ export default class {
                     }
                 }
 
-                // for (const localFlagCitation of localFlagCitations[itemKey]) {
-                //     const targetQid = localFlagCitation;
-                //     const oci = calculateOCI(sourceQid, targetQid);
-                //     const citation = sourceItem.citations.filter // get citation
-                //     citation.oci.push(oci);
-                //     // and replace it. I need a CitationList/SourceItem method
-                //     // that takes a uuid (e.g., qid), locates the one citation
-                //     // that has that qid, and adds the corresponding oci
-                //     // there is a complementary method that removes the oci
-                //     // SourceItem.updateOci(supplier, targetUuid)
-                //     // SourceItem.removeOci(supplier, targetUuid)
-                // }
-                // for (const localUnflagCitation of localUnflagCitations[itemKey]) {
-                //     console.log(`Zotero item ${itemKey}: removing Wikidata OCI for target item with QID ${localUnflagCitation}.`)
-                // }
+                // citations to unflag
+                const unflagCitations = localUnflagCitations[sourceItem.item.id];
+                if (unflagCitations.length) {
+                    for (const targetQid of unflagCitations) {
+                        const citations = sourceItem.getCitations(targetQid, 'qid');
+                        if (citations.length) {
+                            for (const citation of citations) {
+                                citation.removeOCI('wikidata');
+                            }
+                        } else {
+                            throw new Error('No matching citations for QID ' + targetQid);
+                        }
+                    }
+                }
+
+                // citations to delete
                 // for (const localDeleteCitation of localDeleteCitations[itemKey]) {
                 //     const targetQid = localRemoveCitation
                 //     const citationIndex = sourceItem.citations.// find citation index
                 //     SourceItem.removeCitation(citationIndex);
                 // }
+
+                // end batch session so citations are saved
                 sourceItem.endBatch();
             }
             progress.updateLine(
