@@ -164,7 +164,7 @@ function CitationsBox(props) {
                     break
             }
         }
-        await props.sourceItem.delete(index, sync);
+        await props.sourceItem.deleteCitation(index, sync);
     }
 
     function handleCitationMove(index, shift) {

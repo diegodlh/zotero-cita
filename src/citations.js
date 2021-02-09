@@ -1,7 +1,7 @@
 import Citation from './citation';
-import SourceItemWrapper from './sourceItemWrapper';
 import OCI from './oci';
 import Progress from './progress';
+import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 
@@ -69,6 +69,14 @@ export default class {
      * @param {Array} sourceItems - One or more source items to sync citations for.
      */
     static async syncItemCitationsWithWikidata(sourceItems) {
+        // check which of the items provided have QID
+        // in principle only citations with target QID should be uploaded
+        // alternatively, Wikidata.getQID may be called for each target item
+        // to try and get QID, but I think this may be too much for batch?
+        // maybe it could be a tick in a confirmation dialog
+        // "try to get QID for citation targets before syncing to wikidata"
+        // do this only for items with qid
+
         const noQidItems = sourceItems.filter(
             (sourceItem) => !sourceItem.qid
         );
@@ -543,7 +551,7 @@ export default class {
                 const flagCitations = localFlagCitations[sourceItem.item.id];
                 if (flagCitations.length) {
                     for (const targetQid of flagCitations) {
-                        const citations = sourceItem.getCitations(targetQid, 'qid');
+                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
                         if (citations.length) {
                             for (const citation of citations) {
                                 citation.addOCI(
@@ -560,7 +568,7 @@ export default class {
                 const unflagCitations = localUnflagCitations[sourceItem.item.id];
                 if (unflagCitations.length) {
                     for (const targetQid of unflagCitations) {
-                        const citations = sourceItem.getCitations(targetQid, 'qid');
+                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
                         if (citations.length) {
                             for (const citation of citations) {
                                 citation.removeOCI('wikidata');
@@ -572,11 +580,19 @@ export default class {
                 }
 
                 // citations to delete
-                // for (const localDeleteCitation of localDeleteCitations[itemKey]) {
-                //     const targetQid = localRemoveCitation
-                //     const citationIndex = sourceItem.citations.// find citation index
-                //     SourceItem.removeCitation(citationIndex);
-                // }
+                const deleteCitations = localDeleteCitations[sourceItem.item.id];
+                if (deleteCitations.length) {
+                    for (const targetQid of deleteCitations) {
+                        const { indices } = sourceItem.getCitations(targetQid, 'qid');
+                        if (indices.length) {
+                            for (const index of indices) {
+                                sourceItem.deleteCitation(index);
+                            }
+                        } else {
+                                throw new Error('No matching citations for QID ' + targetQid);
+                        }
+                    }
+                }
 
                 // end batch session so citations are saved
                 sourceItem.endBatch();
@@ -588,38 +604,6 @@ export default class {
                 )
             );
         }
-
-
-        // // check which of the items provided have QID
-        // // in principle only citations with target QID should be uploaded
-        // // alternatively, Wikidata.getQID may be called for each target item
-        // // to try and get QID, but I think this may be too much for batch?
-        // // maybe it could be a tick in a confirmation dialog
-        // // "try to get QID for citation targets before syncing to wikidata"
-        // // do this only for items with qid
-        // let { values: sourceQIDs } = items.map(item => Wikicite.getExtraField(item, 'qid'));
-        // let remoteCitations = this.getCitations(sourceQIDs[0]);
-        // for (let item of items) {
-        //     // get remote citations for this specific item from remoteCitations
-        //     let localCitations = new CitationList(item);
-        //     // check which of the local citations is not a remote citation too
-        //     // identified by qid-to-qid links
-        //     // use this.addCitations() to send citations to Wikidata
-        //     // update the localCitations citations to include suppliers = wikidata, and save
-
-        //     // also, there will be some local citations with wikidata in the suppliers,
-        //     // but this citation may be missing in remote citations
-        //     // this means it was deleted from Wikidata.
-        //     // ask user if they want to remove them locally too
-        //     // maybe return a list of these at the end, and have the caller of this method
-        //     // ask the user and delete them if user says yes
-        //     // like one by one, or selection, or yes/yes to all, etc
-
-        //     // now of the remote citations that are not available locally,
-        //     // use some CitationList method to check if a similar citation
-        //     // exists already
-        // }
-        // let localCitations = items.map(item => CitationList(item));
         progress.close();
     }
 

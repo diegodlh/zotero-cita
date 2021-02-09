@@ -152,16 +152,21 @@ class SourceItemWrapper extends ItemWrapper {
     getCitations(id, idType) {
         if (!this._batch) this.updateCitations();
         const citations = [];
+        const indices = [];
         if (idType === 'index') {
             citations.push(this.citations[id]);
         } else {
-            citations.push(
-                ...this.citations.filter(
-                    (citation) => citation.target[idType] === id
-                )
-            );
+            this.citations.forEach((citation, index) => {
+                if (citation.target[idType] === id) {
+                    citations.push(citation);
+                    indices.push(index);
+                }
+            });
         }
-        return citations;
+        return {
+            citations,
+            indices
+        }
     }
 
     /*
@@ -189,7 +194,7 @@ class SourceItemWrapper extends ItemWrapper {
     //     this.updateCitationLabels();
     // }
 
-    async delete(index, sync) {
+    async deleteCitation(index, sync) {
         if (!this._batch) this.updateCitations();
         if (sync) {
             let citation = this.citations[index];
