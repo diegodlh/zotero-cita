@@ -181,7 +181,7 @@ class SourceItemWrapper extends ItemWrapper {
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself
         if (!this._batch) this.updateCitations();
-        this._citations.concat(citations);
+        this._citations = this._citations.concat(citations);
         if (!this._batch) this.saveCitations();
         // this.updateCitationLabels();  //deprecated
         // return if successful (index of new citation?)
