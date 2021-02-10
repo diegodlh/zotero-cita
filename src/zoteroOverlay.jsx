@@ -482,7 +482,7 @@ const zoteroOverlay = {
         var selectedItems = ZoteroPane.getSelectedItems()
         if (selectedItems.length == 1) {
             var item = selectedItems[0];
-            if (item.isRegularItem  && !item.isFeedItem) {
+            if (item.isRegularItem()  && !item.isFeedItem) {
                 var zoteroViewTabbox = ZoteroPane.document.getElementById('zotero-view-tabbox');
                 // fix: should I get any of these references from when they were created above?
                 const editPaneTabs = document.getElementById('zotero-editpane-tabs');
