@@ -1,6 +1,6 @@
 {
   "name": "wikicite-zotero",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "WikiCite plugin for Zotero",
   "scripts": {
     "postinstall": "patch-package",

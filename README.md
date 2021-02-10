@@ -13,7 +13,7 @@ or [back up your database](https://www.zotero.org/support/zotero_data#backing_up
 ## Description
 The plugin consists of four separate basic modules:
 
-#### Citation metadata support (preliminary)
+#### Citation metadata support
 
 This module adds citation metadata support to Zotero.
 It provides an additional Citations tab where the user can:
@@ -25,9 +25,10 @@ It provides an additional Citations tab where the user can:
 Citation metadata are currently saved to the source item's "extra" field, but it is [planned](https://github.com/diegodlh/zotero-wikicite/issues/13)
 to move them to Note attachments.
 
-#### WikiData communication (to be developed)
+#### WikiData communication (partial)
 This module will add back and forth citation syncing to WikiData, using property
 [P2860](https://www.wikidata.org/wiki/Property:P2860) "cites work".
+Uploading support to be developed.
 
 #### Local Citation Network visualization (to be developed)
 This module will allow visualizing how items in a local library connect to each other through citations,
@@ -59,6 +60,7 @@ to have Zotero run the plugin directly from the `dist` directory.
 	- `-jsconsole`: opens a basic JavaScript debug console; this is not necessary if you be debugging
 	using your browser (see below), but it may help you detect early errors without having to open
 	the developer tools
+6. For distribution, pack the contents of the `dist` directory into a ZIP file and change its extension to `.xpi`.
 
 ### Debugging
 To debug, you need to build Zotero with debugging support. Follow the instructions
