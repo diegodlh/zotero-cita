@@ -106,6 +106,23 @@ export default {
         item.setField('extra', newExtra);
     },
 
+    /*
+     * Return Citations note
+     */
+    getCitationsNote: function(item) {
+        const notes = Zotero.Items.get(item.getNotes()).filter(
+            (note) => note.getNoteTitle() === 'Citations'
+        );
+        if (notes.length > 1) {
+            Services.prompt.alert(
+                window,
+                'Wikicite',
+                'Unexpected more than one Citations note found!'
+            );
+        }
+        return notes[0];
+    },
+
     getString: function(name) {
         return this._bundle.GetStringFromName(name)
     },

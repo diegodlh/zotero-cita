@@ -5,6 +5,10 @@ import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
+// Fixme: define this in the preferences
+const SAVE_TO = 'note'; // extra
+
+/* global DOMParser */
 /* global Zotero */
 
 class SourceItemWrapper extends ItemWrapper {
@@ -16,6 +20,7 @@ class SourceItemWrapper extends ItemWrapper {
     constructor(item) {
         super(item, item.saveTx.bind(item));
         this._citations = [];
+        this.citationsNoteID = undefined;
         this._batch = false;
         this.updateCitations(false);
     }
@@ -34,20 +39,42 @@ class SourceItemWrapper extends ItemWrapper {
             }
             return value;
         }
-        const jsonCitations = citations.map(
-            (citation) => {
-                let json = JSON.stringify(
-                    citation,
-                    replacer,
-                    1  // insert 1 whitespace into the output JSON
-                );
-                json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
-                json = json.replace(/\n/g, ""); // remove line-breaks
-                return json;
+        if (SAVE_TO === 'extra') {
+            const jsonCitations = citations.map(
+                (citation) => {
+                    let json = JSON.stringify(
+                        citation,
+                        replacer,
+                        1  // insert 1 whitespace into the output JSON
+                    );
+                    json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
+                    json = json.replace(/\n/g, ""); // remove line-breaks
+                    return json;
+                }
+            );
+            Wikicite.setExtraField(this.item, 'citation', jsonCitations);
+            this.saveHandler();
+        } else if (SAVE_TO === 'note') {
+            let note = Wikicite.getCitationsNote(this.item);
+            if (!citations.length && note) {
+                note.eraseTx();
+                this.citationNoteID = undefined;
+                return;
             }
-        );
-        Wikicite.setExtraField(this.item, 'citation', jsonCitations);
-        this.saveHandler();
+            if (!note) {
+                note = new Zotero.Item('note');
+                // note.libraryID = this.item.libraryID;
+                note.parentKey = this.item.key;
+            }
+            const jsonCitations = JSON.stringify(citations, replacer, 2);
+            note.setNote(
+                '<h1>Citations</h1>\n' +
+                '<p>Do not edit this note manually!</p>' +
+                `<pre>${jsonCitations}</pre>`
+            );
+            note.saveTx();
+            this.citationNoteID = note.id;
+        }
         this._citations = citations;
         console.log(`Saving citations to source item took ${performance.now() - t0}`);
     }
@@ -70,21 +97,38 @@ class SourceItemWrapper extends ItemWrapper {
         // Constructs a Citation List by harvesting all Citation elements in
         // an item's extra field value.
         const t0 = performance.now();
-        let rawCitations = Wikicite.getExtraField(this.item, 'citation').values;
+        const citations = [];
         const corruptCitations = [];
-        const citations = rawCitations.reduce((citations, rawCitation, index) => {
-            try {
-                const citation = new Citation(JSON.parse(rawCitation), this);
-                if (citation) {
-                    citations.push(citation)
+        if (SAVE_TO === 'extra') {
+            const rawCitations = Wikicite.getExtraField(this.item, 'citation').values;
+            rawCitations.forEach((rawCitation, index) => {
+                try {
+                    const citation = new Citation(JSON.parse(rawCitation), this);
+                    if (citation) {
+                        citations.push(citation)
+                    }
+                } catch {
+                    // if citation can't be parsed, append it to the corrupt citations array
+                    corruptCitations.push(rawCitation);
+                    console.log(`Citation #${index} is corrupt`);
                 }
-            } catch {
-                // if citation can't be parsed, append it to the corrupt citations array
-                corruptCitations.push(rawCitation);
-                console.log(`Citation #${index} is corrupt`);
+            });
+        } else if (SAVE_TO === 'note') {
+            const note = Wikicite.getCitationsNote(this.item);
+            if (note) {
+                this.citationsNoteID = note.id;
+                const doc = new DOMParser().parseFromString(
+                    note.getNote(), 'text/html'
+                );
+                const rawCitations = doc.getElementsByTagName('pre')[0].textContent;
+                citations.push(
+                    ...JSON.parse(rawCitations).map(
+                        (rawCitation) => new Citation(rawCitation, this)
+                    )
+                );
+                // Fixme: support corrupt note citations
             }
-            return citations;
-        }, []);
+        }
         if (compare) {
             // Fixme: consider running further checks
             if (this._citations.length !== citations.length) {

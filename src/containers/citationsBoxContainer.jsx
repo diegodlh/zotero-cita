@@ -67,7 +67,7 @@ function CitationsBoxContainer(props) {
                 // That is, until the item selected changes.
                 if (type === 'item' && action === 'modify') {
                     console.log('Modified item observer has been triggered...');
-                    if (ids.includes(props.item.id)) {
+                    if (ids.includes(props.item.id) || ids.includes(sourceItem.citationsNoteID)) {
                         // This may cause two re-renders: one when sourceItem is reset,
                         // and another after sourceItem-dependent useEffect run above is run.
                         setSourceItem(new SourceItemWrapper(props.item));
