@@ -4,12 +4,14 @@ import React, {
 } from 'react';
 
 import Wikicite from '../../wikicite';  // so far needed just for getExtraField
+import Wikidata from '../../wikidata';
 // should I provide it somewhere else?
 
 /* global window, Components */
-const Zotero = Components.classes['@zotero.org/Zotero;1']
+window.Zotero = Components.classes['@zotero.org/Zotero;1']
 	.getService(Components.interfaces.nsISupports)
 	.wrappedJSObject
+/* global Zotero */
 
 const {citation, usedUUIDs} = window.arguments[0];
 const item = citation.target.item;
@@ -28,12 +30,8 @@ const CitationEditor = () => {
 	const [publication, setPublication] = useState(item.getField('publicationTitle'));
 	const [date, setDate] = useState(item.getField('date'));
 	const [doi, setDoi] = useState(item.getField('DOI'));
-	const [qid, setQid] = useState(
-		Wikicite.getExtraField(item, 'qid').values[0] ?? ''
-	);
-	const [occ, setOcc] = useState(
-		Wikicite.getExtraField(item, 'occ').values[0] ?? ''
-	);
+	const [qid, setQid] = useState(citation.target.qid ?? '');
+	const [occ, setOcc] = useState(citation.target.occ ?? '');
 
 	const [key, setKey] = useState(item.key);
 	const [linked, setLinked] = useState(Boolean(key));
@@ -71,13 +69,14 @@ const CitationEditor = () => {
 		setKey(undefined);
 	}
 
-	function getQID() {
-		// eslint-disable-next-line no-alert
-		window.alert('Getting QID not yet supported!');
-		// Fixme: can't simply call fetchQid, because that would
-		// automatically save the target item, and that's not
-		// how the citation editor works
-		// citation.target.fetchQid();
+	async function getQID() {
+		const targetItem = citation.target;
+		targetItem.item = makeItem();
+		const items = await Wikidata.getQID(targetItem);
+		const { qid } = items[0];
+		if (qid) {
+			setQid(qid);
+		}
 	}
 
 	function onCancel() {
@@ -115,16 +114,7 @@ const CitationEditor = () => {
 		return parsedCreators;
 	}
 
-	function onSave() {
-		// Fixme: improve usedUUIDs check
-		if (
-			usedUUIDs.doi.includes(doi) ||
-			usedUUIDs.qid.includes(qid) ||
-			usedUUIDs.occ.includes(occ)
-		) {
-			window.alert('The citation list already includes a cited item with one of the UUIDs provided!')
-			return;
-		}
+	function makeItem() {
 		let itemOut = new Zotero.Item();
 		if (linked) {
 			itemOut.libraryID = sourceItem.libraryID;
@@ -139,6 +129,20 @@ const CitationEditor = () => {
 			Wikicite.setExtraField(itemOut, 'qid', qid);
 			Wikicite.setExtraField(itemOut, 'occ', occ);
 		}
+		return itemOut;
+	}
+
+	function onSave() {
+		// Fixme: improve usedUUIDs check
+		if (
+			usedUUIDs.doi.includes(doi) ||
+			usedUUIDs.qid.includes(qid) ||
+			usedUUIDs.occ.includes(occ)
+		) {
+			window.alert('The citation list already includes a cited item with one of the UUIDs provided!')
+			return;
+		}
+		const itemOut = makeItem();
 		// Fixme: return the item wrapper
 		retVals.item = itemOut;
 		window.close()
@@ -231,7 +235,7 @@ const CitationEditor = () => {
 				<button
 					type="button"
 					onClick={getQID}
-					disabled={!qid}
+					disabled={!doi}
 				>Get QID</button>
 
 				<label htmlFor="occ">OCC</label>

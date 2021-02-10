@@ -33,10 +33,11 @@ export default class {
     static async getQID(items, create=false) { //, approximate, getCitations=true) {
         const progress = new Progress();
         if (!Array.isArray(items)) items = [items];
+        items = items.map((item) => ({ item: item, qid: item.qid }));
         let identifiers = items.reduce((identifiers, item) => {
             if (!item.qid) {
-                const cleanDoi = Zotero.Utilities.cleanDOI(item.doi);
-                const cleanIsbn = Zotero.Utilities.cleanISBN(item.isbn);
+                const cleanDoi = Zotero.Utilities.cleanDOI(item.item.doi);
+                const cleanIsbn = Zotero.Utilities.cleanISBN(item.item.isbn);
                 if (cleanDoi) {
                     identifiers.push(cleanDoi.toUpperCase());
                 } else if (cleanIsbn) {
@@ -65,7 +66,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     }
     SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
 }
-            `
+`
             const url = wdk.sparqlQuery(sparql);
             progress.newLine(
                 'loading',
@@ -94,13 +95,13 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 );
                 for (const item of items.filter((item) => !item.qid)) {
                     let matches;
-                    if (item.doi) {
+                    if (item.item.doi) {
                         matches = bindings.filter(
-                            (binding) => binding.doi.value === item.doi.toUpperCase()
+                            (binding) => binding.doi.value === item.item.doi.toUpperCase()
                         );
-                    } else if (item.isbn) {
+                    } else if (item.item.isbn) {
                         matches = bindings.filter(
-                            (binding) => binding.isbn.value === item.isbn
+                            (binding) => binding.isbn.value === item.item.isbn
                         );
                     }
                     if (matches.length) {
@@ -153,6 +154,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             )
         }
         progress.close();
+        return items;
     }
 
     /**

@@ -131,17 +131,14 @@ class SourceItemWrapper extends ItemWrapper {
         // if I'm adding a citation which already exists for the source item
     }
 
-    // Fixme: add "citation" to the name of all these methods below
-    // or create a separate "citation" namespace
-
-    async new() {
-        let citation = new Citation({item: {itemType: 'journalArticle'}, ocis: []}, this);
-        let newCitation = await this.openEditor(citation);
-        // if this.source.qid && newCitation.item.qid, offer to sync to Wikidata?
-        if (this.add(newCitation)) {
-            this.save();
-        }
-    }
+    // async new() {
+    //     let citation = new Citation({item: {itemType: 'journalArticle'}, ocis: []}, this);
+    //     let newCitation = await this.openEditor(citation);
+    //     // if this.source.qid && newCitation.item.qid, offer to sync to Wikidata?
+    //     if (this.add(newCitation)) {
+    //         this.save();
+    //     }
+    // }
 
     /*
      * Return citations matching the id provided.
