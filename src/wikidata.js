@@ -35,14 +35,12 @@ export default class {
         if (!Array.isArray(items)) items = [items];
         items = items.map((item) => ({ item: item, qid: item.qid }));
         let identifiers = items.reduce((identifiers, item) => {
-            if (!item.qid) {
-                const cleanDoi = Zotero.Utilities.cleanDOI(item.item.doi);
-                const cleanIsbn = Zotero.Utilities.cleanISBN(item.item.isbn);
-                if (cleanDoi) {
-                    identifiers.push(cleanDoi.toUpperCase());
-                } else if (cleanIsbn) {
-                    identifiers.push(cleanIsbn);
-                }
+            const cleanDoi = Zotero.Utilities.cleanDOI(item.item.doi);
+            const cleanIsbn = Zotero.Utilities.cleanISBN(item.item.isbn);
+            if (cleanDoi) {
+                identifiers.push(cleanDoi.toUpperCase());
+            } else if (cleanIsbn) {
+                identifiers.push(cleanIsbn);
             }
             return identifiers;
         }, []);
@@ -93,7 +91,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         'wikicite.wikidata.progress.qid.fetch.done'
                     )
                 );
-                for (const item of items.filter((item) => !item.qid)) {
+                // for (const item of items.filter((item) => !item.qid)) {
+                for (const item of items) {
                     let matches;
                     if (item.item.doi) {
                         matches = bindings.filter(
