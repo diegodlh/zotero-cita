@@ -67,10 +67,13 @@ class Citation {
     addOCI(oci) {
         const { citingId, citedId, idType, supplier } = OCI.parseOci(oci);
 
-        // if source or target items do not have pid of type idType,
-        // use the one derived from the oci provided
-        if (!this.source[idType]) this.source[idType] = citingId;
-        if (!this.target[idType]) this.target[idType] = citedId;
+        // commented out because not really needed (yet) and was causing
+        // that pids could not be cleared, because they would be refilled
+        // when addOCI was invoked from the constructor
+        // // if source or target items do not have pid of type idType,
+        // // use the one derived from the oci provided
+        // if (!this.source[idType]) this.source[idType] = citingId;
+        // if (!this.target[idType]) this.target[idType] = citedId;
 
         // recalculate OCI and compare against OCI given
         let newOci = '';
