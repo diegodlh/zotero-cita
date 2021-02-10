@@ -65,9 +65,13 @@ function CitationsBoxContainer(props) {
             notify: async function (action, type, ids, extraData) {
                 // This observer will be triggered as long as the component remains mounted
                 // That is, until the item selected changes.
-                if (type === 'item' && action === 'modify') {
-                    console.log('Modified item observer has been triggered...');
-                    if (ids.includes(props.item.id) || ids.includes(sourceItem.citationsNoteID)) {
+                if (type === 'item') {
+                    const notes = Zotero.Items.get(ids).filter((item) => item.isNote());
+                    if (
+                        ids.includes(props.item.id) ||
+                        notes.map((note) => note.parentID).includes(props.item.id)
+                    ) {
+                        console.log('Item observer has been triggered...');
                         // This may cause two re-renders: one when sourceItem is reset,
                         // and another after sourceItem-dependent useEffect run above is run.
                         setSourceItem(new SourceItemWrapper(props.item));

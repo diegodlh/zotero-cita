@@ -20,7 +20,6 @@ class SourceItemWrapper extends ItemWrapper {
     constructor(item) {
         super(item, item.saveTx.bind(item));
         this._citations = [];
-        this.citationsNoteID = undefined;
         this._batch = false;
         this.updateCitations(false);
     }
@@ -58,7 +57,6 @@ class SourceItemWrapper extends ItemWrapper {
             let note = Wikicite.getCitationsNote(this.item);
             if (!citations.length && note) {
                 note.eraseTx();
-                this.citationNoteID = undefined;
                 return;
             }
             if (!note) {
@@ -73,7 +71,6 @@ class SourceItemWrapper extends ItemWrapper {
                 `<pre>${jsonCitations}</pre>`
             );
             note.saveTx();
-            this.citationNoteID = note.id;
         }
         this._citations = citations;
         console.log(`Saving citations to source item took ${performance.now() - t0}`);
@@ -116,7 +113,6 @@ class SourceItemWrapper extends ItemWrapper {
         } else if (SAVE_TO === 'note') {
             const note = Wikicite.getCitationsNote(this.item);
             if (note) {
-                this.citationsNoteID = note.id;
                 const doc = new DOMParser().parseFromString(
                     note.getNote(), 'text/html'
                 );
