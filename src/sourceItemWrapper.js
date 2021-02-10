@@ -87,7 +87,7 @@ class SourceItemWrapper extends ItemWrapper {
         }, []);
         if (compare) {
             // Fixme: consider running further checks
-            if (this._citations.length !== citations) {
+            if (this._citations.length !== citations.length) {
                 console.log('Number of citations changed')
             }
         }
