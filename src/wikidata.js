@@ -1,5 +1,6 @@
 import Progress from './progress';
 import WBK from 'wikibase-sdk';
+import wbEdit from 'wikibase-edit';
 import Wikicite from './wikicite';
 
 /* global Services */
@@ -17,14 +18,19 @@ const WBK_SPARQL = 'https://query.wikidata.org/sparql';
 const wdk = WBK({
     instance: WBK_INSTANCE,
     sparqlEndpoint: WBK_SPARQL
-})
+});
+
+const wdEdit = wbEdit({
+    instance: WBK_INSTANCE,
+    tags: ['Zotero_WikiCite']
+});
 
 export default class {
     constructor() {
         this.wdk = WBK({
-          instance: WBK_INSTANCE,
-          sparqlEndpoint: WBK_SPARQL
-      })
+            instance: WBK_INSTANCE,
+            sparqlEndpoint: WBK_SPARQL
+        })
     }
 
     // Fixme: add title query support. This is needed before
@@ -239,12 +245,54 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         return itemMap;
     }
 
+    // Fixme: consider having one single method that adds, edits, and removes
+    // citations (i.e., P2860 claims) in batch
     static addCitations(sourceQID, targetQID) {
-        // Is there a lenght limit in calls to Wikidata API?
-        // I need wikidata-js here
+        const sandboxItems = [
+            'Q4115189', 'Q13406268', 'Q15397819'
+        ];
+        if (!sandboxItems.includes(sourceQID)) {
+            throw new Error('refuse to change non-sandbox items!!');
+        }
+
         // I can provide an array of (sourceQID, targetQID)s for batch operations
         // returns a promise
+        const requestConfig = {
+            credentials: {
+                username: undefined,
+                password: undefined
+            },
+            anonymous: false, // false is default
+        }
+        // I should enter a loop that repeats endlessly until the right credentials
+        // (or the anonymous edit option) are given
+        wdEdit.entity.edit(
+            {
+                id: sourceQID,
+                claims: {
+                    P2860: [
+                        {
+                            //id: GUID, if editing existing claim,
+                            value: targetQID,
+                            references: [
+                                {
+                                    P248: 'Q5188229', //stated in; possible values would be Crossref, or OCC Q26382154
+                                    P854: 'https://api.crossref.org/works/' // reference URL, I need doi for this
+                                }
+                            ]
+                        }
+                    ]
+                },
+                summary: 'adding citations',
+                // baserevid:
+            }, requestConfig
+        )
 
+        // I deem the following uneccesary, because I would expect this method to
+        // be called from a sync with Wikidata operation. Hence, this check should
+        // have been done there. Maybe do ask for a lastrevid for each sourceQID
+        // and fail if they do not match.
+        // Or do get citations for checking if no lastrevid provided
         // for each sourceQID, get current citations from wikidata
         // for each targetQID, ignore those in wikidata already
         // add remaining citations

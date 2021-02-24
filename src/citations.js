@@ -231,7 +231,7 @@ export default class {
                             // the citation doesn't have a Wikidata OCI yet
                             remoteAddCitations[itemId].push(localCitedQid);
                             remoteAddCitationsCount += 1;
-                            remoteEntitiesToUpdate.add(sourceItem.item.qid);
+                            remoteEntitiesToUpdate.add(sourceItem.qid);
                         }
                     }
                 } else {
@@ -485,24 +485,21 @@ export default class {
 
         if (remoteAddCitationsCount) {
             progress.updateLine(
-                'error',
-                'Uploading citations to Wikidata not yet supported'
+                'loading',
+                'Uploading citations to Wikidata'
             );
-            // try {
-            //     await Wikidata.addCitations([
-            //         {
-            //             qid: 'Q1234',
-            //             citations: [
-            //                 citation.item
-            //             ]
-            //         }
-            //     ])
-            // } catch {
-            //     progress.updateLine('error', '');
-            //     progress.close();
-            //     return;
-            // }
-            // progress.updateLine('done', '');
+            // username and password should be asked here
+            for (const sourceItem of sourceItems) {
+                if (!remoteEntitiesToUpdate.has(sourceItem.qid)) {
+                    // item not in the list of items to update; skip
+                    continue;
+                }
+                await Wikidata.addCitations(
+                    sourceItem.qid,
+                    remoteAddCitations[sourceItem.item.id][0] // accept more than one
+                );
+            }
+            progress.updateLine('done', '');
         }
 
         // Only then, run local actions

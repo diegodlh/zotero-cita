@@ -23,7 +23,9 @@ module.exports = {
   resolve: {
     extensions: ['*', '.js', '.jsx'],
     fallback: {
-      'querystring': false
+      'querystring': require.resolve("querystring-es3"),
+      'http': false,
+      'https': false
     }
   },
   optimization: {
