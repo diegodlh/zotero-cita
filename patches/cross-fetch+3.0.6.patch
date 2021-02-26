@@ -1,0 +1,17 @@
+diff --git a/node_modules/cross-fetch/dist/browser-ponyfill.js b/node_modules/cross-fetch/dist/browser-ponyfill.js
+index 7a795ac..11dce64 100644
+--- a/node_modules/cross-fetch/dist/browser-ponyfill.js
++++ b/node_modules/cross-fetch/dist/browser-ponyfill.js
+@@ -468,7 +468,11 @@ var irrelevant = (function (exports) {
+         var options = {
+           status: xhr.status,
+           statusText: xhr.statusText,
+-          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
++          headers: parseHeaders(
++            // Zotero's XMLHttpRequest.prototype.getAllResponseHeaders does not ignore
++            // set-cookie headers
++            xhr.getAllResponseHeaders().replace(xhr.getResponseHeader('set-cookie'), '') || ''
++          )
+         };
+         options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
+         var body = 'response' in xhr ? xhr.response : xhr.responseText;
