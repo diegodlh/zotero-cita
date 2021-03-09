@@ -298,7 +298,7 @@ export default class {
                     for (const itemId of Object.keys(orphanedCitations)) {
                         remoteAddCitations[itemId].push(...orphanedCitations[itemId]);
                         const sourceQid = sourceItems.filter(
-                            (sourceItem) => sourceItem.item.id === itemId
+                            (sourceItem) => sourceItem.item.id === Number(itemId)
                         )[0].qid;
                         remoteEntitiesToUpdate.add(sourceQid);
                     }
@@ -490,7 +490,7 @@ export default class {
         if (remoteAddCitationsCount) {
             progress.updateLine(
                 'loading',
-                'Uploading citations to Wikidata'
+                Wikicite.getString('wikicite.wikidata.progress.upload.loading')
             );
 
             for (const sourceItem of sourceItems) {
@@ -505,8 +505,21 @@ export default class {
             }
             // Fixme: in the future, support editing cites work claims as well;
             // for example, to add references or qualifiers
-            await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
-            progress.updateLine('done', '');
+            const results = await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
+            // Fixme: handle results before changing progress dialog
+            if (Object.values(results).every((result) => result === 'ok')) {
+                progress.updateLine('done', '');
+            } else {
+                // Fixme: indicate whether there were errors or if the user cancelled
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.upload.error'
+                    )
+                );
+                progress.close();
+                return;
+            }
         }
 
         // Only then, run local actions

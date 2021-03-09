@@ -264,15 +264,20 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         const password = {value: undefined};
         let anonymous = false;
 
+        let cancelled = false;
+
+        const results = {}
+
         for (const id of Object.keys(citesWorkClaims)) {
             // REMOVE!!
             if (!sandboxItems.includes(id)) {
-                throw new Error('refuse to change non-sandbox items!!');
+                results[id] = 'non-sandbox';
+                continue;
             }
+            const actionType = getActionType(citesWorkClaims[id]);
 
-            let authorized = false;
-            let loginError = '';
-            while (!authorized) {
+            let loginError;
+            if (!cancelled) do {
                 const saveCredentials = {value: false};
                 if (!anonymous && !password.value) {
                     let promptText = '';
@@ -281,8 +286,6 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                             'wikicite.wikidata.login.error.' + loginError
                         ) + '\n\n';
                     }
-                    // reset login error
-                    loginError = '';
                     promptText += Wikicite.getString('wikicite.wikidata.login.message.main') + '\n\n';
                     promptText += Wikicite.formatString(
                         'wikicite.wikidata.login.message.createAccount',
@@ -302,12 +305,12 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         saveCredentials
                     )
                     if (!loginPrompt) {
-                        // This should be handled upstream
-                        throw new Error('User cancelled login');
+                        // user cancelled login
+                        cancelled = true;
+                        break;
                     }
                     anonymous = !username.value || !password.value;
                 }
-                const actionType = getActionType(citesWorkClaims[id]);
                 const requestConfig = { anonymous: anonymous };
                 if (!anonymous) {
                     requestConfig.credentials = {
@@ -315,6 +318,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         password: password.value
                     }
                 }
+                // reset loginError
+                loginError = '';
                 try {
                     await wdEdit.entity.edit(
                         {
@@ -328,7 +333,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         }, requestConfig
                     );
                     // Fixme: check wdEdit return value to confirm all is OK
-                    authorized = true;
+                    results[id] = 'ok';
                     if (saveCredentials.value && !anonymous) {
                         // Fixme
                         console.log('Saving credentials to be implemented');
@@ -350,12 +355,16 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         // anonymous edit may be failing for this specific edition
                         anonymous = false;
                     } else {
-                        // some other error
-                        throw new Error(error.message);
+                        results[id] = error;
                     }
                 }
+            } while (loginError);
+
+            if (cancelled) {
+                results[id] = 'cancelled';
             }
         }
+        return results;
 
         // I deem the following uneccesary, because I would expect this method to
         // be called from a sync with Wikidata operation. Hence, this check should
