@@ -279,11 +279,19 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     if (loginError) {
                         promptText += Wikicite.getString(
                             'wikicite.wikidata.login.error.' + loginError
-                        ) + '\n';
+                        ) + '\n\n';
                     }
                     // reset login error
                     loginError = '';
-                    promptText += Wikicite.getString('wikicite.wikidata.login.message');
+                    promptText += Wikicite.getString('wikicite.wikidata.login.message.main') + '\n\n';
+                    promptText += Wikicite.formatString(
+                        'wikicite.wikidata.login.message.createAccount',
+                        'https://www.wikidata.org/w/index.php?title=Special:CreateAccount'
+                    ) + '\n\n';
+                    promptText += Wikicite.formatString(
+                        'wikicite.wikidata.login.message.botPass',
+                        'https://www.mediawiki.org/wiki/Special:BotPasswords'
+                    );
                     const loginPrompt = Services.prompt.promptUsernameAndPassword(
                         window,
                         Wikicite.getString('wikicite.wikidata.login.title'),
