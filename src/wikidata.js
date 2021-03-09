@@ -1,16 +1,24 @@
 import Progress from './progress';
 import WBK from 'wikibase-sdk';
-import wbEdit from 'wikibase-edit';
 import Wikicite from './wikicite';
+import wbEdit from 'wikibase-edit';
 
 /* global Services */
 /* global Zotero */
+/* global window */
 
 // Fixme: Wikibase instance and Sparql Endpoint should be
 // specified in the plugin preferences, to support other
 // Wikibase instances.
 const WBK_INSTANCE = 'https://www.wikidata.org';
 const WBK_SPARQL = 'https://query.wikidata.org/sparql';
+
+const properties = {
+    'citesWork': 'P2860',
+    'statedIn': 'P248',
+    'refUrl': 'P854',
+    'citoIntention': 'P3712'
+};
 
 // Fixme: have it as a global variable like this,
 // or as an instance variable like below? Pros and cons of each?
@@ -22,7 +30,7 @@ const wdk = WBK({
 
 const wdEdit = wbEdit({
     instance: WBK_INSTANCE,
-    tags: ['Zotero_WikiCite']
+    // tags: ['Zotero_WikiCite']
 });
 
 export default class {
@@ -177,7 +185,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
      * @param {Array} sourceQIDs - Array of one or more entity QIDs
      * @returns {Promise} Citations map { entityQID: [cites work QIDs]... }
      */
-    static async getCitations(sourceQIDs) {
+    static async getCitesWorkClaims(sourceQIDs) {
         // Fixme: alternatively, use the SPARQL endpoint to get more than 50
         // entities per request, and to get only the claims I'm interested in
         // (i.e., P2860).
@@ -186,30 +194,31 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             props: ['claims'],
             format: 'json'
         });
-        const citations = new Map();
+        const citesWorkClaims = new Map();
         while (urls.length) {
             const url = urls.shift();
             try {
                 const xmlhttp = await Zotero.HTTP.request('GET', url);
                 // Fixme: handle entities undefined
-                const entities = JSON.parse(xmlhttp.response).entities;
+                const { entities } = JSON.parse(xmlhttp.response);
                 for (const id of Object.keys(entities)) {
                     const entity = entities[id];
-                    const entityCitations = new Set();
-                    if (entity.claims && entity.claims.P2860) {
-                        for (const claim of entity.claims.P2860) {
-                            if (claim.mainsnak) {
-                                entityCitations.add(claim.mainsnak.datavalue.value.id);
+                    if (entity.claims && entity.claims[properties.citesWork]) {
+                        citesWorkClaims[id] = wdk.simplify.propertyClaims(
+                            entity.claims[properties.citesWork],
+                            {
+                                keepIds: true,
+                                keepQualifiers: true,
+                                keepReferences: true
                             }
-                        }
+                        );
                     }
-                    citations[id] = [...entityCitations];
                 }
             } catch (err) {
                 console.log(err);
             }
         }
-        return citations;
+        return citesWorkClaims;
     }
 
     /**
@@ -245,48 +254,100 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         return itemMap;
     }
 
-    // Fixme: consider having one single method that adds, edits, and removes
-    // citations (i.e., P2860 claims) in batch
-    static addCitations(sourceQID, targetQID) {
+    static async updateCitesWorkClaims(citesWorkClaims) {
+        // REMOVE!!
         const sandboxItems = [
             'Q4115189', 'Q13406268', 'Q15397819'
         ];
-        if (!sandboxItems.includes(sourceQID)) {
-            throw new Error('refuse to change non-sandbox items!!');
-        }
 
-        // I can provide an array of (sourceQID, targetQID)s for batch operations
-        // returns a promise
-        const requestConfig = {
-            credentials: {
-                username: undefined,
-                password: undefined
-            },
-            anonymous: false, // false is default
-        }
-        // I should enter a loop that repeats endlessly until the right credentials
-        // (or the anonymous edit option) are given
-        wdEdit.entity.edit(
-            {
-                id: sourceQID,
-                claims: {
-                    P2860: [
+        const username = {value: undefined};
+        const password = {value: undefined};
+        let anonymous = false;
+
+        for (const id of Object.keys(citesWorkClaims)) {
+            // REMOVE!!
+            if (!sandboxItems.includes(id)) {
+                throw new Error('refuse to change non-sandbox items!!');
+            }
+
+            let authorized = false;
+            let loginError = '';
+            while (!authorized) {
+                const saveCredentials = {value: false};
+                if (!anonymous && !password.value) {
+                    let promptText = '';
+                    if (loginError) {
+                        promptText += Wikicite.getString(
+                            'wikicite.wikidata.login.error.' + loginError
+                        ) + '\n';
+                    }
+                    // reset login error
+                    loginError = '';
+                    promptText += Wikicite.getString('wikicite.wikidata.login.message');
+                    const loginPrompt = Services.prompt.promptUsernameAndPassword(
+                        window,
+                        Wikicite.getString('wikicite.wikidata.login.title'),
+                        promptText,
+                        username,
+                        password,
+                        "Save login credentials",
+                        saveCredentials
+                    )
+                    if (!loginPrompt) {
+                        // This should be handled upstream
+                        throw new Error('User cancelled login');
+                    }
+                    anonymous = !username.value || !password.value;
+                }
+                const actionType = getActionType(citesWorkClaims[id]);
+                const requestConfig = { anonymous: anonymous };
+                if (!anonymous) {
+                    requestConfig.credentials = {
+                        username: username.value,
+                        password: password.value
+                    }
+                }
+                try {
+                    await wdEdit.entity.edit(
                         {
-                            //id: GUID, if editing existing claim,
-                            value: targetQID,
-                            references: [
-                                {
-                                    P248: 'Q5188229', //stated in; possible values would be Crossref, or OCC Q26382154
-                                    P854: 'https://api.crossref.org/works/' // reference URL, I need doi for this
-                                }
-                            ]
+                            id: id,
+                            claims: {
+                                [properties.citesWork]: citesWorkClaims[id]
+                            },
+                            summary: Wikicite.getString(
+                                'wikicite.wikidata.updateCitesWork.' + actionType
+                            )
+                        }, requestConfig
+                    );
+                    // Fixme: check wdEdit return value to confirm all is OK
+                    authorized = true;
+                    if (saveCredentials.value && !anonymous) {
+                        // Fixme
+                        console.log('Saving credentials to be implemented');
+                    }
+                } catch (error) {
+                    if (error.name == 'badtoken') {
+                        if (anonymous) {
+                            // See https://github.com/maxlath/wikibase-edit/issues/63
+                            loginError = 'unsupportedAnonymous';
+                        } else {
+                            loginError = 'unknown';
                         }
-                    ]
-                },
-                summary: 'adding citations',
-                // baserevid:
-            }, requestConfig
-        )
+                    } else if (error.message.split(':')[0] == 'failed to login') {
+                        loginError = 'wrongCredentials';
+                    }
+                    if (loginError) {
+                        // reset credentials and try again
+                        password.value = undefined;
+                        // anonymous edit may be failing for this specific edition
+                        anonymous = false;
+                    } else {
+                        // some other error
+                        throw new Error(error.message);
+                    }
+                }
+            }
+        }
 
         // I deem the following uneccesary, because I would expect this method to
         // be called from a sync with Wikidata operation. Hence, this check should
@@ -297,9 +358,77 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         // for each targetQID, ignore those in wikidata already
         // add remaining citations
     }
-
-    static deleteCitations(sourceQID, targetQID) {
-        // I can provide an array of (sourceQID, targetQID)s for batch operations
-        // returns a promise
-    }
 }
+
+/**
+ * For a set of claims, return the type of action
+ * (add, edit, remove or update) that will be requested.
+ */
+function getActionType(claims) {
+    let actionType;
+    if (claims.some(claim => claim.id)) {
+        if (claims.every(claim => claim.id)) {
+            if (claims.every(claim => claim.remove)) {
+                // all claims provided have an id and are to be removed
+                actionType = 'remove';
+            } else {
+                // all claims provided have an id
+                actionType = 'edit';
+            }
+        } else {
+            // some (but not all) claims provided have an id
+            actionType = 'update';
+        }
+    } else {
+        // no claim provided has an id
+        actionType = 'add';
+    }
+    return actionType;
+}
+
+export class CitesWorkClaim {
+    constructor(citesWorkClaimValue={}) {
+        this.id = citesWorkClaimValue.id;
+        this.value = citesWorkClaimValue.value;
+        this.references = citesWorkClaimValue.references;
+        this.qualifiers = citesWorkClaimValue.qualifiers;
+    }
+
+    // get intentions() {
+    //     return this.qualifiers[properties.citoIntention];
+    // }
+
+    // set intentions(intentionQualifiers) {
+    //     this.qualifiers[properties.citoIntention] = intentionQualifiers;
+    // }
+
+    // addReference() {}
+
+    // removeReference() {}
+
+    // editReference() {}
+
+    // addIntention() {}
+
+    // removeIntention() {}
+}
+
+// class Reference {
+//     // P248: 'Q5188229', //stated in; possible values would be Crossref, or OCC Q26382154
+//     // P854: 'https://api.crossref.org/works/' // reference URL, I need doi for this
+//     constructor(reference) {
+//         this.statedIn = reference[properties.statedIn];
+//         this.refUrl = reference[properties.refUrl];
+//     }
+// }
+
+// class Qualifier {
+//     constructor(qualifier) {}
+// }
+
+// class IntentionQualifier {
+//     // P3712 objective of project or action
+//     constructor(intentionQualifier) {
+//         this.intentions = [];
+//     }
+// }

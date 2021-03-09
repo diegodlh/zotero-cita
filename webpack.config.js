@@ -24,8 +24,10 @@ module.exports = {
     extensions: ['*', '.js', '.jsx'],
     fallback: {
       'querystring': require.resolve("querystring-es3"),
-      'http': false,
-      'https': false
+      'http': false, //require.resolve('stream-http'),
+      'https': false //require.resolve('https-browserify'),
+      // 'url': require.resolve('url/'),
+      // 'buffer': require.resolve('buffer/')
     }
   },
   optimization: {

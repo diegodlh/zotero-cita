@@ -4,6 +4,7 @@ import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
+import { CitesWorkClaim } from './wikidata';
 
 /* global Services */
 /* global window */
@@ -114,10 +115,9 @@ export default class {
             )
         );
 
-        let remoteCitedQidMap;
+        let pulledCitesWorkClaims;
         try {
-            // get a map of citingQid -> citedQids
-            remoteCitedQidMap = await Wikidata.getCitations(qids);
+            pulledCitesWorkClaims = await Wikidata.getCitesWorkClaims(qids);
             progress.updateLine(
                 'done',
                 Wikicite.getString(
@@ -182,7 +182,9 @@ export default class {
             remoteAddCitations[itemId] = [];
             orphanedCitations[itemId] = [];
 
-            const remoteCitedQids = remoteCitedQidMap[sourceItem.qid];
+            const remoteCitedQids = pulledCitesWorkClaims[sourceItem.qid].map(
+                (claim) => claim.value
+            );
 
             let localCitedQids = new Set();
             // first iterate over local citations
@@ -483,22 +485,27 @@ export default class {
             );
         }
 
+        // cites work claims to be pushed to Wikidata
+        const pushCitesWorkClaims = {};
         if (remoteAddCitationsCount) {
             progress.updateLine(
                 'loading',
                 'Uploading citations to Wikidata'
             );
-            // username and password should be asked here
+
             for (const sourceItem of sourceItems) {
                 if (!remoteEntitiesToUpdate.has(sourceItem.qid)) {
                     // item not in the list of items to update; skip
                     continue;
                 }
-                await Wikidata.addCitations(
-                    sourceItem.qid,
-                    remoteAddCitations[sourceItem.item.id][0] // accept more than one
-                );
+                const newCitesWorkClaims = remoteAddCitations[sourceItem.item.id].map(
+                    (targetQid) => new CitesWorkClaim({ value: targetQid })
+                )
+                pushCitesWorkClaims[sourceItem.qid] = newCitesWorkClaims;
             }
+            // Fixme: in the future, support editing cites work claims as well;
+            // for example, to add references or qualifiers
+            await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
             progress.updateLine('done', '');
         }
 
