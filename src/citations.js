@@ -506,7 +506,28 @@ export default class {
             // Fixme: in the future, support editing cites work claims as well;
             // for example, to add references or qualifiers
             const results = await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
-            // Fixme: handle results before changing progress dialog
+
+            // After Wikidata edits have been submitted,
+            // iterate through source items again,
+            // to see if any of them have to be updated
+            for (const sourceItem of sourceItems) {
+                const itemId = sourceItem.item.id;
+                if (remoteAddCitations[itemId] && results[sourceItem.qid] === 'ok') {
+                    // if item had citations to upload to Wikidata
+                    // and uploads where succesful
+                    // flag citations immediately as available in Wikidata
+                    for (const targetQid of remoteAddCitations[itemId]) {
+                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
+                        for (const citation of citations) {
+                            citation.addOCI(
+                                OCI.getOci('wikidata', sourceItem.qid, targetQid)
+                            );
+                        }
+                    }
+                    sourceItem.saveCitations();
+                }
+            }
+
             if (Object.values(results).every((result) => result === 'ok')) {
                 progress.updateLine('done', '');
             } else {
