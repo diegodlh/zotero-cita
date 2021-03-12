@@ -203,7 +203,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 const { entities } = JSON.parse(xmlhttp.response);
                 for (const id of Object.keys(entities)) {
                     const entity = entities[id];
-                    if (entity.claims && entity.claims[properties.citesWork]) {
+                    if (entity.claims) {
                         citesWorkClaims[id] = wdk.simplify.propertyClaims(
                             entity.claims[properties.citesWork],
                             {
