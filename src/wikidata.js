@@ -321,7 +321,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 // reset loginError
                 loginError = '';
                 try {
-                    await wdEdit.entity.edit(
+                    const res = await wdEdit.entity.edit(
                         {
                             id: id,
                             claims: {
@@ -332,8 +332,14 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                             )
                         }, requestConfig
                     );
-                    // Fixme: check wdEdit return value to confirm all is OK
-                    results[id] = 'ok';
+                    if (res.success) {
+                        // res returned by wdEdit.entity.edit has an entity prop
+                        results[id] = 'ok';
+                    } else {
+                        // is it even possible to get here without an error being
+                        // thrown by wdEdit.entity.edit above, and caught below?
+                        results[id] = 'unsuccessful'
+                    }
                     if (saveCredentials.value && !anonymous) {
                         // Fixme
                         console.log('Saving credentials to be implemented');
@@ -355,6 +361,13 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         // anonymous edit may be failing for this specific edition
                         anonymous = false;
                     } else {
+                        // I don't want permissiondenied errors to be treated as
+                        // login errors, because permission may have been denied
+                        // for just one of multiple edits requested, and the user
+                        // may not have other credentials, so they would get stuck
+                        // in a login-error loop, of which they can only get out
+                        // by cancelling, thus cancelling all edits (not just the
+                        // one they didn't have permission for)
                         results[id] = error;
                     }
                 }

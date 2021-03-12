@@ -1,13 +1,13 @@
 diff --git a/node_modules/wikibase-edit/lib/request/logout.js b/node_modules/wikibase-edit/lib/request/logout.js
 new file mode 100644
-index 0000000..1f73f38
+index 0000000..656d417
 --- /dev/null
 +++ b/node_modules/wikibase-edit/lib/request/logout.js
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +const request = require('./request')
 +const { buildUrl } = require('../utils')
 +
-+module.exports = (instance, token) => () => {
++module.exports = (instance, token) => (body) => {
 +  request('post', {
 +    url: buildUrl(
 +      `${instance}/w/api.php`, {
@@ -20,6 +20,7 @@ index 0000000..1f73f38
 +      token: token
 +    }
 +  });
++  return body;
 +}
 diff --git a/node_modules/wikibase-edit/lib/request/post.js b/node_modules/wikibase-edit/lib/request/post.js
 index 0af9984..dab241c 100644
