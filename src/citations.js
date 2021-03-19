@@ -149,24 +149,25 @@ export default class {
         // in Wikidata
         const orphanedCitations = {};
 
+        const counters = {};
         // local citation actions counters
-        let localAddCitationsCount = 0;
-        let localFlagCitationsCount = 0;
-        let localUnflagCitationsCount = 0;
-        let localDeleteCitationsCount = 0;
+        counters.localAddCitations = 0;
+        counters.localFlagCitations = 0;
+        counters.localUnflagCitations = 0;
+        counters.localDeleteCitations = 0;
 
         // remote citation actions counters
-        let remoteAddCitationsCount = 0;
+        counters.remoteAddCitations = 0;
 
         // special counters
-        let orphanedCitationsCount = 0;
+        counters.orphanedCitations = 0;
 
         // citations which already have a Wikidata OCI
-        let syncedCitationsCount = 0;
+        counters.syncedCitation = 0;
         // citations for which their target item qids are unknown
-        let noQidCitationsCount = 0;
+        counters.noQidCitations = 0;
         // citations with an invalid Wikidata OCI
-        let invalidOciCount = 0;
+        counters.invalidOci = 0;
 
         const localItemsToUpdate = new Set();
         const remoteEntitiesToUpdate = new Set();
@@ -201,7 +202,7 @@ export default class {
                 if (wikidataOci && !wikidataOci.valid) {
                     // local citation has a wikidata oci, but it is invalid
                     // i.e., it corresponds to another source or target qid
-                    invalidOciCount += 1;
+                    counters.invalidOci += 1;
 
                     // add the invalid oci's target qid to the array of local cited qids
                     // because we don't want to create a new local citation for this
@@ -215,11 +216,11 @@ export default class {
                         // the citation exists in Wikidata as well
                         if (wikidataOci) {
                             // the citation already has a valid up-to-date wikidata oci
-                            syncedCitationsCount += 1;
+                            counters.syncedCitations += 1;
                         } else {
                             // the citation doesn't have a wikidata oci yet
                             localFlagCitations[itemId].push(localCitedQid);
-                            localFlagCitationsCount += 1;
+                            counters.localFlagCitations += 1;
                             localItemsToUpdate.add(itemId);
                         }
                     } else {
@@ -228,24 +229,24 @@ export default class {
                             // the citation has a valid Wikidata oci
                             // hence, it existed in Wikidata before
                             orphanedCitations[itemId].push(localCitedQid);
-                            orphanedCitationsCount += 1;
+                            counters.orphanedCitations += 1;
                         } else {
                             // the citation doesn't have a Wikidata OCI yet
                             remoteAddCitations[itemId].push(localCitedQid);
-                            remoteAddCitationsCount += 1;
+                            counters.remoteAddCitations += 1;
                             remoteEntitiesToUpdate.add(sourceItem.qid);
                         }
                     }
                 } else {
                     // the citation target item's qid is unknown
-                    noQidCitationsCount += 1;
+                    counters.noQidCitations += 1;
                 }
             }
             // then iterate over remote Wikidata citations
             for (const remoteCitedQid of remoteCitedQids) {
                 if (!localCitedQids.has(remoteCitedQid)) {
                     localAddCitations[itemId].push(remoteCitedQid);
-                    localAddCitationsCount += 1;
+                    counters.localAddCitations += 1;
                     localItemsToUpdate.add(itemId);
                 }
             }
@@ -254,12 +255,12 @@ export default class {
         // Ask the user what to do with orphaned citations
         const orphanedActions = ['keep', 'remove', 'upload'];
         const orphanedActionSelection = {}
-        if (orphanedCitationsCount) {
+        if (counters.orphanedCitations) {
             const result = Services.prompt.select(
                 window,
                 Wikicite.getString('wikicite.wikidata.orphaned.title'),
                 Wikicite.formatString(
-                    'wikicite.wikidata.orphaned.message', orphanedCitationsCount
+                    'wikicite.wikidata.orphaned.message', counters.orphanedCitations
                 ),
                 orphanedActions.length,
                 orphanedActions.map((orphanedAction) => Wikicite.getString(
@@ -283,7 +284,7 @@ export default class {
                         localUnflagCitations[itemId].push(...orphanedCitations[itemId]);
                         localItemsToUpdate.add(Number(itemId));
                     }
-                    localUnflagCitationsCount += orphanedCitationsCount;
+                    counters.localUnflagCitations += counters.orphanedCitations;
                     break;
                 case 'remove':
                     // remove local citation because it no longer exists in Wikidata
@@ -291,7 +292,7 @@ export default class {
                         localDeleteCitations[itemId].push(...orphanedCitations[itemId]);
                         localItemsToUpdate.add(Number(itemId));
                     }
-                    localDeleteCitationsCount += orphanedCitationsCount;
+                    counters.localDeleteCitations += counters.orphanedCitations;
                     break;
                 case 'upload':
                     // keep local citation and upload to Wikidata again
@@ -302,7 +303,7 @@ export default class {
                         )[0].qid;
                         remoteEntitiesToUpdate.add(sourceQid);
                     }
-                    remoteAddCitationsCount += orphanedCitationsCount;
+                    counters.remoteAddCitations += counters.orphanedCitations;
                     break;
             }
         }
@@ -321,119 +322,14 @@ export default class {
 
         // Show verbose confirmation message with actions to be taken
         // before proceeding.
-
-        // Message header
-        let confirmMsg = Wikicite.getString(
-            'wikicite.wikidata.confirm.message.header'
-        );
-
-        // local items to update section
-        if (localItemsToUpdate.size) {
-            confirmMsg += (
-                '\n\n' +
-                Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.localItems',
-                    localItemsToUpdate.size
-                ) +
-                ':'
-            );
-            if (localAddCitationsCount) {
-                confirmMsg += '\n\t' + Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.localAdd',
-                    localAddCitationsCount
-                );
-            }
-            if (localFlagCitationsCount) {
-                confirmMsg += '\n\t' + Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.localFlag',
-                    localFlagCitationsCount
-                );
-            }
-            if (localUnflagCitationsCount) {
-                confirmMsg += '\n\t' + Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.localUnflag',
-                    localUnflagCitationsCount
-                );
-            }
-            if (localDeleteCitationsCount) {
-                confirmMsg += '\n\t' + Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.localDelete',
-                    localDeleteCitationsCount
-                );
-            }
-        }
-
-        // remote entities to update section
-        if (remoteEntitiesToUpdate.size) {
-            confirmMsg += (
-                '\n\n' +
-                Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.remoteEntities',
-                    remoteEntitiesToUpdate.size
-                ) +
-                ':'
-            );
-            if (remoteAddCitationsCount) {
-                confirmMsg += '\n\t' + Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.remoteAdd',
-                    remoteAddCitationsCount
-                );
-            }
-        }
-
-        // local citations that will not be changed section
-        const unchangedCitationsCount = (
-            syncedCitationsCount +
-            noQidCitationsCount +
-            invalidOciCount
-        );
-        if (unchangedCitationsCount) {
-            confirmMsg += (
-                '\n\n' +
-                Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.unchanged',
-                    unchangedCitationsCount
-                ) +
-                ':'
-            );
-            if (syncedCitationsCount) {
-                confirmMsg += (
-                    '\n\t' +
-                    Wikicite.formatString(
-                        'wikicite.wikidata.confirm.message.synced',
-                        syncedCitationsCount
-                    )
-                );
-            }
-            if (noQidCitationsCount) {
-                confirmMsg += (
-                    '\n\t' +
-                    Wikicite.formatString(
-                        'wikicite.wikidata.confirm.message.noQid',
-                        noQidCitationsCount
-                    )
-                );
-            }
-            if (invalidOciCount) {
-                confirmMsg += (
-                    '\n\t' +
-                    Wikicite.formatString(
-                        'wikicite.wikidata.confirm.message.invalidOci',
-                        invalidOciCount
-                    )
-                );
-            }
-        }
-
-        // message footer
-        confirmMsg += '\n\n' + Wikicite.getString(
-            'wikicite.wikidata.confirm.message.footer'
-        );
-
         const confirmed = Services.prompt.confirm(
             window,
             Wikicite.getString('wikicite.wikidata.confirm.title'),
-            confirmMsg
+            composeConfirmation(
+                localItemsToUpdate,
+                remoteEntitiesToUpdate,
+                counters
+            )
         )
 
         if (!confirmed) {
@@ -452,7 +348,7 @@ export default class {
 
         // download metadata of target items of citations to be created
         let targetItems;
-        if (localAddCitationsCount) {
+        if (counters.localAddCitations) {
             // create an array of QIDs whose metadata must be downloaded
             const downloadQids = Object.values(localAddCitations).reduce(
                 (qids, citedQids) => qids.concat(citedQids)
@@ -487,7 +383,7 @@ export default class {
 
         // cites work claims to be pushed to Wikidata
         const pushCitesWorkClaims = {};
-        if (remoteAddCitationsCount) {
+        if (counters.remoteAddCitations) {
             progress.updateLine(
                 'loading',
                 Wikicite.getString('wikicite.wikidata.progress.upload.loading')
@@ -649,3 +545,122 @@ export default class {
     // because I don't think I want (or even can) call with multiple pdfs
     // But I may want to use Zotero.ProgressQueue to keep track of what is going on
 }
+
+// Compose confirmation message for the user to confirm actions to be taken
+// before proceeding
+function composeConfirmation(
+    localItemsToUpdate,
+    remoteEntitiesToUpdate,
+    counters
+) {
+    // Message header
+    let confirmMsg = Wikicite.getString(
+        'wikicite.wikidata.confirm.message.header'
+    );
+
+    // local items to update section
+    if (localItemsToUpdate.size) {
+        confirmMsg += (
+            '\n\n' +
+            Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.localItems',
+                localItemsToUpdate.size
+            ) +
+            ':'
+        );
+        if (counters.localAddCitations) {
+            confirmMsg += '\n\t' + Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.localAdd',
+                counters.localAddCitations
+            );
+        }
+        if (counters.localFlagCitations) {
+            confirmMsg += '\n\t' + Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.localFlag',
+                counters.localFlagCitations
+            );
+        }
+        if (counters.localUnflagCitations) {
+            confirmMsg += '\n\t' + Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.localUnflag',
+                counters.localUnflagCitations
+            );
+        }
+        if (counters.localDeleteCitations) {
+            confirmMsg += '\n\t' + Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.localDelete',
+                counters.localDeleteCitations
+            );
+        }
+    }
+
+    // remote entities to update section
+    if (remoteEntitiesToUpdate.size) {
+        confirmMsg += (
+            '\n\n' +
+            Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.remoteEntities',
+                remoteEntitiesToUpdate.size
+            ) +
+            ':'
+        );
+        if (counters.remoteAddCitations) {
+            confirmMsg += '\n\t' + Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.remoteAdd',
+                counters.remoteAddCitations
+            );
+        }
+    }
+
+    // local citations that will not be changed section
+    const unchangedCitationsCount = (
+        counters.syncedCitations +
+        counters.noQidCitations +
+        counters.invalidOci
+    );
+    if (counters.unchangedCitations) {
+        confirmMsg += (
+            '\n\n' +
+            Wikicite.formatString(
+                'wikicite.wikidata.confirm.message.unchanged',
+                unchangedCitationsCount
+            ) +
+            ':'
+        );
+        if (counters.syncedCitations) {
+            confirmMsg += (
+                '\n\t' +
+                Wikicite.formatString(
+                    'wikicite.wikidata.confirm.message.synced',
+                    counters.syncedCitations
+                )
+            );
+        }
+        if (counters.noQidCitations) {
+            confirmMsg += (
+                '\n\t' +
+                Wikicite.formatString(
+                    'wikicite.wikidata.confirm.message.noQid',
+                    counters.noQidCitations
+                )
+            );
+        }
+        if (counters.invalidOci) {
+            confirmMsg += (
+                '\n\t' +
+                Wikicite.formatString(
+                    'wikicite.wikidata.confirm.message.invalidOci',
+                    counters.invalidOci
+                )
+            );
+        }
+    }
+
+    // message footer
+    confirmMsg += '\n\n' + Wikicite.getString(
+        'wikicite.wikidata.confirm.message.footer'
+    );
+
+    return confirmMsg;
+}
+
