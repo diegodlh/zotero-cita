@@ -1,42 +1,13 @@
-diff --git a/node_modules/wikibase-edit/lib/request/logout.js b/node_modules/wikibase-edit/lib/request/logout.js
-new file mode 100644
-index 0000000..656d417
---- /dev/null
-+++ b/node_modules/wikibase-edit/lib/request/logout.js
-@@ -0,0 +1,18 @@
-+const request = require('./request')
-+const { buildUrl } = require('../utils')
-+
-+module.exports = (instance, token) => (body) => {
-+  request('post', {
-+    url: buildUrl(
-+      `${instance}/w/api.php`, {
-+        action: 'logout',
-+        format: 'json'
-+      }
-+    ),
-+    headers: {},
-+    body: {
-+      token: token
-+    }
-+  });
-+  return body;
-+}
 diff --git a/node_modules/wikibase-edit/lib/request/post.js b/node_modules/wikibase-edit/lib/request/post.js
-index 0af9984..dab241c 100644
+index 9c96f76..db82774 100644
 --- a/node_modules/wikibase-edit/lib/request/post.js
 +++ b/node_modules/wikibase-edit/lib/request/post.js
-@@ -1,4 +1,5 @@
- const { buildUrl } = require('../utils')
-+const logout = require('./logout')
- const request = require('./request')
- const throwErrorRes = require('./throw_error_res')
- 
-@@ -63,6 +64,7 @@ const actionPost = (action, data, config) => authData => {
+@@ -67,7 +67,7 @@ const actionPost = (action, data, config) => authData => {
  
    return request('post', params)
    .then(throwErrorRes(`action=${action} error`, params))
-+  .then(logout(instance, data.token))
+-  .then(afterRequest)
++  .finally(afterRequest)
  }
  
  const mayBeSolvedByTokenRefresh = err => {
