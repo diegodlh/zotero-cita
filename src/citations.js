@@ -426,16 +426,36 @@ export default class {
 
             if (Object.values(results).every((result) => result === 'ok')) {
                 progress.updateLine('done', '');
+            } else if (Object.values(results).some((result) => result === 'cancelled')) {
+                // user cancelled login for at least one of the entities to be edited
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.citations.cancelled'
+                    )
+                );
+                // if user cancelled, abort citation synchronization altogether
+                progress.close();
+                return;
             } else {
-                // Fixme: indicate whether there were errors or if the user cancelled
+                // not all entity editions succeeded, but none was cancelled
+                // show information dialog to the user, asking whether to abort
+                // the whole operation, or to continue with the other steps
+                const proceed = Services.prompt.confirm(
+                    window,
+                    Wikicite.getString('wikicite.wikidata.upload.error.title'),
+                    composeUploadErrorMsg(results)
+                )
                 progress.updateLine(
                     'error',
                     Wikicite.getString(
                         'wikicite.wikidata.progress.upload.error'
                     )
                 );
-                progress.close();
-                return;
+                if (!proceed) {
+                    progress.close();
+                    return;
+                }
             }
         }
 
@@ -664,3 +684,60 @@ function composeConfirmation(
     return confirmMsg;
 }
 
+// Compose information message about what failed when uploading
+// changes to Wikidata
+function composeUploadErrorMsg(results) {
+    // compose an information message saying that something went wrong
+    let uploadErrorMsg = Wikicite.getString(
+        'wikicite.wikidata.upload.error.header'
+    ) + ':';
+    // indicating which entities could not be edited due to insufficient
+    // permissions (if any)
+    const permissionDeniedQids = Object.keys(results).filter(
+        (qid) => results[qid] === 'permissiondenied'
+    );
+    if (permissionDeniedQids.length) {
+        uploadErrorMsg += (
+            '\n\n' + Wikicite.getString(
+                'wikicite.wikidata.upload.error.denied'
+            ) + ': ' +
+            permissionDeniedQids.join(', ') + '.'
+        );
+    }
+    // which entity editions failed for unexpected reasons
+    const unknownErrorQids = {};
+    for (const [qid, result] of Object.entries(results)) {
+        // results other than 'ok' and 'permissiondenied'
+        // there should be no cancelled editions (see above)
+        if (!['ok', 'cancelled', 'permissiondenied'].includes(result)) {
+            if (!unknownErrorQids[result]) {
+                unknownErrorQids[result] = [];
+            }
+            unknownErrorQids[result].push(qid);
+        }
+    }
+    for (const err of Object.keys(unknownErrorQids)) {
+        uploadErrorMsg += (
+            // Entities failed with error
+            '\n\n' + Wikicite.getString(
+                'wikicite.wikidata.upload.error.unknown'
+            ) +
+            ' ' + err + ': ' +
+            unknownErrorQids[err].join(', ') + '.'
+        );
+    }
+    // say which entity editions succeeded as well
+    const okQids = Object.keys(results).filter(
+        (qid) => results[qid] === 'ok'
+    );
+    if (okQids.length) {
+        uploadErrorMsg += (
+            '\n\n' + Wikicite.getString(
+                'wikicite.wikidata.upload.error.ok'
+            ) + ': ' +
+            okQids.join(', ') + '.'
+        )
+    }
+
+    return uploadErrorMsg;
+}
