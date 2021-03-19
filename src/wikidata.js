@@ -311,7 +311,10 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     }
                     anonymous = !username.value || !password.value;
                 }
-                const requestConfig = { anonymous: anonymous };
+                const requestConfig = {
+                    letAgentHandleLoginCookies: true,
+                    anonymous: anonymous
+                };
                 if (!anonymous) {
                     requestConfig.credentials = {
                         username: username.value,
