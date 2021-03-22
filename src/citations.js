@@ -439,22 +439,32 @@ export default class {
                 return;
             } else {
                 // not all entity editions succeeded, but none was cancelled
-                // show information dialog to the user, asking whether to abort
-                // the whole operation, or to continue with the other steps
-                const proceed = Services.prompt.confirm(
-                    window,
-                    Wikicite.getString('wikicite.wikidata.upload.error.title'),
-                    composeUploadErrorMsg(results)
-                )
                 progress.updateLine(
                     'error',
                     Wikicite.getString(
                         'wikicite.wikidata.progress.upload.error'
                     )
                 );
-                if (!proceed) {
-                    progress.close();
-                    return;
+                if (localItemsToUpdate.size) {
+                    // if local changes pending, ask user whether to proceed
+                    const proceed = Services.prompt.confirm(
+                        window,
+                        Wikicite.getString('wikicite.wikidata.upload.error.title'),
+                        (
+                            composeUploadErrorMsg(results) + '\n\n' +
+                            Wikicite.getString('wikicite.wikidata.upload.error.proceed')
+                        )
+                    )
+                    if (!proceed) {
+                        localItemsToUpdate.clear();
+                    }
+                } else {
+                    // no local changes pending, just show information dialog
+                    Services.prompt.alert(
+                        window,
+                        Wikicite.getString('wikicite.wikidata.upload.error.title'),
+                        composeUploadErrorMsg(results)
+                    )
                 }
             }
         }
