@@ -256,11 +256,6 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     }
 
     static async updateCitesWorkClaims(citesWorkClaims) {
-        // REMOVE!!
-        const sandboxItems = [
-            'Q4115189', 'Q13406268', 'Q15397819'
-        ];
-
         const username = {value: undefined};
         const password = {value: undefined};
         let anonymous = false;
@@ -270,11 +265,6 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         const results = {}
 
         for (const id of Object.keys(citesWorkClaims)) {
-            // REMOVE!!
-            if (!sandboxItems.includes(id)) {
-                results[id] = 'non-sandbox';
-                continue;
-            }
             const actionType = getActionType(citesWorkClaims[id]);
 
             let loginError;
