@@ -292,7 +292,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         promptText,
                         username,
                         password,
-                        "Save login credentials",
+                        null,  // "Save login credentials",
                         saveCredentials
                     )
                     if (!loginPrompt) {
