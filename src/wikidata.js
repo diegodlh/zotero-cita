@@ -3,6 +3,7 @@ import WBK from 'wikibase-sdk';
 import Wikicite from './wikicite';
 import wbEdit from 'wikibase-edit';
 
+/* global Components */
 /* global Services */
 /* global Zotero */
 /* global window */
@@ -311,10 +312,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     }
                     anonymous = !username.value || !password.value;
                 }
-                const requestConfig = {
-                    letAgentHandleLoginCookies: true,
-                    anonymous: anonymous
-                };
+                const requestConfig = { anonymous: anonymous };
                 if (!anonymous) {
                     requestConfig.credentials = {
                         username: username.value,
@@ -323,6 +321,18 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 }
                 // reset loginError
                 loginError = '';
+
+                // remove cookies for API host before proceeding
+                const iter = Services.cookies.getCookiesFromHost(
+                    new URL(WBK_INSTANCE).host, {}
+                );
+                while (iter.hasMoreElements()) {
+                    const cookie = iter.getNext();
+                    if (cookie instanceof Components.interfaces.nsICookie) {
+                        Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, {});
+                    }
+                }
+
                 try {
                     const res = await wdEdit.entity.edit(
                         {
