@@ -381,7 +381,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         // in a login-error loop, of which they can only get out
                         // by cancelling, thus cancelling all edits (not just the
                         // one they didn't have permission for)
-                        results[id] = error;
+                        results[id] = error.name;
                     }
                 }
             } while (loginError);
