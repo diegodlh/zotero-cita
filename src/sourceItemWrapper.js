@@ -1,6 +1,7 @@
 import Citations from './citations';
 import Citation from './citation';
 import ItemWrapper from './itemWrapper';
+import Progress from './progress';
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
@@ -235,30 +236,30 @@ class SourceItemWrapper extends ItemWrapper {
         if (!this._batch) this.updateCitations();
         if (sync) {
             let citation = this.citations[index];
-            const wikidataOci = citation.ocis.filter((oci) => oci.supplier === 'wikidata')[0]
-            if (wikidataOci && wikidataOci.valid) {
-                const progressWin = new Zotero.ProgressWindow({ closeOnClick: false });
-                let progress;
-                progressWin.changeHeadline(
-                    'Wikicite'
+            const progress = new Progress(
+                'loading',
+                Wikicite.getString(
+                    'wikicite.wikidata.progress.delete.loading'
+                )
+            );
+            try {
+                await citation.deleteRemotely();
+                progress.updateLine(
+                    'done',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.delete.done'
+                    )
                 );
-                progressWin.show();
-                progress = new progressWin.ItemProgress(
-                    'chrome://zotero/skin/arrow_refresh.png',
-                    'Deleting citation from Wikidata...'
+                progress.close();
+            } catch {
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.delete.error'
+                    )
                 );
-                progress.setProgress(100);
-                await Wikidata.deleteCitations([[this.qid, citation.target.qid]]);
-                progress.setError();
-                progress.setText('Deleting citations from Wikidata not yet supported');
-                progressWin.startCloseTimer(3000);
-                // handle result and fail if citation could not be deleted remotely
-                // do not fail if it couldn't be deleted because it doesn't exist
-            } else {
-                // fix: better handle this. Do I have a debugger?
-                // Located string in a console message?
-                console.error('Cannot sync deletion of citation not available in Wikidata.')
-                return
+                progress.close();
+                return;
             }
         }
         this._citations.splice(index, 1);

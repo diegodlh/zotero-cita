@@ -190,6 +190,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
      * @returns {Promise} Citations map { entityQID: [cites work QIDs]... }
      */
     static async getCitesWorkClaims(sourceQIDs) {
+        if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
         // Fixme: alternatively, use the SPARQL endpoint to get more than 50
         // entities per request, and to get only the claims I'm interested in
         // (i.e., P2860).
@@ -198,7 +199,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             props: ['claims'],
             format: 'json'
         });
-        const citesWorkClaims = new Map();
+        const citesWorkClaims = {};
         while (urls.length) {
             const url = urls.shift();
             try {
@@ -428,6 +429,7 @@ export class CitesWorkClaim {
         this.value = citesWorkClaimValue.value;
         this.references = citesWorkClaimValue.references;
         this.qualifiers = citesWorkClaimValue.qualifiers;
+        this.remove = false;
     }
 
     // get intentions() {

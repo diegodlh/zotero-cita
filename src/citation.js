@@ -1,3 +1,4 @@
+import Wikidata, { CitesWorkClaim } from './wikidata';
 import ItemWrapper from './itemWrapper';
 import OCI from './oci';
 import Wikicite from './wikicite';
@@ -103,6 +104,42 @@ class Citation {
             supplier: supplier,
             valid: valid
         });
+    }
+
+    /*
+     * Delete citation from Wikidata
+     */
+    async deleteRemotely() {
+        const wikidataOci = this.getOCI('wikidata')
+        if (wikidataOci && wikidataOci.valid) {
+            try {
+                // fetch cites work statements
+                const claims = await Wikidata.getCitesWorkClaims(this.source.qid);
+                const pushClaims = {};
+                pushClaims[this.source.qid] = claims[this.source.qid].reduce(
+                    (pushClaims, claim) => {
+                        // keep those which want to be deleted
+                        if (claim.value === this.target.qid) {
+                            // create CitesWorkClaim objects from them
+                            const pushClaim = new CitesWorkClaim(claim);
+                            // and update them to pending remove status
+                            pushClaim.remove = true;
+                            pushClaims.push(pushClaim);
+                        }
+                        return pushClaims;
+                }, [])
+                // pass them to updateCitesWorkClaims to upload changes
+                await Wikidata.updateCitesWorkClaims(pushClaims);
+            } catch (err) {
+                // fail if citation could not be deleted remotely
+                // do not fail if it couldn't be deleted because it doesn't exist
+                throw err;
+            }
+        } else {
+            // fix: better handle this. Do I have a debugger?
+            // Located string in a console message?
+            throw new Error('Cannot sync deletion of citation not available in Wikidata.');
+        }
     }
 
     getOCI(supplier) {
