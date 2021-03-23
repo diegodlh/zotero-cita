@@ -1,10 +1,9 @@
+import Wikidata, { CitesWorkClaim } from './wikidata';
 import Citation from './citation';
 import OCI from './oci';
 import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
-import Wikidata from './wikidata';
-import { CitesWorkClaim } from './wikidata';
 
 /* global Services */
 /* global window */

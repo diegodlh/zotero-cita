@@ -1,9 +1,8 @@
-import Citations from './citations';
 import Citation from './citation';
+import Citations from './citations';
 import ItemWrapper from './itemWrapper';
 import Progress from './progress';
 import Wikicite from './wikicite';
-import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
 // Fixme: define this in the preferences
@@ -312,7 +311,7 @@ class SourceItemWrapper extends ItemWrapper {
         // I think it is too trivial to have one Class method
         // be careful this method will not update this instance of CitationList
         // because it creates its own instances for each item provided
-        Wikidata.syncCitations(this.item);
+        // Wikidata.syncCitations(this.item);
     }
 
     // Fixme: maybe the methods below may take an optional index number
