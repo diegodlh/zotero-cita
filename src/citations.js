@@ -412,6 +412,7 @@ export default class {
                     // if item had citations to upload to Wikidata
                     // and uploads where succesful
                     // flag citations immediately as available in Wikidata
+                    sourceItem.startBatch();
                     for (const targetQid of remoteAddCitations[itemId]) {
                         const { citations } = sourceItem.getCitations(targetQid, 'qid');
                         for (const citation of citations) {
@@ -420,7 +421,7 @@ export default class {
                             );
                         }
                     }
-                    sourceItem.saveCitations();
+                    sourceItem.endBatch();
                 }
             }
 
