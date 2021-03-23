@@ -1,0 +1,13 @@
+diff --git a/node_modules/wikibase-edit/lib/request/post.js b/node_modules/wikibase-edit/lib/request/post.js
+index 0af9984..915cfb4 100644
+--- a/node_modules/wikibase-edit/lib/request/post.js
++++ b/node_modules/wikibase-edit/lib/request/post.js
+@@ -57,7 +57,7 @@ const actionPost = (action, data, config) => authData => {
+   if (summary != null) data.summary = data.summary || summary
+   if (baserevid != null) data.baserevid = data.baserevid || baserevid
+   if (tags != null) data.tags = data.tags || tags.join('|')
+-  data.maxlag = maxlag || 5
++  if (maxlag != null) data.maxlag = maxlag || 5
+ 
+   params.body = data
+ 
