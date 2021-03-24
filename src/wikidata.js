@@ -48,14 +48,25 @@ export default class {
     // Fixme: add title query support. This is needed before
     // upload to Wikidata is implemented. Rethink flow and progress windows.
     // items must be item wrappers
+    /*
+     * Fetches QIDs for item wrappers provided and returns item -> QID map
+     */
     static async getQID(items, create=false) { //, approximate, getCitations=true) {
         const progress = new Progress();
+        // make sure an array of items was provided
         if (!Array.isArray(items)) items = [items];
-        items = items.map((item) => ({ item: item, qid: item.qid }));
+        // create item -> qid map that will be returned at the end
+        const qidMap = new Map(items.map((item) => [item, item.qid]));
+        // one pool of identifiers to match against, across items and PID type
         let identifiers = items.reduce((identifiers, item) => {
-            const cleanDoi = Zotero.Utilities.cleanDOI(item.item.doi);
-            const cleanIsbn = Zotero.Utilities.cleanISBN(item.item.isbn);
+            // Fixme: support more PIDs
+            // also support multiple PIDs per item (e.g., DOI & PMID)
+            // see #51
+            const cleanDoi = Zotero.Utilities.cleanDOI(item.doi);
+            const cleanIsbn = Zotero.Utilities.cleanISBN(item.isbn);
             if (cleanDoi) {
+                // Wikidata's P356 (DOI) value is automatically transformed
+                // to uppercase https://www.wikidata.org/wiki/Property_talk:P356#Documentation
                 identifiers.push(cleanDoi.toUpperCase());
             } else if (cleanIsbn) {
                 identifiers.push(cleanIsbn);
@@ -64,9 +75,11 @@ export default class {
         }, []);
         identifiers = [...new Set(identifiers)];
         if (identifiers.length) {
+            // if at least one supported identifier available,
+            // run the SPARQL query
             const identifierString = identifiers.map(
                 (identifier) => `"${identifier}"`
-            ).join(" ");
+            ).join(' ');
             const sparql = `
 SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     VALUES ?identifier { ${identifierString} }.
@@ -83,17 +96,18 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
 }
 `
-            const url = wdk.sparqlQuery(sparql);
+            const [url, body] = wdk.sparqlQuery(sparql).split('?');
             progress.newLine(
                 'loading',
                 Wikicite.getString(
                     'wikicite.wikidata.progress.qid.fetch.loading'
                 )
             );
-            let bindings;
+            let results;
             try {
-                const xmlhttp = await Zotero.HTTP.request('GET', url);
-                bindings = JSON.parse(xmlhttp.response).results.bindings;
+                // make POST request in case query is too long
+                const xmlhttp = await Zotero.HTTP.request('POST', url, {body: body});
+                results = wdk.simplify.sparqlResults(xmlhttp.response);
             } catch {
                 progress.updateLine(
                     'error',
@@ -102,34 +116,40 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     )
                 );
             }
-            if (bindings.length) {
+
+            if (results.length) {
                 progress.updateLine(
                     'done',
                     Wikicite.getString(
                         'wikicite.wikidata.progress.qid.fetch.done'
                     )
                 );
-                // for (const item of items.filter((item) => !item.qid)) {
                 for (const item of items) {
+                    // matches are sparql results/entities whose doi or isbn
+                    // match the current item doi or isbn
+                    // Fixme: support other PIDs, see #51
                     let matches;
-                    if (item.item.doi) {
-                        matches = bindings.filter(
-                            (binding) => binding.doi.value === item.item.doi.toUpperCase()
+                    if (item.doi) {
+                        matches = results.filter(
+                            (result) => result.doi === item.doi.toUpperCase()
                         );
-                    } else if (item.item.isbn) {
-                        matches = bindings.filter(
-                            (binding) => binding.isbn.value === item.item.isbn
+                    } else if (item.isbn) {
+                        matches = results.filter(
+                            (result) => result.isbn === item.isbn
                         );
                     }
                     if (matches.length) {
                         const qids = matches.map(
-                            (match) => match.item.value.split('/').slice(-1)[0]
+                            (match) => match.item.value
                         );
                         // if multiple entities found, choose the oldest one
-                        item.qid = qids.sort()[0];
+                        const qid = qids.sort()[0];
+                        // add matching qid to the qidMap to be returned
+                        qidMap.set(item, qid);
                     }
                 }
             } else {
+                // no results from sparql query
                 progress.updateLine(
                     'error',
                     Wikicite.getString(
@@ -138,11 +158,13 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 );
             }
         } else {
+            // items provided have no supported PIDs (DOI, ISBN)
             progress.newLine('error', 'No valid unique identifiers provided')
         }
         // Fixme: approximate search should be available for all items for which a
         // qid could not be returned before trying to create a new entity
-        if (items.filter((item) => !item.qid).length) {
+        if ([...qidMap.values()].some((qid) => typeof qid === 'undefined')) {
+            // at least one of the items provided isn't mapped to a qid yet
             Services.prompt.alert(
                 null,
                 'Title query unsupported',
@@ -171,7 +193,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             )
         }
         progress.close();
-        return items;
+        return qidMap;
     }
 
     /**

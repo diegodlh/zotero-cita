@@ -112,8 +112,8 @@ export default class ItemWrapper{
     }
 
     async fetchQid() {
-        const items = await Wikidata.getQID(this);
-        const { qid } = items[0];
+        const qids = await Wikidata.getQID(this);
+        const qid = qids.get(this);
         if (qid) {
             this.qid = qid;
         }

@@ -72,8 +72,8 @@ const CitationEditor = () => {
 	async function getQID() {
 		const targetItem = citation.target;
 		targetItem.item = makeItem();
-		const items = await Wikidata.getQID(targetItem);
-		const { qid } = items[0];
+		const qids = await Wikidata.getQID(targetItem);
+		const qid = qids.get(targetItem);
 		if (qid) {
 			setQid(qid);
 		}
