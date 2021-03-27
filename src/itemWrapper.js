@@ -112,7 +112,7 @@ export default class ItemWrapper{
     }
 
     async fetchQid() {
-        const qids = await Wikidata.getQID(this);
+        const qids = await Wikidata.reconcile(this);
         const qid = qids.get(this);
         if (qid) {
             this.qid = qid;

@@ -13,9 +13,20 @@ import wbEdit from 'wikibase-edit';
 // Wikibase instances.
 const WBK_INSTANCE = 'https://www.wikidata.org';
 const WBK_SPARQL = 'https://query.wikidata.org/sparql';
+const RECONCILE_API = 'https://wikidata.reconci.link/en/api'
+
+const entities = {
+    'work': 'Q386724'
+}
 
 const properties = {
+    'author': 'P50',
+    'authorNameString': 'P2093',
     'citesWork': 'P2860',
+    'doi': 'P356',
+    'isbn10': 'P957',
+    'isbn13': 'P212',
+    'publicationDate': 'P577',
     'statedIn': 'P248',
     'refUrl': 'P854',
     'citoIntention': 'P3712'
@@ -43,6 +54,93 @@ export default class {
             instance: WBK_INSTANCE,
             sparqlEndpoint: WBK_SPARQL
         })
+    }
+
+    static async reconcile(items, options={overwrite: true, partial: false}) {
+        // make sure an array of items was provided
+        if (!Array.isArray(items)) items = [items];
+        // create item -> qid map that will be returned at the end
+        const qids = new Map(items.map((item) => [item, item.qid]));
+        // iterate over the items to create the qXX query objects
+        const queries = {};
+        items.forEach((item, i) => {
+            if (item.qid && !options.overwrite) {
+                return;
+            }
+            const queryProps = [];
+            const cleanDOI = Zotero.Utilities.cleanDOI(item.doi);
+            if (cleanDOI) {
+                queryProps.push({
+                    pid: properties.doi,
+                    v: cleanDOI.toUpperCase()
+                });
+            }
+            const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn);
+            if (cleanISBN) {
+                queryProps.push({
+                    pid: [properties.isb10, properties.isbn13].join('|'),
+                    v: cleanISBN
+                })
+            }
+            // multiple matching creators decrease rather than increase
+            // matching score
+            // see https://www.wikidata.org/wiki/Wikidata_talk:Tools/OpenRefine#Reconcile_using_several_authors
+            // const creators = item.item.getCreatorsJSON();
+            // if (creators) {
+            //     queryProps.push({
+            //         pid: [properties.author, properties.authorNameString].join('|'),
+            //         v: creators.map(
+            //             (creator) => [creator.firstName, creator.lastName].join(' ').trim()
+            //         )
+            //     })
+            // }
+            // const year = Zotero.Date.strToDate(item.item.getField('date')).year;
+            // if (year) {
+            //     queryProps.push({
+            //         pid: properties.publicationDate + '@year',
+            //         v: year
+            //     })
+            // }
+            queries[`q${i}`] = {
+                query: item.title,
+                type: entities.work,
+                type_strict: 'should',
+                properties: queryProps,
+                // limit: 3,                                ]
+            }
+        })
+        if (Object.keys(queries).length) {
+            // send HTTP POST request
+            let req;
+            try {
+                req = await Zotero.HTTP.request(
+                    'POST',
+                    RECONCILE_API,
+                    {
+                        body: `queries=${JSON.stringify(queries)}`
+                    }
+                );
+            } catch (err) {
+                throw err;
+            }
+            const response = JSON.parse(req.response);
+            items.forEach((item, i) => {
+                if (item.qid && !options.overwrite) {
+                    return;
+                }
+                const candidates = response[`q${i}`].result;
+                const match = candidates.filter((candidate) => candidate.match)[0];
+                if (match) {
+                    qids.set(item, match.id);
+                } else if (candidates && options.partial) {
+                    // Could not find exact match for ...
+                    // Did you mean...
+                    // Choose, Skip
+                    console.log('select')
+                }
+            })
+        }
+        return qids; // and let the calling function decide whether to create new entity or not
     }
 
     // Fixme: add title query support. This is needed before
