@@ -56,9 +56,26 @@ export default class {
         })
     }
 
-    static async reconcile(items, options={overwrite: true, partial: false}) {
+    /**
+     * Fetches QIDs for item wrappers provided, using reconciliation API
+     * @param {Array|ItemWrapper} items (Array of) ItemWrapper(s)
+     * @param {Object} options
+     * @param {Boolean} options.overwrite Whether to overwrite item's known QID
+     * @param {Boolean} options.partial Whether to suggest approximate matches
+     * @returns {Map} item to qid map; qid is null if not found, and undefined if not queried
+     */
+    static async reconcile(items, options={overwrite: true, partial: undefined}) {
+        const progress = new Progress();
         // make sure an array of items was provided
         if (!Array.isArray(items)) items = [items];
+        // default partial value depends on how many items provided
+        if (typeof options.partial === 'undefined') {
+            if (items.length > 1) {
+                options.partial = false;
+            } else {
+                options.partial = true;
+            }
+        }
         // create item -> qid map that will be returned at the end
         const qids = new Map(items.map((item) => [item, item.qid]));
         // iterate over the items to create the qXX query objects
@@ -101,6 +118,10 @@ export default class {
             //         v: year
             //     })
             // }
+            if (!item.title && !queryProps.length) {
+                // if no title nor supported properties, skip to next item
+                return;
+            }
             queries[`q${i}`] = {
                 query: item.title,
                 type: entities.work,
@@ -110,43 +131,126 @@ export default class {
             }
         })
         if (Object.keys(queries).length) {
+            progress.newLine(
+                'loading',
+                Wikicite.getString(
+                    'wikicite.wikidata.progress.qid.fetch.loading'
+                )
+            );
             // send HTTP POST request
-            let req;
+            let response = {};
             try {
-                req = await Zotero.HTTP.request(
+                const req = await Zotero.HTTP.request(
                     'POST',
                     RECONCILE_API,
                     {
                         body: `queries=${JSON.stringify(queries)}`
                     }
                 );
-            } catch (err) {
-                throw err;
+                response = JSON.parse(req.response);
+                if (Object.values(response).some((query) => query.result.length)) {
+                    // query batch succeeded and at least one query returned results
+                    progress.updateLine(
+                        'done',
+                        Wikicite.getString(
+                            'wikicite.wikidata.progress.qid.fetch.done'
+                        )
+                    );
+                } else {
+                    // query batch succeeded, but no query returned results
+                    progress.updateLine(
+                        'error',
+                        Wikicite.getString(
+                            'wikicite.wikidata.progress.qid.fetch.zero'
+                        )
+                    );
+                }
+            } catch {
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.qid.fetch.error'
+                    )
+                );
             }
-            const response = JSON.parse(req.response);
+            let cancelled = false;
             items.forEach((item, i) => {
+                if (cancelled) {
+                    return;
+                }
                 if (item.qid && !options.overwrite) {
                     return;
                 }
-                const candidates = response[`q${i}`].result;
-                const match = candidates.filter((candidate) => candidate.match)[0];
-                if (match) {
-                    qids.set(item, match.id);
-                } else if (candidates && options.partial) {
-                    // Could not find exact match for ...
-                    // Did you mean...
-                    // Choose, Skip
-                    console.log('select')
+                const query = response[`q${i}`];
+                if (query) {
+                    const candidates = query.result;
+                    const match = candidates.filter((candidate) => candidate.match)[0];
+                    if (match) {
+                        qids.set(item, match.id);
+                    } else if (candidates.length && options.partial) {
+                        const choices = [
+                            Wikicite.getString(
+                                'wikicite.wikidata.reconcile.approx.none'
+                            ),
+                            ...candidates.map(
+                                (candidate) => `${candidate.name} (${candidate.id})`
+                            )
+                        ]
+                        const selection = {};
+                        const select = Services.prompt.select(
+                            window,
+                            Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
+                            Wikicite.formatString(
+                                'wikicite.wikidata.reconcile.approx.message',
+                                item.title
+                            ),
+                            choices.length,
+                            choices,
+                            selection
+                        );
+                        if (select) {
+                            if (selection.value > 0) {
+                                const index = selection.value - 1;
+                                qids.set(item, candidates[index].id);
+                            } else {
+                                // user chose 'none', meaning no candidate is relevant
+                                // set qid to 'null' meaning no results where found
+                                qids.set(item, null);
+                            }
+                        } else {
+                            // user cancelled
+                            // leave qid 'undefined' in qids map
+                            cancelled = true;
+                        }
+                    } else {
+                        // item is in the response
+                        // but response is empty
+                        // meaning it wasn't found in Wikidata
+                        // make it 'null' in the qids maps
+                        qids.set(item, null);
+                    }
+                } else {
+                    // item not in the response:
+                    // either not included in the query
+                    // or query failed altogether
+                    // remains 'undefined' in the qids map
                 }
             })
+        } else {
+            // no searchable items
+            progress.newLine(
+                'error',
+                Wikicite.getString(
+                    'wikicite.wikidata.progress.qid.fetch.invalid'
+                )
+            );
         }
-        return qids; // and let the calling function decide whether to create new entity or not
+        progress.close();
+        return qids;
     }
 
-    // Fixme: add title query support. This is needed before
-    // upload to Wikidata is implemented. Rethink flow and progress windows.
-    // items must be item wrappers
-    /*
+    /**
+     * DEPRECATED - use this.reconcile() instead
      * Fetches QIDs for item wrappers provided and returns item -> QID map
      */
     static async getQID(items, create=false) { //, approximate, getCitations=true) {

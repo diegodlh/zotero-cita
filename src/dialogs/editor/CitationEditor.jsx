@@ -72,7 +72,7 @@ const CitationEditor = () => {
 	async function getQID() {
 		const targetItem = citation.target;
 		targetItem.item = makeItem();
-		const qids = await Wikidata.getQID(targetItem);
+		const qids = await Wikidata.reconcile(targetItem);
 		const qid = qids.get(targetItem);
 		if (qid) {
 			setQid(qid);
@@ -235,7 +235,7 @@ const CitationEditor = () => {
 				<button
 					type="button"
 					onClick={getQID}
-					disabled={!doi}
+					disabled={!title && !doi}
 				>Get QID</button>
 
 				<label htmlFor="occ">OCC</label>
