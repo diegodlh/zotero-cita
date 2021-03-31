@@ -110,6 +110,13 @@ have to be opened again. If someone knows of a way to prevent developer tools fr
 when connection is available again, or to have them open automatically via console, so it can be run
 immediately after Zotero, please let me know!
 
+## Third-party software
+
+The Wikicite plugin for Zotero depends on:
+- maxlath's [wikibase-edit](https://github.com/maxlath/wikibase-edit) & [wikibase-sdk](https://github.com/maxlath/wikibase-sdk)
+- Philipp Zumstein's [QuickStatements translator for Zotero](https://github.com/UB-Mannheim/zotkat)
+- [React](https://reactjs.org/)
+
 ## License
 
 Copyright (C) 2021 Diego de la Hera.
