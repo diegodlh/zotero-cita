@@ -150,6 +150,16 @@ const zoteroOverlay = {
                 `${TRANSLATORS_PATH}${label}.json`
             )
         );
+        const installed = Zotero.Translators.get(header.translatorID);
+        if (installed) {
+            const newDate = new Date(header.lastUpdated);
+            const oldDate = new Date(installed.lastUpdated);
+            if (oldDate > newDate) {
+                // do not install
+                console.log('Skipping installation of translator ' + label);
+                return;
+            }
+        }
         const code = Zotero.File.getContentsFromURL(
             `${TRANSLATORS_PATH}${label}.js`
         );
