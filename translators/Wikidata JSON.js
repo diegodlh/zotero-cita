@@ -1,3 +1,18 @@
+{
+	"translatorID": "3599d5a3-75c7-4fd5-b8e7-4976ce464e55",
+	"label": "Wikidata JSON",
+	"creator": "Diego de la Hera",
+	"target": "json",
+	"minVersion": "4.0.27",
+	"maxVersion": "",
+	"priority": 100,
+	"inRepository": true,
+	"translatorType": 1,
+	"cacheCode": true,
+	"lastUpdated": "2021-01-11 22:40:29"
+}
+
+
 /*
 	***** BEGIN LICENSE BLOCK *****
 

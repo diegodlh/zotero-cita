@@ -9,7 +9,8 @@ import WikiciteChrome from './wikiciteChrome';
 const TRANSLATORS_PATH = 'chrome://wikicite/content/translators/'
 const TRANSLATOR_LABELS = [
     'Wikidata API',
-    'Wikidata JSON'
+    'Wikidata JSON',
+    'Wikidata QuickStatements'
 ];
 
 /* global window, document, Components, MutationObserver*/
@@ -145,14 +146,15 @@ const zoteroOverlay = {
     },
 
     installTranslator: async function(label) {
-        const header = JSON.parse(
-            Zotero.File.getContentsFromURL(
-                `${TRANSLATORS_PATH}${label}.json`
-            )
+        const source = Zotero.File.getContentsFromURL(
+            `${TRANSLATORS_PATH}${label}.js`
         );
-        const installed = Zotero.Translators.get(header.translatorID);
+        const header = (/^\s*{[\S\s]*?}\s*?[\r\n]/).exec(source)[0];
+        const metadata = JSON.parse(header);
+        const code = source.replace(header, '');
+        const installed = Zotero.Translators.get(metadata.translatorID);
         if (installed) {
-            const newDate = new Date(header.lastUpdated);
+            const newDate = new Date(metadata.lastUpdated);
             const oldDate = new Date(installed.lastUpdated);
             if (oldDate > newDate) {
                 // do not install
@@ -160,11 +162,8 @@ const zoteroOverlay = {
                 return;
             }
         }
-        const code = Zotero.File.getContentsFromURL(
-            `${TRANSLATORS_PATH}${label}.js`
-        );
         try {
-            await Zotero.Translators.save(header, code);
+            await Zotero.Translators.save(metadata, code);
         } catch (err) {
             console.log(`Failed to install translator ${label}: ${err}`);
             this.uninstallTranslator(label);

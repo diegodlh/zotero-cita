@@ -1,3 +1,18 @@
+{
+	"translatorID": "fb15ed4a-7f58-440e-95ac-61e10aa2b4d8",
+	"label": "Wikidata API",
+	"creator": "Diego de la Hera",
+	"target": "",
+	"minVersion": "4.0.29.11",
+	"maxVersion": "",
+	"priority": 100,
+	"inRepository": false,
+	"translatorType": 8,
+	"cacheCode": true,
+	"lastUpdated": "2021-01-12 23:00:00"
+}
+
+
 /*
 	***** BEGIN LICENSE BLOCK *****
 

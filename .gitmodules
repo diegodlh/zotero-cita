@@ -1,0 +1,3 @@
+[submodule "translators/zotkat"]
+	path = translators/zotkat
+	url = https://github.com/UB-Mannheim/zotkat.git

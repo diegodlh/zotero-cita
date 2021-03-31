@@ -47,7 +47,7 @@ Feel free to try it, but please use a [separate Zotero profile](https://www.zote
 Download the [latest XPI](https://github.com/diegodlh/zotero-wikicite/releases/latest) and [install](https://www.zotero.org/support/plugins) it in Zotero.
 
 ## Development
-1. Clone the source code
+1. Clone the source code, and run `git submodule update --init --recursive` to fetch the nested submodules.
 2. Run `npm install`
 3. This plugin is built using Webpack and Babel. Run `npm run build`, or `npm run watch` to rebuild
 automatically each time the source code is changed. Built files will be saved to `dist/chrome/content`.
