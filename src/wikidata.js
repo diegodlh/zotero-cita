@@ -62,19 +62,19 @@ export default class {
      * @param {Object} options
      * @param {Boolean} options.overwrite Whether to overwrite item's known QID
      * @param {Boolean} options.partial Whether to suggest approximate matches
+     * @param {Boolean} options.create Offer to create entity if not found in Wikidata
      * @returns {Map} item to qid map; qid is null if not found, and undefined if not queried
      */
-    static async reconcile(items, options={overwrite: true, partial: undefined}) {
+    static async reconcile(items, options={overwrite: false, partial: undefined, create: undefined}) {
         const progress = new Progress();
         // make sure an array of items was provided
         if (!Array.isArray(items)) items = [items];
-        // default partial value depends on how many items provided
+        // some options default values depend on number of items provided
         if (typeof options.partial === 'undefined') {
-            if (items.length > 1) {
-                options.partial = false;
-            } else {
-                options.partial = true;
-            }
+            options.partial = items.length === 1;
+        }
+        if (typeof options.create === 'undefined') {
+            options.create = items.length === 1;
         }
         // create item -> qid map that will be returned at the end
         const qids = new Map(items.map((item) => [item, item.qid]));
@@ -82,6 +82,7 @@ export default class {
         const queries = {};
         items.forEach((item, i) => {
             if (item.qid && !options.overwrite) {
+                // current item has qid already
                 return;
             }
             const queryProps = [];
@@ -173,6 +174,7 @@ export default class {
                     )
                 );
             }
+            progress.close();
             let cancelled = false;
             items.forEach((item, i) => {
                 if (cancelled) {
@@ -237,15 +239,44 @@ export default class {
                 }
             })
         } else {
-            // no searchable items
+            // no searchable items, or qids known already
             progress.newLine(
                 'error',
                 Wikicite.getString(
                     'wikicite.wikidata.progress.qid.fetch.invalid'
                 )
             );
+            progress.close();
         }
-        progress.close();
+        // select items unavailable in Wikidata for entity creation
+        const unavailable = [];
+        for (const [item, qid] of qids) {
+            if (qid === null) {
+                if (!item.title) {
+                    // skip items without a title
+                    continue;
+                }
+                unavailable.push(item);
+            }
+        }
+        if (unavailable.length && options.create) {
+            const result = Services.prompt.confirm(
+                window,
+                Wikicite.getString(
+                    'wikicite.wikidata.reconcile.unavailable.title'
+                ),
+                Wikicite.formatString(
+                    'wikicite.wikidata.reconcile.unavailable.message',
+                    unavailable.map((item) => item.title).join('\n')
+                )
+            )
+            if (result) {
+                for (const item of unavailable) {
+                    const qid = await this.create(item, {checkDuplicates: false});
+                    qids.set(item, qid);
+                }
+            }
+        }
         return qids;
     }
 
@@ -399,12 +430,123 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     }
 
     /**
-     * Creates a Wikidata element for an item.
+     * Creates a Wikidata entity for an item wrapper provided
+     * @param {ItemWrapper} item Wrapped Zotero item
+     * @param {Object} options
+     * @param {Boolean} options.checkDuplicates Whether to check for duplicates before proceeding
+     * @returns {(String|undefined|null)} qid - QID of entity created, null if cancelled, or
+     *     undefined if QID is unknown (created with QuickStatements)
      */
-    static setQID(item) {
-        let qid
-        // make sure I'm not generating a duplicate before creating a QID for an item
-        // somewhere I will have to map itemType to Wikidata supported instances of
+    static async create(item, options={checkDuplicates: true}) {
+        if (options.checkDuplicates) {
+            throw Error('Checking for duplicates within create function non-supported.');
+        }
+        if (!item.title) {
+            throw Error('Cannot create an entity for an item without a title');
+        }
+        await Zotero.Schema.schemaUpdatePromise;
+        const translation = new Zotero.Translate.Export();
+        if (item.item.libraryID) {
+            translation.setItems([item.item]);
+        } else {
+            // export translation expects the item to have a libraryID
+            // target (i.e., cited) items in the CitationEditor do not have one
+            // create temporary item
+            const tmpItem = new Zotero.Item();
+            tmpItem.fromJSON(item.item.toJSON());
+            tmpItem.libraryID = 1;
+            translation.setItems([tmpItem])
+        }
+        translation.setTranslator('51e5355d-9974-484f-80b9-f84d2b55782e');  // QuickStatements translator
+        await translation.translate();
+        const qsCommands = translation.string;
+        let qid;
+        if (qsCommands) {
+            const buttonFlags = (
+                (Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_IS_STRING) +
+                (Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_IS_STRING) +
+                (Services.prompt.BUTTON_POS_2 * Services.prompt.BUTTON_TITLE_CANCEL)
+            );
+            const response = Services.prompt.confirmEx(
+                window,
+                Wikicite.getString('wikicite.wikidata.create.confirm.title'),
+                Wikicite.formatString(
+                    'wikicite.wikidata.create.confirm.message',
+                    item.title
+                ),
+                buttonFlags,
+                Wikicite.getString('wikicite.wikidata.create.confirm.button.create'),
+                Wikicite.getString('wikicite.wikidata.create.confirm.button.qs'),
+                "",
+                undefined,
+                {}
+            );
+            switch (response) {
+                case 0: {
+                    // create
+                    // convert qs commands to wikibase-edit entity
+                    const wbEntity = qs2json(qsCommands);
+                    // use wikibase-entity to create entity
+                    const progress = new Progress();
+                    try {
+                        const { entity } = await wbEdit.entity.create(wbEntity);
+                        qid = entity.id;
+                    } catch {
+                        progress.newLine(
+                            'error',
+                            Wikicite.getString(
+                                'wikicite.wikidata.create.progress.unsupported'
+                            )
+                        );
+                        qid = null;
+                    }
+                    progress.close();
+                    break;
+                }
+                case 1: {
+                    // quickstatements
+                    const confirm = Services.prompt.confirm(
+                        window,
+                        Wikicite.getString(
+                            'wikicite.wikidata.create.qs.title'
+                        ),
+                        Wikicite.getString(
+                            'wikicite.wikidata.create.qs.message'
+                        )
+                    )
+                    if (confirm) {
+                        // copy commands to clipboard
+                        Zotero.Utilities.Internal.copyTextToClipboard(qsCommands);
+                        // launch QuickStatements
+                        Zotero.launchURL(
+                            'https://quickstatements.toolforge.org/#/batch'
+                        );
+                        // return undefined qid (because it can't be known)
+                        qid = undefined;
+                    } else {
+                        // return null qid (because user cancelled)
+                        qid = null;
+                    }
+                    // // running QS through URL doesn't let edit the commands
+                    // Zotero.launchURL(
+                    //     'https://quickstatements.toolforge.org/#/v1=' +
+                    //     qsCommands.replace(/\t/g, '|').replace(/\n/g, '||')
+                    // );
+                    // qid = undefined;
+                    break;
+                }
+                case 2:
+                    // cancel
+                    qid = null;
+                    break;
+            }
+        } else {
+            // handle cases where the QS translator returns nothing?
+            // e.g., if item has qid already - these items should have
+            // been ignored by the function calling this.create()
+            // we want to make sure no duplicate entries are created
+            // for an item that might have a QID already!
+        }
         return qid
     }
 
@@ -645,6 +787,16 @@ function getActionType(claims) {
         actionType = 'add';
     }
     return actionType;
+}
+
+/**
+ * Translate QuickStatements commands into wikibase-edit JSON entity
+ * @param {String} qs - QuickStatments commands
+ * @returns {Object} entity - wikibase-edit JSON entity
+ */
+function qs2json(qs) {
+    // See https://github.com/maxlath/wikibase-edit/issues/64
+    return {}
 }
 
 export class CitesWorkClaim {
