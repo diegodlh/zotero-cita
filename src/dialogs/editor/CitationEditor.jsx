@@ -247,11 +247,11 @@ const CitationEditor = () => {
 					disabled={linked}
 					onKeyPress={handleKeyPress}
 				/>
-				<button
+				{/*<button
 					type="button"
 					title="Link/Unlink"  // testing tooltips
 					onClick={linked ? unlink : link}
-				>{linked ? 'Unlink' : 'Link'}</button>
+				>{linked ? 'Unlink' : 'Link'}</button>*/}
 				<button type="button" onClick={onCancel}>Cancel</button>
 				<button type="button" onClick={onSave}>Save</button>
 			</form>
