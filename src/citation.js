@@ -207,7 +207,7 @@ class Citation {
             Services.prompt.alert(
                 null,
                 "",
-                "You cannot link to the citation's source item."
+                Wikicite.getString('wikicite.citation.link.error.sourceItem')
             );
             return;
         }
@@ -221,7 +221,7 @@ class Citation {
             Services.prompt.alert(
                 null,
                 "",
-                "Another citation links to this item already."
+                Wikicite.getString('wikicite.citation.link.error.duplicate')
             );
             return;
         }
@@ -230,7 +230,7 @@ class Citation {
             Services.prompt.alert(
                 null,
                 "",
-                "You cannot link to an item in another library."
+                Wikicite.getString('wikicite.citation.link.error.library')
             );
             return;
         }

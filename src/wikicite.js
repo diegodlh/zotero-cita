@@ -110,25 +110,34 @@ export default {
      * Return Citations note
      */
     getCitationsNote: function(item) {
+        // Fixme: consider moving to SourceItemWrapper
         const notes = Zotero.Items.get(item.getNotes()).filter(
             (note) => note.getNoteTitle() === 'Citations'
         );
         if (notes.length > 1) {
             Services.prompt.alert(
                 window,
-                'Wikicite',
-                'Unexpected more than one Citations note found!'
+                Wikicite.getString('wikicite.global.name'),
+                Wikicite.getString('wikicite.sourceItem.getCitationsNote.error.multiple')
             );
         }
         return notes[0];
     },
 
     getString: function(name) {
-        return this._bundle.GetStringFromName(name)
+        const nameParts = name.split('.');
+        // if leading part of the name is not 'wikicite', add it
+        if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
+        name = nameParts.join('.');
+        return this._bundle.GetStringFromName(name);
     },
 
     formatString: function(name, params) {
         if (!Array.isArray(params)) params = [params];
+        const nameParts = name.split('.');
+        // if leading part of the name is not 'wikicite', add it
+        if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
+        name = nameParts.join('.');
         return this._bundle.formatStringFromName(name, params, params.length);
     }
 

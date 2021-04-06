@@ -18,6 +18,11 @@ const item = citation.target.item;
 const sourceItem = citation.source;
 const retVals = window.arguments[1];
 
+// provide a shorter way to call Wikicite's getString
+function getStr(name) {
+	return Wikicite.getString(name);
+}
+
 // Fixme: as a Citation Editor (not a target item editor)
 // consider providing at least some read only information about the citation
 // such as label of the source item, OCIs, and Zotero link status
@@ -162,17 +167,19 @@ const CitationEditor = () => {
 				// Fixme: move to CSS!
 				style={{display: 'flex', flexDirection: 'column'}}
 			>
-				<label htmlFor="itemType">Item Type</label>
+				<label htmlFor="itemType">{getStr('item.type')}</label>
 				<select
 					id="itemType"
 					value={itemType}
 					onChange={(e) => setItemType(e.target.value)}
 					disabled={linked}
 				>
-					<option value="journalArticle">Journal Article</option>
+					<option value="journalArticle">
+						{getStr('item.type.journalArticle')}
+					</option>
 				</select>
 
-				<label htmlFor="title">Title</label>
+				<label htmlFor="title">{getStr('item.title')}</label>
 				<input
 					type="text"
 					id="title"
@@ -182,18 +189,18 @@ const CitationEditor = () => {
 					onKeyPress={handleKeyPress}
 				/>
 
-				<label htmlFor="creators">Creators</label>
+				<label htmlFor="creators">{getStr('item.creators')}</label>
 				{/* Fixme: provide better input for creators */}
 				<textarea
 					id="creators"
 					value={creators}
 					onChange={(e) => setCreators(e.target.value)}
 					disabled={linked}
-					placeholder="One author per line&#13;last name, first name&#13;or full name"
+					placeholder={getStr('editor.creators.placeholder')}
 
 				/>
 
-				<label htmlFor="publication">Publication</label>
+				<label htmlFor="publication">{getStr('item.publication')}</label>
 				<input
 					type="text"
 					id="publication"
@@ -203,7 +210,7 @@ const CitationEditor = () => {
 					onKeyPress={handleKeyPress}
 				/>
 
-				<label htmlFor="date">Date</label>
+				<label htmlFor="date">{getStr('item.date')}</label>
 				<input
 					type="text"
 					id="date"
@@ -213,7 +220,7 @@ const CitationEditor = () => {
 					onKeyPress={handleKeyPress}
 				/>
 
-				<label htmlFor="doi">DOI</label>
+				<label htmlFor="doi">{getStr('item.doi')}</label>
 				<input
 					type="text"
 					id="doi"
@@ -223,7 +230,7 @@ const CitationEditor = () => {
 					onKeyPress={handleKeyPress}
 				/>
 
-				<label htmlFor="qid">QID</label>
+				<label htmlFor="qid">{getStr('item.qid')}</label>
 				<input
 					type="text"
 					id="qid"
@@ -236,9 +243,9 @@ const CitationEditor = () => {
 					type="button"
 					onClick={getQID}
 					disabled={!title && !doi}
-				>Get QID</button>
+				>{getStr('editor.getQid')}</button>
 
-				<label htmlFor="occ">OCC</label>
+				<label htmlFor="occ">{getStr('item.occ')}</label>
 				<input
 					type="text"
 					id="occ"
@@ -252,8 +259,12 @@ const CitationEditor = () => {
 					title="Link/Unlink"  // testing tooltips
 					onClick={linked ? unlink : link}
 				>{linked ? 'Unlink' : 'Link'}</button>*/}
-				<button type="button" onClick={onCancel}>Cancel</button>
-				<button type="button" onClick={onSave}>Save</button>
+				<button type="button" onClick={onCancel}>
+					{getStr('editor.cancel')}
+				</button>
+				<button type="button" onClick={onSave}>
+					{getStr('editor.save')}
+				</button>
 			</form>
 		</div>
 	)

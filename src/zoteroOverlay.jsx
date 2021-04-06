@@ -1,5 +1,9 @@
 import Citations from './citations';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
+import Crossref from './crossref';
+import Extraction from './extract';
+import LCN from './localCitationNetwork';
+import OpenCitations from './opencitations';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import SourceItemWrapper from './sourceItemWrapper';
@@ -221,11 +225,11 @@ const zoteroOverlay = {
         // filter items with doi
         // generate batch call to crossref
         // only add items not available locally yet
-        alert('Batch getting citations from Crossref not yet supported.');
+        Crossref.getCitations();
     },
 
     getFromOCC: function(menuName) {
-        alert('Batch getting citations from OpenCitations Corpus not yet supported.');
+        OpenCitations.getCitations();
     },
 
     getFromAttachments: function(menuName) {
@@ -235,7 +239,7 @@ const zoteroOverlay = {
         // call the extract method once per item
         // maybe call it in a way it doesn't fail if pdf is not readable
         // call it with one pdf
-        alert('Batch extracting citations from attachments not yet supported.');
+        Extraction.extract();
     },
 
     addAsCitations: function(menuName) {
@@ -247,9 +251,9 @@ const zoteroOverlay = {
         // 5. finally, link citations to the Zotero items
         // see #39
         Services.prompt.alert(
-            null,
-            'Unsupported',
-            'Adding items as citations to other items not yet supported.'
+            window,
+            Wikicite.getString('wikicite.global.unsupported'),
+            Wikicite.getString('wikicite.citations.fromItems.unsupported')
         );
     },
 
@@ -257,7 +261,7 @@ const zoteroOverlay = {
         // This should be available for collections too
         // I guess the ones above too
         // At least two items selected?
-        alert('Local Citation Network not yet supported.');
+        LCN.show();
     },
 
 
@@ -353,49 +357,63 @@ const zoteroOverlay = {
 
         const itemWikidataSync = doc.createElement('menuitem');
         itemWikidataSync.setAttribute('id', 'item-menu-wikidata-sync');
-        itemWikidataSync.setAttribute('label', 'Sync citations with Wikidata');
+        itemWikidataSync.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.syncWikidata')
+        );
         itemWikidataSync.addEventListener(
             'command', () => this._sourceItem.syncWithWikidata()
         );
 
         const itemCrossrefGet = doc.createElement('menuitem');
         itemCrossrefGet.setAttribute('id', 'item-menu-crossref-get');
-        itemCrossrefGet.setAttribute('label', 'Get citations from Crossref');
+        itemCrossrefGet.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.getCrossref')
+        );
         itemCrossrefGet.addEventListener(
             'command', () => this._sourceItem.getFromCrossref()
         );
 
         const itemOccGet = doc.createElement('menuitem');
         itemOccGet.setAttribute('id', 'item-menu-occ-get');
-        itemOccGet.setAttribute('label', 'Get citations from OpenCitations Corpus');
+        itemOccGet.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.getOCC')
+        );
         itemOccGet.addEventListener(
             'command', () => this._sourceItem.getFromOCC()
         );
 
         const itemPdfExtract = doc.createElement('menuitem');
         itemPdfExtract.setAttribute('id', 'item-menu-pdf-extract');
-        itemPdfExtract.setAttribute('label', 'Extract citations from attachments');
+        itemPdfExtract.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.getPDF')
+        );
         itemPdfExtract.addEventListener(
             'command', () => this._sourceItem.getFromPDF()
         );
 
         const itemBibTexImport = doc.createElement('menuitem');
         itemBibTexImport.setAttribute('id', 'item-menu-bibtex-import');
-        itemBibTexImport.setAttribute('label', 'Import citations from BibTeX');
+        itemBibTexImport.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.importBibTeX')
+        );
         itemBibTexImport.addEventListener(
             'command', () => this._sourceItem.getFromBibTeX()
         );
 
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'item-menu-bibtex-export');
-        itemBibTexExport.setAttribute('label', 'Export citations to BibTeX');
+        itemBibTexExport.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.exportBibTeX')
+        );
         itemBibTexExport.addEventListener(
             'command', () => this._sourceItem.exportToBibTeX()
         );
 
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'item-menu-croci-export');
-        itemCrociExport.setAttribute('label', 'Export citations to CROCI');
+        itemCrociExport.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.exportCroci')
+        );
         itemCrociExport.addEventListener(
             'command', () => this._sourceItem.exportToCroci()
         );
@@ -451,21 +469,27 @@ const zoteroOverlay = {
 
         const citationWikidataSync = doc.createElement('menuitem');
         citationWikidataSync.setAttribute('id', 'citation-menu-wikidata-sync');
-        citationWikidataSync.setAttribute('label', 'Sync citation with Wikidata');
+        citationWikidataSync.setAttribute(
+            'label', Wikicite.getString('wikicite.citationMenu.syncWikidata')
+        );
         citationWikidataSync.addEventListener(
             'command', () => this._sourceItem.syncWithWikidata(this._citationIndex)
         );
 
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'citation-menu-bibtex-export');
-        itemBibTexExport.setAttribute('label', 'Export cited item as BibTeX');
+        itemBibTexExport.setAttribute(
+            'label', Wikicite.getString('wikicite.citationMenu.exportBibTeX')
+        );
         itemBibTexExport.addEventListener(
             'command', () => this._sourceItem.exportToBibTeX(this._citationIndex)
         );
 
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'citation-menu-croci-export');
-        itemCrociExport.setAttribute('label', 'Export citation to CROCI');
+        itemCrociExport.setAttribute(
+            'label', Wikicite.getString('wikicite.citationMenu.exportCroci')
+        );
         itemCrociExport.addEventListener(
             'command', () => this._sourceItem.exportToCroci(this._citationIndex)
         );
@@ -475,38 +499,26 @@ const zoteroOverlay = {
         // for any one citation?
         const ociMenu = doc.createElement('menu');
         ociMenu.setAttribute('id', 'citation-menu-oci-submenu');
-        ociMenu.setAttribute('label', 'See in OpenCitations');
+        ociMenu.setAttribute(
+            'label', Wikicite.getString('wikicite.citationMenu.oci')
+        );
 
         const ociPopup = doc.createElement('menupopup');
         ociPopup.setAttribute('id', 'citation-menu-oci-submenu-popup');
         ociMenu.appendChild(ociPopup);
 
-        const ociCrossref = doc.createElement('menuitem');
-        ociCrossref.setAttribute('id', 'citation-menu-oci-crossref');
-        ociCrossref.setAttribute('label', 'Crossref supplier');
-        ociCrossref.addEventListener(
-            'command',
-            () => this._sourceItem.citations[this._citationIndex].resolveOCI('crossref')
-        );
-        ociPopup.appendChild(ociCrossref);
-
-        const ociOcc = doc.createElement('menuitem');
-        ociOcc.setAttribute('id', 'citation-menu-oci-occ');
-        ociOcc.setAttribute('label', 'OCC supplier');
-        ociOcc.addEventListener(
-            'command',
-            () => this._sourceItem.citations[this._citationIndex].resolveOCI('occ')
-        );
-        ociPopup.appendChild(ociOcc);
-
-        const ociWikidata = doc.createElement('menuitem');
-        ociWikidata.setAttribute('id', 'citation-menu-oci-wikidata');
-        ociWikidata.setAttribute('label', 'Wikidata supplier');
-        ociWikidata.addEventListener(
-            'command',
-            () => this._sourceItem.citations[this._citationIndex].resolveOCI('wikidata')
-        );
-        ociPopup.appendChild(ociWikidata);
+        for (const supplier of ['crossref', 'occ', 'wikidata']) {
+            const ociItem = doc.createElement('menuitem');
+            ociItem.setAttribute('id', 'citation-menu-oci-' + supplier);
+            ociItem.setAttribute(
+                'label', Wikicite.getString('wikicite.citationMenu.oci.' + supplier)
+            );
+            ociItem.addEventListener(
+                'command',
+                () => this._sourceItem.citations[this._citationIndex].resolveOCI(supplier)
+            );
+            ociPopup.appendChild(ociItem);
+        }
 
         citationMenu.appendChild(citationWikidataSync);
         citationMenu.appendChild(itemBibTexExport);

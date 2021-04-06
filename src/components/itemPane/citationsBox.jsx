@@ -203,6 +203,7 @@ function CitationsBox(props) {
     }
 
     function handleCitationSync(index) {
+        // Fixme: consider making this a Citation method
         const citation = citations[index];
         const syncable = citation.source.qid && citation.target.qid;
         const oci = citation.getOCI('wikidata');
@@ -231,8 +232,8 @@ function CitationsBox(props) {
         } else {
             Services.prompt.alert(
                 window,
-                'Citation cannot be synced',
-                'Both citing and cited items must have a QID'
+                Wikicite.getString('wikicite.citation.sync.error'),
+                Wikicite.getString('wikicite.citation.sync.error.qid')
             );
         }
     }
@@ -253,11 +254,19 @@ function CitationsBox(props) {
     }
 
     function handleDoiFetch() {
-        alert('Fetching DOI not yet supported');
+        Services.prompt.alert(
+            window,
+            Wikicite.getString('wikicite.global.unsupported'),
+            Wikicite.getString('wikicite.crossref.getDOI.unsupported')
+        );
     }
 
     function handleOccFetch() {
-        alert('Fetching OCC not yet supported');
+        Services.prompt.alert(
+            window,
+            Wikicite.getString('wikicite.global.unsupported'),
+            Wikicite.getString('wikicite.opencitations.getOCC.unsupported')
+        );
     }
 
     function handleQidFetch() {
@@ -279,7 +288,7 @@ function CitationsBox(props) {
                 str += 'plural';
                 break;
         }
-        return Wikicite._bundle.formatStringFromName(str, [count], 1);
+        return Wikicite.formatString(str, count);
     }
 
     function renderCitationRow(citation, index) {
@@ -423,21 +432,21 @@ function CitationsBox(props) {
                     <tbody>
                         <UuidTableRow
                             editable={props.editable}
-                            label="QID"
+                            label={Wikicite.getString('wikicite.item.qid')}
                             onCommit={handleQidCommit}
                             onFetch={handleQidFetch}
                             value={qid}
                         />
                         <UuidTableRow
                             editable={props.editable}
-                            label="DOI"
+                            label={Wikicite.getString('wikicite.item.doi')}
                             onCommit={handleDoiCommit}
                             onFetch={handleDoiFetch}
                             value={doi}
                         />
                         <UuidTableRow
                             editable={props.editable}
-                            label="OCC"
+                            label={Wikicite.getString('wikicite.item.occ')}
                             onCommit={handleOccCommit}
                             onFetch={handleOccFetch}
                             value={occ}

@@ -1,3 +1,5 @@
+import Wikicite from './wikicite';
+
 /* global Zotero */
 
 const icons = new Map([
@@ -16,7 +18,7 @@ export default class Progress{
         // setting to default true.
         this.progressWin = new Zotero.ProgressWindow({ closeOnClick: true });
         this.progressWin.changeHeadline(
-            'Wikicite addon',
+            Wikicite.getString('wikicite.global.name'),
             'chrome://wikicite/skin/wikicite.png'
         );
         this.progressWin.show();

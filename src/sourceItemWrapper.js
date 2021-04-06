@@ -1,6 +1,9 @@
 import Citation from './citation';
 import Citations from './citations';
+import Crossref from './crossref';
+import Extraction from './extract';
 import ItemWrapper from './itemWrapper';
+import OpenCitations from './opencitations';
 import Progress from './progress';
 import Wikicite from './wikicite';
 // import { getExtraField } from './wikicite';
@@ -9,7 +12,9 @@ import Wikicite from './wikicite';
 const SAVE_TO = 'note'; // extra
 
 /* global DOMParser */
+/* global Services */
 /* global Zotero */
+/* global window */
 
 class SourceItemWrapper extends ItemWrapper {
     // When I thought of this originally, I wasn't giving the source item to the citation creator
@@ -319,7 +324,7 @@ class SourceItemWrapper extends ItemWrapper {
     // if not, do it for all
 
     getFromCrossref() {
-        alert('Getting citations from Crossref not yet supported');
+        Crossref.getCitations();
         // fail if item doesn't have a DOI specified
         // In general I would say to try and get DOI with another plugin if not available locally
         // call the crossref api
@@ -342,14 +347,18 @@ class SourceItemWrapper extends ItemWrapper {
         // What about CROCI? I need DOI to get it from them,
         // But they may not be available from crossref
         // Maybe add Get from CROCI? Should I add get from Dryad too?
-        alert('Getting citations from OpenCitations Corpus not yet supported');
+        OpenCitations.getCitations();
         //
     }
 
     syncWithWikidata(citationIndex) {
         if (citationIndex !== undefined) {
             // Alternatively, do this for the citationIndex provided
-            alert('Syncing individual citations with Wikidata not yet supported');
+            Services.prompt.alert(
+                window,
+                Wikicite.getString('wikicite.global.unsupported'),
+                Wikicite.getString('wikicite.sourceItem.syncSingleCitation.unsupported')
+            );
         } else {
             Citations.syncItemCitationsWithWikidata([this]);
         }
@@ -363,7 +372,7 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     getFromPDF(method, fetchDOIs, fetchQIDs) {
-        alert('Extracting citations from file attachments not yet supported.');
+        Extraction.extract();
         // fail if no PDF attachments found
         // either check preferences here or get them from method parameter
         // to know what method to use (GROBID, the other, url, etc)
@@ -380,15 +389,23 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     getFromBibTeX() {
-        alert('Getting citations from a BibTeX file not yet supported');
+        Services.prompt.alert(
+            window,
+            Wikicite.getString('wikicite.global.unsupported'),
+            Wikicite.getString('wikicite.bibtex.importCitations')
+        );
     }
 
     exportToBibTeX(citationIndex) {
-        alert('Exporting citations to a BibTeX file not yet supported');
+        Services.prompt.alert(
+            window,
+            Wikicite.getString('wikicite.global.unsupported'),
+            Wikicite.getString('wikicite.bibtex.exportCitations')
+        );
     }
 
     exportToCroci(citationIndex) {
-        alert('Exporting to CROCI not yet supported.');
+        OpenCitations.exportCitations();
     }
 }
 
