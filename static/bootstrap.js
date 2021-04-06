@@ -153,6 +153,7 @@ Wikicite.Prefs = {
   setDefaults: function() {
     const defaults = Services.prefs.getDefaultBranch(PREF_BRANCH);
     // defaults.setIntPref(prefName, prefValue);
+    defaults.setCharPref('sortBy', 'ordinal');  // 'ordinal', 'authors', 'title', 'date'
     defaults.setCharPref('storage', 'extra');  // 'extra' || 'note'
     // defaults.setBoolPref();
   },
@@ -230,8 +231,10 @@ Wikicite.Prefs = {
     if (topic != 'nsPref:changed') {
       return;
     }
-
-    const prefParts = data.split('.');
-    Services.obs.notifyObservers(null, '...', null);
+    if (data === 'sortBy') {
+      // if the sortBy preference changes, notify observers of the
+      // 'wikicite-sortby-update' topic
+      Services.obs.notifyObservers(null, 'wikicite-sortby-update', null);
+    }
   }
 }

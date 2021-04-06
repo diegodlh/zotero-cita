@@ -400,6 +400,35 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.exportToCroci()
         );
 
+        const menuSort = doc.createElement('menu');
+        menuSort.setAttribute('id', 'item-menu-sort-submenu');
+        menuSort.setAttribute(
+            'label', Wikicite.getString('wikicite.itemMenu.sort')
+        );
+
+        const sortPopup = doc.createElement('menupopup');
+        sortPopup.setAttribute('id', 'item-menu-sort-submenu-popup');
+
+        menuSort.appendChild(sortPopup);
+
+        const sortValues = ['ordinal', 'authors', 'date', 'title'];
+        const sortByValue = window.Wikicite.Prefs.get('sortBy');
+        for (const value of sortValues) {
+            const itemSort = doc.createElement('menuitem');
+            itemSort.setAttribute('id', 'item-menu-sort-' + value);
+            itemSort.setAttribute(
+                'label', Wikicite.getString('wikicite.itemMenu.sort.' + value)
+            );
+            itemSort.setAttribute('type', 'radio');
+            if (value === sortByValue) {
+                itemSort.setAttribute('checked', true);
+            }
+            itemSort.addEventListener(
+                'command', () => window.Wikicite.Prefs.set('sortBy', value)
+            );
+            sortPopup.appendChild(itemSort);
+        }
+
         itemMenu.appendChild(itemWikidataSync);
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
@@ -407,6 +436,7 @@ const zoteroOverlay = {
         itemMenu.appendChild(itemBibTexImport);
         itemMenu.appendChild(itemBibTexExport);
         itemMenu.appendChild(itemCrociExport);
+        itemMenu.appendChild(menuSort);
 
         mainWindow.appendChild(itemMenu);
         WikiciteChrome.registerXUL(itemMenuID, doc);

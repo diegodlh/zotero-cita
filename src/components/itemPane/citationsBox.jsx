@@ -20,6 +20,7 @@ import WikidataButton from './wikidataButton';
 
 function CitationsBox(props) {
     const [citations, setCitations] = useState([]);
+    const [sortedIndices, setSortedIndices] = useState([]);
     const [doi, setDoi] = useState('');
     const [occ, setOcc] = useState('');
     const [qid, setQid] = useState('');
@@ -39,6 +40,32 @@ function CitationsBox(props) {
             Boolean(props.sourceItem.item.getAttachments().length)
         );
     }, [props.sourceItem]);
+
+    useEffect(() => {
+        const items = props.sourceItem.citations.map((citation, index) => {
+            let value;
+            switch (props.sortBy) {
+                case 'ordinal':
+                    value = index;
+                    break;
+                case 'authors':
+                    value = citation.target.item.getField('firstCreator');
+                    break;
+                case 'date':
+                    value = new Date(Zotero.Date.strToISO(
+                        citation.target.item.getField('date')
+                    ));
+                    break;
+                case 'title':
+                    value = citation.target.title;
+                    break;
+                default:
+            }
+            return {index: index, value: value}
+        });
+        items.sort((a, b) => (a.value > b.value ? 1 : -1));
+        setSortedIndices(items.map((item) => item.index));
+    }, [props.sortBy, props.sourceItem])
 
     /**
      * Opens the citation editor window.
@@ -296,7 +323,7 @@ function CitationsBox(props) {
                         onClick={() => handleCitationSync(index)}
                     />
                     <button
-                        disabled={ isFirstCitation }
+                        disabled={ isFirstCitation || props.sortBy !== 'ordinal' }
                         onClick={() => handleCitationMove(index, -1)}
                     >
                         <img
@@ -305,7 +332,7 @@ function CitationsBox(props) {
                         />
                     </button>
                     <button
-                        disabled={ isLastCitation }
+                        disabled={ isLastCitation || props.sortBy !== 'ordinal' }
                         onClick={() => handleCitationMove(index, +1)}
                     >
                         <img
@@ -382,7 +409,7 @@ function CitationsBox(props) {
                     What about using something like bibtex keys?*/}
                     {/* Maybe in the future the index of the Citation in the CitationList
                     will be a property of the Citation itself */}
-                    {citations.map((citation, index) => renderCitationRow(citation, index))}
+                    {sortedIndices.map((index) => renderCitationRow(citations[index], index))}
                 </ul>
             {/* I understand this bit here makes TAB create a new tag
                 { props.editable && <span
@@ -434,6 +461,7 @@ function CitationsBox(props) {
 
 CitationsBox.propTypes = {
     editable: PropTypes.bool,
+    sortBy: PropTypes.string,
     sourceItem: PropTypes.instanceOf(SourceItemWrapper),
     onItemPopup: PropTypes.func,
     onCitationPopup: PropTypes.func

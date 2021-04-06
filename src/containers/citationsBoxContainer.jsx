@@ -7,12 +7,17 @@ import CitationsBox from '../components/itemPane/citationsBox.jsx';
 import PropTypes from 'prop-types';
 
 /* global document, window */
+/* global Services */
 /* global Zotero */
 
 function CitationsBoxContainer(props) {
     console.log('CitationsBoxContainer will render...');
     // fix: where to get citations from (extra field or note) should be configurable
     // therefore, it may be better to have two separate functions
+
+    // this CitationsBox container knows about the current
+    // sortBy preference value
+    const [sortBy, setSortBy] = useState(() => window.Wikicite.Prefs.get('sortBy'));
 
     // Option 1, include sourceItem in component's internal state.
     // Con: The component will re-render every time the sourceItem is reinstantiated.
@@ -101,9 +106,36 @@ function CitationsBoxContainer(props) {
     }, [props.item]);
 
     useEffect(() => {
+        // single-run effect to register listeners for preference-change topics
+        const observers = {
+            observe: function(subject, topic, data) {
+                switch (topic) {
+                    case 'wikicite-sortby-update':
+                        setSortBy(window.Wikicite.Prefs.get('sortBy'));
+                        break;
+                    default:
+                }
+            },
+            register: function() {
+                Services.obs.addObserver(this, 'wikicite-sortby-update', false);
+            },
+            unregister: function() {
+                Services.obs.removeObserver(this, 'wikicite-sortby-update');
+            }
+        }
+        observers.register();
+        return () => {
+            observers.unregister();
+        }
+    }, []);
+
+    useEffect(() => {
         window.WikiciteChrome.zoteroOverlay.setSourceItem(sourceItem);
     }, [sourceItem]);
 
+    /**
+     * Display citing-item actions pop-up menu at the event's coordinates
+     */
     function handleItemPopup(event) {
         const itemPopupMenu = document.getElementById('citations-box-item-menu');
         event.preventDefault();
@@ -118,6 +150,7 @@ function CitationsBoxContainer(props) {
 
     return <CitationsBox
         editable={props.editable}
+        sortBy={sortBy}
         sourceItem={sourceItem}
         onItemPopup={handleItemPopup}
         onCitationPopup={handleCitationPopup}
