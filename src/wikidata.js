@@ -1,6 +1,7 @@
 import Progress from './progress';
 import WBK from 'wikibase-sdk';
 import Wikicite from './wikicite';
+import qs2wbEdit from 'quickstatements-to-wikibase-edit';
 import wbEdit from 'wikibase-edit';
 
 /* global Components */
@@ -485,11 +486,12 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 case 0: {
                     // create
                     // convert qs commands to wikibase-edit entity
-                    const wbEntity = qs2json(qsCommands);
+                    // const { creations } = qs2wbEdit(qsCommands);
+                    const creations = [{}];
                     // use wikibase-entity to create entity
                     const progress = new Progress();
                     try {
-                        const { entity } = await wbEdit.entity.create(wbEntity);
+                        const { entity } = await wbEdit.entity.create(creations[0]);
                         qid = entity.id;
                     } catch {
                         progress.newLine(
@@ -787,16 +789,6 @@ function getActionType(claims) {
         actionType = 'add';
     }
     return actionType;
-}
-
-/**
- * Translate QuickStatements commands into wikibase-edit JSON entity
- * @param {String} qs - QuickStatments commands
- * @returns {Object} entity - wikibase-edit JSON entity
- */
-function qs2json(qs) {
-    // See https://github.com/maxlath/wikibase-edit/issues/64
-    return {}
 }
 
 export class CitesWorkClaim {
