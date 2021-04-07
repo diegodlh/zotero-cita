@@ -5,7 +5,7 @@ A [Zotero](http://www.zotero.org/) plugin adding citation metadata support, with
 Development of this plugin is supported by a [grant](https://meta.wikimedia.org/wiki/Wikicite/grant/WikiCite_addon_for_Zotero_with_citation_graph_support)
 from the Wikimedia Foundation.
 
-**WARNING: THIS PLUGIN IS IN AN EARLY DEVELOPMENT PHASE AND MAY BREAK YOUR LIBRARY!**
+**WARNING: THIS PLUGIN HAS NOT BEEN TESTED THOROUGHLY AND MAY BREAK YOUR LIBRARY!**
 This plugin is under development and there is still much work to do and bugs to fix.
 Feel free to try it, but please use a [separate Zotero profile](https://www.zotero.org/support/kb/multiple_profiles)
 or [back up your database](https://www.zotero.org/support/zotero_data#backing_up_your_zotero_data) before proceeding.
@@ -19,16 +19,14 @@ This module adds citation metadata support to Zotero.
 It provides an additional Citations tab where the user can:
 
 - add, edit or remove individual citations;
-- run item-wide and citation specific actions, such as syncing to WikiData, parsing citations from attachments, etc;
+- run item-wide and citation specific actions, such as syncing citations with WikiData, parsing citations from attachments (not yet supported), etc;
 - edit source item's UUIDs, such as DOI, WikiData's QID, and [OpenCitations Corpus](https://opencitations.net/corpus) ID.
 
-Citation metadata are currently saved to the source item's "extra" field, but it is [planned](https://github.com/diegodlh/zotero-wikicite/issues/13)
-to move them to Note attachments.
+Citations metadata are currently saved as a note attachment.
 
-#### WikiData communication (partial)
-This module will add back and forth citation syncing to WikiData, using property
+#### WikiData communication
+This module provides back and forth citation syncing with WikiData, using property
 [P2860](https://www.wikidata.org/wiki/Property:P2860) "cites work".
-Uploading support to be developed.
 
 #### Local Citation Network visualization (to be developed)
 This module will allow visualizing how items in a local library connect to each other through citations,
@@ -40,7 +38,7 @@ This module will send file attachments to local or remote citation extraction se
 retrieve parsed citations from them.
 
 ## Installation
-**WARNING: THIS PLUGIN IS IN AN EARLY DEVELOPMENT PHASE AND MAY BREAK YOUR LIBRARY!**
+**WARNING: THIS PLUGIN HAS NOT BEEN TESTED THOROUGHLY AND MAY BREAK YOUR LIBRARY!**
 Feel free to try it, but please use a [separate Zotero profile](https://www.zotero.org/support/kb/multiple_profiles) or
 [back up your database](https://www.zotero.org/support/zotero_data#backing_up_your_zotero_data) before proceeding.
 
