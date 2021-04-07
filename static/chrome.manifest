@@ -1,3 +1,4 @@
 content   wikicite              chrome/content/
 skin      wikicite    default   chrome/skin/default/
-locale    wikicite    en-US    	chrome/locale/en-US/
+locale    wikicite    en-US     chrome/locale/en-US/
+locale    wikicite    es        chrome/locale/es/
