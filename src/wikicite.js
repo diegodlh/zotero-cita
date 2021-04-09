@@ -125,6 +125,8 @@ export default {
     },
 
     getString: function(name) {
+        // convert camelCase to hyphen-divided for translatewiki.net
+        name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
         const nameParts = name.split('.');
         // if leading part of the name is not 'wikicite', add it
         if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
@@ -134,6 +136,8 @@ export default {
 
     formatString: function(name, params) {
         if (!Array.isArray(params)) params = [params];
+        // convert camelCase to hyphen-divided for translatewiki.net
+        name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
         const nameParts = name.split('.');
         // if leading part of the name is not 'wikicite', add it
         if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
