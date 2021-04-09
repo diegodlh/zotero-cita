@@ -175,7 +175,7 @@ const CitationEditor = () => {
 					disabled={linked}
 				>
 					<option value="journalArticle">
-						{getStr('item.type.journalArticle')}
+						{getStr('item.type.journal-article')}
 					</option>
 				</select>
 
@@ -243,7 +243,7 @@ const CitationEditor = () => {
 					type="button"
 					onClick={getQID}
 					disabled={!title && !doi}
-				>{getStr('editor.getQid')}</button>
+				>{getStr('editor.get-qid')}</button>
 
 				<label htmlFor="occ">{getStr('item.occ')}</label>
 				<input

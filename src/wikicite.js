@@ -118,7 +118,7 @@ export default {
             Services.prompt.alert(
                 window,
                 Wikicite.getString('wikicite.global.name'),
-                Wikicite.getString('wikicite.sourceItem.getCitationsNote.error.multiple')
+                Wikicite.getString('wikicite.source-item.get-citations-note.error.multiple')
             );
         }
         return notes[0];

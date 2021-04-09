@@ -22,15 +22,15 @@ function ZoteroButton(props) {
             );
             const response = Services.prompt.confirmEx(
                 window,
-                Wikicite.getString('wikicite.citationsPane.linked.confirm.title'),
+                Wikicite.getString('wikicite.citations-pane.linked.confirm.title'),
                 Wikicite.formatString(
-                    'wikicite.citationsPane.linked.confirm.message',
+                    'wikicite.citations-pane.linked.confirm.message',
                     item.getField('title')
                 ),
                 bttnFlags,
-                Wikicite.getString('wikicite.citationsPane.linked.confirm.go'),
+                Wikicite.getString('wikicite.citations-pane.linked.confirm.go'),
                 "",
-                Wikicite.getString('wikicite.citationsPane.linked.confirm.unlink'),
+                Wikicite.getString('wikicite.citations-pane.linked.confirm.unlink'),
                 undefined,
                 {}
             );

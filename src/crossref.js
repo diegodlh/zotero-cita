@@ -8,7 +8,7 @@ export default class Crossref{
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.crossref.getCitations.unsupported')
+            Wikicite.getString('wikicite.crossref.get-citations.unsupported')
         );
 	}
 

@@ -357,7 +357,7 @@ class SourceItemWrapper extends ItemWrapper {
             Services.prompt.alert(
                 window,
                 Wikicite.getString('wikicite.global.unsupported'),
-                Wikicite.getString('wikicite.sourceItem.syncSingleCitation.unsupported')
+                Wikicite.getString('wikicite.source-item.sync-single-citation.unsupported')
             );
         } else {
             Citations.syncItemCitationsWithWikidata([this]);
@@ -392,7 +392,7 @@ class SourceItemWrapper extends ItemWrapper {
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.bibtex.importCitations')
+            Wikicite.getString('wikicite.bibtex.import-citations.unsupported')
         );
     }
 
@@ -400,7 +400,7 @@ class SourceItemWrapper extends ItemWrapper {
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.bibtex.exportCitations')
+            Wikicite.getString('wikicite.bibtex.export-citations.unsupported')
         );
     }
 

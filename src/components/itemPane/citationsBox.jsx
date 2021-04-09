@@ -170,11 +170,11 @@ function CitationsBox(props) {
             );
             const response = Services.prompt.confirmEx(
                 window,
-                Wikicite.getString('wikicite.citationsPane.delete.remote.title'),
-                Wikicite.getString('wikicite.citationsPane.delete.remote.message'),
+                Wikicite.getString('wikicite.citations-pane.delete.remote.title'),
+                Wikicite.getString('wikicite.citations-pane.delete.remote.message'),
                 bttnFlags,
                 "", "", "",
-                undefined,  // Wikicite.getString('wikicite.citationsPane.delete.remote.remember'),
+                undefined,  // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
                 {}  // remember
             );
             switch (response) {
@@ -257,7 +257,7 @@ function CitationsBox(props) {
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.crossref.getDOI.unsupported')
+            Wikicite.getString('wikicite.crossref.get-doi.unsupported')
         );
     }
 
@@ -265,7 +265,7 @@ function CitationsBox(props) {
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.opencitations.getOCC.unsupported')
+            Wikicite.getString('wikicite.opencitations.get-occ.unsupported')
         );
     }
 
@@ -380,7 +380,7 @@ function CitationsBox(props) {
                 { props.editable &&
                     <div>
                         <button onClick={() => handleCitationAdd()}>
-                            {Wikicite.getString('wikicite.citationsPane.add')}
+                            {Wikicite.getString('wikicite.citations-pane.add')}
                         </button>
                     </div>
                 }
@@ -388,8 +388,8 @@ function CitationsBox(props) {
                     locale={Zotero.locale}
                     // Fixme: improve messages object
                     messages={{
-                        'wikicite.citationsPane.more': Wikicite.getString(
-                            'wikicite.citationsPane.more'
+                        'wikicite.citations-pane.more': Wikicite.getString(
+                            'wikicite.citations-pane.more'
                         )
                     }}
                 >
@@ -405,7 +405,7 @@ function CitationsBox(props) {
                         className="citations-box-actions"
                         isMenu={true}
                         onClick={props.onItemPopup}
-                        text="wikicite.citationsPane.more"
+                        text="wikicite.citations-pane.more"
                         title=""
                         size="sm"
                     />

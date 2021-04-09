@@ -207,7 +207,7 @@ class Citation {
             Services.prompt.alert(
                 null,
                 "",
-                Wikicite.getString('wikicite.citation.link.error.sourceItem')
+                Wikicite.getString('wikicite.citation.link.error.source-item')
             );
             return;
         }
