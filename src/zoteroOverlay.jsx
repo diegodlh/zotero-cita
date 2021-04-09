@@ -253,7 +253,7 @@ const zoteroOverlay = {
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.citations.fromItems.unsupported')
+            Wikicite.getString('wikicite.citations.from-items.unsupported')
         );
     },
 
@@ -327,7 +327,7 @@ const zoteroOverlay = {
         citationsTab.setAttribute('id', citationsTabID);
         citationsTab.setAttribute(
             'label',
-            Wikicite.getString('wikicite.citationsPane.label')
+            Wikicite.getString('wikicite.citations-pane.label')
         )
         tabs.appendChild(citationsTab);
         WikiciteChrome.registerXUL(citationsTabID, doc)
@@ -358,7 +358,7 @@ const zoteroOverlay = {
         const itemWikidataSync = doc.createElement('menuitem');
         itemWikidataSync.setAttribute('id', 'item-menu-wikidata-sync');
         itemWikidataSync.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.syncWikidata')
+            'label', Wikicite.getString('wikicite.item-menu.sync-wikidata')
         );
         itemWikidataSync.addEventListener(
             'command', () => this._sourceItem.syncWithWikidata()
@@ -367,7 +367,7 @@ const zoteroOverlay = {
         const itemCrossrefGet = doc.createElement('menuitem');
         itemCrossrefGet.setAttribute('id', 'item-menu-crossref-get');
         itemCrossrefGet.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.getCrossref')
+            'label', Wikicite.getString('wikicite.item-menu.get-crossref')
         );
         itemCrossrefGet.addEventListener(
             'command', () => this._sourceItem.getFromCrossref()
@@ -376,7 +376,7 @@ const zoteroOverlay = {
         const itemOccGet = doc.createElement('menuitem');
         itemOccGet.setAttribute('id', 'item-menu-occ-get');
         itemOccGet.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.getOCC')
+            'label', Wikicite.getString('wikicite.item-menu.get-occ')
         );
         itemOccGet.addEventListener(
             'command', () => this._sourceItem.getFromOCC()
@@ -385,7 +385,7 @@ const zoteroOverlay = {
         const itemPdfExtract = doc.createElement('menuitem');
         itemPdfExtract.setAttribute('id', 'item-menu-pdf-extract');
         itemPdfExtract.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.getPDF')
+            'label', Wikicite.getString('wikicite.item-menu.get-pdf')
         );
         itemPdfExtract.addEventListener(
             'command', () => this._sourceItem.getFromPDF()
@@ -394,7 +394,7 @@ const zoteroOverlay = {
         const itemBibTexImport = doc.createElement('menuitem');
         itemBibTexImport.setAttribute('id', 'item-menu-bibtex-import');
         itemBibTexImport.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.importBibTeX')
+            'label', Wikicite.getString('wikicite.item-menu.import-bibtex')
         );
         itemBibTexImport.addEventListener(
             'command', () => this._sourceItem.getFromBibTeX()
@@ -403,7 +403,7 @@ const zoteroOverlay = {
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'item-menu-bibtex-export');
         itemBibTexExport.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.exportBibTeX')
+            'label', Wikicite.getString('wikicite.item-menu.export-bibtext')
         );
         itemBibTexExport.addEventListener(
             'command', () => this._sourceItem.exportToBibTeX()
@@ -412,7 +412,7 @@ const zoteroOverlay = {
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'item-menu-croci-export');
         itemCrociExport.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.exportCroci')
+            'label', Wikicite.getString('wikicite.item-menu.export-croci')
         );
         itemCrociExport.addEventListener(
             'command', () => this._sourceItem.exportToCroci()
@@ -421,7 +421,7 @@ const zoteroOverlay = {
         const menuSort = doc.createElement('menu');
         menuSort.setAttribute('id', 'item-menu-sort-submenu');
         menuSort.setAttribute(
-            'label', Wikicite.getString('wikicite.itemMenu.sort')
+            'label', Wikicite.getString('wikicite.item-menu.sort')
         );
 
         const sortPopup = doc.createElement('menupopup');
@@ -435,7 +435,7 @@ const zoteroOverlay = {
             const itemSort = doc.createElement('menuitem');
             itemSort.setAttribute('id', 'item-menu-sort-' + value);
             itemSort.setAttribute(
-                'label', Wikicite.getString('wikicite.itemMenu.sort.' + value)
+                'label', Wikicite.getString('wikicite.item-menu.sort.' + value)
             );
             itemSort.setAttribute('type', 'radio');
             if (value === sortByValue) {
@@ -470,7 +470,7 @@ const zoteroOverlay = {
         const citationWikidataSync = doc.createElement('menuitem');
         citationWikidataSync.setAttribute('id', 'citation-menu-wikidata-sync');
         citationWikidataSync.setAttribute(
-            'label', Wikicite.getString('wikicite.citationMenu.syncWikidata')
+            'label', Wikicite.getString('wikicite.citation-menu.sync-wikidata')
         );
         citationWikidataSync.addEventListener(
             'command', () => this._sourceItem.syncWithWikidata(this._citationIndex)
@@ -479,7 +479,7 @@ const zoteroOverlay = {
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'citation-menu-bibtex-export');
         itemBibTexExport.setAttribute(
-            'label', Wikicite.getString('wikicite.citationMenu.exportBibTeX')
+            'label', Wikicite.getString('wikicite.citation-menu.export-bibtex')
         );
         itemBibTexExport.addEventListener(
             'command', () => this._sourceItem.exportToBibTeX(this._citationIndex)
@@ -488,7 +488,7 @@ const zoteroOverlay = {
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'citation-menu-croci-export');
         itemCrociExport.setAttribute(
-            'label', Wikicite.getString('wikicite.citationMenu.exportCroci')
+            'label', Wikicite.getString('wikicite.citation-menu.export-croci')
         );
         itemCrociExport.addEventListener(
             'command', () => this._sourceItem.exportToCroci(this._citationIndex)
@@ -500,7 +500,7 @@ const zoteroOverlay = {
         const ociMenu = doc.createElement('menu');
         ociMenu.setAttribute('id', 'citation-menu-oci-submenu');
         ociMenu.setAttribute(
-            'label', Wikicite.getString('wikicite.citationMenu.oci')
+            'label', Wikicite.getString('wikicite.citation-menu.oci')
         );
 
         const ociPopup = doc.createElement('menupopup');
@@ -511,7 +511,7 @@ const zoteroOverlay = {
             const ociItem = doc.createElement('menuitem');
             ociItem.setAttribute('id', 'citation-menu-oci-' + supplier);
             ociItem.setAttribute(
-                'label', Wikicite.getString('wikicite.citationMenu.oci.' + supplier)
+                'label', Wikicite.getString('wikicite.citation-menu.oci.' + supplier)
             );
             ociItem.addEventListener(
                 'command',

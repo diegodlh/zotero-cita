@@ -651,11 +651,11 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     }
                     promptText += Wikicite.getString('wikicite.wikidata.login.message.main') + '\n\n';
                     promptText += Wikicite.formatString(
-                        'wikicite.wikidata.login.message.createAccount',
+                        'wikicite.wikidata.login.message.create-account',
                         'https://www.wikidata.org/w/index.php?title=Special:CreateAccount'
                     ) + '\n\n';
                     promptText += Wikicite.formatString(
-                        'wikicite.wikidata.login.message.botPass',
+                        'wikicite.wikidata.login.message.bot-pass',
                         'https://www.mediawiki.org/wiki/Special:BotPasswords'
                     );
                     const loginPrompt = Services.prompt.promptUsernameAndPassword(

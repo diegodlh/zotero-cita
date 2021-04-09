@@ -8,7 +8,7 @@ export default class OpenCitations{
         Services.prompt.alert(
             window,
             Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.opencitations.getCitations.unsupported')
+            Wikicite.getString('wikicite.opencitations.get-citations.unsupported')
         );
 	}
 

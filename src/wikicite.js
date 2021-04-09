@@ -118,27 +118,39 @@ export default {
             Services.prompt.alert(
                 window,
                 Wikicite.getString('wikicite.global.name'),
-                Wikicite.getString('wikicite.sourceItem.getCitationsNote.error.multiple')
+                Wikicite.getString('wikicite.source-item.get-citations-note.error.multiple')
             );
         }
         return notes[0];
     },
 
     getString: function(name) {
+        // convert camelCase to hyphen-divided for translatewiki.net
+        name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
         const nameParts = name.split('.');
         // if leading part of the name is not 'wikicite', add it
         if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
         name = nameParts.join('.');
-        return this._bundle.GetStringFromName(name);
+        try {
+            return this._bundle.GetStringFromName(name);
+        } catch {
+            throw Error('Failed getting string from name ' + name);
+        }
     },
 
     formatString: function(name, params) {
         if (!Array.isArray(params)) params = [params];
+        // convert camelCase to hyphen-divided for translatewiki.net
+        name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
         const nameParts = name.split('.');
         // if leading part of the name is not 'wikicite', add it
         if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
         name = nameParts.join('.');
-        return this._bundle.formatStringFromName(name, params, params.length);
+        try {
+            return this._bundle.formatStringFromName(name, params, params.length);
+        } catch {
+            throw Error('Failed formatting string from name ' + name);
+        }
     }
 
     // // Return citation and bibliography labels for list of items provided

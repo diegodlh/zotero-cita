@@ -593,32 +593,32 @@ function composeConfirmation(
         confirmMsg += (
             '\n\n' +
             Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.localItems',
+                'wikicite.wikidata.confirm.message.local-items',
                 localItemsToUpdate.size
             ) +
             ':'
         );
         if (counters.localAddCitations) {
             confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.localAdd',
+                'wikicite.wikidata.confirm.message.local-add',
                 counters.localAddCitations
             );
         }
         if (counters.localFlagCitations) {
             confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.localFlag',
+                'wikicite.wikidata.confirm.message.local-flag',
                 counters.localFlagCitations
             );
         }
         if (counters.localUnflagCitations) {
             confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.localUnflag',
+                'wikicite.wikidata.confirm.message.local-unflag',
                 counters.localUnflagCitations
             );
         }
         if (counters.localDeleteCitations) {
             confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.localDelete',
+                'wikicite.wikidata.confirm.message.local-delete',
                 counters.localDeleteCitations
             );
         }
@@ -629,14 +629,14 @@ function composeConfirmation(
         confirmMsg += (
             '\n\n' +
             Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.remoteEntities',
+                'wikicite.wikidata.confirm.message.remote-entities',
                 remoteEntitiesToUpdate.size
             ) +
             ':'
         );
         if (counters.remoteAddCitations) {
             confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.remoteAdd',
+                'wikicite.wikidata.confirm.message.remote-add',
                 counters.remoteAddCitations
             );
         }
@@ -670,7 +670,7 @@ function composeConfirmation(
             confirmMsg += (
                 '\n\t' +
                 Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.noQid',
+                    'wikicite.wikidata.confirm.message.no-qid',
                     counters.noQidCitations
                 )
             );
@@ -679,7 +679,7 @@ function composeConfirmation(
             confirmMsg += (
                 '\n\t' +
                 Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.invalidOci',
+                    'wikicite.wikidata.confirm.message.invalid-oci',
                     counters.invalidOci
                 )
             );
