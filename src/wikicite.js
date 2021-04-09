@@ -131,7 +131,11 @@ export default {
         // if leading part of the name is not 'wikicite', add it
         if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
         name = nameParts.join('.');
-        return this._bundle.GetStringFromName(name);
+        try {
+            return this._bundle.GetStringFromName(name);
+        } catch {
+            throw Error('Failed getting string from name ' + name);
+        }
     },
 
     formatString: function(name, params) {
@@ -142,7 +146,11 @@ export default {
         // if leading part of the name is not 'wikicite', add it
         if (nameParts[0] !== 'wikicite') nameParts.unshift('wikicite');
         name = nameParts.join('.');
-        return this._bundle.formatStringFromName(name, params, params.length);
+        try {
+            return this._bundle.formatStringFromName(name, params, params.length);
+        } catch {
+            throw Error('Failed formatting string from name ' + name);
+        }
     }
 
     // // Return citation and bibliography labels for list of items provided
