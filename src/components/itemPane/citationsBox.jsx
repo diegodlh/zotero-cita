@@ -273,24 +273,6 @@ function CitationsBox(props) {
         props.sourceItem.fetchQid();
     }
 
-    function renderCount() {
-        var count = citations.length;
-        var str = 'wikicite.citationsPane.citations.count.';
-        // TODO: Switch to plural rules
-        switch (count) {
-            case 0:
-                str += 'zero';
-                break;
-            case 1:
-                str += 'singular';
-                break;
-            default:
-                str += 'plural';
-                break;
-        }
-        return Wikicite.formatString(str, count);
-    }
-
     function renderCitationRow(citation, index) {
         let item = citation.target.item;
         const itemType = Zotero.ItemTypes.getName(item.itemTypeID);
@@ -376,7 +358,14 @@ function CitationsBox(props) {
     return (
         <div className="citations-box">
             <div className="citations-box-header">
-                <div className="citations-box-count">{renderCount()}</div>
+                <div className="citations-box-count">
+                {
+                    Wikicite.formatString(
+                        'wikicite.citations-pane.citations.count',
+                        citations.length
+                    )
+                }
+                </div>
                 { props.editable &&
                     <div>
                         <button onClick={() => handleCitationAdd()}>
