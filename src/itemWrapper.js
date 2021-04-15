@@ -7,12 +7,12 @@ import Wikidata from './wikidata';
 // to be run after each setter. This would be the item's saveTx
 // for source items, and the source item's saveTx for target items
 export default class ItemWrapper{
-	constructor(item, saveHandler) {  // key
+	constructor(item, saveHandler) {
 		// beware this property set like this allows others to change it
 		// if this is not desired, change to this._item and create a
 		// getter/setter pair
 		this.item = item;
-		// this.key = key;
+		this.key = item.key;
 		this.saveHandler = saveHandler;
 	}
 

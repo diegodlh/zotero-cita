@@ -9,7 +9,7 @@ import Wikicite from '../../wikicite';
 /* global window */
 
 function ZoteroButton(props) {
-    const key = props.citation.zotero;
+    const key = props.citation.target.key;
     function handleClick() {
         if (key) {
             const libraryID = props.citation.source.item.libraryID;

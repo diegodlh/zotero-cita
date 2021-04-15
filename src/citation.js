@@ -53,7 +53,7 @@ class Citation {
         ocis.forEach((oci) => this.addOCI(oci));
 
         // zotero item key the target item of this citation is linked to
-        this.zotero = zotero;
+        this.target.key = zotero;
 
         // Issue: Save and upload information about citations order
         // this.series_ordinal;
@@ -166,7 +166,7 @@ class Citation {
         return {
             item: item,
             ocis: this.ocis.map((oci) => oci.oci),
-            zotero: this.zotero
+            zotero: this.target.key
         }
     }
 
@@ -214,7 +214,7 @@ class Citation {
 
         // keys linked to by other citations of the same source item
         const linkedKeys = this.source.citations.map(
-            (citation) => citation.zotero
+            (citation) => citation.target.key
         );
 
         if (linkedKeys.includes(key)) {
@@ -235,7 +235,7 @@ class Citation {
             return;
         }
 
-        this.zotero = item.key;
+        this.target.key = item.key;
         this.source.saveCitations();
 
         if (this.source.item.addRelatedItem(item)) {
@@ -253,7 +253,7 @@ class Citation {
     unlinkFromZoteroItem() {
         const linkedItem = Zotero.Items.getByLibraryAndKey(
             this.source.item.libraryID,
-            this.zotero
+            this.target.key
         );
         if (linkedItem) {
             if (this.source.item.removeRelatedItem(linkedItem)) {
@@ -267,7 +267,7 @@ class Citation {
                 });
             }
         }
-        this.zotero = undefined;
+        this.target.key = undefined;
         this.source.saveCitations();
     }
 
