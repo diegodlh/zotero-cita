@@ -1,3 +1,6 @@
 [submodule "translators/zotkat"]
 	path = translators/zotkat
 	url = https://github.com/UB-Mannheim/zotkat.git
+[submodule "Local-Citation-Network"]
+	path = Local-Citation-Network
+	url = git@github.com:diegodlh/Local-Citation-Network.git
