@@ -49,7 +49,15 @@ module.exports = {
           from: "translators/zotkat/Wikidata QuickStatements.js",
           to: "./chrome/content/translators"
         },
-        { from: "LICENSE.md", to: "." }
+        { from: "LICENSE.md", to: "." },
+        {
+          from: "Local-Citation-Network/index*",
+          to: "./chrome/content/Local-Citation-Network/[name].[ext]"
+        },
+        {
+          from: "Local-Citation-Network/lib",
+          to: "./chrome/content/Local-Citation-Network/lib"
+        }
       ]
     })
   ]
