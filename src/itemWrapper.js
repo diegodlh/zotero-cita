@@ -8,6 +8,9 @@ import Wikidata from './wikidata';
 // for source items, and the source item's saveTx for target items
 export default class ItemWrapper{
 	constructor(item, saveHandler) {
+        if (!item.isRegularItem()) {
+            throw new Error('Cannot wrap non-regular items');
+        }
 		// beware this property set like this allows others to change it
 		// if this is not desired, change to this._item and create a
 		// getter/setter pair
@@ -92,6 +95,18 @@ export default class ItemWrapper{
     // but in principle I wouldn't deal with them
     // this.extra.pmcid;
     // this.extra.pmid;
+
+    get url() {
+        let url = this.item.getField('url');
+        const cleanDOI = this.doi && Zotero.Utilities.cleanDOI(this.doi);
+        // const cleanISBN = this.isbn && Zotero.Utilities.cleanISBN(this.isbn);
+        if (url) return url;
+        else if (this.qid) return 'https://www.wikidata.org/wiki/' + this.qid;
+        else if (cleanDOI) return 'https://doi.org/' + cleanDOI;
+        // else if (cleanISBN) return ''
+        else if (this.occ) return 'https://opencitations.net/corpus/br/' + this.occ;
+        else return undefined;
+    }
 
     getLabel() {
         const firstCreator = this.item.getField('firstCreator');

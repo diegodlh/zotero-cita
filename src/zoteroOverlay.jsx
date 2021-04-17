@@ -260,8 +260,13 @@ const zoteroOverlay = {
     localCitationNetwork: function(menuName) {
         // This should be available for collections too
         // I guess the ones above too
-        // At least two items selected?
-        LCN.show();
+        const items = ZoteroPane.getSelectedItems().filter(
+            (item) => item.isRegularItem()
+        );
+        if (items.length) {
+            const lcn = new LCN(items);
+            lcn.show();
+        }
     },
 
 
