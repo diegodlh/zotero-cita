@@ -9,13 +9,14 @@ export default class LCN{
     constructor(items) {
         if (!items.length) return
         this.itemMap = new Map;  // itemKey/tmpItemKey -> ItemWrapper
-        this.inputKeys = [];
+        this.inputKeys = [];  // keys of the Zotero items treated as LCN "input items"
         this.libraryID = items[0].libraryID;  // all items will belong to same library
         const tmpKeyMap = new Map;  // uid/title -> tmpKey
         // Fixme: this may take some time; make sure it doesn't block anything
         for (const item of items) {
             const wrappedItem = new SourceItemWrapper(item);
             // try and link citations; if success, save
+            // do we want to limit the search to the set of items selected?
             // wrappedItem.linkCitations()
             for (let i = 0; i < wrappedItem.citations.length; i++) {
                 const citation = wrappedItem.citations[i];
@@ -47,6 +48,9 @@ export default class LCN{
                         title: citation.target.title.toLowerCase()
                     };
 
+                    // retrieve tmp keys already given to this item,
+                    // i.e., the target item of another source item's citation
+                    // had one or more of the same uids or title
                     const tmpKeys = new Set();
                     for (const [key, value] of Object.entries(uids)) {
                         const tmpKey = tmpKeyMap.get(`${key}:${value}`);
@@ -55,22 +59,31 @@ export default class LCN{
 
                     let tmpKey;
                     if (tmpKeys.size === 0) {
+                        // if no matching temp keys found, create a new one
                         do {
                             tmpKey = 'tmp' + String(
                                 Math.round(Math.random()*100000)
                             ).padStart(5, '0');
+                        // make sure randomly created key does not exist already
                         } while (this.itemMap.has(tmpKey));
                     } else if (tmpKeys.size === 1) {
+                        // if one matching key found, use that one
                         tmpKey = [...tmpKeys][0];
                     } else {
-                        throw Error('UIDs of a citation target item should not refer to different temporary item keys');
+                        // finding more than one matching key should be unexpected
+                        throw Error(
+                            'UIDs of a citation target item should not refer to different temporary item keys'
+                        );
                     }
 
+                    // save key to the map of temp keys
                     for (const [key, value] of Object.entries(uids)) {
                         if (value) tmpKeyMap.set(`${key}:${value}`, tmpKey);
                     }
 
+                    // add temp key to the citation's target
                     wrappedItem.citations[i].target.key = tmpKey;
+                    // save citation's target to the item map
                     this.itemMap.set(tmpKey, wrappedItem.citations[i].target);
                 }
             }
