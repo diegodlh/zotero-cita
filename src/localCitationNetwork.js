@@ -120,10 +120,18 @@ export default class LCN{
     }
 
     show() {
+        const windowFeatures = [
+            'chrome',
+            'dialog=no',
+            'centerscreen',
+            'resizable',
+            `height=${window.screen.availHeight*0.9}`,
+            `width=${window.screen.availWidth*0.9}`
+        ]
         window.openDialog(
             'chrome://wikicite/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=' + this.inputKeys.join(','),
             '',
-            'chrome,dialog=no,centerscreen,resizable=yes',
+            windowFeatures.join(','),
             this.itemMap,
             this.openItem.bind(this),
             Zotero.launchURL
