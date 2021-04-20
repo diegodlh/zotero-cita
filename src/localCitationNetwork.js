@@ -1,3 +1,4 @@
+import ItemWrapper from './itemWrapper';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 
@@ -9,7 +10,9 @@ export default class LCN{
     constructor(items) {
         if (!items.length) return
         this.itemMap = new Map;  // itemKey/tmpItemKey -> ItemWrapper
-        this.inputKeys = [];  // keys of the Zotero items treated as LCN "input items"
+
+        // keys of the Zotero items treated as LCN "input items"
+        this.inputKeys = items.map((item) => item.key);
         this.libraryID = items[0].libraryID;  // all items will belong to same library
         const tmpKeyMap = new Map;  // uid/title -> tmpKey
         // Fixme: this may take some time; make sure it doesn't block anything
@@ -21,15 +24,30 @@ export default class LCN{
             for (let i = 0; i < wrappedItem.citations.length; i++) {
                 const citation = wrappedItem.citations[i];
                 if (citation.target.key) {
-                    // if citation's target item is linked to a Zotero item,
-                    // do not ignore, given that the linked-to Zotero item
-                    // may not have been selected (hence, not an input item)
-                    if (!this.itemMap.has(citation.target.key)) {
-                        // but only add to the item map if the linked-to item
-                        // has not been added already, because we don't want to
-                        // overwrite the correspoding SourceItemWrapper
-                        // with its citations
-                        this.itemMap.set(citation.target.key, citation.target);
+                    // if citation's target item is linked to a Zotero item...
+                    if (!this.inputKeys.includes(citation.target.key)) {
+                        // ... and the linked-to Zotero item has not been
+                        // selected (i.e., it is not an input item),
+                        // add the linked-to item to the item map.
+
+                        const linkedToItem = Zotero.Items.getByLibraryAndKey(
+                            this.libraryID,
+                            citation.target.key
+                        );
+                        // Non-linked citation target items are not part of the
+                        // LCN "input items" set.
+                        // Citations of these non-linked citation target items
+                        // are unknown.
+                        // This citation's target item is linked to a Zotero item
+                        // which is not part of the LCN "input items" set either.
+                        // For consistency, citations of this Zotero item should be
+                        // unknown as well.
+                        // Therefore, wrapping it in a regular ItemWrapper,
+                        // without citations.
+                        this.itemMap.set(
+                            citation.target.key,
+                            new ItemWrapper(linkedToItem)
+                        );
                     }
                 }
                 else {
@@ -88,7 +106,6 @@ export default class LCN{
                 }
             }
             this.itemMap.set(wrappedItem.key, wrappedItem);
-            this.inputKeys.push(wrappedItem.key);
         }
     }
 
