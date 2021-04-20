@@ -19,7 +19,19 @@ export default class LCN{
             // wrappedItem.linkCitations()
             for (let i = 0; i < wrappedItem.citations.length; i++) {
                 const citation = wrappedItem.citations[i];
-                if (!citation.target.key) {
+                if (citation.target.key) {
+                    // if citation's target item is linked to a Zotero item,
+                    // do not ignore, given that the linked-to Zotero item
+                    // may not have been selected (hence, not an input item)
+                    if (!this.itemMap.has(citation.target.key)) {
+                        // but only add to the item map if the linked-to item
+                        // has not been added already, because we don't want to
+                        // overwrite the correspoding SourceItemWrapper
+                        // with its citations
+                        this.itemMap.set(citation.target.key, citation.target);
+                    }
+                }
+                else {
                     // Fixme: clean ids below; otherwise, they may not match
                     const uids = {
                         doi: citation.target.doi,
