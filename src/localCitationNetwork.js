@@ -32,13 +32,19 @@ export default class LCN{
                     }
                 }
                 else {
-                    // Fixme: clean ids below; otherwise, they may not match
+                    // the citation's target item is not linked to a Zotero item;
+                    // give it a temporary key, but first make sure it hasn't been
+                    // given one already (i.e, another source item --that cites the
+                    // same target item-- has been processed already)
+
+                    // collect item's unique identifiers (including name) and clean
+                    // them, to make sure the same item always gets the same tmp key
                     const uids = {
-                        doi: citation.target.doi,
-                        isbn: citation.target.isbn,
-                        occ: citation.target.occ,
-                        qid: citation.target.qid,
-                        title: citation.target.title
+                        doi: Zotero.Utilities.cleanDOI(citation.target.doi).toUpperCase(),
+                        isbn: Zotero.Utilities.cleanISBN(citation.target.isbn),
+                        occ: citation.target.occ,  // Fixme: provide OCC cleaning function
+                        qid: citation.target.qid.toUpperCase(),
+                        title: citation.target.title.toLowerCase()
                     };
 
                     const tmpKeys = new Set();
