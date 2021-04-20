@@ -58,11 +58,14 @@ export default class LCN{
 
                     // collect item's unique identifiers (including name) and clean
                     // them, to make sure the same item always gets the same tmp key
+                    const cleanDOI = Zotero.Utilities.cleanDOI(citation.target.doi);
+                    const cleanISBN = Zotero.Utilities.cleanISBN(citation.target.isbn);
+                    const qid = citation.target.qid;
                     const uids = {
-                        doi: Zotero.Utilities.cleanDOI(citation.target.doi).toUpperCase(),
-                        isbn: Zotero.Utilities.cleanISBN(citation.target.isbn),
+                        doi: cleanDOI && cleanDOI.toUpperCase(),
+                        isbn: cleanISBN,
                         occ: citation.target.occ,  // Fixme: provide OCC cleaning function
-                        qid: citation.target.qid.toUpperCase(),
+                        qid: qid && qid.toUpperCase(),
                         title: citation.target.title.toLowerCase()
                     };
 
