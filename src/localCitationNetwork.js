@@ -111,6 +111,8 @@ export default class LCN{
                     // add temp key to the citation's target
                     wrappedItem.citations[i].target.key = tmpKey;
                     // save citation's target to the item map
+                    // Fixme: if itemMap already has tmpKey, do not overwrite
+                    // a more complete target item with a less complete one (#72)
                     this.itemMap.set(tmpKey, wrappedItem.citations[i].target);
                 }
             }
