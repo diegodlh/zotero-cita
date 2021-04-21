@@ -66,7 +66,13 @@ export default class LCN{
                         isbn: cleanISBN,
                         occ: citation.target.occ,  // Fixme: provide OCC cleaning function
                         qid: qid && qid.toUpperCase(),
-                        title: citation.target.title.toLowerCase()
+                        // based on Zotero.Duplicates.prototype._findDuplicates'
+                        // normalizeString function
+                        title: Zotero.Utilities.removeDiacritics(citation.target.title)
+                            // Convert (ASCII) punctuation to spaces
+                            .replace(/[ !-/:-@[-`{-~]+/g, ' ')
+                            .trim()
+                            .toLowerCase()
                     };
 
                     // retrieve tmp keys already given to this item,
