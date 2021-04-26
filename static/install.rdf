@@ -7,7 +7,7 @@
         <em:name>WikiCite Plugin for Zotero</em:name>
         <em:version>0.1.1</em:version>
         <em:multiprocessCompatible>true</em:multiprocessCompatible>
-        <em:updateURL></em:updateURL>
+        <em:updateURL>https://raw.githubusercontent.com/diegodlh/zotero-wikicite/master/update.rdf</em:updateURL>
 
         <em:localized>
             <Description>
