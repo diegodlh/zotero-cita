@@ -44,6 +44,9 @@ Feel free to try it, but please use a [separate Zotero profile](https://www.zote
 
 Download the [latest XPI](https://github.com/diegodlh/zotero-wikicite/releases/latest) and [install](https://www.zotero.org/support/plugins) it in Zotero.
 
+## Translation
+Cita is collaboratively translated at translatewiki.net. Would you like to help translate it to other languages? Join the translation project [here](https://translatewiki.net/wiki/Translating:Cita)!
+
 ## Development
 1. Clone the source code, and run `git submodule update --init --recursive` to fetch the nested submodules.
 2. Run `npm install`
