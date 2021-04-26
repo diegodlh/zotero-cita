@@ -1,9 +1,10 @@
 import CitationEditor from './CitationEditor';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Wikicite from '../../wikicite';
 
-/* global document */
+/* global document, window */
+
+const { Wikicite } = window.arguments[0];
 
 document.title = Wikicite.getString('wikicite.editor.title');
 

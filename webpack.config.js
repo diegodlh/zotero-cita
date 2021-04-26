@@ -45,18 +45,15 @@ module.exports = {
       patterns: [
         { from: "static", to: "." },
         { from: "LICENSE.md", to: "." },
-        // fallback localization properties
         {
-          from: "static/chrome/locale/en-US/wikicite.properties",
-          to: "./chrome/content/wikicite.properties"
+          from: "static/chrome/locale",
+          to: "./chrome/content/locale"
         },
-        // translators
         { from: "translators/*.js", to: "./chrome/content/translators/[name].[ext]" },
         {
           from: "translators/zotkat/Wikidata QuickStatements.js",
           to: "./chrome/content/translators"
         },
-        // local citation network
         {
           from: "Local-Citation-Network/index*",
           to: "./chrome/content/Local-Citation-Network/[name].[ext]"

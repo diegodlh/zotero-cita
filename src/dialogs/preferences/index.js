@@ -1,6 +1,6 @@
-import Wikicite from '../../wikicite';
+/* global document, window */
 
-/* global document */
+const { Wikicite } = window.arguments[0];
 
 document.title = Wikicite.getString('wikicite.prefs.title');
 document.body.appendChild(
