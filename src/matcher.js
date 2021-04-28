@@ -54,7 +54,7 @@ export default class Matcher {
         const isbnMatches = this._isbnMap[isbn] ?? [];
 
         // DOI
-        const doi = Zotero.Utilities.cleanDOI(String(item.getField('DOI')))
+        const doi = (Zotero.Utilities.cleanDOI(String(item.getField('DOI'))) ?? '')
             .toUpperCase();
         const doiMatches = this._doiMap[doi] ?? [];
 
@@ -158,7 +158,8 @@ export default class Matcher {
         const doiMap = {};
         for (const row of rows) {
             // DOIs are case insensitive
-            const newVal = Zotero.Utilities.cleanDOI(String(row.value)).toUpperCase();
+            const newVal = (Zotero.Utilities.cleanDOI(String(row.value)) ?? '')
+                .toUpperCase();
             if (!newVal) continue;
             doiCache[row.itemID] = newVal;
             if (doiMap[newVal] === undefined) doiMap[newVal] = [];
