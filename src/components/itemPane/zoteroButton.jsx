@@ -48,7 +48,7 @@ function ZoteroButton(props) {
                     break
             }
         } else {
-            props.citation.linkToZoteroItem();
+            props.citation.autoLink();
         }
     }
 

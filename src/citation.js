@@ -1,5 +1,6 @@
 import Wikidata, { CitesWorkClaim } from './wikidata';
 import ItemWrapper from './itemWrapper';
+import Matcher from './matcher';
 import OCI from './oci';
 import Wikicite from './wikicite';
 
@@ -181,27 +182,28 @@ class Citation {
         // I need access to the parent CitationList
     }
 
+    async autoLink() {
+        const matcher = new Matcher(this.source.item.libraryID);
+        // Trying automatic linking
+        await matcher.init();
+        const matches = matcher.findMatches(this.target.item);
+        let item;
+        if (matches.length) {
+            // Automatic linking succeeded
+            // if multiple matches, use first one
+            item = Zotero.Items.get(matches[0]);
+        } else {
+            // Automatic linking failed: select manually
+            item = Wikicite.selectItem();
+        }
+        if (item) {
+            this.linkToZoteroItem(item);
+        }
+    }
+
     // link the citation target item to an item in the zotero library
-    linkToZoteroItem() {
-        // Adapted from Zotero's bindings/relatedbox.xml
-        const io = {singleSelection: true, dataOut: null};
-        window.openDialog(
-            'chrome://zotero/content/selectItemsDialog.xul',
-            '',
-            'chrome,dialog=no,modal,centerscreen,resizable=yes',
-            io
-        );
-        if (!io.dataOut || !io.dataOut.length) {
-            return;
-        }
-        const id = io.dataOut[0];
-        const item = Zotero.Items.get(id);
-
-        if (!item) {
-            return;
-        }
-
-        const key = item.key
+    linkToZoteroItem(item) {
+        const key = item.key;
 
         if (item === this.source.item) {
             Services.prompt.alert(

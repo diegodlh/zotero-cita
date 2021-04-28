@@ -4,6 +4,7 @@
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 /* global Zotero */
+/* global window */
 
 // Provides an alternative CSL Engine to obtain labels for the citation items
 // However, it is very slow so an alternative approach will be used instead
@@ -151,6 +152,24 @@ export default {
         } catch {
             throw Error('Failed formatting string from name ' + name);
         }
+    },
+
+    selectItem: function() {
+        // Adapted from Zotero's bindings/relatedbox.xml
+        const io = {singleSelection: true, dataOut: null};
+        window.openDialog(
+            'chrome://zotero/content/selectItemsDialog.xul',
+            '',
+            'chrome,dialog=no,modal,centerscreen,resizable=yes',
+            io
+        );
+        if (!io.dataOut || !io.dataOut.length) {
+            return;
+        }
+        const id = io.dataOut[0];
+        const item = Zotero.Items.get(id);
+
+        return item;
     }
 
     // // Return citation and bibliography labels for list of items provided
