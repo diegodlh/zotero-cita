@@ -272,11 +272,18 @@ class Citation {
     }
 
     unlinkFromZoteroItem() {
+        // other citations link to the same item
+        const otherLinks = this.source.citations.some(
+            (citation) => (
+                citation !== this &&
+                citation.target.key === this.target.key
+            )
+        );
         const linkedItem = Zotero.Items.getByLibraryAndKey(
             this.source.item.libraryID,
             this.target.key
         );
-        if (linkedItem) {
+        if (linkedItem && !otherLinks) {
             if (this.source.item.removeRelatedItem(linkedItem)) {
                 this.source.item.saveTx({
                     skipDateModifiedUpdate: true
