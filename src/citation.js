@@ -255,19 +255,19 @@ class Citation {
             return;
         }
 
-        this.target.key = item.key;
-        this.source.saveCitations();
-
-        if (this.source.item.addRelatedItem(item)) {
-            this.source.item.saveTx({
-                skipDateModifiedUpdate: true
-            });
-        }
+        // this.source.newRelations ||= this.source.item.addRelatedItem(item);
+        this.source.newRelations = (
+            this.source.item.addRelatedItem(item) ||
+            this.source.newRelations
+        );
         if (item.addRelatedItem(this.source.item)) {
             item.saveTx({
                 skipDateModifiedUpdate: true
             });
         }
+
+        this.target.key = item.key;
+        this.source.saveCitations();
     }
 
     unlinkFromZoteroItem() {

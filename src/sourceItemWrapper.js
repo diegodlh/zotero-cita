@@ -1,11 +1,12 @@
+import Wikicite, { debug } from './wikicite';
 import Citation from './citation';
 import Citations from './citations';
 import Crossref from './crossref';
 import Extraction from './extract';
 import ItemWrapper from './itemWrapper';
+import Matcher from './matcher';
 import OpenCitations from './opencitations';
 import Progress from './progress';
-import Wikicite from './wikicite';
 // import { getExtraField } from './wikicite';
 
 // Fixme: define this in the preferences
@@ -26,6 +27,7 @@ class SourceItemWrapper extends ItemWrapper {
         super(item, item.saveTx.bind(item));
         this._citations = [];
         this._batch = false;
+        this.newRelations = false;  // Whether new item relations have been queued
         this.updateCitations(false);
     }
 
@@ -79,6 +81,13 @@ class SourceItemWrapper extends ItemWrapper {
         }
         this._citations = citations;
         console.log(`Saving citations to source item took ${performance.now() - t0}`);
+        if (this.newRelations) {
+            debug('Saving new item relations to source item');
+            this.item.saveTx({
+                skipDateModifiedUpdate: true
+            });
+            this.newRelations = false;
+        }
     }
 
     get corruptCitations() {
@@ -93,6 +102,35 @@ class SourceItemWrapper extends ItemWrapper {
         Wikicite.setExtraField(this.item, 'corrupt-citation', corruptCitations);
         this.saveHandler();
         console.log(`Saving corrupt citations to source item took ${performance.now() - t0}`)
+    }
+
+    /**
+     * Automatically link citations with Zotero items
+     */
+    async autoLinkCitations() {
+        const matcher = new Matcher(this.item.libraryID);
+        const progress = new Progress(
+            'loading',
+            Wikicite.getString('wikicite.source-item.auto-link.progress.loading')
+        );
+        await matcher.init();
+        this.startBatch();
+        for (const citation of this.citations) {
+            // skip citations already linked
+            if (citation.target.key) continue;
+            const matches = matcher.findMatches(citation.target.item);
+            if (matches.length) {
+                // if multiple matches, use first one
+                const item = Zotero.Items.get(matches[0]);
+                citation.linkToZoteroItem(item);
+            }
+        }
+        this.endBatch();
+        progress.updateLine(
+            'done',
+            Wikicite.getString('wikicite.source-item.auto-link.progress.done')
+        )
+        progress.close();
     }
 
     updateCitations(compare=true) {
@@ -145,7 +183,7 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     saveCitations() {
-        this.citations = this._citations;
+        if (!this._batch) this.citations = this._citations;
     }
 
     /* Disble automatic citation update and saving for batch editing
@@ -161,8 +199,8 @@ class SourceItemWrapper extends ItemWrapper {
      * Re-enable automatic citation update and saving after batch editing
      */
     endBatch() {
-        this.saveCitations();
         this._batch = false;
+        this.saveCitations();
     }
 
     openEditor(citation) { // always provide a citation (maybe an empty one)

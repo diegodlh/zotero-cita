@@ -360,6 +360,8 @@ const zoteroOverlay = {
         itemMenu.setAttribute('id', itemMenuID);
         itemMenu.addEventListener('popupshowing', handleItemPopupShowing);
 
+        // Sync with Wikidata menu item
+
         const itemWikidataSync = doc.createElement('menuitem');
         itemWikidataSync.setAttribute('id', 'item-menu-wikidata-sync');
         itemWikidataSync.setAttribute(
@@ -368,6 +370,8 @@ const zoteroOverlay = {
         itemWikidataSync.addEventListener(
             'command', () => this._sourceItem.syncWithWikidata()
         );
+
+        // Get Crossref citations menu item
 
         const itemCrossrefGet = doc.createElement('menuitem');
         itemCrossrefGet.setAttribute('id', 'item-menu-crossref-get');
@@ -378,6 +382,8 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.getFromCrossref()
         );
 
+        // Get OCC citations menu item
+
         const itemOccGet = doc.createElement('menuitem');
         itemOccGet.setAttribute('id', 'item-menu-occ-get');
         itemOccGet.setAttribute(
@@ -386,6 +392,8 @@ const zoteroOverlay = {
         itemOccGet.addEventListener(
             'command', () => this._sourceItem.getFromOCC()
         );
+
+        // Extract citations menu item
 
         const itemPdfExtract = doc.createElement('menuitem');
         itemPdfExtract.setAttribute('id', 'item-menu-pdf-extract');
@@ -396,6 +404,8 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.getFromPDF()
         );
 
+        // Import from BibTeX menu item
+
         const itemBibTexImport = doc.createElement('menuitem');
         itemBibTexImport.setAttribute('id', 'item-menu-bibtex-import');
         itemBibTexImport.setAttribute(
@@ -404,6 +414,8 @@ const zoteroOverlay = {
         itemBibTexImport.addEventListener(
             'command', () => this._sourceItem.getFromBibTeX()
         );
+
+        // Export to BibTeX menu item
 
         const itemBibTexExport = doc.createElement('menuitem');
         itemBibTexExport.setAttribute('id', 'item-menu-bibtex-export');
@@ -414,6 +426,8 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.exportToBibTeX()
         );
 
+        // Export to CROCI menu item
+
         const itemCrociExport = doc.createElement('menuitem');
         itemCrociExport.setAttribute('id', 'item-menu-croci-export');
         itemCrociExport.setAttribute(
@@ -422,6 +436,8 @@ const zoteroOverlay = {
         itemCrociExport.addEventListener(
             'command', () => this._sourceItem.exportToCroci()
         );
+
+        // Sort-by submenu
 
         const menuSort = doc.createElement('menu');
         menuSort.setAttribute('id', 'item-menu-sort-submenu');
@@ -452,6 +468,18 @@ const zoteroOverlay = {
             sortPopup.appendChild(itemSort);
         }
 
+        // Auto-link citations menu item
+
+        const autoLinkCitations = doc.createElement('menuitem');
+        autoLinkCitations.setAttribute('id', 'item-menu-autolink-citations');
+        autoLinkCitations.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.autolink-citations')
+        );
+        autoLinkCitations.addEventListener(
+            'command', () => this._sourceItem.autoLinkCitations()
+        );
+
+
         itemMenu.appendChild(itemWikidataSync);
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
@@ -460,6 +488,7 @@ const zoteroOverlay = {
         itemMenu.appendChild(itemBibTexExport);
         itemMenu.appendChild(itemCrociExport);
         itemMenu.appendChild(menuSort);
+        itemMenu.appendChild(autoLinkCitations);
 
         mainWindow.appendChild(itemMenu);
         WikiciteChrome.registerXUL(itemMenuID, doc);
