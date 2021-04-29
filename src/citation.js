@@ -2,6 +2,7 @@ import Wikidata, { CitesWorkClaim } from './wikidata';
 import ItemWrapper from './itemWrapper';
 import Matcher from './matcher';
 import OCI from './oci';
+import Progress from './progress';
 import Wikicite from './wikicite';
 
 /* global Services */
@@ -184,16 +185,27 @@ class Citation {
 
     async autoLink() {
         const matcher = new Matcher(this.source.item.libraryID);
-        // Trying automatic linking
+        const progress = new Progress(
+            'loading',
+            Wikicite.getString('wikicite.citation.auto-link.progress.loading')
+        )
         await matcher.init();
         const matches = matcher.findMatches(this.target.item);
         let item;
         if (matches.length) {
             // Automatic linking succeeded
+            progress.updateLine(
+                'done',
+                Wikicite.getString('wikicite.citation.auto-link.progress.success')
+            );
             // if multiple matches, use first one
             item = Zotero.Items.get(matches[0]);
         } else {
             // Automatic linking failed: select manually
+            progress.updateLine(
+                'error',
+                Wikicite.getString('wikicite.citation.auto-link.progress.failure')
+            );
             const result = Services.prompt.confirm(
               window,
               Wikicite.getString('wikicite.citation.auto-link.failure.title'),
@@ -201,6 +213,7 @@ class Citation {
             );
             if (result) item = Wikicite.selectItem();
         }
+        progress.close()
         if (item) {
             this.linkToZoteroItem(item);
         }
