@@ -212,6 +212,21 @@ class Citation {
               Wikicite.getString('wikicite.citation.auto-link.failure.message')
             );
             if (result) item = Wikicite.selectItem();
+
+            // ignore selection if another citation already links to the same item
+            if (
+                item &&
+                this.source.citations.some(
+                    (citation) => citation.target.key === item.key
+                )
+            ) {
+                Services.prompt.alert(
+                    null,
+                    "",
+                    Wikicite.getString('wikicite.citation.link.error.duplicate')
+                );
+                item = undefined;
+            }
         }
         progress.close()
         if (item) {
@@ -228,20 +243,6 @@ class Citation {
                 null,
                 "",
                 Wikicite.getString('wikicite.citation.link.error.source-item')
-            );
-            return;
-        }
-
-        // keys linked to by other citations of the same source item
-        const linkedKeys = this.source.citations.map(
-            (citation) => citation.target.key
-        );
-
-        if (linkedKeys.includes(key)) {
-            Services.prompt.alert(
-                null,
-                "",
-                Wikicite.getString('wikicite.citation.link.error.duplicate')
             );
             return;
         }
