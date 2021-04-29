@@ -1,5 +1,6 @@
 import Wikidata, { CitesWorkClaim } from './wikidata';
 import Citation from './citation';
+import Matcher from './matcher';
 import OCI from './oci';
 import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
@@ -477,6 +478,7 @@ export default class {
                     'wikicite.wikidata.progress.local.update.loading'
                 )
             );
+            const matchers = {};
             for (const sourceItem of sourceItems) {
                 if (!localItemsToUpdate.has(sourceItem.item.id)) {
                     // item not in the list of items to update; skip
@@ -490,6 +492,11 @@ export default class {
                 // citations to add
                 const addCitations = localAddCitations[sourceItem.item.id];
                 if (addCitations.length) {
+                    const libraryID = sourceItem.item.libraryID;
+                    if (!matchers[libraryID]) {
+                        matchers[libraryID] = new Matcher(libraryID);
+                        await matchers[libraryID].init();
+                    }
                     const newCitations = [];
                     for (const targetQid of addCitations) {
                         const targetItem = targetItems[targetQid];
@@ -501,6 +508,7 @@ export default class {
                             },
                             sourceItem
                         );
+                        citation.autoLink(matchers[libraryID]);
                         newCitations.push(citation)
                     }
                     // Fixme: the number of localAddCitations and localFlagCitations

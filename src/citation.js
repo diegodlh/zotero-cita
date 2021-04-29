@@ -183,26 +183,31 @@ class Citation {
         // I need access to the parent CitationList
     }
 
-    async autoLink() {
-        const matcher = new Matcher(this.source.item.libraryID);
-        const progress = new Progress(
-            'loading',
-            Wikicite.getString('wikicite.citation.auto-link.progress.loading')
-        )
-        await matcher.init();
+    async autoLink(matcher) {
+        let manual = false;
+        let progress;
+        if (!matcher) {
+            matcher = new Matcher(this.source.item.libraryID);
+            progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.citation.auto-link.progress.loading')
+            )
+            await matcher.init();
+            manual = true;
+        }
         const matches = matcher.findMatches(this.target.item);
         let item;
         if (matches.length) {
             // Automatic linking succeeded
-            progress.updateLine(
+            if (progress) progress.updateLine(
                 'done',
                 Wikicite.getString('wikicite.citation.auto-link.progress.success')
             );
             // if multiple matches, use first one
             item = Zotero.Items.get(matches[0]);
-        } else {
+        } else if (manual) {
             // Automatic linking failed: select manually
-            progress.updateLine(
+            if (progress) progress.updateLine(
                 'error',
                 Wikicite.getString('wikicite.citation.auto-link.progress.failure')
             );
@@ -228,7 +233,7 @@ class Citation {
                 item = undefined;
             }
         }
-        progress.close()
+        if (progress) progress.close()
         if (item) {
             this.linkToZoteroItem(item);
         }
