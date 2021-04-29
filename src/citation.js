@@ -194,7 +194,12 @@ class Citation {
             item = Zotero.Items.get(matches[0]);
         } else {
             // Automatic linking failed: select manually
-            item = Wikicite.selectItem();
+            const result = Services.prompt.confirm(
+              window,
+              Wikicite.getString('wikicite.citation.auto-link.failure.title'),
+              Wikicite.getString('wikicite.citation.auto-link.failure.message')
+            );
+            if (result) item = Wikicite.selectItem();
         }
         if (item) {
             this.linkToZoteroItem(item);
