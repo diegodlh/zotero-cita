@@ -2,22 +2,33 @@ import ItemWrapper from './itemWrapper';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 
-/* global Services */
 /* global Zotero ZoteroPane */
 /* global window */
 
 export default class LCN{
     constructor(items) {
-        if (!items.length) return
+        if (!items.length) return;
+        this.items = items;
         this.itemMap = new Map;  // itemKey/tmpItemKey -> ItemWrapper
 
         // keys of the Zotero items treated as LCN "input items"
         this.inputKeys = items.map((item) => item.key);
         this.libraryID = items[0].libraryID;  // all items will belong to same library
+    }
+
+    async init() {
         const tmpKeyMap = new Map;  // uid/title -> tmpKey
-        // Fixme: this may take some time; make sure it doesn't block anything
-        for (const item of items) {
-            const wrappedItem = new SourceItemWrapper(item);
+
+        // Wrapping items (with citations) takes the most.
+        // Using Promise.all hoping that it would wrap them in parallel
+        // But there seems to be no difference.
+        const wrappedItems = await Promise.all(this.items.map(
+            (item) => new Promise((resolve) => resolve(new SourceItemWrapper(item)))
+        ));
+        // const wrappedItems = this.items.map((item) => new SourceItemWrapper(item));
+
+        // Processing wrapped items takes way less time
+        for (const wrappedItem of wrappedItems) {
             // try and link citations; if success, save
             // do we want to limit the search to the set of items selected?
             // wrappedItem.linkCitations()

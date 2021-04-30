@@ -265,7 +265,7 @@ const zoteroOverlay = {
         );
         if (items.length) {
             const lcn = new LCN(items);
-            lcn.show();
+            lcn.init().then(() => lcn.show());
         }
     },
 

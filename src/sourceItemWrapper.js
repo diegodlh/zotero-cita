@@ -162,12 +162,27 @@ class SourceItemWrapper extends ItemWrapper {
                 const doc = new DOMParser().parseFromString(
                     note.getNote(), 'text/html'
                 );
-                const rawCitations = doc.getElementsByTagName('pre')[0].textContent;
+                const rawCitations = JSON.parse(
+                    doc.getElementsByTagName('pre')[0].textContent
+                );
+                // Fixme: Creating Citation objects takes most of the time
                 citations.push(
-                    ...JSON.parse(rawCitations).map(
+                    ...rawCitations.map(
                         (rawCitation) => new Citation(rawCitation, this)
                     )
                 );
+                // const items = await Promise.all(rawCitations.map((rawCitation) => {
+                //     return new Promise((resolve) => {
+                //         const zoteroItem = new Zotero.Item();
+                //         const jsonItem = rawCitation.item;
+                //         zoteroItem.fromJSON(jsonItem);
+                //         resolve(zoteroItem);
+                //     });
+                // }))
+                // rawCitations.forEach((rawCitation, index) => {
+                //     rawCitations[index].item = items[index]
+                // })
+
                 // Fixme: support corrupt note citations
             }
         }
