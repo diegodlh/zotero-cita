@@ -494,6 +494,8 @@ export default class {
                 if (addCitations.length) {
                     const libraryID = sourceItem.item.libraryID;
                     if (!matchers[libraryID]) {
+                        // If there isn't a Matcher initialized for this library already
+                        // create and initialize a new one
                         matchers[libraryID] = new Matcher(libraryID);
                         await matchers[libraryID].init();
                     }

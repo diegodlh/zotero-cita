@@ -183,11 +183,17 @@ class Citation {
         // I need access to the parent CitationList
     }
 
+    /**
+     * Automatically link citation with matching Zotero item
+     * @param {Object} [matcher] Initialized Matcher object for batch operations
+     */
     async autoLink(matcher) {
         let manual = false;
         let progress;
         if (!matcher) {
+            // If a Matcher object was not provided, create a new one
             matcher = new Matcher(this.source.item.libraryID);
+            // Only in this case, be verbose
             progress = new Progress(
                 'loading',
                 Wikicite.getString('wikicite.citation.auto-link.progress.loading')
