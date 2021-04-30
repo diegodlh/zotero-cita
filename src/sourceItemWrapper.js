@@ -133,9 +133,12 @@ class SourceItemWrapper extends ItemWrapper {
         progress.close();
     }
 
+    /**
+     * Constructs a Citation List by harvesting all Citation elements
+     * in an item's extra field value.
+     */
     updateCitations(compare=true) {
-        // Constructs a Citation List by harvesting all Citation elements in
-        // an item's extra field value.
+        if (this.batch) return;
         const t0 = performance.now();
         const citations = [];
         const corruptCitations = [];
@@ -230,7 +233,6 @@ class SourceItemWrapper extends ItemWrapper {
      * @return {Array} citations - Array of matching citations.
      */
     getCitations(id, idType) {
-        if (!this._batch) this.updateCitations();
         const citations = [];
         const indices = [];
         if (idType === 'index') {
@@ -252,7 +254,7 @@ class SourceItemWrapper extends ItemWrapper {
     /*
      * @param {Boolean} batch - Do not update or save citations at the beginning and at the end.
      */
-    addCitations(citations, batch=false) {
+    addCitations(citations) {
         // Fixme: apart from one day implementing possible duplicates
         // here I have to check other UUIDs too (not only QID)
         // and if they overlap, add the new OCIs provided only
@@ -260,9 +262,9 @@ class SourceItemWrapper extends ItemWrapper {
 
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself
-        if (!this._batch) this.updateCitations();
+        this.updateCitations();
         this._citations = this._citations.concat(citations);
-        if (!this._batch) this.saveCitations();
+        this.saveCitations();
         // this.updateCitationLabels();  //deprecated
         // return if successful (index of new citation?)
 
