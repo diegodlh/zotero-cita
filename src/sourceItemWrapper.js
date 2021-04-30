@@ -275,7 +275,7 @@ class SourceItemWrapper extends ItemWrapper {
     // }
 
     async deleteCitation(index, sync) {
-        if (!this._batch) this.updateCitations();
+        this.updateCitations();
         if (sync) {
             let citation = this.citations[index];
             const progress = new Progress(
@@ -304,8 +304,12 @@ class SourceItemWrapper extends ItemWrapper {
                 return;
             }
         }
+        const citation = this._citations[index];
+        if (citation.target.key) {
+            citation.unlinkFromZoteroItem(false);
+        }
         this._citations.splice(index, 1);
-        if (!this._batch) this.saveCitations();
+        this.saveCitations();
         // this.updateCitationLabels();  //deprecated
     }
 

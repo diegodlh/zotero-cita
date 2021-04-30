@@ -282,7 +282,7 @@ class Citation {
         this.source.saveCitations();
     }
 
-    unlinkFromZoteroItem() {
+    unlinkFromZoteroItem(autosave=true) {
         // other citations link to the same item
         const otherLinks = this.source.citations.some(
             (citation) => (
@@ -295,11 +295,10 @@ class Citation {
             this.target.key
         );
         if (linkedItem && !otherLinks) {
-            if (this.source.item.removeRelatedItem(linkedItem)) {
-                this.source.item.saveTx({
-                    skipDateModifiedUpdate: true
-                });
-            }
+            this.source.newRelations = (
+                this.source.item.removeRelatedItem(linkedItem) ||
+                this.source.newRelations
+            );
             if (linkedItem.removeRelatedItem(this.source.item)) {
                 linkedItem.saveTx({
                     skipDateModifiedUpdate: true
@@ -307,7 +306,7 @@ class Citation {
             }
         }
         this.target.key = undefined;
-        this.source.saveCitations();
+        if (autosave) this.source.saveCitations();
     }
 
     resolveOCI(supplier) {
