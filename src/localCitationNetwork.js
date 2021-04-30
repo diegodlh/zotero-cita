@@ -57,7 +57,7 @@ export default class LCN{
                         // without citations.
                         this.itemMap.set(
                             citation.target.key,
-                            new ItemWrapper(linkedToItem)
+                            parseWrappedItem(new ItemWrapper(linkedToItem))
                         );
                     }
                 }
@@ -124,10 +124,10 @@ export default class LCN{
                     // save citation's target to the item map
                     // Fixme: if itemMap already has tmpKey, do not overwrite
                     // a more complete target item with a less complete one (#72)
-                    this.itemMap.set(tmpKey, wrappedItem.citations[i].target);
+                    this.itemMap.set(tmpKey, parseWrappedItem(wrappedItem.citations[i].target));
                 }
             }
-            this.itemMap.set(wrappedItem.key, wrappedItem);
+            this.itemMap.set(wrappedItem.key, parseWrappedItem(wrappedItem));
         }
     }
 
@@ -156,4 +156,25 @@ export default class LCN{
             Zotero.launchURL
         );
     }
+}
+
+/**
+ * Get ItemWrapper and return Data Item as understood by Local Citations Network
+ */
+function parseWrappedItem(wrappedItem) {
+    const authors = wrappedItem.item.getCreators().map(
+        (creator) => ({ LN: creator.lastName, FN: creator.firstName })
+    );
+    if (!authors.length) authors.push({ LN: undefined });
+    return {
+      id: wrappedItem.key,
+      doi: wrappedItem.doi,
+      title: wrappedItem.title,
+      authors: authors,
+      year: wrappedItem.item.getField('year'),
+      journal: wrappedItem.item.getField('publicationTitle'),
+      references: wrappedItem.citations ? wrappedItem.citations.map((citation) => citation.target.key) : [],
+      abstract: wrappedItem.item.getField('abstractNote'),
+      url: wrappedItem.url
+    };
 }
