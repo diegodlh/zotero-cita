@@ -133,4 +133,31 @@ export default class ItemWrapper{
             this.qid = qid;
         }
     }
+
+    fromJSON(json) {
+        // Adapted from Zotero.Item.fromJSON for faster performance
+        this.item.setType(Zotero.ItemTypes.getID(json.itemType));
+        for (const [key, value] of Object.entries(json)) {
+            if (key === 'creators') {
+                this.item.setCreators(value);
+            } else if (key !== 'itemType') {
+                this.item.setField(key, value);
+            }
+        }
+    }
+
+    toJSON() {
+        // Adapted from Zotero.Item.toJSON for faster performance
+        const json = {
+            itemType: Zotero.ItemTypes.getName(this.item.itemTypeID),
+            creators: this.item.getCreatorsJSON()
+        }
+        for (const i in this.item._itemData) {
+            const val = String(this.item.getField(i));
+            if (val !== '') {
+                json[Zotero.ItemFields.getName(i)] = val;
+            }
+        }
+        return json;
+    }
 }

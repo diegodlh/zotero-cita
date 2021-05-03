@@ -36,20 +36,19 @@ class Citation {
         }
 
         // this.index = index;
-        if (!(item instanceof Zotero.Item)) {
+        this.source = sourceItem;
+
+        if (item instanceof Zotero.Item) {
+            this.target = new ItemWrapper(item, this.source.item.saveTx);
+        } else {
+            this.target = new ItemWrapper(new Zotero.Item(), this.source.item.saveTx);
             if (!item.itemType) {
                 // use a default item type if it was not provided in the target item literal
                 // fix: move this default value out to another file or module
                 item.itemType = 'journalArticle';
             }
-            // Fixme: why can't I do Zotero.Item().fromJSON(item) ?
-            let zoteroItem = new Zotero.Item();
-            zoteroItem.fromJSON(item);
-            item = zoteroItem;
+            this.target.fromJSON(item);
         }
-
-        this.source = sourceItem;
-        this.target = new ItemWrapper(item, this.source.item.saveTx);
 
         this.ocis = [];
         ocis.forEach((oci) => this.addOCI(oci));
@@ -160,13 +159,14 @@ class Citation {
      * Return a JSON object to save to the source item extra field.
      */
     toJSON() {
-        let item = this.target.item.toJSON();
-        delete item.version;
-        delete item.tags;
-        delete item.collections;
-        delete item.relations;
+        // const item = this.target.item.toJSON();
+        // delete item.version;
+        // delete item.tags;
+        // delete item.collections;
+        // delete item.relations;
+
         return {
-            item: item,
+            item: this.target.toJSON(),
             ocis: this.ocis.map((oci) => oci.oci),
             zotero: this.target.key
         }
