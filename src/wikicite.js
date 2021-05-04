@@ -118,8 +118,8 @@ export default {
         if (notes.length > 1) {
             Services.prompt.alert(
                 window,
-                Wikicite.getString('wikicite.global.name'),
-                Wikicite.getString('wikicite.source-item.get-citations-note.error.multiple')
+                this.getString('wikicite.global.name'),
+                this.getString('wikicite.source-item.get-citations-note.error.multiple')
             );
         }
         return notes[0];
