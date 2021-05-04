@@ -257,7 +257,7 @@ const zoteroOverlay = {
         );
     },
 
-    localCitationNetwork: function(menuName) {
+    localCitationNetwork: async function(menuName) {
         // This should be available for collections too
         // I guess the ones above too
         const items = ZoteroPane.getSelectedItems().filter(
@@ -265,7 +265,8 @@ const zoteroOverlay = {
         );
         if (items.length) {
             const lcn = new LCN(items);
-            lcn.init().then(() => lcn.show());
+            await lcn.init();
+            lcn.show();
         }
     },
 

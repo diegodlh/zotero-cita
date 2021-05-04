@@ -28,7 +28,7 @@ class SourceItemWrapper extends ItemWrapper {
         this._citations = [];
         this._batch = false;
         this.newRelations = false;  // Whether new item relations have been queued
-        this.updateCitations(false);
+        this.loadCitations(false);
     }
 
     get citations() {
@@ -81,13 +81,6 @@ class SourceItemWrapper extends ItemWrapper {
         }
         this._citations = citations;
         console.log(`Saving citations to source item took ${performance.now() - t0}`);
-        if (this.newRelations) {
-            debug('Saving new item relations to source item');
-            this.item.saveTx({
-                skipDateModifiedUpdate: true
-            });
-            this.newRelations = false;
-        }
     }
 
     get corruptCitations() {
@@ -106,16 +99,22 @@ class SourceItemWrapper extends ItemWrapper {
 
     /**
      * Automatically link citations with Zotero items
+     * @param {Object} [matcher] Initialized Matcher object for batch operations
+     * @param {Boolean} [noReload] Do not reload citations before automatic linking
      */
-    async autoLinkCitations() {
-        const matcher = new Matcher(this.item.libraryID);
-        const progress = new Progress(
-            'loading',
-            Wikicite.getString('wikicite.source-item.auto-link.progress.loading')
-        );
-        await matcher.init();
-        this.startBatch();
-        for (const citation of this.citations) {
+    async autoLinkCitations(matcher, noReload=false) {
+        let progress;
+        if (!matcher) {
+            matcher = new Matcher(this.item.libraryID);
+            progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.source-item.auto-link.progress.loading')
+            );
+            await matcher.init();
+        }
+        this.startBatch(noReload);
+        let newLinks = false;
+        for (const citation of this._citations) {
             // skip citations already linked
             if (citation.target.key) continue;
             const matches = matcher.findMatches(citation.target.item);
@@ -123,21 +122,24 @@ class SourceItemWrapper extends ItemWrapper {
                 // if multiple matches, use first one
                 const item = Zotero.Items.get(matches[0]);
                 citation.linkToZoteroItem(item);
+                newLinks = true;
             }
         }
-        this.endBatch();
-        progress.updateLine(
-            'done',
-            Wikicite.getString('wikicite.source-item.auto-link.progress.done')
-        )
-        progress.close();
+        this.endBatch(!newLinks);
+        if (progress) {
+                progress.updateLine(
+                'done',
+                Wikicite.getString('wikicite.source-item.auto-link.progress.done')
+            )
+            progress.close();
+        }
     }
 
     /**
      * Constructs a Citation List by harvesting all Citation elements
      * in an item's extra field value.
      */
-    updateCitations(compare=true) {
+    loadCitations(compare=true) {
         if (this.batch) return;
         const t0 = performance.now();
         const citations = [];
@@ -194,31 +196,41 @@ class SourceItemWrapper extends ItemWrapper {
         }
         this._citations = citations;
         if (corruptCitations.length) {
-            this.saveCitations();
+            this.citations = this._citations;
             this.corruptCitations = this.corruptCitations.concat(corruptCitations);
         }
         console.log(`Getting citations from source item took ${performance.now() - t0}`)
     }
 
     saveCitations() {
-        if (!this._batch) this.citations = this._citations;
+        if (this._batch) return;
+        this.citations = this._citations;
+        if (this.newRelations) {
+            debug('Saving new item relations to source item');
+            this.item.saveTx({
+                skipDateModifiedUpdate: true
+            });
+            this.newRelations = false;
+        }
     }
 
-    /* Disble automatic citation update and saving for batch editing
-     *
+    /**
+     * Disble automatic citation update and saving for batch editing
+     * @param {Boolean} [noReload] Do not reload citations automatically
      */
-    startBatch() {
+    startBatch(noReload=false) {
         // update citations before beginning
-        this.updateCitations();
+        if (!noReload) this.loadCitations();
         this._batch = true;
     }
 
     /*
      * Re-enable automatic citation update and saving after batch editing
+     * @param {Boolean} [noSave] Do not save citations automatically
      */
-    endBatch() {
+    endBatch(noSave=false) {
         this._batch = false;
-        this.saveCitations();
+        if (!noSave) this.saveCitations();
     }
 
     openEditor(citation) { // always provide a citation (maybe an empty one)
@@ -277,9 +289,12 @@ class SourceItemWrapper extends ItemWrapper {
 
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself
-        this.updateCitations();
-        this._citations = this._citations.concat(citations);
-        this.saveCitations();
+
+        if (citations.length) {
+            this.loadCitations();
+            this._citations = this._citations.concat(citations);
+            this.saveCitations();
+        }
         // this.updateCitationLabels();  //deprecated
         // return if successful (index of new citation?)
 
@@ -292,7 +307,7 @@ class SourceItemWrapper extends ItemWrapper {
     // }
 
     async deleteCitation(index, sync) {
-        this.updateCitations();
+        this.loadCitations();
         if (sync) {
             let citation = this.citations[index];
             const progress = new Progress(

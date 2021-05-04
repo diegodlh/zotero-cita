@@ -1,4 +1,6 @@
 import ItemWrapper from './itemWrapper';
+import Matcher from './matcher';
+import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 
@@ -14,10 +16,21 @@ export default class LCN{
         // keys of the Zotero items treated as LCN "input items"
         this.inputKeys = items.map((item) => item.key);
         this.libraryID = items[0].libraryID;  // all items will belong to same library
+
+        this.progress = new Progress();
     }
 
     async init() {
         const tmpKeyMap = new Map;  // uid/title -> tmpKey
+
+        this.progress.newLine(
+            'loading',
+            Wikicite.getString('wikicite.lcn.init.progress.getting-citations')
+        );
+
+        // A short delay is needed before wrapping items
+        // for the progress window to show
+        await Zotero.Promise.delay(100);
 
         // Wrapping items (with citations) takes the most.
         // Using Promise.all hoping that it would wrap them in parallel
@@ -26,7 +39,23 @@ export default class LCN{
             (item) => new Promise((resolve) => resolve(new SourceItemWrapper(item)))
         ));
         // const wrappedItems = this.items.map((item) => new SourceItemWrapper(item));
+        this.progress.updateLine('done');
 
+        this.progress.newLine(
+            'loading',
+            Wikicite.getString('wikicite.lcn.init.progress.updating-links')
+        );
+        const matcher = new Matcher(this.libraryID);
+        await matcher.init();
+        for (const wrappedItem of wrappedItems) {
+            wrappedItem.autoLinkCitations(matcher, true);
+        }
+        this.progress.updateLine('done');
+
+        this.progress.newLine(
+            'loading',
+            Wikicite.getString('wikicite.lcn.init.progress.processing-citations')
+        );
         // Processing wrapped items takes way less time
         for (const wrappedItem of wrappedItems) {
             // try and link citations; if success, save
@@ -129,6 +158,7 @@ export default class LCN{
             }
             this.itemMap.set(wrappedItem.key, parseWrappedItem(wrappedItem));
         }
+        this.progress.updateLine('done');
     }
 
     openItem(key) {
@@ -138,7 +168,7 @@ export default class LCN{
         window.focus();
     }
 
-    show() {
+    async show() {
         const windowFeatures = [
             'chrome',
             'dialog=no',
@@ -147,6 +177,14 @@ export default class LCN{
             `height=${window.screen.availHeight*0.9}`,
             `width=${window.screen.availWidth*0.9}`
         ]
+        this.progress.newLine(
+            'done',
+            Wikicite.getString('wikicite.lcn.show.progress.opening')
+        );
+        // A short delay is needed before opening the LCN dialog
+        // for the progress new line to show
+        await Zotero.Promise.delay(100);
+
         window.openDialog(
             'chrome://wikicite/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=' + this.inputKeys.join(','),
             '',
@@ -155,6 +193,9 @@ export default class LCN{
             this.openItem.bind(this),
             Zotero.launchURL
         );
+        // Fixme: this is in fact returning immediately, but for some reason
+        // Zotero gets blocked until the LCN window loads completely
+        this.progress.close();
     }
 }
 
