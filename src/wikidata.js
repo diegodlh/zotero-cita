@@ -146,7 +146,7 @@ export default class {
                     'POST',
                     RECONCILE_API,
                     {
-                        body: `queries=${JSON.stringify(queries)}`
+                        body: `queries=${encodeURIComponent(JSON.stringify(queries))}`
                     }
                 );
                 response = JSON.parse(req.response);
