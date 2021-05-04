@@ -97,7 +97,7 @@ export default class {
             const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn);
             if (cleanISBN) {
                 queryProps.push({
-                    pid: [properties.isb10, properties.isbn13].join('|'),
+                    pid: [properties.isbn10, properties.isbn13].join('|'),
                     v: cleanISBN
                 })
             }
