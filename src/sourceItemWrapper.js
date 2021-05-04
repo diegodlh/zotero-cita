@@ -290,6 +290,7 @@ class SourceItemWrapper extends ItemWrapper {
         // this is not checked for editing a citation, because that can be
         // done with the editor only, and the editor will check himself
 
+        if (!Array.isArray(citations)) citations = [citations];
         if (citations.length) {
             this.loadCitations();
             this._citations = this._citations.concat(citations);
