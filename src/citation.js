@@ -41,12 +41,15 @@ class Citation {
         if (item instanceof Zotero.Item) {
             this.target = new ItemWrapper(item, this.source.item.saveTx);
         } else {
-            this.target = new ItemWrapper(new Zotero.Item(), this.source.item.saveTx);
             if (!item.itemType) {
                 // use a default item type if it was not provided in the target item literal
                 // fix: move this default value out to another file or module
                 item.itemType = 'journalArticle';
             }
+            this.target = new ItemWrapper(
+                new Zotero.Item(item.itemType),
+                this.source.item.saveTx
+            );
             this.target.fromJSON(item);
         }
 
@@ -166,6 +169,7 @@ class Citation {
         // delete item.relations;
 
         return {
+            // item: item,
             item: this.target.toJSON(),
             ocis: this.ocis.map((oci) => oci.oci),
             zotero: this.target.key

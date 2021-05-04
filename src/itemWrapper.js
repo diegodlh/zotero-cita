@@ -136,7 +136,8 @@ export default class ItemWrapper{
 
     fromJSON(json) {
         // Adapted from Zotero.Item.fromJSON for faster performance
-        this.item.setType(Zotero.ItemTypes.getID(json.itemType));
+        const itemTypeID = Zotero.ItemTypes.getID(json.itemType);
+        this.item.setType(itemTypeID);
         for (const [key, value] of Object.entries(json)) {
             if (key === 'creators') {
                 this.item.setCreators(value);
@@ -144,6 +145,7 @@ export default class ItemWrapper{
                 this.item.setField(key, value);
             }
         }
+        // this.item.fromJSON(json);
     }
 
     toJSON() {
@@ -159,5 +161,6 @@ export default class ItemWrapper{
             }
         }
         return json;
+        // return this.item.toJSON();
     }
 }
