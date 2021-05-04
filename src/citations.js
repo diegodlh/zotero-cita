@@ -501,7 +501,7 @@ export default class {
                     }
                     const newCitations = [];
                     for (const targetQid of addCitations) {
-                        const targetItem = targetItems[targetQid];
+                        const targetItem = targetItems.get(targetQid);
                         const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
                         const citation = new Citation(
                             {

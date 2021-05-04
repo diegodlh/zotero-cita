@@ -622,7 +622,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             item.fromJSON(jsonItem);
 
             const qid = Wikicite.getExtraField(item, 'qid').values[0];
-            itemMap[qid] = item;
+            itemMap.set(qid, item);
         }
         return itemMap;
     }
