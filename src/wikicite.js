@@ -50,8 +50,25 @@ export default {
     // zoteroID: 'zotero@chnm.gmu.edu',
     // zoteroTabURL: 'chrome://zotero/content/tab.xul',
 
-    _bundle: Services.strings.
-        createBundle('chrome://wikicite/locale/wikicite.properties'),
+    _bundle: (() => {
+        const zoteroLocale = Zotero.locale;
+        const requestedLocale = Services.locale.getRequestedLocale();
+        let propertiesFile;
+        if (zoteroLocale.split('-')[0] === requestedLocale.split('-')[0]) {
+            propertiesFile = 'chrome://wikicite/locale/wikicite.properties';
+        } else {
+            // support locales not supported by Zotero
+            propertiesFile = [
+                'chrome://wikicite/content/locale',
+                requestedLocale,
+                'wikicite.properties'
+            ].join('/');
+        }
+        return Services.strings.createBundle(propertiesFile);
+    })(),
+    _fallbackBundle: Services.strings.createBundle(
+        'chrome://wikicite/content/locale/en-US/wikicite.properties'
+    ),
 
     // citeproc: new CiteProc('http://www.zotero.org/styles/apa'),
 
@@ -135,7 +152,11 @@ export default {
         try {
             return this._bundle.GetStringFromName(name);
         } catch {
-            throw Error('Failed getting string from name ' + name);
+            try {
+                return this._fallbackBundle.GetStringFromName(name);
+            } catch {
+                throw Error('Failed getting string from name ' + name);
+            }
         }
     },
 
@@ -150,7 +171,13 @@ export default {
         try {
             return this._bundle.formatStringFromName(name, params, params.length);
         } catch {
-            throw Error('Failed formatting string from name ' + name);
+            try {
+                return this._fallbackBundle.formatStringFromName(
+                    name, params, params.length
+                );
+            } catch {
+                throw Error('Failed formatting string from name ' + name);
+            }
         }
     },
 

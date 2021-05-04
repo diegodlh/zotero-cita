@@ -11,6 +11,7 @@ import OCI from '../../oci';
 import PropTypes from 'prop-types';
 import UuidTableRow from './uuidTableRow';
 import Wikicite from '../../wikicite';
+import Wikidata from '../../wikidata';
 import ZoteroButton from './zoteroButton';
 import WikidataButton from './wikidataButton';
 
@@ -76,7 +77,9 @@ function CitationsBox(props) {
     function openEditor(citation, usedUUIDs) {
         const args = {
             citation: citation,
-            usedUUIDs: usedUUIDs
+            usedUUIDs: usedUUIDs,
+            Wikicite: Wikicite,
+            Wikidata: Wikidata
         };
         const retVals = {};
         window.openDialog(

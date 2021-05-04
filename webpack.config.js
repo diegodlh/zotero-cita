@@ -44,12 +44,16 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: "static", to: "." },
+        { from: "LICENSE.md", to: "." },
+        {
+          from: "static/chrome/locale",
+          to: "./chrome/content/locale"
+        },
         { from: "translators/*.js", to: "./chrome/content/translators/[name].[ext]" },
         {
           from: "translators/zotkat/Wikidata QuickStatements.js",
           to: "./chrome/content/translators"
         },
-        { from: "LICENSE.md", to: "." },
         {
           from: "Local-Citation-Network/index*",
           to: "./chrome/content/Local-Citation-Network/[name].[ext]"

@@ -1,3 +1,5 @@
+import Wikicite from './wikicite';
+
 /* global window, Components, Services */
 /* gloabl AddonManager */
 
@@ -40,8 +42,12 @@ WikiciteChrome.openPreferences = function() {
         featureStr = featureStr + modalStr;
 
         this._preferencesWindow =
-            window.openDialog('chrome://wikicite/content/preferences.html',
-            'wikicite-prefs-window', featureStr);
+            window.openDialog(
+                'chrome://wikicite/content/preferences.html',
+                'wikicite-prefs-window',
+                featureStr,
+                { Wikicite }
+            );
     }
 
     this._preferencesWindow.focus();

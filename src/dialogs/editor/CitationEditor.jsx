@@ -3,17 +3,18 @@ import React, {
 	useState
 } from 'react';
 
-import Wikicite from '../../wikicite';  // so far needed just for getExtraField
-import Wikidata from '../../wikidata';
-// should I provide it somewhere else?
-
 /* global window, Components */
 window.Zotero = Components.classes['@zotero.org/Zotero;1']
 	.getService(Components.interfaces.nsISupports)
 	.wrappedJSObject
 /* global Zotero */
 
-const {citation, usedUUIDs} = window.arguments[0];
+const {
+	citation,
+	usedUUIDs,
+	Wikicite,
+	Wikidata
+} = window.arguments[0];
 const item = citation.target.item;
 const sourceItem = citation.source;
 const retVals = window.arguments[1];
