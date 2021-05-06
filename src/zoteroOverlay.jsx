@@ -276,11 +276,7 @@ const zoteroOverlay = {
     },
 
     localCitationNetwork: async function(menuName) {
-        // This should be available for collections too
-        // I guess the ones above too
-        const items = ZoteroPane.getSelectedItems().filter(
-            (item) => item.isRegularItem()
-        );
+        const items = await this.getSelectedItems(menuName, false);
         if (items.length) {
             const lcn = new LCN(items);
             await lcn.init();
