@@ -577,6 +577,9 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 for (const id of Object.keys(entities)) {
                     const entity = entities[id];
                     if (entity.claims) {
+                        // Note: we can't know what class(es) the "cites work"
+                        // objects belong to. Hence, we may be returning
+                        // entities of types not supported by Zotero.
                         citesWorkClaims[id] = wdk.simplify.propertyClaims(
                             entity.claims[properties.citesWork],
                             {
@@ -610,7 +613,16 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
         translate.search = qids.map((qid) => ({extra: `qid: ${qid}`}));
         // Fixme: handle "no items returned from any translator" error
-        const jsonItems = await translate.translate({libraryID: false});
+        let jsonItems;
+        try {
+            jsonItems = await translate.translate({libraryID: false});
+        } catch (err) {
+            if (err === translate.ERROR_NO_RESULTS) {
+                jsonItems = [];
+            } else {
+                throw err;
+            }
+        }
         for (const jsonItem of jsonItems) {
             // delete irrelevant fields to avoid warnings in Item#fromJSON
             delete jsonItem['notes'];

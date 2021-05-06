@@ -344,6 +344,11 @@ export default class {
             return;
         }
 
+        // keep track of citations that could not be added locally
+        // because the Wikidata entity is not an instance of a class
+        // mapped to a supported Zotero item type
+        let unsupportedCitations = 0;
+
         // First, run actions that require communication with Wikidata
 
         // download metadata of target items of citations to be created
@@ -502,16 +507,24 @@ export default class {
                     const newCitations = [];
                     for (const targetQid of addCitations) {
                         const targetItem = targetItems.get(targetQid);
-                        const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
-                        const citation = new Citation(
-                            {
-                                item: targetItem,
-                                ocis: [oci]
-                            },
-                            sourceItem
-                        );
-                        citation.autoLink(matchers[libraryID]);
-                        newCitations.push(citation)
+                        if (targetItem) {
+                            const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
+                            const citation = new Citation(
+                                {
+                                    item: targetItem,
+                                    ocis: [oci]
+                                },
+                                sourceItem
+                            );
+                            citation.autoLink(matchers[libraryID]);
+                            newCitations.push(citation)
+                        } else {
+                            // targetQid won't be found in targetItems map
+                            // if corresponding Wikidata entity does not belong
+                            // to a class supported by the Wikidata JSON translator
+                            // e.g. "retracted paper (Q45182324)"
+                            unsupportedCitations += 1;
+                        }
                     }
                     // Fixme: the number of localAddCitations and localFlagCitations
                     // shown in the confirmation message above may be wrong, as the
@@ -579,6 +592,18 @@ export default class {
             );
         }
         progress.close();
+
+        // display information dialog with deviations from confirmation message above
+        if (unsupportedCitations) {
+            Services.prompt.alert(
+                null,
+                "",
+                Wikicite.formatString(
+                    'wikicite.wikidata.deviations.unsupported-citations',
+                    unsupportedCitations
+                )
+            )
+        }
     }
 
     // maybe i don't need a batch method for getting from PDF
