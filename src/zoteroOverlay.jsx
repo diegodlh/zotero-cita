@@ -9,6 +9,7 @@ import ReactDOM from 'react-dom';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 import WikiciteChrome from './wikiciteChrome';
+import Wikidata from './wikidata';
 
 const TRANSLATORS_PATH = 'chrome://wikicite/content/translators/'
 const TRANSLATOR_LABELS = [
@@ -190,8 +191,14 @@ const zoteroOverlay = {
     /******************************************/
     // Functions for item tree batch actions
     /******************************************/
-    // Fixme: Consider using the Citations class methods instead
-    getSelectedItems: async function(menuName) {
+    /**
+     * Return selected regular items
+     * @param {String} menuName Zotero popup menu firing the action: 'item' or 'collection'
+     * @param {Boolean} [wrap=true] Whether to return wrapped items or not
+     * @return {Array} Array of selected regular items
+     */
+    getSelectedItems: async function(menuName, wrap=true) {
+        // Fixme: Consider using the Citations class methods instead
         let items;
         switch (menuName) {
             case 'item': {
@@ -210,7 +217,18 @@ const zoteroOverlay = {
                 break;
             }
         }
-        return items.map((item) => new SourceItemWrapper(item));
+        items = items.filter((item) => item.isRegularItem());
+        if (wrap) items = items.map((item) => new SourceItemWrapper(item));
+        return items;
+    },
+
+    fetchQIDs: async function(menuName) {
+        const items = await this.getSelectedItems(menuName);
+        const qidMap = await Wikidata.reconcile(items);
+        for (const item of items) {
+            const qid = qidMap.get(item);
+            if (qid) item.qid = qid;
+        }
     },
 
     syncWithWikidata: async function(menuName) {
@@ -761,6 +779,7 @@ const zoteroOverlay = {
     // Create Zotero item menu items as children of menuPopup
     createMenuItems: function(menuName, menuPopup, IDPrefix, elementsAreRoot, doc) {
         const menuFunctions = [
+            'fetchQIDs',
             'syncWithWikidata',
             'getFromCrossref',
             'getFromOCC',
