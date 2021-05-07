@@ -167,11 +167,28 @@ export default class {
                         )
                     );
                 }
-            } catch {
+            } catch (err) {
+                // Handle too large batch error until openrefine-wikibase#109 is fixed
+                let largeBatch = false;
+                if (err.xmlhttp && err.xmlhttp.response) {
+                    const details = JSON.parse(err.xmlhttp.response).details;
+                    if (details) {
+                        const match = details.match(
+                            /url=URL\('https:\/\/query\.wikidata\.org\/sparql\?query=(.*)&format=json'\)/
+                        );
+                        if (match) {
+                            const query = match[1];
+                            if (query.length > 7442) {
+                                largeBatch = true
+                            }
+                        }
+                    }
+                }
                 progress.updateLine(
                     'error',
                     Wikicite.getString(
-                        'wikicite.wikidata.progress.qid.fetch.error'
+                        'wikicite.wikidata.progress.qid.fetch.error' +
+                        (largeBatch ? '.large-batch' : '')
                     )
                 );
             }
