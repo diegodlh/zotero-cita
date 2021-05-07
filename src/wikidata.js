@@ -146,7 +146,9 @@ export default class {
                     'POST',
                     RECONCILE_API,
                     {
-                        body: `queries=${encodeURIComponent(JSON.stringify(queries))}`
+                        body: `queries=${encodeURIComponent(JSON.stringify(queries))}`,
+                        // Fixme: split large requests instead of disabling timeout #78
+                        timeout: 0
                     }
                 );
                 response = JSON.parse(req.response);
