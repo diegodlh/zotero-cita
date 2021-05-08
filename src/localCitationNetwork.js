@@ -191,12 +191,27 @@ export default class LCN{
             windowFeatures.join(','),
             this.itemMap,
             this.openItem.bind(this),
-            Zotero.launchURL
+            Zotero.launchURL,
+            getString
         );
         // Fixme: this is in fact returning immediately, but for some reason
         // Zotero gets blocked until the LCN window loads completely
         this.progress.close();
     }
+}
+
+/**
+ * Get localized string for LCN window
+ */
+function getString(name, params) {
+    name = 'wikicite.lcn.window.' + name;
+    let string;
+    if (params) {
+        string = Wikicite.formatString(name, params);
+    } else {
+        string = Wikicite.getString(name);
+    }
+    return string;
 }
 
 /**
