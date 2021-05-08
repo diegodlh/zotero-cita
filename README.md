@@ -28,8 +28,8 @@ Citations metadata are currently saved as a note attachment.
 This module provides back and forth citation syncing with WikiData, using property
 [P2860](https://www.wikidata.org/wiki/Property:P2860) "cites work".
 
-#### Local Citation Network visualization (to be developed)
-This module will allow visualizing how items in a local library connect to each other through citations,
+#### Local Citation Network visualization
+This module allows visualizing how items in a local library connect to each other through citations,
 using Tim Wölfle's [Local Citation Network](https://timwoelfle.github.io/Local-Citation-Network/).
 
 #### Citation extraction (to be developed)
