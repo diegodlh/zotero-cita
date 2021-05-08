@@ -3,6 +3,7 @@ skin      wikicite    default   chrome/skin/default/
 locale    wikicite    en-US     chrome/locale/en-US/
 locale    wikicite    de        chrome/locale/de/
 locale    wikicite    es        chrome/locale/es/
+locale    wikicite    fa        chrome/locale/fa/
 locale    wikicite    fr        chrome/locale/fr/
 locale    wikicite    mk        chrome/locale/mk/
 locale    wikicite    pms       chrome/locale/pms/
