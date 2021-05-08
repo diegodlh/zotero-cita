@@ -226,7 +226,11 @@ function doImport() {
 				if (Object.keys(mapping).includes(property)) {
 					if (property === TITLE) hasTitle = true;
 					for (const claim of entity.claims[property]) {
-						claims[entity.id].push(claim);
+						if (claim.mainsnak.datavalue) {
+							// ignore claims without mainsnak datavalue
+							// showing as 'unknown value' in Wikidata
+							claims[entity.id].push(claim);
+						}
 					}
 				}
 			}
