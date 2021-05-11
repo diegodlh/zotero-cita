@@ -4,24 +4,24 @@
 
     <Description about="urn:mozilla:install-manifest">
         <em:id>zotero-wikicite@wikidata.org</em:id>
-        <em:name>WikiCite Plugin for Zotero</em:name>
+        <em:name>Cita</em:name>
         <em:version>0.1.1</em:version>
         <em:multiprocessCompatible>true</em:multiprocessCompatible>
-        <em:updateURL>https://raw.githubusercontent.com/diegodlh/zotero-wikicite/master/update.rdf</em:updateURL>
+        <em:updateURL>https://raw.githubusercontent.com/diegodlh/zotero-cita/master/update.rdf</em:updateURL>
 
         <em:localized>
             <Description>
                 <em:locale>en-US</em:locale>
-                <em:name>WikiCite Plugin for Zotero</em:name>
-                <em:description>Add citations support to Zotero, sync to WikiCite, and visualize</em:description>
+                <em:name>Cita</em:name>
+                <em:description>Citations metadata support for Zotero</em:description>
             </Description>
         </em:localized>
 
         <em:creator>Diego de la Hera</em:creator>
-        <em:optionsURL>chrome://wikicite/content/preferences.html</em:optionsURL>
+        <em:optionsURL>chrome://cita/content/preferences.html</em:optionsURL>
         <em:type>2</em:type> <!-- type=extension -->
-        <em:iconURL>chrome://wikicite/skin/wikicite.png</em:iconURL>
-        <em:icon64URL>chrome://wikicite/skin/wikicite64.png</em:icon64URL>
+        <em:iconURL>chrome://cita/skin/cita.png</em:iconURL>
+        <em:icon64URL>chrome://cita/skin/cita64.png</em:icon64URL>
         <em:bootstrap>true</em:bootstrap>
 
         <em:translator>es: Diego de la Hera</em:translator>
@@ -48,8 +48,8 @@
         <em:localized>
             <Description>
                 <em:locale>es</em:locale>
-                <em:name>Plugin WikiCite para Zotero</em:name>
-                <em:description>Soporte para citas e integración con WikiCite</em:description>
+                <em:name>Cita</em:name>
+                <em:description>Soporte para metadatos de citas en Zotero</em:description>
             </Description>
         </em:localized>
     </Description>

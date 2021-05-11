@@ -32,7 +32,7 @@ class CiteProc {
         }
         this.cslEngine = new Zotero.CiteProc.CSL.Engine(
             this.sys,
-            Zotero.File.getContentsFromURL('chrome://wikicite/content/apa.csl'),
+            Zotero.File.getContentsFromURL('chrome://cita/content/apa.csl'),
             Zotero.locale,
             false
         );
@@ -55,11 +55,11 @@ export default {
         const requestedLocale = Services.locale.getRequestedLocale();
         let propertiesFile;
         if (zoteroLocale.split('-')[0] === requestedLocale.split('-')[0]) {
-            propertiesFile = 'chrome://wikicite/locale/wikicite.properties';
+            propertiesFile = 'chrome://cita/locale/wikicite.properties';
         } else {
             // support locales not supported by Zotero
             propertiesFile = [
-                'chrome://wikicite/content/locale',
+                'chrome://cita/content/locale',
                 requestedLocale,
                 'wikicite.properties'
             ].join('/');
@@ -67,7 +67,7 @@ export default {
         return Services.strings.createBundle(propertiesFile);
     })(),
     _fallbackBundle: Services.strings.createBundle(
-        'chrome://wikicite/content/locale/en-US/wikicite.properties'
+        'chrome://cita/content/locale/en-US/wikicite.properties'
     ),
 
     // citeproc: new CiteProc('http://www.zotero.org/styles/apa'),

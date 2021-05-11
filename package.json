@@ -1,7 +1,7 @@
 {
-  "name": "wikicite-zotero",
+  "name": "zotero-cita",
   "version": "0.1.1",
-  "description": "WikiCite plugin for Zotero",
+  "description": "Cita: a Wikidata addon for Zotero",
   "scripts": {
     "postinstall": "patch-package",
     "watch": "webpack --watch",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/diegodlh/zotero-wikicite.git"
+    "url": "git+https://github.com/diegodlh/zotero-cita.git"
   },
   "author": "Diego de la Hera",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/diegodlh/zotero-wikicite/issues"
+    "url": "https://github.com/diegodlh/zotero-cita/issues"
   },
-  "homepage": "https://github.com/diegodlh/zotero-wikicite#readme",
+  "homepage": "https://github.com/diegodlh/zotero-cita#readme",
   "devDependencies": {
     "@babel/cli": "^7.12.1",
     "@babel/core": "^7.12.3",

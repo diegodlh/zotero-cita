@@ -11,7 +11,7 @@ import Wikicite from './wikicite';
 import WikiciteChrome from './wikiciteChrome';
 import Wikidata from './wikidata';
 
-const TRANSLATORS_PATH = 'chrome://wikicite/content/translators/'
+const TRANSLATORS_PATH = 'chrome://cita/content/translators/'
 const TRANSLATOR_LABELS = [
     'Wikidata API',
     'Wikidata JSON',
@@ -26,9 +26,9 @@ Components.utils.import('resource://zotero/config.js');
 // Fixme: Candidate move to Wikicite?
 function debug(msg, err) {
     if (err) {
-        Zotero.debug(`{Wikicite} ${new Date} error: ${msg} (${err} ${err.stack})`)
+        Zotero.debug(`{Cita} ${new Date} error: ${msg} (${err} ${err.stack})`)
     } else {
-        Zotero.debug(`{Wikicite} ${new Date}: ${msg}`)
+        Zotero.debug(`{Cita} ${new Date}: ${msg}`)
     }
 }
 

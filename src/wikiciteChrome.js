@@ -43,7 +43,7 @@ WikiciteChrome.openPreferences = function() {
 
         this._preferencesWindow =
             window.openDialog(
-                'chrome://wikicite/content/preferences.html',
+                'chrome://cita/content/preferences.html',
                 'wikicite-prefs-window',
                 featureStr,
                 { Wikicite }

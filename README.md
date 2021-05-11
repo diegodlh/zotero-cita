@@ -1,4 +1,4 @@
-# WikiCite plugin for Zotero
+# Cita: a Wikidata addon for Zotero
 A [Zotero](http://www.zotero.org/) plugin adding citation metadata support, with back and forth communication to
 [WikiData](https://www.wikidata.org/), citation extraction from file attachments, and local citation network visualization.
 
@@ -42,7 +42,7 @@ retrieve parsed citations from them.
 Feel free to try it, but please use a [separate Zotero profile](https://www.zotero.org/support/kb/multiple_profiles) or
 [back up your database](https://www.zotero.org/support/zotero_data#backing_up_your_zotero_data) before proceeding.
 
-Download the [latest XPI](https://github.com/diegodlh/zotero-wikicite/releases/latest) and [install](https://www.zotero.org/support/plugins) it in Zotero.
+Download the [latest XPI](https://github.com/diegodlh/zotero-cita/releases/latest) and [install](https://www.zotero.org/support/plugins) it in Zotero.
 
 ## Quickstart guide
 Quickstart guide available at [Wikidata's Cita page](https://www.wikidata.org/wiki/Wikidata:Zotero/Cita).
@@ -116,7 +116,7 @@ immediately after Zotero, please let me know!
 
 ## Third-party software
 
-The Wikicite plugin for Zotero depends on:
+Cita depends on:
 - maxlath's [wikibase-edit](https://github.com/maxlath/wikibase-edit) & [wikibase-sdk](https://github.com/maxlath/wikibase-sdk)
 - Philipp Zumstein's [QuickStatements translator for Zotero](https://github.com/UB-Mannheim/zotkat)
 - [React](https://reactjs.org/)

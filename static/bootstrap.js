@@ -4,10 +4,10 @@
 /* global APP_SHUTDOWN */
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-const PREF_BRANCH = 'extensions.wikicite.';
+const PREF_BRANCH = 'extensions.cita.';
 
 const styleSheets = [
-  'chrome://wikicite/skin/overlay.css'
+  'chrome://cita/skin/overlay.css'
 ];
 
 // eslint-disable-next-line no-unused-vars
@@ -136,7 +136,7 @@ const Wikicite = {
     // shutdown
     scope.WikiciteChrome = {};
     Services.scriptloader.loadSubScript(
-      'chrome://wikicite/content/main.js', scope);
+      'chrome://cita/content/main.js', scope);
     scope.WikiciteChrome.zoteroOverlay.init();
   }
 }
@@ -181,7 +181,7 @@ Wikicite.Prefs = {
       }
     }
     catch (e) {
-      throw new Error('Invalid Wikicite pref call for ' + pref);
+      throw new Error('Invalid Cita pref call for ' + pref);
     }
 
     return prefVal;

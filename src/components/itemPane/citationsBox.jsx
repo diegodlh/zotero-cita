@@ -83,7 +83,7 @@ function CitationsBox(props) {
         };
         const retVals = {};
         window.openDialog(
-            'chrome://wikicite/content/editor.html',
+            'chrome://cita/content/editor.html',
             '',
             'chrome,dialog=no,modal,centerscreen,resizable=yes',
             args,
@@ -390,7 +390,7 @@ function CitationsBox(props) {
                             <span>
                                 <img
                                     height="16px"
-                                    src="chrome://wikicite/skin/wikicite.png"
+                                    src="chrome://cita/skin/wikicite.png"
                                 />
                             </span>
                         }*/

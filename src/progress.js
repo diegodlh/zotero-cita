@@ -19,7 +19,7 @@ export default class Progress{
         this.progressWin = new Zotero.ProgressWindow({ closeOnClick: true });
         this.progressWin.changeHeadline(
             Wikicite.getString('wikicite.global.name'),
-            'chrome://wikicite/skin/wikicite.png'
+            'chrome://cita/skin/cita.png'
         );
         this.progressWin.show();
         this.progress = [];

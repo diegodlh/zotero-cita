@@ -1,10 +1,10 @@
-content   wikicite              chrome/content/
-skin      wikicite    default   chrome/skin/default/
-locale    wikicite    en-US     chrome/locale/en-US/
-locale    wikicite    de        chrome/locale/de/
-locale    wikicite    es        chrome/locale/es/
-locale    wikicite    fa        chrome/locale/fa/
-locale    wikicite    fr        chrome/locale/fr/
-locale    wikicite    mk        chrome/locale/mk/
-locale    wikicite    pms       chrome/locale/pms/
-locale    wikicite    sk        chrome/locale/sk/
+content   cita              chrome/content/
+skin      cita    default   chrome/skin/default/
+locale    cita    en-US     chrome/locale/en-US/
+locale    cita    de        chrome/locale/de/
+locale    cita    es        chrome/locale/es/
+locale    cita    fa        chrome/locale/fa/
+locale    cita    fr        chrome/locale/fr/
+locale    cita    mk        chrome/locale/mk/
+locale    cita    pms       chrome/locale/pms/
+locale    cita    sk        chrome/locale/sk/

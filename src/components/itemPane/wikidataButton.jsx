@@ -7,7 +7,7 @@ function WikidataButton(props) {
     const syncable = citation.source.qid && citation.target.qid;
     const oci = citation.getOCI('wikidata');
     let title;
-    let imgSrc = 'chrome://wikicite/skin/wikidata-';
+    let imgSrc = 'chrome://cita/skin/wikidata-';
     if (oci) {
         if (oci.valid) {
             title = 'See in OpenCitations';
