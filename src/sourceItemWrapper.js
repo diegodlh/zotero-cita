@@ -12,6 +12,7 @@ import Progress from './progress';
 // Fixme: define this in the preferences
 const SAVE_TO = 'note'; // extra
 
+/* global Components */
 /* global DOMParser */
 /* global Services */
 /* global Zotero */
@@ -161,7 +162,15 @@ class SourceItemWrapper extends ItemWrapper {
         } else if (SAVE_TO === 'note') {
             const note = Wikicite.getCitationsNote(this.item);
             if (note) {
-                const doc = new DOMParser().parseFromString(
+                let parser;
+                try {
+                    parser = new DOMParser();
+                } catch {
+                    // Workaround fix Pubpeer compatibility issue #41
+                    parser = Components.classes["@mozilla.org/xmlextras/domparser;1"]
+                        .createInstance(Components.interfaces.nsIDOMParser);
+                }
+                const doc = parser.parseFromString(
                     note.getNote(), 'text/html'
                 );
                 const rawCitations = JSON.parse(
