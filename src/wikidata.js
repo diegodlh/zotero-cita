@@ -125,7 +125,8 @@ export default class {
                 return;
             }
             queries[`q${i}`] = {
-                query: item.title,
+                // Workaround until #84 can be fixed
+                query: item.title.replace(/^(\w+):/, "$1"),
                 type: entities.work,
                 type_strict: 'should',
                 properties: queryProps,
