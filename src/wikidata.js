@@ -46,6 +46,7 @@ const wdEdit = wbEdit({
     // maxlag may be ommited for interactive tasks where a user is waiting for the result
     // https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
     maxlag: null,
+    userAgent: `${Wikicite.httpUserAgent} wikibase-edit/v?`
     // tags: ['Zotero_WikiCite']
 });
 
@@ -148,6 +149,9 @@ export default class {
                     RECONCILE_API,
                     {
                         body: `queries=${encodeURIComponent(JSON.stringify(queries))}`,
+                        headers: {
+                            'User-Agent': `${Wikicite.httpUserAgent} zotero/${Zotero.version}`
+                        },
                         // Fixme: split large requests instead of disabling timeout #78
                         timeout: 0
                     }
@@ -360,7 +364,16 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             let results;
             try {
                 // make POST request in case query is too long
-                const xmlhttp = await Zotero.HTTP.request('POST', url, {body: body});
+                const xmlhttp = await Zotero.HTTP.request(
+                    'POST',
+                    url,
+                    {
+                        body: body,
+                        headers: {
+                            'User-Agent': `${Wikicite.httpUserAgent} wikibase-sdk/v?`
+                        }
+                    }
+                );
                 results = wdk.simplify.sparqlResults(xmlhttp.response);
             } catch {
                 progress.updateLine(
@@ -591,7 +604,15 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         while (urls.length) {
             const url = urls.shift();
             try {
-                const xmlhttp = await Zotero.HTTP.request('GET', url);
+                const xmlhttp = await Zotero.HTTP.request(
+                    'GET',
+                    url,
+                    {
+                        headers: {
+                            'User-Agent': `${Wikicite.httpUserAgent} wikibase-sdk/v?`
+                        }
+                    }
+                );
                 // Fixme: handle entities undefined
                 const { entities } = JSON.parse(xmlhttp.response);
                 for (const id of Object.keys(entities)) {
@@ -635,6 +656,9 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         // Fixme: handle "no items returned from any translator" error
         let jsonItems;
         try {
+            translate.requestHeaders = {
+                'User-Agent': `${Wikicite.httpUserAgent} zotero/${Zotero.version}`
+            }
             jsonItems = await translate.translate({libraryID: false});
         } catch (err) {
             if (err === translate.ERROR_NO_RESULTS) {

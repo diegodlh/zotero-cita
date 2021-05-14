@@ -40,6 +40,7 @@ const LOCALE = 'en';
 const INSTANCE_OF = 'P31';
 const TITLE = 'P1476';
 const SERIES_ORDINAL = 'P1545';
+const HTTP_USER_AGENT = 'Cita/v? (https://github.com/diegodlh/zotero-cita)';
 
 //see also https://github.com/UB-Mannheim/zotkat/blob/master/Wikidata%20QuickStatements.js
 var typeMapping = {
@@ -351,7 +352,15 @@ function updateItems(items, claims, labels={}) {
 			languages: [lang]
 		})
 		// console.log(url);
-		ZU.doGet(url, (data) => updateItems(items, pendingClaims, parseLabels(data, lang)));
+		ZU.doGet(
+			url,
+			(data) => updateItems(items, pendingClaims, parseLabels(data, lang)),
+			undefined,
+			undefined,
+			{
+				'User-Agent': `${HTTP_USER_AGENT} zotero/${ZU.getVersion()}`
+			}
+		);
 	} else {
 		if (Object.values(pendingClaims).some(
 			(pendingItemClaims) => pendingItemClaims.length > 0)

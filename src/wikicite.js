@@ -70,6 +70,8 @@ export default {
         'chrome://cita/content/locale/en-US/wikicite.properties'
     ),
 
+    httpUserAgent: 'Cita/v? (https://github.com/diegodlh/zotero-cita)',
+
     // citeproc: new CiteProc('http://www.zotero.org/styles/apa'),
 
     /********************************************/

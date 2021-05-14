@@ -1,7 +1,7 @@
 import Wikicite from './wikicite';
 
 /* global window, Components, Services */
-/* gloabl AddonManager */
+/* global AddonManager */
 
 Components.utils.import('resource://gre/modules/AddonManager.jsm');
 
