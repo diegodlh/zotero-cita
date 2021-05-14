@@ -189,10 +189,12 @@ export default class LCN{
             'chrome://cita/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=' + this.inputKeys.join(','),
             '',
             windowFeatures.join(','),
-            this.itemMap,
-            this.openItem.bind(this),
-            Zotero.launchURL,
-            getString
+            {
+                itemMap: this.itemMap,
+                openItem: this.openItem.bind(this),
+                openUrl: Zotero.launchURL,
+                getString
+            }
         );
         // Fixme: this is in fact returning immediately, but for some reason
         // Zotero gets blocked until the LCN window loads completely
