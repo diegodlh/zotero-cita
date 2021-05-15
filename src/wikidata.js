@@ -49,7 +49,6 @@ const wdEdit = wbEdit({
     // maxlag may be ommited for interactive tasks where a user is waiting for the result
     // https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
     maxlag: null,
-    userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v?`
     // tags: ['Zotero_WikiCite']
 });
 
@@ -733,7 +732,10 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     }
                     anonymous = !username.value || !password.value;
                 }
-                const requestConfig = { anonymous: anonymous };
+                const requestConfig = {
+                    anonymous: anonymous,
+                    userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
+                };
                 if (!anonymous) {
                     requestConfig.credentials = {
                         username: username.value,
