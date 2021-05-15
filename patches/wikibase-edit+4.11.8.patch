@@ -1,3 +1,17 @@
+diff --git a/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js b/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js
+index 6693bca..b059f25 100644
+--- a/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js
++++ b/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js
+@@ -23,7 +23,8 @@ module.exports = async (config, propertyIds = []) => {
+ 
+   const urls = WBK(instance).getManyEntities({ ids: missingPropertyIds, props: 'info' })
+ 
+-  const responses = await Promise.all(urls.map(getJson))
++  const headers = { 'user-agent': config.userAgent }
++  const responses = await Promise.all(urls.map((url) => getJson(url, { headers })))
+   const responsesEntities = responses.map(parseResponse)
+   const allEntities = Object.assign(...responsesEntities)
+   missingPropertyIds.forEach(addMissingProperty(allEntities, properties))
 diff --git a/node_modules/wikibase-edit/lib/request/post.js b/node_modules/wikibase-edit/lib/request/post.js
 index 0af9984..915cfb4 100644
 --- a/node_modules/wikibase-edit/lib/request/post.js
