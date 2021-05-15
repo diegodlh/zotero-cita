@@ -9,6 +9,9 @@ import wbEdit from 'wikibase-edit';
 /* global Zotero */
 /* global window */
 
+const wbSdkVersion = require('wikibase-sdk/package.json').version;
+const wbEditVersion = require('wikibase-edit/package.json').version;
+
 // Fixme: Wikibase instance and Sparql Endpoint should be
 // specified in the plugin preferences, to support other
 // Wikibase instances.
@@ -370,7 +373,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     {
                         body: body,
                         headers: {
-                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v?`
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
                         }
                     }
                 );
@@ -609,7 +612,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     url,
                     {
                         headers: {
-                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v?`
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
                         }
                     }
                 );
