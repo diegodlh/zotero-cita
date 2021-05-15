@@ -46,7 +46,7 @@ const wdEdit = wbEdit({
     // maxlag may be ommited for interactive tasks where a user is waiting for the result
     // https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
     maxlag: null,
-    userAgent: `${Wikicite.httpUserAgent} wikibase-edit/v?`
+    userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v?`
     // tags: ['Zotero_WikiCite']
 });
 
@@ -150,7 +150,7 @@ export default class {
                     {
                         body: `queries=${encodeURIComponent(JSON.stringify(queries))}`,
                         headers: {
-                            'User-Agent': `${Wikicite.httpUserAgent} zotero/${Zotero.version}`
+                            'User-Agent': `${Wikicite.getUserAgent()} zotero/${Zotero.version}`
                         },
                         // Fixme: split large requests instead of disabling timeout #78
                         timeout: 0
@@ -370,7 +370,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     {
                         body: body,
                         headers: {
-                            'User-Agent': `${Wikicite.httpUserAgent} wikibase-sdk/v?`
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v?`
                         }
                     }
                 );
@@ -609,7 +609,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     url,
                     {
                         headers: {
-                            'User-Agent': `${Wikicite.httpUserAgent} wikibase-sdk/v?`
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v?`
                         }
                     }
                 );
@@ -657,7 +657,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         let jsonItems;
         try {
             translate.requestHeaders = {
-                'User-Agent': `${Wikicite.httpUserAgent} zotero/${Zotero.version}`
+                'User-Agent': `${Wikicite.getUserAgent()} zotero/${Zotero.version}`
             }
             jsonItems = await translate.translate({libraryID: false});
         } catch (err) {

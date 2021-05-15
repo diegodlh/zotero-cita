@@ -18,9 +18,11 @@ const TRANSLATOR_LABELS = [
     'Wikidata QuickStatements'
 ];
 
+/* global AddonManager */
 /* global window, document, Components, MutationObserver*/
 /* global Services */
 /* global Zotero, ZoteroPane */
+Components.utils.import("resource://gre/modules/AddonManager.jsm");
 Components.utils.import('resource://zotero/config.js');
 
 // Fixme: Candidate move to Wikicite?
@@ -66,6 +68,11 @@ const zoteroOverlay = {
     // Window load handling
     /******************************************/
     init: function() {
+        // retrieve and set addon version
+        AddonManager.getAddonByID(Wikicite.id, (addon) => {
+            Wikicite.version = addon.version
+        });
+
         this.fullOverlay();
 
         // refresh item and collection submenus each time they show

@@ -46,7 +46,8 @@ export default {
     // /********************************************/
     // // Basic information
     // /********************************************/
-    // id: 'zotero-wikicite@wikidata.or',
+    id: 'zotero-wikicite@wikidata.org',
+    version: undefined,
     // zoteroID: 'zotero@chnm.gmu.edu',
     // zoteroTabURL: 'chrome://zotero/content/tab.xul',
 
@@ -70,7 +71,9 @@ export default {
         'chrome://cita/content/locale/en-US/wikicite.properties'
     ),
 
-    httpUserAgent: 'Cita/v? (https://github.com/diegodlh/zotero-cita)',
+    getUserAgent: function() {
+        return `Cita/v${this.version || '?'} (https://github.com/diegodlh/zotero-cita)`
+    },
 
     // citeproc: new CiteProc('http://www.zotero.org/styles/apa'),
 
