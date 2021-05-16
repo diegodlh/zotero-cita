@@ -552,10 +552,16 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         )
                     )
                     if (confirm) {
+                        let copied = false;
                         // copy commands to clipboard
-                        Zotero.Utilities.Internal.copyTextToClipboard(qsCommands);
+                        try {
+                            Zotero.Utilities.Internal.copyTextToClipboard(qsCommands);
+                            copied = true;
+                        } catch {
+                            throw new Error('Copy to clipboard failed!');
+                        }
                         // launch QuickStatements
-                        Zotero.launchURL(
+                        if (copied) Zotero.launchURL(
                             'https://quickstatements.toolforge.org/#/batch'
                         );
                         // return undefined qid (because it can't be known)
