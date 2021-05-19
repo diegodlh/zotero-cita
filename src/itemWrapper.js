@@ -8,6 +8,9 @@ import Wikidata from './wikidata';
 // for source items, and the source item's saveTx for target items
 export default class ItemWrapper{
 	constructor(item, saveHandler) {
+        if (item === undefined) item = new Zotero.Item();
+        if (saveHandler === undefined) saveHandler = item.saveTx;
+
         if (!item.isRegularItem()) {
             throw new Error('Cannot wrap non-regular items');
         }
