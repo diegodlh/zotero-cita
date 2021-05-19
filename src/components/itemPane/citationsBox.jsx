@@ -385,21 +385,21 @@ function CitationsBox(props) {
                     <tbody>
                         <UuidTableRow
                             editable={props.editable}
-                            label={Wikicite.getString('wikicite.item.qid')}
+                            label={'QID'}
                             onCommit={(qid) => props.sourceItem.setPID('qid', qid)}
                             onFetch={() => props.sourceItem.fetchPID('qid')}
                             value={qid}
                         />
                         <UuidTableRow
                             editable={props.editable}
-                            label={Wikicite.getString('wikicite.item.doi')}
+                            label={'DOI'}
                             onCommit={(doi) => props.sourceItem.setPID('DOI', doi)}
                             onFetch={() => props.sourceItem.fetchPID('DOI')}
                             value={doi}
                         />
                         <UuidTableRow
                             editable={props.editable}
-                            label={Wikicite.getString('wikicite.item.occ')}
+                            label={'OCC'}
                             onCommit={(occ) => props.sourceItem.setPID('occ', occ)}
                             onFetch={() => props.sourceItem.fetchPID('occ')}
                             value={occ}
