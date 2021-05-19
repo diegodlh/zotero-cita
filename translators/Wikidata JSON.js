@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 1,
 	"cacheCode": true,
-	"lastUpdated": "2021-01-11 22:40:29"
+	"lastUpdated": "2021-05-19 05:00:00"
 }
 
 
@@ -296,9 +296,23 @@ function updateItems(items, claims, labels={}) {
 						case 'string':
 							value = datavalue.value;
 							break;
-						case 'time':
-							value = datavalue.value.time;
+						case 'time': {
+							const time = datavalue.value.time;
+							const match = time.match(/^([+-]\d{4,16})-(\d{2})-(\d{2})/);
+							if (match) {
+								const year = Number(match[1]);
+								const month = match[2];
+								const date = match[3];
+								const precision = datavalue.value.precision;
+								const dateParts = [year];
+								if (precision > 9) dateParts.push(month);
+								if (precision > 10) dateParts.push(date);
+								value = dateParts.join('-');
+							} else {
+								value = time;
+							}
 							break;
+						}
 						case 'globecoordinate':
 							value = `${datavalue.value.latitude}, ${datavalue.value.longitude}`;
 							break;
