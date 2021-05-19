@@ -242,17 +242,6 @@ class SourceItemWrapper extends ItemWrapper {
         if (!noSave) this.saveCitations();
     }
 
-    openEditor(citation) { // always provide a citation (maybe an empty one)
-        // return a promise fullfilled or rejected when the editor is closed/saved
-        // the fullfilled promise resolves to a citation object, of course
-
-        // maybe I call add from here, not the other way round
-        // so I can use the add method in automatic batch processes too
-
-        // called from the CitationList object, I can know in the editor
-        // if I'm adding a citation which already exists for the source item
-    }
-
     // async new() {
     //     let citation = new Citation({item: {itemType: 'journalArticle'}, ocis: []}, this);
     //     let newCitation = await this.openEditor(citation);
@@ -355,36 +344,59 @@ class SourceItemWrapper extends ItemWrapper {
         // this.updateCitationLabels();  //deprecated
     }
 
-    /**
-     Returns lists of UUIDs already in use by citations in the list.
-     @param {number} [skip] - Citation index to be ignored.
-     @returns {object} usedUUIDs - Lists of used UUIDs.
-     */
-    getUsedUUIDs(skip=undefined) {
-        const usedUUIDs = {
-            doi: [],
-            qid: [],
-            occ: []
-        };
-        this.citations.forEach((citation, i) => {
-            if (skip === i) {
-                return;
+    getCitedPIDs(type, options={clean: true, skipCitation: undefined}) {
+        const citedPIDs = this.citations.reduce((citedPIDs, citation) => {
+            if (citation !== options.skipCitation) {
+                const pid = citation.target.getPID(type, options.clean);
+                if (pid && !citedPIDs.includes(pid)) {
+                    citedPIDs.push(pid)
+                }
             }
-            const doi = citation.target.doi;
-            const qid = citation.target.qid;
-            const occ = citation.target.occ;
-            if (doi) {
-                usedUUIDs.doi.push(doi);
-            }
-            if (qid) {
-                usedUUIDs.qid.push(qid);
-            }
-            if (occ) {
-                usedUUIDs.occ.push(occ);
-            }
-        });
-        return usedUUIDs;
+            return citedPIDs;
+        }, []);
+        return citedPIDs;
     }
+
+    checkPID(
+        type,
+        value,
+        options={
+            alert: false,
+            parentWindow: null,
+            skipCitation: undefined
+        }
+    ) {
+        const cleanPID = Wikicite.cleanPID(type, value);
+        let conflict = false;
+        if (cleanPID) {
+            const cleanCitingPID = this.getPID(type, true);
+            if (cleanCitingPID === cleanPID) {
+                conflict = 'citing';
+            } else {
+                const cleanCitedPIDs = this.getCitedPIDs(
+                    type, {clean: true, skipCitation: options.skipCitation}
+                );
+                if (cleanCitedPIDs.includes(cleanPID)) {
+                    conflict = 'cited';
+                }
+            }
+        }
+        if (conflict && options.alert) {
+            Services.prompt.alert(
+                options.parentWindow,
+                Wikicite.getString(
+                    'wikicite.source-item.check-pid.conflict'
+                ),
+                Wikicite.formatString(
+                    'wikicite.source-item.check-pid.conflict.' + conflict,
+                    [type, value]
+                )
+            );
+        }
+        return !conflict;
+    }
+
+
 
     // updateCitationLabels() {
     //     const items = this.citations.map((citation) => citation.item);
