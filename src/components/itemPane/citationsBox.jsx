@@ -5,13 +5,13 @@ import React, {
 } from 'react';
 import { Button } from '../button';
 import Citation from '../../citation';
-import SourceItemWrapper from '../../sourceItemWrapper';
+import ItemWrapper from '../../itemWrapper';
 import { IntlProvider } from 'react-intl';
 import OCI from '../../oci';
 import PropTypes from 'prop-types';
+import SourceItemWrapper from '../../sourceItemWrapper';
 import UuidTableRow from './uuidTableRow';
 import Wikicite from '../../wikicite';
-import Wikidata from '../../wikidata';
 import ZoteroButton from './zoteroButton';
 import WikidataButton from './wikidataButton';
 
@@ -71,19 +71,16 @@ function CitationsBox(props) {
     /**
      * Opens the citation editor window.
      * @param {Citation} citation - Citation to be edited.
-     * @param {Object} usedUUIDs - UUIDs used by other citations in the Citation List.
      * @returns {Zotero.Item} - Edited cited item.
      */
-    function openEditor(citation, usedUUIDs) {
+    function openEditor(citation) {
         const args = {
             citation: citation,
-            usedUUIDs: usedUUIDs,
-            Wikicite: Wikicite,
-            Wikidata: Wikidata
+            Wikicite: Wikicite
         };
         const retVals = {};
         window.openDialog(
-            'chrome://cita/content/editor.html',
+            'chrome://cita/content/citationEditor.xul',
             '',
             'chrome,dialog=no,modal,centerscreen,resizable=yes',
             args,
@@ -99,7 +96,7 @@ function CitationsBox(props) {
             },
             ocis: []
         }, props.sourceItem);
-        const item = openEditor(citation, props.sourceItem.getUsedUUIDs());
+        const item = openEditor(citation);
         if (!item) {
             // Fixme: move console.log to wikicite debug
             console.log('Edit cancelled by user.');
@@ -136,8 +133,7 @@ function CitationsBox(props) {
     function handleCitationEdit(index) {
         const citation = citations[index];
         const item = openEditor(
-            citation,
-            props.sourceItem.getUsedUUIDs(index)
+            citation
         );
         // Fixme: I don't like that I'm repeating code from addCitation
         // tagsBox has a single updateTags method instead

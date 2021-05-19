@@ -1,0 +1,38 @@
+window#citation-editor {
+	height: 500px;
+	width: 400px;
+	padding: 1em;
+}
+
+ul#citation-editor-pid-list {
+	list-style: none;
+	padding-left: 0;
+}
+
+ul#citation-editor-pid-list > li {
+	align-items: center;
+	display: flex;
+}
+
+ul#citation-editor-pid-list > li * {
+	margin-left: 2px;
+	margin-right: 2px;
+}
+
+ul#citation-editor-pid-list > li .editable-container {
+	flex-grow: 1;
+}
+
+.editable-content {
+	min-height: 1em;
+}
+
+ul#citation-editor-pid-list > li button {
+	border: 0;
+	background: none;
+	padding: 1px;
+}
+
+div#citation-editor-buttons {
+	text-align: right;
+}
