@@ -104,11 +104,12 @@ export default {
      * @returns {values} values - Array of values for the desired extra field field.
      */
     getExtraField: function(item, fieldName) {
+        const pattern = new RegExp(`^${fieldName}:(.+)$`, 'i')
         const extra = item.getField('extra');
         const lines = extra.split(/\n/g);
         const values = []
         const newExtra = lines.filter((line) => {
-            let match = line.match(`^${fieldName}:(.+)$`, 'i');
+            let match = line.match(pattern);
             if (!match) {
                 return true;
             }
