@@ -307,6 +307,13 @@ export default class {
         return qids;
     }
 
+    static cleanQID(qid) {
+        qid = qid.toUpperCase().trim();
+        if (qid[0] !== 'Q') qid = 'Q' + qid;
+        if (!qid.match(/^Q\d+$/)) qid = '';
+        return qid;
+    }
+
     /**
      * DEPRECATED - use this.reconcile() instead
      * Fetches QIDs for item wrappers provided and returns item -> QID map

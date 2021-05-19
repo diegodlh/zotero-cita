@@ -1,4 +1,4 @@
-'use strict';
+import Wikidata from './wikidata';
 
 /* global Components, Services */
 Components.utils.import("resource://gre/modules/Services.jsm");
@@ -70,6 +70,20 @@ export default {
     _fallbackBundle: Services.strings.createBundle(
         'chrome://cita/content/locale/en-US/wikicite.properties'
     ),
+
+    cleanPID: function(type, value) {
+        value = value || '';
+        switch (type) {
+            case 'DOI':
+                return Zotero.Utilities.cleanDOI(value);
+            case 'ISBN':
+                return Zotero.Utilities.cleanISBN(value);
+            case 'qid':
+                return Wikidata.cleanQID(value);
+            default:
+                return value;
+        }
+    },
 
     getUserAgent: function() {
         return `Cita/v${this.version || '?'} (https://github.com/diegodlh/zotero-cita)`
