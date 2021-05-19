@@ -1,7 +1,9 @@
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 
+/* global Services */
 /* global Zotero */
+/* global window */
 
 // Fixme: maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
@@ -54,50 +56,37 @@ export default class ItemWrapper{
 
 	// UUIDs
 	get doi() {
-		const doi = this.item.getField('DOI');
-		return doi;
+		return this.getPID('DOI');
 	}
 
 	set doi(doi) {
-		this.item.setField('DOI', doi);
-		this.saveHandler();
+        this.setPID('DOI', doi);
 	}
 
     get isbn() {
-        const doi = this.item.getField('ISBN');
-        return doi;
+        return this.getPID('ISBN');
     }
 
     set isbn(isbn) {
-        this.item.setField('ISBN', isbn);
-        this.saveHandler();
+        this.setPID('ISBN', isbn);
     }
 
 	get qid() {
-		const qid = Wikicite.getExtraField(this.item, 'qid').values[0];
-		return qid;
+        return this.getPID('QID');
 	}
 
 	set qid(qid) {
-		Wikicite.setExtraField(this.item, 'qid', qid);
-		this.saveHandler();
+        this.setPID('QID', qid);
 	}
 
     // OpenCitations Corpus Internal Identifier
     get occ() {
-        const occ = Wikicite.getExtraField(this.item, 'occ').values[0];
-        return occ;
+        return this.getPID('OCC');
     }
 
     set occ(occ) {
-        Wikicite.setExtraField(this.item, 'occ', [occ]);
-        this.saveHandler();
+        this.setPID('OCC', occ);
     }
-
-    // other uids may be useful to lookup in wikidata
-    // but in principle I wouldn't deal with them
-    // this.extra.pmcid;
-    // this.extra.pmid;
 
     get url() {
         let url = this.item.getField('url');
@@ -109,6 +98,92 @@ export default class ItemWrapper{
         // else if (cleanISBN) return ''
         else if (this.occ) return 'https://opencitations.net/corpus/br/' + this.occ;
         else return undefined;
+    }
+
+    getPIDTypes() {
+        const allTypes = ['DOI', 'ISBN', 'QID', 'OCC'];
+        const pidTypes = [];
+        for (let type of allTypes) {
+            type = type.toUpperCase();
+            switch (type) {
+                case 'DOI':
+                case 'ISBN':
+                    if (this.isValidField(type)) {
+                        pidTypes.push(type);
+                    }
+                    break;
+                default:
+                    pidTypes.push(type);
+            }
+        }
+        return pidTypes;
+    }
+
+    async fetchPID(type, autosave=true) {
+        type = type.toUpperCase();
+        let pid;
+        switch (type) {
+            case 'QID': {
+                const qids = await Wikidata.reconcile(this);
+                pid = qids.get(this);
+                break;
+            }
+            default:
+                Services.prompt.alert(
+                    window,
+                    Wikicite.getString('wikicite.global.unsupported'),
+                    Wikicite.formatString(
+                        'wikicite.item-wrapper.fetch-pid.unsupported',
+                        type.toUpperCase()
+                    )
+                );
+        }
+        if (pid) {
+            this.setPID(type, pid, autosave);
+        }
+    }
+
+    getPID(type, clean=false) {
+        type = type.toUpperCase();
+        let pid;
+        switch (type) {
+            case 'DOI':
+            case 'ISBN':
+                pid = this.item.getField(type);
+                break;
+            default:
+                pid = Wikicite.getExtraField(this.item, type).values[0];
+        }
+        if (clean) {
+            pid = Wikicite.cleanPID(type, pid);
+        }
+        return pid;
+    }
+
+    setPID(type, value, save=true) {
+        type = type.toUpperCase();
+        switch (type) {
+            case 'DOI':
+            case 'ISBN':
+                if (this.isValidField(type)) {
+                    this.item.setField(type, value);
+                } else {
+                    throw new Error(
+                        `Unsupported PID ${type} for item type ${this.type}`
+                    )
+                }
+                break;
+            default:
+                Wikicite.setExtraField(this.item, type, [value]);
+        }
+        if (save) this.saveHandler();
+    }
+
+    isValidField(fieldName) {
+        return Zotero.ItemFields.isValidForType(
+            Zotero.ItemFields.getID(fieldName),
+            this.item.itemTypeID
+        );
     }
 
     getLabel() {
@@ -127,14 +202,6 @@ export default class ItemWrapper{
         }
         const label = labelParts.join(year ? " " : " - ");
         return label;
-    }
-
-    async fetchQid() {
-        const qids = await Wikidata.reconcile(this);
-        const qid = qids.get(this);
-        if (qid) {
-            this.qid = qid;
-        }
     }
 
     fromJSON(json) {

@@ -241,41 +241,6 @@ function CitationsBox(props) {
         }
     }
 
-    function handleDoiCommit(newDoi) {
-        // setDoi(newDoi);
-        props.sourceItem.doi = newDoi;
-    }
-
-    function handleOccCommit(newOcc) {
-        // setOcc(newOcc);
-        props.sourceItem.occ = newOcc;
-    }
-
-    function handleQidCommit(newQid) {
-        // setQid(newQid);
-        props.sourceItem.qid = newQid;
-    }
-
-    function handleDoiFetch() {
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.crossref.get-doi.unsupported')
-        );
-    }
-
-    function handleOccFetch() {
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.opencitations.get-occ.unsupported')
-        );
-    }
-
-    function handleQidFetch() {
-        props.sourceItem.fetchQid();
-    }
-
     function renderCitationRow(citation, index) {
         let item = citation.target.item;
         const itemType = Zotero.ItemTypes.getName(item.itemTypeID);
@@ -425,22 +390,22 @@ function CitationsBox(props) {
                         <UuidTableRow
                             editable={props.editable}
                             label={Wikicite.getString('wikicite.item.qid')}
-                            onCommit={handleQidCommit}
-                            onFetch={handleQidFetch}
+                            onCommit={(qid) => props.sourceItem.setPID('qid', qid)}
+                            onFetch={() => props.sourceItem.fetchPID('qid')}
                             value={qid}
                         />
                         <UuidTableRow
                             editable={props.editable}
                             label={Wikicite.getString('wikicite.item.doi')}
-                            onCommit={handleDoiCommit}
-                            onFetch={handleDoiFetch}
+                            onCommit={(doi) => props.sourceItem.setPID('DOI', doi)}
+                            onFetch={() => props.sourceItem.fetchPID('DOI')}
                             value={doi}
                         />
                         <UuidTableRow
                             editable={props.editable}
                             label={Wikicite.getString('wikicite.item.occ')}
-                            onCommit={handleOccCommit}
-                            onFetch={handleOccFetch}
+                            onCommit={(occ) => props.sourceItem.setPID('occ', occ)}
+                            onFetch={() => props.sourceItem.fetchPID('occ')}
                             value={occ}
                         />
                     </tbody>
