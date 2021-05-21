@@ -1,3 +1,7 @@
+.cita-icon {
+	height: 16px;
+}
+
 #citations-pane {
 	 display: flex;
 }

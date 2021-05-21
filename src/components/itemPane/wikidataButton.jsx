@@ -32,6 +32,7 @@ function WikidataButton(props) {
             onClick={props.onClick}
         >
             <img
+                className="cita-icon"
                 title={title}
                 src={imgSrc}
             />

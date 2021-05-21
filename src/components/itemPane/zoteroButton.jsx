@@ -65,7 +65,10 @@ function ZoteroButton(props) {
             <img
                 title={title}
                 src={`chrome://zotero/skin/zotero-new-z-16px.png`}
-                className={key ? '' : 'light'}
+                className={
+                    'cita-icon' +
+                    (key ? '' : ' light')
+                }
             />
         </button>
     );

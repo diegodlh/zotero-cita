@@ -248,6 +248,7 @@ function CitationsBox(props) {
                 key={index}
             >
                 <img
+                    className="cita-icon"
                     src={Zotero.ItemTypes.getImageSrc(itemType)}
                     title={Zotero.ItemTypes.getLocalizedString(itemType)}
                 />
@@ -279,6 +280,7 @@ function CitationsBox(props) {
                         onClick={() => handleCitationMove(index, -1)}
                     >
                         <img
+                            className="cita-icon"
                             title="Move up"
                             src={`chrome://zotero/skin/citation-up.png`}
                         />
@@ -288,6 +290,7 @@ function CitationsBox(props) {
                         onClick={() => handleCitationMove(index, +1)}
                     >
                         <img
+                            className="cita-icon"
                             title="Move down"
                             src={`chrome://zotero/skin/citation-down.png`}
                         />
@@ -299,6 +302,7 @@ function CitationsBox(props) {
                     >
                         <img
                             alt={removeStr}
+                            className="cita-icon"
                             title={removeStr}
                             // Fixme: does it change when active?
                             src={`chrome://zotero/skin/minus${Zotero.hiDPISuffix}.png`}/>

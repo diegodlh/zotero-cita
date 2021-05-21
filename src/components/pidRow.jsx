@@ -88,8 +88,7 @@ function PIDRow(props) {
                 onClick={() => onFetch()}
             >
                 <img
-                    height="18"
-                    width="18"
+                    className="cita-icon"
                     title={`Fetch ${props.type}`}
                     src={`chrome://zotero/skin/arrow_refresh.png`}
                 />
