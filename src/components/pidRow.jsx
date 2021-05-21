@@ -1,5 +1,6 @@
 /* License */
 import React, {
+    useEffect,
     useRef,
     useState
 } from 'react';
@@ -11,6 +12,10 @@ function PIDRow(props) {
     const [selected, setSelected] = useState(false);
     const [value, setValue] = useState(props.item.getPID(props.type));
 
+    useEffect(() => {
+        setValue(props.item.getPID(props.type));
+    }, [props.item])
+
     function handleCancel() {
         setSelected(false);
     }
@@ -20,8 +25,11 @@ function PIDRow(props) {
             if (newPid && props.validate && !props.validate(props.type, newPid)) {
                 return;
             }
-            props.item.setPID(props.type, newPid, props.autosave)
-            if (!props.autosave) setValue(props.item.getPID(props.type));
+            props.item.setPID(props.type, newPid, props.autosave);
+            // set new value immediately
+            // if autosave is true, it will be updated twice
+            // but second time (via props.item) might take some time
+            setValue(props.item.getPID(props.type));
         }
         setSelected(false);
     }
@@ -35,7 +43,8 @@ function PIDRow(props) {
 
     async function onFetch() {
         await props.item.fetchPID(props.type, props.autosave);
-        if (!props.autosave) setValue(props.item.getPID(props.type));
+        // set new value immediately (see note in handleCommit)
+        setValue(props.item.getPID(props.type));
     }
 
     return(

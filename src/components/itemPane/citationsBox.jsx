@@ -5,15 +5,13 @@ import React, {
 } from 'react';
 import { Button } from '../button';
 import Citation from '../../citation';
-import ItemWrapper from '../../itemWrapper';
 import { IntlProvider } from 'react-intl';
-import OCI from '../../oci';
+import PIDRow from '../pidRow';
 import PropTypes from 'prop-types';
 import SourceItemWrapper from '../../sourceItemWrapper';
-import UuidTableRow from './uuidTableRow';
 import Wikicite from '../../wikicite';
-import ZoteroButton from './zoteroButton';
 import WikidataButton from './wikidataButton';
+import ZoteroButton from './zoteroButton';
 
 /* global Services */
 /* global window */
@@ -21,26 +19,25 @@ import WikidataButton from './wikidataButton';
 
 function CitationsBox(props) {
     const [citations, setCitations] = useState([]);
+    const [pidTypes, setPidTypes] = useState([]);
     const [sortedIndices, setSortedIndices] = useState([]);
-    const [doi, setDoi] = useState('');
-    const [occ, setOcc] = useState('');
-    const [qid, setQid] = useState('');
     const [hasAttachments, setHasAttachments] = useState(false);
 
     const removeStr = Zotero.getString('general.remove');
 
     useEffect(() => {
         setCitations(props.sourceItem.citations);
-        setDoi(props.sourceItem.doi);
-        // Fixme: to avoid parsing the extra field twice, consider redefining
-        // Wikicite.getExtraField to allow multiple fieldnames as input
-        // and return a fieldName: [values]} object instead
-        setOcc(props.sourceItem.occ ?? '');
-        setQid(props.sourceItem.qid ?? '');
+        setPidTypes(props.sourceItem.getPIDTypes());
         setHasAttachments(
             Boolean(props.sourceItem.item.getAttachments().length)
         );
     }, [props.sourceItem]);
+
+    useEffect(() => {
+        // update citations box height when pid types are updated
+        // and pid rows are rendered below
+        window.WikiciteChrome.zoteroOverlay.updateCitationsBoxSize(window.document);
+    }, [pidTypes])
 
     useEffect(() => {
         const items = props.sourceItem.citations.map((citation, index) => {
@@ -103,7 +100,7 @@ function CitationsBox(props) {
             return;
         }
         if (
-            qid && Wikicite.getExtraField(item, 'qid').values[0]
+            props.sourceItem.getPID('qid') && Wikicite.getExtraField(item, 'qid').values[0]
         ) {
             console.log('Source and target items have QIDs! Offer syncing to Wikidata.')
         }
@@ -143,7 +140,7 @@ function CitationsBox(props) {
             return;
         }
         if (
-            qid && Wikicite.getExtraField(item, 'qid').values[0]
+            props.sourceItem.getPID('qid') && Wikicite.getExtraField(item, 'qid').values[0]
         ) {
             console.log('Source and target items have QIDs! Offer syncing to Wikidata.')
         }
@@ -381,41 +378,36 @@ function CitationsBox(props) {
                  */}
             </div>
             <div className="citations-box-footer">
-                <table className="citations-box-uuids">
-                    <tbody>
-                        <UuidTableRow
+                <ul id="citations-box-pids" className="pid-list">
+                {
+                    // Fixme: to avoid parsing the extra field multiple times
+                    // (once per non-natively supported pid; e.g., QID, OCC)
+                    // consider having a pidBox component and
+                    // redefining Wikicite.getExtraField to allow multiple fieldnames as input
+                    // and return a fieldName: [values]} object instead
+                    pidTypes.map(
+                        (pidType) =>  <PIDRow
+                            autosave={true}
                             editable={props.editable}
-                            label={'QID'}
-                            onCommit={(qid) => props.sourceItem.setPID('qid', qid)}
-                            onFetch={() => props.sourceItem.fetchPID('qid')}
-                            value={qid}
+                            item={props.sourceItem}
+                            key={pidType}
+                            type={pidType}
+                            validate={
+                                (type, value) => (
+                                    props.sourceItem.checkPID(
+                                        type,
+                                        value,
+                                        {
+                                            alert: true,
+                                            parentWindow: window
+                                        }
+                                    )
+                                )
+                            }
                         />
-                        <UuidTableRow
-                            editable={props.editable}
-                            label={'DOI'}
-                            onCommit={(doi) => props.sourceItem.setPID('DOI', doi)}
-                            onFetch={() => props.sourceItem.fetchPID('DOI')}
-                            value={doi}
-                        />
-                        <UuidTableRow
-                            editable={props.editable}
-                            label={'OCC'}
-                            onCommit={(occ) => props.sourceItem.setPID('occ', occ)}
-                            onFetch={() => props.sourceItem.fetchPID('occ')}
-                            value={occ}
-                        />
-                    </tbody>
-                </table>
-                {/*<div className="citations-box-footer-buttons" style={{display: "flex"}}>
-                    <button
-                        onClick={() => props.sourceItem.getFromPDF()}
-                        disabled={!hasAttachments}
-                    >Extract from attachments</button>
-                    <button
-                        onClick={() => props.sourceItem.exportToCroci()}
-                        disabled={!doi}
-                    >Export to CROCI</button>
-                </div>*/}
+                    )
+                }
+                </ul>
             </div>
         </div>
     );

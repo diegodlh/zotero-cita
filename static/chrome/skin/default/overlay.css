@@ -60,6 +60,40 @@
 	 width: 100px;
 	 font-family: inherit;
 }
+
+.citations-box-footer {
+	padding: 10px;
+}
+
 img.light {
 	filter: opacity(50%);
+}
+
+ul.pid-list {
+	list-style: none;
+	padding-left: 0;
+}
+
+ul.pid-list > li {
+	align-items: center;
+	display: flex;
+}
+
+ul.pid-list > li * {
+	margin-left: 2px;
+	margin-right: 2px;
+}
+
+ul.pid-list > li button {
+	border: 0;
+	background: none;
+	padding: 1px;
+}
+
+ul.pid-list > li .editable-container {
+	flex-grow: 1;
+}
+
+ul.pid-list .editable-content {
+	min-height: 1em;
 }

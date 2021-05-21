@@ -83,7 +83,7 @@ const CitationEditor = (props) => {
 
     return(
         <div orient="vertical">
-            <ul id="citation-editor-pid-list">
+            <ul className="pid-list">
             {
                 pidTypes.map(
                     (pidType) =>  <PIDRow
