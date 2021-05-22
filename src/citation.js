@@ -114,6 +114,7 @@ class Citation {
      * Delete citation from Wikidata
      */
     async deleteRemotely() {
+        let success;
         const wikidataOci = this.getOCI('wikidata')
         if (wikidataOci && wikidataOci.valid) {
             try {
@@ -133,7 +134,8 @@ class Citation {
                         return pushClaims;
                 }, [])
                 // pass them to updateCitesWorkClaims to upload changes
-                await Wikidata.updateCitesWorkClaims(pushClaims);
+                const results = await Wikidata.updateCitesWorkClaims(pushClaims);
+                success = Object.values(results).every((result) => result === 'ok')
             } catch (err) {
                 // fail if citation could not be deleted remotely
                 // do not fail if it couldn't be deleted because it doesn't exist
@@ -144,6 +146,7 @@ class Citation {
             // Located string in a console message?
             throw new Error('Cannot sync deletion of citation not available in Wikidata.');
         }
+        return success;
     }
 
     getOCI(supplier) {

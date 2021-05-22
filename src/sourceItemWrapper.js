@@ -315,25 +315,29 @@ class SourceItemWrapper extends ItemWrapper {
                     'wikicite.wikidata.progress.delete.loading'
                 )
             );
+            let success;
             try {
-                await citation.deleteRemotely();
+                success = await citation.deleteRemotely();
+            } catch {
+                success = false;
+            }
+            if (success) {
                 progress.updateLine(
                     'done',
                     Wikicite.getString(
                         'wikicite.wikidata.progress.delete.done'
                     )
                 );
-                progress.close();
-            } catch {
+            } else {
                 progress.updateLine(
                     'error',
                     Wikicite.getString(
                         'wikicite.wikidata.progress.delete.error'
                     )
                 );
-                progress.close();
                 return;
             }
+            progress.close();
         }
         const citation = this._citations[index];
         if (citation.target.key) {
