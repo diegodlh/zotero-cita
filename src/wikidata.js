@@ -699,77 +699,30 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     }
 
     static async updateCitesWorkClaims(citesWorkClaims) {
-        const username = {value: undefined};
-        const password = {value: undefined};
-        let anonymous = false;
-
-        let cancelled = false;
-
-        const results = {}
-
+        const login = new Login();
+        const results = {};
         for (const id of Object.keys(citesWorkClaims)) {
             const actionType = getActionType(citesWorkClaims[id]);
 
-            let loginError;
-            if (!cancelled) do {
-                const saveCredentials = {value: false};
-                if (!anonymous && !password.value) {
-                    let promptText = '';
-                    if (loginError) {
-                        promptText += Wikicite.getString(
-                            'wikicite.wikidata.login.error.' + loginError
-                        ) + '\n\n';
-                    }
-                    promptText += Wikicite.getString('wikicite.wikidata.login.message.main') + '\n\n';
-                    promptText += Wikicite.formatString(
-                        'wikicite.wikidata.login.message.create-account',
-                        'https://www.wikidata.org/w/index.php?title=Special:CreateAccount'
-                    ) + '\n\n';
-                    promptText += Wikicite.formatString(
-                        'wikicite.wikidata.login.message.bot-pass',
-                        'https://www.mediawiki.org/wiki/Special:BotPasswords'
-                    );
-                    const loginPrompt = Services.prompt.promptUsernameAndPassword(
-                        window,
-                        Wikicite.getString('wikicite.wikidata.login.title'),
-                        promptText,
-                        username,
-                        password,
-                        null,  // "Save login credentials",
-                        saveCredentials
-                    )
-                    if (!loginPrompt) {
-                        // user cancelled login
-                        cancelled = true;
-                        break;
-                    }
-                    anonymous = !username.value || !password.value;
+            do {
+                if (
+                    !login.cancelled &&
+                    (!login.anonymous || login.error)
+                ) {
+                    login.prompt();
+                }
+                if (login.cancelled) {
+                    results[id] = 'cancelled';
+                    break;
                 }
                 const requestConfig = {
-                    anonymous: anonymous,
+                    anonymous: login.anonymous,
+                    credentials: login.credentials,
                     userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
                 };
-                if (!anonymous) {
-                    requestConfig.credentials = {
-                        username: username.value,
-                        password: password.value
-                    }
-                }
-                // reset loginError
-                loginError = '';
-
-                // remove cookies for API host before proceeding
-                const iter = Services.cookies.getCookiesFromHost(
-                    new URL(WBK_INSTANCE).host, {}
-                );
-                while (iter.hasMoreElements()) {
-                    const cookie = iter.getNext();
-                    if (cookie instanceof Components.interfaces.nsICookie) {
-                        Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, {});
-                    }
-                }
 
                 try {
+                    resetCookies();
                     const res = await wdEdit.entity.edit(
                         {
                             id: id,
@@ -782,6 +735,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         }, requestConfig
                     );
                     if (res.success) {
+                        login.onSuccess();
                         // res returned by wdEdit.entity.edit has an entity prop
                         results[id] = 'ok';
                     } else {
@@ -789,13 +743,10 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         // thrown by wdEdit.entity.edit above, and caught below?
                         results[id] = 'unsuccessful'
                     }
-                    if (saveCredentials.value && !anonymous) {
-                        // Fixme
-                        console.log('Saving credentials to be implemented');
-                    }
                 } catch (error) {
+                    let loginError;
                     if (error.name == 'badtoken') {
-                        if (anonymous) {
+                        if (this.anonymous) {
                             // See https://github.com/maxlath/wikibase-edit/issues/63
                             loginError = 'unsupportedAnonymous';
                         } else {
@@ -805,10 +756,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         loginError = 'wrongCredentials';
                     }
                     if (loginError) {
-                        // reset credentials and try again
-                        password.value = undefined;
-                        // anonymous edit may be failing for this specific edition
-                        anonymous = false;
+                        login.onError(loginError);
                     } else {
                         // I don't want permissiondenied errors to be treated as
                         // login errors, because permission may have been denied
@@ -820,11 +768,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         results[id] = error.name;
                     }
                 }
-            } while (loginError);
-
-            if (cancelled) {
-                results[id] = 'cancelled';
-            }
+            } while (login.error);
         }
         return results;
 
@@ -836,6 +780,79 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
         // for each sourceQID, get current citations from wikidata
         // for each targetQID, ignore those in wikidata already
         // add remaining citations
+    }
+}
+
+// error to be displayed at top, explains why you need to log in
+class Login {
+    constructor() {
+        this.error = false;
+    }
+
+    get credentials() {
+        let credentials;
+        if (!this.anonymous) {
+            credentials = {};
+            credentials.username = this.username;
+            credentials.password = this.password;
+        }
+        return credentials;
+    }
+
+    onError(error) {
+        this.error = error;
+    }
+
+    onSuccess() {
+        this.error = false;
+        if (!this.anonymous && this.save) {
+            console.log('Saving credentials to be implemented');
+        }
+    }
+
+    prompt() {
+        let promptText = '';
+        if (this.error) {
+            promptText += Wikicite.getString(
+                'wikicite.wikidata.login.error.' + this.error
+            ) + '\n\n';
+        }
+        promptText += Wikicite.getString('wikicite.wikidata.login.message.main') + '\n\n';
+        promptText += Wikicite.formatString(
+            'wikicite.wikidata.login.message.create-account',
+            'https://www.wikidata.org/w/index.php?title=Special:CreateAccount'
+        ) + '\n\n';
+        promptText += Wikicite.formatString(
+            'wikicite.wikidata.login.message.bot-pass',
+            'https://www.mediawiki.org/wiki/Special:BotPasswords'
+        );
+
+        const username = {value: this.username};
+        const password = {value: undefined};
+        const save = {value: false};
+        let loginPrompt;
+        do {
+            loginPrompt = Services.prompt.promptUsernameAndPassword(
+                window,
+                Wikicite.getString('wikicite.wikidata.login.title'),
+                promptText,
+                username,
+                password,
+                null,  // "Save login credentials",
+                save
+            );
+        // if user entered username and clicked OK but forgot password
+        // display prompt again
+        } while (loginPrompt && username.value && !password.value);
+        if (loginPrompt) {
+            this.username = username.value;
+            this.password = password.value;
+            this.anonymous = !this.username && !this.password;
+            this.save = save.value;
+        } else {
+            // user cancelled login
+            this.cancelled = true;
+        }
     }
 }
 
@@ -863,6 +880,19 @@ function getActionType(claims) {
         actionType = 'add';
     }
     return actionType;
+}
+
+function resetCookies() {
+    // remove cookies for API host before proceeding
+    const iter = Services.cookies.getCookiesFromHost(
+        new URL(WBK_INSTANCE).host, {}
+    );
+    while (iter.hasMoreElements()) {
+        const cookie = iter.getNext();
+        if (cookie instanceof Components.interfaces.nsICookie) {
+            Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, {});
+        }
+    }
 }
 
 export class CitesWorkClaim {
