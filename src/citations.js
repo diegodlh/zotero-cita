@@ -767,7 +767,7 @@ function composeUploadErrorMsg(results) {
             '\n\n' + Wikicite.getString(
                 'wikicite.wikidata.upload.error.unknown'
             ) +
-            ' ' + err + ': ' +
+            ' "' + err + '": ' +
             unknownErrorQids[err].join(', ') + '.'
         );
     }
