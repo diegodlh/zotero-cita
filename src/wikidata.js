@@ -28,6 +28,7 @@ const properties = {
     'authorNameString': 'P2093',
     'citesWork': 'P2860',
     'doi': 'P356',
+    'instanceOf': 'P31',
     'isbn10': 'P957',
     'isbn13': 'P212',
     'publicationDate': 'P577',
@@ -577,8 +578,17 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         };
                         resetCookies();
                         try {
+                            const creation = creations[0];
+                            const instanceOf = creation.claims[properties.instanceOf][0];
+                            if (!instanceOf) throw new Error(
+                                'Refused to create an item of an unknown class'
+                            );
+                            requestConfig.summary = Wikicite.formatString(
+                                'wikicite.wikidata.create.auto.summary',
+                                `[[${instanceOf}]]`
+                            ) + ' [[[Wikidata:Zotero/Cita|Cita]]]'
                             const { entity } = await wdEdit.entity.create(
-                                creations[0],
+                                creation,
                                 requestConfig
                             );
                             qid = entity.id
@@ -786,9 +796,10 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                             claims: {
                                 [properties.citesWork]: citesWorkClaims[id]
                             },
-                            summary: Wikicite.getString(
-                                'wikicite.wikidata.updateCitesWork.' + actionType
-                            )
+                            summary: Wikicite.formatString(
+                                'wikicite.wikidata.updateCitesWork.' + actionType,
+                                `[[Property:${properties.citesWork}]]`
+                            ) + ' [[[Wikidata:Zotero/Cita|Cita]]]'
                         }, requestConfig
                     );
                     if (res.success) {
