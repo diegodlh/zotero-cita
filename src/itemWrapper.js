@@ -90,14 +90,12 @@ export default class ItemWrapper{
 
     get url() {
         let url = this.item.getField('url');
-        const cleanDOI = this.doi && Zotero.Utilities.cleanDOI(this.doi);
-        // const cleanISBN = this.isbn && Zotero.Utilities.cleanISBN(this.isbn);
-        if (url) return url;
-        else if (this.qid) return 'https://www.wikidata.org/wiki/' + this.qid;
-        else if (cleanDOI) return 'https://doi.org/' + cleanDOI;
-        // else if (cleanISBN) return ''
-        else if (this.occ) return 'https://opencitations.net/corpus/br/' + this.occ;
-        else return undefined;
+        return (
+            url ||
+            this.getPidUrl('QID') ||
+            this.getPidUrl('DOI') ||
+            this.getPidUrl('OCC')
+        );
     }
 
     getPIDTypes() {
@@ -158,6 +156,35 @@ export default class ItemWrapper{
             pid = Wikicite.cleanPID(type, pid);
         }
         return pid;
+    }
+
+    getPidUrl(type) {
+        type = type.toUpperCase();
+        const cleanPID = this.getPID(type, true);
+        let url;
+        if (cleanPID) {
+            switch (type) {
+                case 'DOI':
+                    url = 'https://doi.org/' +
+                        // From Zotero's itembox.xml:
+                        // Encode some characters that are technically valid in DOIs,
+                        // though generally not used. '/' doesn't need to be encoded.
+                        cleanPID
+                            .replace(/#/g, '%23')
+                            .replace(/\?/g, '%3f')
+                            .replace(/%/g, '%25')
+                            .replace(/"/g, '%22');
+                    break;
+                case 'OCC':
+                    url = 'https://opencitations.net/corpus/br/' + cleanPID;
+                    break;
+                case 'QID':
+                    url = 'https://www.wikidata.org/wiki/' + cleanPID;
+                    break;
+                default:
+            }
+        }
+        return url;
     }
 
     setPID(type, value, save=true) {

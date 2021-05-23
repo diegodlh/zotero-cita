@@ -72,13 +72,14 @@ export default {
     ),
 
     cleanPID: function(type, value) {
+        type = type.toUpperCase();
         value = value || '';
         switch (type) {
             case 'DOI':
                 return Zotero.Utilities.cleanDOI(value);
             case 'ISBN':
                 return Zotero.Utilities.cleanISBN(value);
-            case 'qid':
+            case 'QID':
                 return Wikidata.cleanQID(value);
             default:
                 return value;

@@ -7,14 +7,21 @@ import React, {
 import Editable from 'zotero@components/editable';
 import PropTypes from 'prop-types';
 
+/* global Zotero */
+
 function PIDRow(props) {
     const textboxRef = useRef(null);
     const [selected, setSelected] = useState(false);
     const [value, setValue] = useState(props.item.getPID(props.type));
+    const [url, setUrl] = useState(props.item.getPidUrl(props.type));
 
     useEffect(() => {
         setValue(props.item.getPID(props.type));
-    }, [props.item])
+    }, [props.item, props.type])
+
+    useEffect(() => {
+        setUrl(props.item.getPidUrl(props.type));
+    }, [props.type, value])
 
     function handleCancel() {
         setSelected(false);
@@ -49,7 +56,10 @@ function PIDRow(props) {
 
     return(
         <li>
-            <label>
+            <label
+                className={'pid-label' + (url ? ' pointer' : '')}
+                onClick={url ? () => Zotero.launchURL(url) : undefined}
+            >
                 {props.type.toUpperCase()}
             </label>
             <div className="editable-container">

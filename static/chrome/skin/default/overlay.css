@@ -101,3 +101,7 @@ ul.pid-list > li .editable-container {
 ul.pid-list .editable-content {
 	min-height: 1em;
 }
+
+.pid-label.pointer:hover {
+	cursor: pointer !important;
+}
