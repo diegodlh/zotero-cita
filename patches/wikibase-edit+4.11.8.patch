@@ -1,3 +1,52 @@
+diff --git a/node_modules/wikibase-edit/lib/claim/get_time_object.js b/node_modules/wikibase-edit/lib/claim/get_time_object.js
+index 790da70..a2d6cd9 100644
+--- a/node_modules/wikibase-edit/lib/claim/get_time_object.js
++++ b/node_modules/wikibase-edit/lib/claim/get_time_object.js
+@@ -15,6 +15,7 @@ module.exports = value => {
+     // Drop milliseconds from ISO time strings as those aren't represented in Wikibase anyway
+     // ex: '2019-04-01T00:00:00.000Z' -> '2019-04-01T00:00:00Z'
+     .replace('.000Z', 'Z')
++    .replace(/^\+/, '')
+   if (precision == null) precision = getPrecision(time)
+   const timeStringBase = getTimeStringBase(time, precision)
+   return getPrecisionTimeObject(timeStringBase, precision, calendarmodel)
+diff --git a/node_modules/wikibase-edit/lib/datatype_tests.js b/node_modules/wikibase-edit/lib/datatype_tests.js
+index 11e9b30..c383ed4 100644
+--- a/node_modules/wikibase-edit/lib/datatype_tests.js
++++ b/node_modules/wikibase-edit/lib/datatype_tests.js
+@@ -35,7 +35,18 @@ module.exports = {
+     if (sign === '+' && year.length <= 5) {
+       try {
+         time = time.replace(/^\+/, '')
+-        new Date(time).toISOString()
++        let isoTime = time;
++        // ISO validation would fail if either date or month are 0
++        // Replace date or date and month digits with 01
++        // if precision is less than 11 or 10, respectively
++        if (precision != null) {
++          if (precision < 10) {
++            isoTime = isoTime.replace(/^(\d{4})-\d{1,2}-\d{1,2}/, '$1-01-01')
++          } else if (precision < 11) {
++            isoTime = isoTime.replace(/^(\d{4}-\d{1,2})-\d{1,2}/, '$1-01')
++          }
++        }
++        new Date(isoTime).toISOString()
+       } catch (err) {
+         return false
+       }
+diff --git a/node_modules/wikibase-edit/lib/entity/build_claim.js b/node_modules/wikibase-edit/lib/entity/build_claim.js
+index 8b1ea30..73df90c 100644
+--- a/node_modules/wikibase-edit/lib/entity/build_claim.js
++++ b/node_modules/wikibase-edit/lib/entity/build_claim.js
+@@ -42,7 +42,7 @@ const fullClaimBuilder = params => {
+     claim = builders.specialSnaktype(property, snaktype)
+   } else {
+     // In case of a rich value (monolingual text, quantity, or globe coordinate)
+-    if (value == null && (claimData.text || claimData.amount || claimData.latitude)) {
++    if (value == null && (claimData.text || claimData.amount || claimData.latitude || claimData.time)) {
+       value = claimData
+     }
+     validate.snakValue(property, datatype, value)
 diff --git a/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js b/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js
 index 6693bca..b059f25 100644
 --- a/node_modules/wikibase-edit/lib/properties/fetch_properties_datatypes.js

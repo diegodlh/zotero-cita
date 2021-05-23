@@ -527,23 +527,80 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             switch (response) {
                 case 0: {
                     // create
-                    // convert qs commands to wikibase-edit entity
-                    // const { creations } = qs2wbEdit(qsCommands);
-                    const creations = [{}];
-                    // use wikibase-entity to create entity
-                    const progress = new Progress();
-                    try {
-                        const { entity } = await wbEdit.entity.create(creations[0]);
-                        qid = entity.id;
-                    } catch {
-                        progress.newLine(
-                            'error',
-                            Wikicite.getString(
-                                'wikicite.wikidata.create.progress.unsupported'
-                            )
-                        );
+                    const confirm = Services.prompt.confirm(
+                        window,
+                        Wikicite.getString(
+                            'wikicite.wikidata.create.auto.confirm.title'
+                        ),
+                        Wikicite.formatString(
+                            'wikicite.wikidata.create.auto.confirm.message',
+                            [
+                                item.title,
+                                'https://www.wikidata.org/wiki/Wikidata:Notability'
+                            ]
+                        )
+                    )
+                    if (!confirm) {
                         qid = null;
+                        break;
                     }
+
+                    // convert qs commands to wikibase-edit entity
+                    const { creations } = qs2wbEdit(qsCommands);
+
+                    // use wikibase-entity to create entity
+                    const progress = new Progress(
+                        'loading',
+                        Wikicite.getString(
+                            'wikicite.wikidata.create.auto.progress.loading'
+                        )
+                    );
+                    const login = new Login();
+                    do {
+                        if (
+                            !login.cancelled &&
+                            (!login.anonymous || login.error)
+                        ) {
+                            login.prompt();
+                        }
+                        if (login.cancelled) {
+                            qid = null;
+                            progress.updateLine(
+                                'error',
+                                'wikicite.wikidata.create.auto.progress.cancelled'
+                            );
+                        }
+                        const requestConfig = {
+                            anonymous: login.anonymous,
+                            credentials: login.credentials,
+                            userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
+                        };
+                        resetCookies();
+                        try {
+                            const { entity } = await wdEdit.entity.create(
+                                creations[0],
+                                requestConfig
+                            );
+                            qid = entity.id
+                            progress.updateLine(
+                                'done',
+                                Wikicite.getString(
+                                    'wikicite.wikidata.create.auto.progress.done'
+                                )
+                            );
+                        } catch (error) {
+                            login.onError(error);
+                                if (!login.error) {
+                                    qid = null;
+                                    progress.updateLine(
+                                        'error',
+                                        Wikicite.getString(
+                                            'wikicite.wikidata.create.auto.progress.error'
+                                        )
+                                    );
+                                }
+                            }
+                    } while (login.error);
                     progress.close();
                     break;
                 }
@@ -744,27 +801,9 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         results[id] = 'unsuccessful'
                     }
                 } catch (error) {
-                    let loginError;
-                    if (error.name == 'badtoken') {
-                        if (this.anonymous) {
-                            // See https://github.com/maxlath/wikibase-edit/issues/63
-                            loginError = 'unsupportedAnonymous';
-                        } else {
-                            loginError = 'unknown';
-                        }
-                    } else if (error.message.split(':')[0] == 'failed to login') {
-                        loginError = 'wrongCredentials';
-                    }
-                    if (loginError) {
-                        login.onError(loginError);
-                    } else {
-                        // I don't want permissiondenied errors to be treated as
-                        // login errors, because permission may have been denied
-                        // for just one of multiple edits requested, and the user
-                        // may not have other credentials, so they would get stuck
-                        // in a login-error loop, of which they can only get out
-                        // by cancelling, thus cancelling all edits (not just the
-                        // one they didn't have permission for)
+                    login.onError(error);
+                    if (!login.error) {
+                        // if not login error, save error name and proceed with next id
                         results[id] = error.name;
                     }
                 }
@@ -800,7 +839,24 @@ class Login {
     }
 
     onError(error) {
-        this.error = error;
+        this.error = false;
+        if (error.name == 'badtoken') {
+            if (this.anonymous) {
+                // See https://github.com/maxlath/wikibase-edit/issues/63
+                this.error = 'unsupportedAnonymous';
+            } else {
+                this.error = 'unknown';
+            }
+        } else if (error.message.split(':')[0] == 'failed to login') {
+            this.error = 'wrongCredentials';
+        }
+        // I don't want permissiondenied errors to be treated as
+        // login errors, because permission may have been denied
+        // for just one of multiple edits requested, and the user
+        // may not have other credentials, so they would get stuck
+        // in a login-error loop, of which they can only get out
+        // by cancelling, thus cancelling all edits (not just the
+        // one they didn't have permission for)
     }
 
     onSuccess() {
