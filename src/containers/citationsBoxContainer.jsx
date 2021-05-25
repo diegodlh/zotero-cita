@@ -2,16 +2,17 @@ import React, {
     useEffect,
     useState
 } from 'react';
-import SourceItemWrapper from '../sourceItemWrapper';
 import CitationsBox from '../components/itemPane/citationsBox.jsx';
+import SourceItemWrapper from '../sourceItemWrapper';
 import PropTypes from 'prop-types';
+import { debug } from '../wikicite';
 
 /* global document, window */
 /* global Services */
 /* global Zotero */
 
 function CitationsBoxContainer(props) {
-    console.log('CitationsBoxContainer will render...');
+    debug('CitationsBoxContainer will render...');
     // fix: where to get citations from (extra field or note) should be configurable
     // therefore, it may be better to have two separate functions
 
@@ -65,7 +66,7 @@ function CitationsBoxContainer(props) {
     // OCCID (OpenCitations Corpus ID) makes sense too, because OCI may relate two interanal OC corpus ids
 
     useEffect(() => {
-        console.log('First run, or props.item has changed')
+        debug('First run, or props.item has changed')
         var observer = {
             notify: async function (action, type, ids, extraData) {
                 // This observer will be triggered as long as the component remains mounted
@@ -76,7 +77,7 @@ function CitationsBoxContainer(props) {
                         ids.includes(props.item.id) ||
                         notes.map((note) => note.parentID).includes(props.item.id)
                     ) {
-                        console.log('Item observer has been triggered...');
+                        debug('Item observer has been triggered...');
                         // This may cause two re-renders: one when sourceItem is reset,
                         // and another after sourceItem-dependent useEffect run above is run.
                         setSourceItem(new SourceItemWrapper(props.item));

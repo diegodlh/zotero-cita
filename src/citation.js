@@ -1,9 +1,9 @@
+import Wikicite, { debug } from './wikicite';
 import Wikidata, { CitesWorkClaim } from './wikidata';
 import ItemWrapper from './itemWrapper';
 import Matcher from './matcher';
 import OCI from './oci';
 import Progress from './progress';
-import Wikicite from './wikicite';
 
 /* global Services */
 /* global window */
@@ -96,7 +96,7 @@ class Citation {
 
         // overwrite pre-existing oci of the same supplier
         if (this.getOCI(supplier)) {
-            console.log('Overwritting OCI of supplier ' + supplier);
+            debug('Overwritting OCI of supplier ' + supplier);
             this.removeOCI(supplier);
         }
 

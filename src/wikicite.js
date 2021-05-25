@@ -246,8 +246,9 @@ export default {
 
 export function debug(msg, err) {
     if (err) {
-        Zotero.debug(`{Cita} ${new Date} error: ${msg} (${err} ${err.stack})`)
+        Zotero.debug(`{Cita} ${new Date} error: ${msg} (${err} ${err.stack})`);
     } else {
-        Zotero.debug(`{Cita} ${new Date}: ${msg}`)
+        Zotero.debug(`{Cita} ${new Date}: ${msg}`);
     }
+    // console.log(msg);
 }

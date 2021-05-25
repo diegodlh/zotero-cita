@@ -1,6 +1,6 @@
+import Wikicite, { debug } from './wikicite';
 import Progress from './progress';
 import WBK from 'wikibase-sdk';
-import Wikicite from './wikicite';
 import qs2wbEdit from 'quickstatements-to-wikibase-edit';
 import wbEdit from 'wikibase-edit';
 
@@ -714,7 +714,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     }
                 }
             } catch (err) {
-                console.log(err);
+                debug('Getting "cites work" claims failed', err);
             }
         }
         return citesWorkClaims;
@@ -873,7 +873,7 @@ class Login {
     onSuccess() {
         this.error = false;
         if (!this.anonymous && this.save) {
-            console.log('Saving credentials to be implemented');
+            debug('Saving credentials to be implemented');
         }
     }
 

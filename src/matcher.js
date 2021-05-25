@@ -1,4 +1,4 @@
-import Wikicite from './wikicite';
+import Wikicite, { debug } from './wikicite';
 
 /* global Zotero */
 
@@ -18,7 +18,7 @@ export default class Matcher {
     }
 
     async init() {
-        Zotero.debug('Initializing Matcher');
+        debug('Initializing Matcher');
         const start = Date.now();
 
         await Promise.all([
@@ -31,7 +31,7 @@ export default class Matcher {
             // new Promise((resolve) => setTimeout(() => {resolve()}, 1000))
         ]);
 
-        Zotero.debug(
+        debug(
             `Matcher took ${Date.now() - start}ms to initialize ` +
             `for ${Object.keys(this._yearCache).length} items`
         );
@@ -47,7 +47,7 @@ export default class Matcher {
             !this._creatorsCache
         ) throw new Error("Matches hasn't been initialized yet");
 
-        Zotero.debug("Finding matching Zotero items");
+        debug("Finding matching Zotero items");
         const start = Date.now();
 
         // ISBN
@@ -98,7 +98,7 @@ export default class Matcher {
         const matches = [...new Set(
             [].concat(isbnMatches, doiMatches, qidMatches, titleMatches))
         ].sort((a, b) => a-b);
-        Zotero.debug("Found matches in " + (Date.now() - start) + " ms");
+        debug("Found matches in " + (Date.now() - start) + " ms");
 
         return matches;
     }

@@ -1,10 +1,10 @@
 import Wikidata, { CitesWorkClaim } from './wikidata';
+import Wikicite, { debug } from './wikicite';
 import Citation from './citation';
 import Matcher from './matcher';
 import OCI from './oci';
 import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
-import Wikicite from './wikicite';
 
 /* global Services */
 /* global window */
@@ -546,7 +546,7 @@ export default class {
                                 );
                             }
                         } else {
-                            console.error('No matching citations for QID ' + targetQid);
+                            debug('No matching citations for QID ' + targetQid);
                         }
                     }
                 }

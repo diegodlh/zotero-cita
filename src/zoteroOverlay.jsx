@@ -1,3 +1,4 @@
+import Wikicite, { debug } from './wikicite';
 import Citations from './citations';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
 import Crossref from './crossref';
@@ -7,7 +8,6 @@ import OpenCitations from './opencitations';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import SourceItemWrapper from './sourceItemWrapper';
-import Wikicite from './wikicite';
 import WikiciteChrome from './wikiciteChrome';
 import Wikidata from './wikidata';
 
@@ -22,17 +22,10 @@ const TRANSLATOR_LABELS = [
 /* global window, document, Components, MutationObserver*/
 /* global Services */
 /* global Zotero, ZoteroPane */
+/* global performance */
+
 Components.utils.import("resource://gre/modules/AddonManager.jsm");
 Components.utils.import('resource://zotero/config.js');
-
-// Fixme: Candidate move to Wikicite?
-function debug(msg, err) {
-    if (err) {
-        Zotero.debug(`{Cita} ${new Date} error: ${msg} (${err} ${err.stack})`)
-    } else {
-        Zotero.debug(`{Cita} ${new Date}: ${msg}`)
-    }
-}
 
 // needed as a separate function, because zoteroOverlay.refreshZoteroPopup refers to `this`, and a bind would make it
 // two separate functions in add/remove eventlistener
@@ -170,14 +163,14 @@ const zoteroOverlay = {
             const oldDate = new Date(installed.lastUpdated);
             if (oldDate > newDate) {
                 // do not install
-                console.log('Skipping installation of translator ' + label);
+                debug('Skipping installation of translator ' + label);
                 return;
             }
         }
         try {
             await Zotero.Translators.save(metadata, code);
         } catch (err) {
-            console.log(`Failed to install translator ${label}: ${err}`);
+            debug(`Failed to install translator ${label}`, err);
             this.uninstallTranslator(label);
         }
     },
@@ -191,7 +184,7 @@ const zoteroOverlay = {
             destFile.remove(false)
           }
         } catch (err) {
-          console.log(`Failed to remove translator ${label}: ${err}`)
+          debug(`Failed to remove translator ${label}`, err)
         }
     },
 
@@ -596,7 +589,7 @@ const zoteroOverlay = {
                 const citationsTabIndex = Array.from(editPaneTabs.children).findIndex(child => child.id === 'zotero-editpane-citations-tab');
                 if (zoteroViewTabbox.selectedIndex === citationsTabIndex) {
                     // fix: runs twice when tab is changed to Citations
-                    console.log(`Refreshing citations pane... (${target.id})`);
+                    debug(`Refreshing citations pane... (${target.id})`);
                     const t0 = performance.now();
                     ReactDOM.render(
                         <CitationsBoxContainer
@@ -615,7 +608,7 @@ const zoteroOverlay = {
                         () => this.updateCitationsBoxSize(document)
                     );
                     const t1 = performance.now();
-                    console.log(`Rendering CitationsBoxContainer took ${t1-t0}ms.`);
+                    debug(`Rendering CitationsBoxContainer took ${t1-t0}ms.`);
                 }
             }
         }
@@ -660,7 +653,7 @@ const zoteroOverlay = {
     },
 
     handleCitationPopupShowing: function(doc) {
-        console.log(`Showing citation popup for citation #${this._citationIndex}`);
+        debug(`Showing citation popup for citation #${this._citationIndex}`);
 
         const sourceItem = this._sourceItem;
         const citation = sourceItem.citations[this._citationIndex];

@@ -3,13 +3,13 @@ import React, {
     useEffect,
     useState
 } from 'react';
+import Wikicite, { debug } from '../../wikicite';
 import { Button } from '../button';
 import Citation from '../../citation';
 import { IntlProvider } from 'react-intl';
 import PIDRow from '../pidRow';
 import PropTypes from 'prop-types';
 import SourceItemWrapper from '../../sourceItemWrapper';
-import Wikicite from '../../wikicite';
 import WikidataButton from './wikidataButton';
 import ZoteroButton from './zoteroButton';
 
@@ -95,14 +95,13 @@ function CitationsBox(props) {
         }, props.sourceItem);
         const item = openEditor(citation);
         if (!item) {
-            // Fixme: move console.log to wikicite debug
-            console.log('Edit cancelled by user.');
+            debug('Edit cancelled by user.');
             return;
         }
         if (
             props.sourceItem.getPID('qid') && Wikicite.getExtraField(item, 'qid').values[0]
         ) {
-            console.log('Source and target items have QIDs! Offer syncing to Wikidata.')
+            debug('Source and target items have QIDs! Offer syncing to Wikidata.')
         }
         citation.target.item = item;
 
@@ -135,14 +134,13 @@ function CitationsBox(props) {
         // Fixme: I don't like that I'm repeating code from addCitation
         // tagsBox has a single updateTags method instead
         if (!item) {
-            // Fixme: move console.log to wikicite debug
-            console.log('Edit cancelled by user.');
+            debug('Edit cancelled by user.');
             return;
         }
         if (
             props.sourceItem.getPID('qid') && Wikicite.getExtraField(item, 'qid').values[0]
         ) {
-            console.log('Source and target items have QIDs! Offer syncing to Wikidata.')
+            debug('Source and target items have QIDs! Offer syncing to Wikidata.')
         }
         citation.target.item = item;
 

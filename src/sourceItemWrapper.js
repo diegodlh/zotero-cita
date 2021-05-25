@@ -16,6 +16,7 @@ const SAVE_TO = 'note'; // extra
 /* global DOMParser */
 /* global Services */
 /* global Zotero */
+/* global performance */
 /* global window */
 
 class SourceItemWrapper extends ItemWrapper {
@@ -81,13 +82,13 @@ class SourceItemWrapper extends ItemWrapper {
             note.saveTx();
         }
         this._citations = citations;
-        console.log(`Saving citations to source item took ${performance.now() - t0}`);
+        debug(`Saving citations to source item took ${performance.now() - t0}`);
     }
 
     get corruptCitations() {
         const t0 = performance.now();
         const corruptCitations = Wikicite.getExtraField(this.item, 'corrupt-citation').values;
-        console.log(`Getting corrupt citations from source item took ${performance.now() - t0}`)
+        debug(`Getting corrupt citations from source item took ${performance.now() - t0}`)
         return corruptCitations;
     }
 
@@ -95,7 +96,7 @@ class SourceItemWrapper extends ItemWrapper {
         const t0 = performance.now()
         Wikicite.setExtraField(this.item, 'corrupt-citation', corruptCitations);
         this.saveHandler();
-        console.log(`Saving corrupt citations to source item took ${performance.now() - t0}`)
+        debug(`Saving corrupt citations to source item took ${performance.now() - t0}`)
     }
 
     /**
@@ -156,7 +157,7 @@ class SourceItemWrapper extends ItemWrapper {
                 } catch {
                     // if citation can't be parsed, append it to the corrupt citations array
                     corruptCitations.push(rawCitation);
-                    console.log(`Citation #${index} is corrupt`);
+                    debug(`Citation #${index} is corrupt`);
                 }
             });
         } else if (SAVE_TO === 'note') {
@@ -200,7 +201,7 @@ class SourceItemWrapper extends ItemWrapper {
         if (compare) {
             // Fixme: consider running further checks
             if (this._citations.length !== citations.length) {
-                console.log('Number of citations changed')
+                debug('Number of citations changed')
             }
         }
         this._citations = citations;
@@ -208,7 +209,7 @@ class SourceItemWrapper extends ItemWrapper {
             this.citations = this._citations;
             this.corruptCitations = this.corruptCitations.concat(corruptCitations);
         }
-        console.log(`Getting citations from source item took ${performance.now() - t0}`)
+        debug(`Getting citations from source item took ${performance.now() - t0}`)
     }
 
     saveCitations() {
