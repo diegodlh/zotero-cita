@@ -5,6 +5,7 @@
     <Description about="urn:mozilla:install-manifest">
         <em:id>zotero-wikicite@wikidata.org</em:id>
         <em:name>Cita</em:name>
+        <em:description>Citations metadata support for Zotero</em:description>
         <em:version>0.2.3</em:version>
         <em:multiprocessCompatible>true</em:multiprocessCompatible>
         <em:updateURL>https://raw.githubusercontent.com/diegodlh/zotero-cita/master/update.rdf</em:updateURL>
@@ -14,10 +15,13 @@
                 <em:locale>en-US</em:locale>
                 <em:name>Cita</em:name>
                 <em:description>Citations metadata support for Zotero</em:description>
+                <em:creator>Diego de la Hera</em:creator>
+                <em:homepageURL>https://github.com/diegodlh/zotero-cita</em:homepageURL>
             </Description>
         </em:localized>
 
         <em:creator>Diego de la Hera</em:creator>
+        <em:homepageURL>https://github.com/diegodlh/zotero-cita</em:homepageURL>
         <em:optionsURL>chrome://cita/content/preferences.html</em:optionsURL>
         <em:type>2</em:type> <!-- type=extension -->
         <em:iconURL>chrome://cita/skin/cita.png</em:iconURL>
@@ -50,6 +54,8 @@
                 <em:locale>es</em:locale>
                 <em:name>Cita</em:name>
                 <em:description>Soporte para metadatos de citas en Zotero</em:description>
+                <em:creator>Diego de la Hera</em:creator>
+                <em:homepageURL>https://github.com/diegodlh/zotero-cita</em:homepageURL>
             </Description>
         </em:localized>
     </Description>
