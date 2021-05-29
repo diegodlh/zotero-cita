@@ -568,8 +568,11 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                             qid = null;
                             progress.updateLine(
                                 'error',
-                                'wikicite.wikidata.create.auto.progress.cancelled'
+                                Wikicite.getString(
+                                    'wikicite.wikidata.create.auto.progress.cancelled'
+                                )
                             );
+                            break;
                         }
                         const requestConfig = {
                             anonymous: login.anonymous,
