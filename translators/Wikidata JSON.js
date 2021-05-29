@@ -58,7 +58,8 @@ var typeMapping = {
 	"Q30070414": "dictionaryEntry",
 	"Q49848": "document",
 	"Q30070439": "email",
-	"Q17329259": "encyclopediaArticle",
+	"Q13433827": "encyclopediaArticle",
+	"Q17329259": "encyclopediaArticle", // merged into Q13433827
 	"Q11424": "film",
 	"Q7216866": "forumPost",
 	"Q30070550": "hearing",
