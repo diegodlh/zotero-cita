@@ -70,7 +70,7 @@ class SourceItemWrapper extends ItemWrapper {
             }
             if (!note) {
                 note = new Zotero.Item('note');
-                // note.libraryID = this.item.libraryID;
+                note.libraryID = this.item.libraryID;
                 note.parentKey = this.item.key;
             }
             const jsonCitations = JSON.stringify(citations, replacer, 2);
