@@ -32,7 +32,7 @@ If applicable, add screenshots to help explain your problem.
  - OS name and version: [e.g., Windows 10]
 
 **Additional context**
-Add any other context about the problem here. For example, a list of installed add-ons, a debug 
+Add any other context about the problem here. For example, a list of installed add-ons.
 
 <!---
 If possible, attach a debug output log:
@@ -41,4 +41,8 @@ If possible, attach a debug output log:
 3. Go to Help > Debug Output Logging > View Output.
 4. On the window that opens, go to File > Save to save the log. Attach this file to this bug report.
 5. Close the Debug Output window and disable logging: Help > Debug Output Logging > Disable.
+
+If it doesn't affect your privacy, you can also export the item or collection causing trouble to a file and attach it to this bug report:
+1. Select the item(s) or collection causing trouble, right click on your selection and choose Export Item/Collection.
+2. Choose "Zotero RDF" as format and make sure to check Export Notes (because Cita saves citations metadata to note attachments). Hit OK to save.
 -->
