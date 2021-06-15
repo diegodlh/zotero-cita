@@ -611,6 +611,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                                             'wikicite.wikidata.create.auto.progress.error'
                                         )
                                     );
+                                    throw error;
                                 }
                             }
                     } while (login.error);
