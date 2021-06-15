@@ -34,7 +34,7 @@
   "dependencies": {
     "prop-types": "^15.7.2",
     "querystring-es3": "^0.2.1",
-    "quickstatements-to-wikibase-edit": "^1.0.2",
+    "quickstatements-to-wikibase-edit": "^1.0.3",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-intl": "^5.10.13",

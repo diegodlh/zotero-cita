@@ -1,0 +1,17 @@
+diff --git a/node_modules/quickstatements-to-wikibase-edit/lib/format_value.js b/node_modules/quickstatements-to-wikibase-edit/lib/format_value.js
+index faa23c0..71f7672 100644
+--- a/node_modules/quickstatements-to-wikibase-edit/lib/format_value.js
++++ b/node_modules/quickstatements-to-wikibase-edit/lib/format_value.js
+@@ -28,7 +28,11 @@ const formatters = {
+     let [ , amount, approximation, unit ] = value.match(patterns.quantity)
+     amount = parseFloat(amount)
+     const valueObj = { amount }
+-    if (unit) valueObj.unit = unit.replace('U', 'Q')
++    if (unit) {
++      valueObj.unit = unit.replace('U', 'Q')
++    } else {
++      valueObj.unit = '1'
++    }
+     if (approximation != null) {
+       approximation = parseFloat(approximation.slice(1))
+       valueObj.lowerBound = amount - approximation
