@@ -860,10 +860,23 @@ class Login {
                 // See https://github.com/maxlath/wikibase-edit/issues/63
                 this.error = 'unsupportedAnonymous';
             } else {
+                debug(
+                    'Unexpected login error',
+                    error
+                )
                 this.error = 'unknown';
             }
         } else if (error.message.split(':')[0] == 'failed to login') {
-            this.error = 'wrongCredentials';
+            const reason = error.message.split(':')[1].trim();
+            if (reason === 'invalid username/password') {
+                this.error = 'wrongCredentials';
+            } else {
+                debug(
+                    'Unexpected login error',
+                    error
+                );
+                this.error = 'unknown';
+            }
         }
         // I don't want permissiondenied errors to be treated as
         // login errors, because permission may have been denied
