@@ -17,7 +17,11 @@ const wbEditVersion = require('wikibase-edit/package.json').version;
 // Wikibase instances.
 const WBK_INSTANCE = 'https://www.wikidata.org';
 const WBK_SPARQL = 'https://query.wikidata.org/sparql';
-const RECONCILE_API = 'https://wikidata.reconci.link/en/api'
+const RECONCILE_API = (
+    'https://wikidata.reconci.link/' +
+    Services.locale.getRequestedLocale().split('-')[0] +
+    '/api'
+);
 
 const entities = {
     'work': 'Q386724'
@@ -253,7 +257,14 @@ export default class {
                                 'wikicite.wikidata.reconcile.approx.none'
                             ),
                             ...candidates.map(
-                                (candidate) => `${candidate.name} (${candidate.id})`
+                                (candidate) => {
+                                    let candidateStr = candidate.id + ': ' + candidate.name;
+                                    const typeNames = candidate.type.map((type) => type.name);
+                                    if (typeNames.length) {
+                                        candidateStr += ' (' + typeNames.join('; ') + ')';
+                                    }
+                                    return candidateStr;
+                                }
                             )
                         ]
                         const selection = {};
