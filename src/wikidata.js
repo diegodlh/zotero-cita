@@ -17,11 +17,7 @@ const wbEditVersion = require('wikibase-edit/package.json').version;
 // Wikibase instances.
 const WBK_INSTANCE = 'https://www.wikidata.org';
 const WBK_SPARQL = 'https://query.wikidata.org/sparql';
-const RECONCILE_API = (
-    'https://wikidata.reconci.link/' +
-    Services.locale.getRequestedLocale().split('-')[0] +
-    '/api'
-);
+const RECONCILE_API = 'https://wikidata.reconci.link/$lng/api';
 
 const entities = {
     'work': 'Q386724'
@@ -168,7 +164,10 @@ export default class {
             try {
                 const req = await Zotero.HTTP.request(
                     'POST',
-                    RECONCILE_API,
+                    RECONCILE_API.replace(
+                        '$lng',
+                        Services.locale.getRequestedLocale().split('-')[0]
+                    ),
                     {
                         body: `queries=${encodeURIComponent(JSON.stringify(queries))}`,
                         headers: {
