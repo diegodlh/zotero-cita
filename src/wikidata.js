@@ -81,11 +81,13 @@ export default class {
         if (typeof options.create === 'undefined') {
             options.create = items.length === 1;
         }
+        const typeMapping = await getTypeMapping();
         // create item -> qid map that will be returned at the end
         const qids = new Map(items.map((item) => [item, item.qid]));
         // iterate over the items to create the qXX query objects
         const queries = {};
-        items.forEach((item, i) => {
+        for (let i=0; i<items.length; i++) {
+            const item = items[i];
             if (item.qid && !options.overwrite) {
                 // current item has qid already
                 return;
@@ -128,15 +130,28 @@ export default class {
                 // if no title nor supported properties, skip to next item
                 return;
             }
-            queries[`q${i}`] = {
-                // Workaround until #84 can be fixed
-                query: item.title.replace(/^(\w+):/, "$1"),
+            const queryId = `q${i}`;
+            // Workaround until #84 can be fixed
+            const query = item.title.replace(/^(\w+):/, "$1");
+            queries[queryId] = {
+                query,
                 type: entities.work,
-                type_strict: 'should',
                 properties: queryProps,
                 // limit: 3,                                ]
+            };
+
+            // Add type-specific queries (#101)
+            const mappedType = typeMapping[item.type];
+            if (mappedType) {
+                // if the Zotero item type maps to a Wikidata class
+                // add type-specific (t) query
+                queries[queryId + 't'] = {
+                    query,
+                    type: mappedType,
+                    properties: queryProps
+                };
             }
-        })
+        }
         if (Object.keys(queries).length) {
             progress.newLine(
                 'loading',
@@ -159,7 +174,22 @@ export default class {
                         timeout: 0
                     }
                 );
-                response = JSON.parse(req.response);
+                const tmpResponse = JSON.parse(req.response);
+                for (let i=0; i<items.length; i++) {
+                    const queryId = `q${i}`;
+                    const typedQuery = tmpResponse[queryId + 't'];
+                    const result = typedQuery ? typedQuery.result : [];
+                    for (const candidate of tmpResponse[queryId].result) {
+                        if (!result.map((candidate) => candidate.id).includes(candidate.id)) {
+                            // candidates from default (i.e., not type-specific) query
+                            // should not be exact matches
+                            candidate.match = false;
+                            result.push(candidate);
+                        }
+                    }
+                    result.sort((a, b) => b.score - a.score);
+                    response[queryId] = { result };
+                }
                 if (Object.values(response).some((query) => query.result.length)) {
                     // query batch succeeded and at least one query returned results
                     progress.updateLine(
@@ -232,7 +262,10 @@ export default class {
                             Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
                             Wikicite.formatString(
                                 'wikicite.wikidata.reconcile.approx.message',
-                                item.title
+                                [
+                                    item.title,
+                                    Zotero.ItemTypes.getLocalizedString(item.type)
+                                ]
                             ),
                             choices.length,
                             choices,
@@ -964,6 +997,28 @@ function getActionType(claims) {
         actionType = 'add';
     }
     return actionType;
+}
+
+/**
+ * Get typeMapping object from QS export translator
+ */
+async function getTypeMapping() {
+    // wait until translation service is ready
+    await Zotero.Schema.schemaUpdatePromise;
+    // get the translator's code
+    const code = await Zotero.Translators.get(
+        '51e5355d-9974-484f-80b9-f84d2b55782e'  // Wikidata QuickStatements
+    ).getCode();
+    // create a translator sandbox
+    const sm = new Zotero.Translate.SandboxManager();
+    // evaluate the translator's code and import the typeMapping object
+    sm.eval(
+        'ZOTERO_TRANSLATOR_INFO = ' + code,
+        [
+            'typeMapping'
+        ]
+    );
+    return sm.sandbox.typeMapping;
 }
 
 function resetCookies() {
