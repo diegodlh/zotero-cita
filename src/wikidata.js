@@ -90,7 +90,7 @@ export default class {
             const item = items[i];
             if (item.qid && !options.overwrite) {
                 // current item has qid already
-                return;
+                continue;
             }
             const queryProps = [];
             const cleanDOI = Zotero.Utilities.cleanDOI(item.doi);
@@ -128,7 +128,7 @@ export default class {
             // }
             if (!item.title && !queryProps.length) {
                 // if no title nor supported properties, skip to next item
-                return;
+                continue;
             }
             const queryId = `q${i}`;
             // Workaround until #84 can be fixed
