@@ -180,6 +180,7 @@ export default class {
                 const tmpResponse = JSON.parse(req.response);
                 for (let i=0; i<items.length; i++) {
                     const queryId = `q${i}`;
+                    if (!tmpResponse[queryId]) continue;
                     const typedQuery = tmpResponse[queryId + 't'];
                     const result = typedQuery ? typedQuery.result : [];
                     for (const candidate of tmpResponse[queryId].result) {
