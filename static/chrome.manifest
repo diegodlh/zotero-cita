@@ -1,11 +1,14 @@
 content   cita              chrome/content/
 skin      cita    default   chrome/skin/default/
+locale    cita    ca        chrome/locale/ca/
 locale    cita    en-US     chrome/locale/en-US/
 locale    cita    de        chrome/locale/de/
 locale    cita    es        chrome/locale/es/
 locale    cita    fa        chrome/locale/fa/
 locale    cita    fr        chrome/locale/fr/
+locale    cita    he        chrome/locale/he/
 locale    cita    mk        chrome/locale/mk/
 locale    cita    pms       chrome/locale/pms/
 locale    cita    sk        chrome/locale/sk/
 locale    cita    tr        chrome/locale/tr/
+locale    cita    uk        chrome/locale/uk/
