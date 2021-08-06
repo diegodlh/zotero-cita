@@ -489,12 +489,28 @@ class SourceItemWrapper extends ItemWrapper {
         // offer to automatically link to zotero items
     }
 
-    getFromBibTeX() {
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.bibtex.import-citations.unsupported')
-        );
+    // get BibTeX from clipboard
+    // - also supports other formats supported by Zotero
+    // - also supports multiple items
+    async getFromBibTeX() {
+        var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
+        var translation = new Zotero.Translate.Import();
+        translation.setString(str);
+
+        // set libraryID to false so we don't save this item in the Zotero library
+        var newItems = await translation.translate({libraryID: false});
+        
+        let citations = []
+        newItems.forEach((item) => {
+            let newItem = new Zotero.Item(item.itemType);
+            newItem.fromJSON(item);
+
+            let citation = new Citation({item: newItem, ocis: []}, this);
+            citation.target.item = newItem;
+            citations.push(citation)
+        });
+
+        this.addCitations(citations);
     }
 
     exportToBibTeX(citationIndex) {
