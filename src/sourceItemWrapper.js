@@ -514,11 +514,35 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     exportToBibTeX(citationIndex) {
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.bibtex.export-citations.unsupported')
-        );
+        if (this._citations.length) {
+            this.loadCitations();
+            var exporter = new Zotero_File_Exporter();
+
+            // export all citations, or only those selected?
+            var citationsToExport;
+            if (citationIndex === undefined){
+                citationsToExport = this._citations;
+            }
+            else{
+                citationsToExport = [this._citations[citationIndex]];
+            }
+
+            // extract the Zotero items from the citations
+            var citationItems = citationsToExport.map((citation) => {
+                // Note: need to set the libraryID for the exported items, otherwise we get an error on export
+                citation.target.item._libraryID = this.item._libraryID;
+                return citation.target.item;
+            });
+            
+            exporter.items = citationItems;
+            if(!exporter.items || !exporter.items.length) throw("no citations to export");
+            
+            // opens Zotero export dialog box - can select format and file location
+            exporter.save();
+        }
+        else{
+            throw("no citations to export")
+        }
     }
 
     exportToCroci(citationIndex) {
