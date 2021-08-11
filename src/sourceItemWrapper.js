@@ -505,6 +505,37 @@ class SourceItemWrapper extends ItemWrapper {
         );
     }
 
+    // get Identifier from clipboard (DOI/ISBN/ArXiV/...)
+    // - also supports other formats supported by Zotero
+    // - also supports multiple items
+    async getFromIdentifier() {
+        var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
+        var identifiers = Zotero.Utilities.Internal.extractIdentifiers(str);
+
+        var citations = []
+        if (identifiers.length > 0){
+            for (const identifier of identifiers) {
+                let translation = new Zotero.Translate.Search();
+                translation.setIdentifier(identifier);
+
+                // set libraryID to false so we don't save this item in the Zotero library
+                let newItems = await translation.translate({libraryID: false});
+    
+                if (newItems.length == 1){
+                    let item = newItems[0]
+                    let newItem = new Zotero.Item(item.itemType);
+                    newItem.fromJSON(item);
+        
+                    let citation = new Citation({item: newItem, ocis: []}, this);
+                    citation.target.item = newItem;
+                    citations.push(citation)
+                }
+            }
+        }
+
+        this.addCitations(citations);
+    }
+
     exportToCroci(citationIndex) {
         OpenCitations.exportCitations();
     }

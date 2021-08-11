@@ -419,6 +419,18 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.getFromPDF()
         );
 
+        // Import from identifier menu item
+
+        const itemIdentifierImport = doc.createElement('menuitem');
+        itemIdentifierImport.setAttribute('id', 'item-menu-identifier-import');
+        itemIdentifierImport.setAttribute(
+            // 'label', Wikicite.getString('wikicite.item-menu.import-identifier')
+            'label', 'Import Item from Identifier'
+        );
+        itemIdentifierImport.addEventListener(
+            'command', () => this._sourceItem.getFromIdentifier()
+        );
+
         // Import from BibTeX menu item
 
         const itemBibTexImport = doc.createElement('menuitem');
@@ -499,6 +511,7 @@ const zoteroOverlay = {
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
         itemMenu.appendChild(itemPdfExtract);
+        itemMenu.appendChild(itemIdentifierImport);
         itemMenu.appendChild(itemBibTexImport);
         itemMenu.appendChild(itemBibTexExport);
         itemMenu.appendChild(itemCrociExport);
@@ -639,6 +652,7 @@ const zoteroOverlay = {
         const itemCrossrefGet = document.getElementById('item-menu-crossref-get');
         const itemOccGet = document.getElementById('item-menu-occ-get');
         const itemPdfExtract = document.getElementById('item-menu-pdf-extract');
+        const itemIdentifierImport = document.getElementById('item-menu-identifier-import');
         const itemBibTexImport = document.getElementById('item-menu-bibtex-import');
         const itemBibTexExport = document.getElementById('item-menu-bibtex-export');
         const itemCrociExport = document.getElementById('item-menu-croci-export');
@@ -647,6 +661,7 @@ const zoteroOverlay = {
         itemCrossrefGet.disabled = !sourceDoi;
         itemOccGet.disabled = !sourceOcc;
         itemPdfExtract.disabled = !hasAttachments;
+        itemIdentifierImport.disabled = false;
         itemBibTexImport.disabled = false;
         itemBibTexExport.disabled = !hasCitations;
         itemCrociExport.disabled = !hasCitations;
