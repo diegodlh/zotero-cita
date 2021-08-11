@@ -512,28 +512,58 @@ class SourceItemWrapper extends ItemWrapper {
         var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
         var identifiers = Zotero.Utilities.Internal.extractIdentifiers(str);
 
-        var citations = []
-        if (identifiers.length > 0){
-            for (const identifier of identifiers) {
-                let translation = new Zotero.Translate.Search();
-                translation.setIdentifier(identifier);
+        const progress = new Progress(
+            'loading',
+            'Adding citations...'
+        );
 
-                // set libraryID to false so we don't save this item in the Zotero library
-                let newItems = await translation.translate({libraryID: false});
+        try{
+            var citations = []
+            if (identifiers.length > 0){
+                for (const identifier of identifiers) {
+                    let translation = new Zotero.Translate.Search();
+                    translation.setIdentifier(identifier);
     
-                if (newItems.length == 1){
-                    let item = newItems[0]
-                    let newItem = new Zotero.Item(item.itemType);
-                    newItem.fromJSON(item);
+                    // set libraryID to false so we don't save this item in the Zotero library
+                    let newItems = await translation.translate({libraryID: false});
         
-                    let citation = new Citation({item: newItem, ocis: []}, this);
-                    citation.target.item = newItem;
-                    citations.push(citation)
+                    if (newItems.length == 1){
+                        let item = newItems[0]
+                        let newItem = new Zotero.Item(item.itemType);
+                        newItem.fromJSON(item);
+            
+                        let citation = new Citation({item: newItem, ocis: []}, this);
+                        citation.target.item = newItem;
+                        citations.push(citation)
+                    }
+                    else{
+                        progress.updateLine(
+                            'error',
+                            'No items were detected from identifier'
+                        );
+                    }
                 }
+
+                this.addCitations(citations);
+    
+                progress.updateLine(
+                    'done',
+                    'Added citations'
+                );
+            }
+            else{
+                progress.updateLine(
+                    'error',
+                    'No identifiers were detected'
+                );
             }
         }
-
-        this.addCitations(citations);
+        catch {
+            progress.updateLine(
+                'error',
+                'Error adding citations'
+            );
+        }
     }
 
     exportToCroci(citationIndex) {
