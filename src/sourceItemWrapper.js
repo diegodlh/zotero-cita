@@ -497,20 +497,52 @@ class SourceItemWrapper extends ItemWrapper {
         var translation = new Zotero.Translate.Import();
         translation.setString(str);
 
-        // set libraryID to false so we don't save this item in the Zotero library
-        var newItems = await translation.translate({libraryID: false});
+        const progress = new Progress(
+            'loading',
+            'Adding citations...'
+        );
         
-        let citations = []
-        newItems.forEach((item) => {
-            let newItem = new Zotero.Item(item.itemType);
-            newItem.fromJSON(item);
+        try {
+            var translators = await translation.getTranslators();
 
-            let citation = new Citation({item: newItem, ocis: []}, this);
-            citation.target.item = newItem;
-            citations.push(citation)
-        });
+            if (translators.length > 0){
+                // set libraryID to false so we don't save this item in the Zotero library
+                var newItems = await translation.translate({libraryID: false});
+        
+                let citations = []
+                if (newItems.length > 0){
+                    newItems.forEach((item) => {
+                        let newItem = new Zotero.Item(item.itemType);
+                        newItem.fromJSON(item);
+            
+                        let citation = new Citation({item: newItem, ocis: []}, this);
+                        citation.target.item = newItem;
+                        citations.push(citation)
+                    });
+                    
+                    this.addCitations(citations);
+        
+                    progress.updateLine(
+                        'done',
+                        'Added citations'
+                    );
 
-        this.addCitations(citations);
+                    return;
+                }
+            }
+            // no translators, or no new items were detected
+            progress.updateLine(
+                'error',
+                'No citations were detected'
+            );  
+        }
+        catch {
+            progress.updateLine(
+                'error',
+                'Error adding citations'
+            );
+        }
+
     }
 
     exportToBibTeX(citationIndex) {
