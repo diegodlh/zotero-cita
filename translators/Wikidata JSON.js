@@ -51,6 +51,7 @@ var typeMapping = {
 	"Q571": "book",
 	"Q3331189": "book", // Edition
 	"Q47461344": "book", // written work
+	"Q7725634": "book", // literary work
 	"Q1980247": "bookSection",
 	"Q2334719": "case",
 	"Q40056": "computerProgram",
@@ -80,8 +81,7 @@ var typeMapping = {
 	"Q1266946": "thesis",
 	"Q15416": "tvBroadcast",
 	"Q30070675": "videoRecording",
-	"Q36774": "webpage",
-	"Q7725634": "book" // literary work
+	"Q36774": "webpage"
 };
 
 //see also https://www.wikidata.org/wiki/Template:Bibliographical_properties
