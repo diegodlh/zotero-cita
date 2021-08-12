@@ -16,6 +16,7 @@ const SAVE_TO = 'note'; // extra
 /* global DOMParser */
 /* global Services */
 /* global Zotero */
+/* global Zotero_File_Exporter */
 /* global performance */
 /* global window */
 
@@ -489,84 +490,88 @@ class SourceItemWrapper extends ItemWrapper {
         // offer to automatically link to zotero items
     }
 
-    // get BibTeX from clipboard
-    // - also supports other formats supported by Zotero
-    // - also supports multiple items
-    async getFromBibTeX() {
-        var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
-        var translation = new Zotero.Translate.Import();
+    // get citations from clipboard
+    // supports all formats supported by Zotero's import translator (BibTeX, RIS, ...)
+    // also supports multiple items
+    async importCitationsFromClipboard() {
+        const str = Zotero.Utilities.Internal.getClipboard("text/unicode");
+
+        // wait for Zotero's translation system to be ready
+        await Zotero.Schema.schemaUpdatePromise;
+        let translation = new Zotero.Translate.Import();
         translation.setString(str);
 
         const progress = new Progress(
             'loading',
-            'Adding citations...'
+            Wikicite.getString('wikicite.citation.import-clipboard.loading')
         );
         
+        let citations = []
         try {
-            var translators = await translation.getTranslators();
+            const translators = await translation.getTranslators();
 
             if (translators.length > 0){
                 // set libraryID to false so we don't save this item in the Zotero library
-                var newItems = await translation.translate({libraryID: false});
-        
-                let citations = []
-                if (newItems.length > 0){
-                    newItems.forEach((item) => {
-                        let newItem = new Zotero.Item(item.itemType);
-                        newItem.fromJSON(item);
-            
-                        let citation = new Citation({item: newItem, ocis: []}, this);
-                        citation.target.item = newItem;
-                        citations.push(citation)
-                    });
-                    
-                    this.addCitations(citations);
-        
-                    progress.updateLine(
-                        'done',
-                        'Added citations'
-                    );
+                const jsonItems = await translation.translate({libraryID: false});
 
-                    return;
+                for (const jsonItem of jsonItems) {
+                    let newItem = new Zotero.Item(jsonItem.itemType);
+                    newItem.fromJSON(jsonItem);
+        
+                    const citation = new Citation({item: newItem, ocis: []}, this);
+                    citation.target.item = newItem;
+                    citations.push(citation)
                 }
             }
-            // no translators, or no new items were detected
-            progress.updateLine(
-                'error',
-                'No citations were detected'
-            );  
         }
         catch {
             progress.updateLine(
                 'error',
-                'Error adding citations'
+                Wikicite.getString('wikicite.citation.import-clipboard.error')
             );
         }
 
+        if (citations.length > 0){
+            this.addCitations(citations);
+            progress.updateLine(
+                'done',
+                Wikicite.formatString('wikicite.citation.import-clipboard.done', citations.length)
+            );
+        }
+        else{
+            // no translators were found, or no items were detected in text
+            progress.updateLine(
+                'error',
+                Wikicite.getString('wikicite.citation.import-clipboard.none-imported')
+            );  
+        }
+
+        progress.close()
     }
 
-    exportToBibTeX(citationIndex) {
-        if (this._citations.length) {
-            this.loadCitations();
-            var exporter = new Zotero_File_Exporter();
+    exportToFile(citationIndex) {
+        this.loadCitations();
+        if (this.citations.length) {
+            let exporter = new Zotero_File_Exporter();
 
             // export all citations, or only those selected?
-            var citationsToExport;
+            let citationsToExport;
             if (citationIndex === undefined){
-                citationsToExport = this._citations;
+                citationsToExport = this.citations;
             }
             else{
-                citationsToExport = [this._citations[citationIndex]];
+                citationsToExport = [this.citations[citationIndex]];
             }
 
             // extract the Zotero items from the citations
-            var citationItems = citationsToExport.map((citation) => {
+            const citationItems = citationsToExport.map((citation) => {
                 // Note: need to set the libraryID for the exported items, otherwise we get an error on export
-                citation.target.item._libraryID = this.item._libraryID;
+                citation.target.item.libraryID = this.item.libraryID;
                 return citation.target.item;
             });
             
             exporter.items = citationItems;
+            exporter.name = Wikicite.getString('wikicite.item-menu.export-file.filename');
             if(!exporter.items || !exporter.items.length) throw("no citations to export");
             
             // opens Zotero export dialog box - can select format and file location
