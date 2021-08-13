@@ -506,64 +506,68 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     // get Identifier from clipboard (DOI/ISBN/ArXiV/...)
-    // - also supports other formats supported by Zotero
     // - also supports multiple items
-    async getFromIdentifier() {
+    async addCitationsByIdentifier() {
+        // Consider using a textbox instead of getting from clipboard
         var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
         var identifiers = Zotero.Utilities.Internal.extractIdentifiers(str);
 
         const progress = new Progress(
             'loading',
-            'Adding citations...'
+            'Adding citation(s) by identifier'
         );
 
-        try{
-            var citations = []
-            if (identifiers.length > 0){
+        try {
+            if (identifiers.length > 0) {
+                var citations = [];
+                await Zotero.Schema.schemaUpdatePromise;
                 for (const identifier of identifiers) {
                     let translation = new Zotero.Translate.Search();
                     translation.setIdentifier(identifier);
-    
-                    // set libraryID to false so we don't save this item in the Zotero library
-                    let newItems = await translation.translate({libraryID: false});
-        
-                    if (newItems.length == 1){
-                        let item = newItems[0]
-                        let newItem = new Zotero.Item(item.itemType);
-                        newItem.fromJSON(item);
-            
+
+                    let jsonItems;
+                    try {
+                        // set libraryID to false so we don't save this item in the Zotero library
+                        jsonItems = await translation.translate({libraryID: false});
+                    } catch {
+                        debug('No items returned for identifier ' + identifier);
+                    }
+
+                    if (jsonItems) {
+                        let jsonItem = jsonItems[0]
+                        let newItem = new Zotero.Item(jsonItem.itemType);
+                        newItem.fromJSON(jsonItem);
+
                         let citation = new Citation({item: newItem, ocis: []}, this);
-                        citation.target.item = newItem;
                         citations.push(citation)
                     }
-                    else{
-                        progress.updateLine(
-                            'error',
-                            'No items were detected from identifier'
-                        );
-                    }
                 }
-
-                this.addCitations(citations);
-    
-                progress.updateLine(
-                    'done',
-                    'Added citations'
-                );
-            }
-            else{
+                if (citations.length) {
+                    this.addCitations(citations);
+                    progress.updateLine(
+                        'done',
+                        'XX citations added'
+                    );
+                } else {
+                    progress.updateLine(
+                        'error',
+                        'No citations found'
+                    );
+                }
+            } else {
                 progress.updateLine(
                     'error',
-                    'No identifiers were detected'
+                    'No valid identifiers provided'
                 );
             }
         }
         catch {
             progress.updateLine(
                 'error',
-                'Error adding citations'
+                'Adding citation(s) by identifier failed'
             );
         }
+        progress.close();
     }
 
     exportToCroci(citationIndex) {

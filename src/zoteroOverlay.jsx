@@ -419,16 +419,16 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.getFromPDF()
         );
 
-        // Import from identifier menu item
+        // Add citations by identifier menu item
 
         const itemIdentifierImport = doc.createElement('menuitem');
         itemIdentifierImport.setAttribute('id', 'item-menu-identifier-import');
         itemIdentifierImport.setAttribute(
             // 'label', Wikicite.getString('wikicite.item-menu.import-identifier')
-            'label', 'Import Item from Identifier'
+            'label', 'Add citation(s) by identifier'
         );
         itemIdentifierImport.addEventListener(
-            'command', () => this._sourceItem.getFromIdentifier()
+            'command', () => this._sourceItem.addCitationsByIdentifier()
         );
 
         // Import from BibTeX menu item
