@@ -506,8 +506,8 @@ class SourceItemWrapper extends ItemWrapper {
             Wikicite.getString('wikicite.citation.import-clipboard.loading')
         );
         
-        let citations = []
         try {
+            const citations = [];
             const translators = await translation.getTranslators();
 
             if (translators.length > 0){
@@ -523,27 +523,26 @@ class SourceItemWrapper extends ItemWrapper {
                     citations.push(citation)
                 }
             }
+            if (citations.length > 0){
+                this.addCitations(citations);
+                progress.updateLine(
+                    'done',
+                    Wikicite.formatString('wikicite.citation.import-clipboard.done', citations.length)
+                );
+            }
+            else{
+                // no translators were found, or no items were detected in text
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString('wikicite.citation.import-clipboard.none-imported')
+                );
+            }
         }
         catch {
             progress.updateLine(
                 'error',
                 Wikicite.getString('wikicite.citation.import-clipboard.error')
             );
-        }
-
-        if (citations.length > 0){
-            this.addCitations(citations);
-            progress.updateLine(
-                'done',
-                Wikicite.formatString('wikicite.citation.import-clipboard.done', citations.length)
-            );
-        }
-        else{
-            // no translators were found, or no items were detected in text
-            progress.updateLine(
-                'error',
-                Wikicite.getString('wikicite.citation.import-clipboard.none-imported')
-            );  
         }
 
         progress.close()
