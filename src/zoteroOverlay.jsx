@@ -424,8 +424,7 @@ const zoteroOverlay = {
         const itemIdentifierImport = doc.createElement('menuitem');
         itemIdentifierImport.setAttribute('id', 'item-menu-identifier-import');
         itemIdentifierImport.setAttribute(
-            // 'label', Wikicite.getString('wikicite.item-menu.import-identifier')
-            'label', 'Add citation(s) by identifier'
+            'label', Wikicite.getString('wikicite.item-menu.import-identifier')
         );
         itemIdentifierImport.addEventListener(
             'command', () => this._sourceItem.addCitationsByIdentifier()

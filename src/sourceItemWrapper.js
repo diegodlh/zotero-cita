@@ -514,7 +514,7 @@ class SourceItemWrapper extends ItemWrapper {
 
         const progress = new Progress(
             'loading',
-            'Adding citation(s) by identifier'
+            Wikicite.getString('wikicite.wikidata.progress.import-identifier.loading')
         );
 
         try {
@@ -546,25 +546,25 @@ class SourceItemWrapper extends ItemWrapper {
                     this.addCitations(citations);
                     progress.updateLine(
                         'done',
-                        'XX citations added'
+                        Wikicite.formatString('wikicite.wikidata.progress.import-identifier.done', citations.length)
                     );
                 } else {
                     progress.updateLine(
                         'error',
-                        'No citations found'
+                        Wikicite.getString('wikicite.wikidata.progress.import-identifier.none-found')
                     );
                 }
             } else {
                 progress.updateLine(
                     'error',
-                    'No valid identifiers provided'
+                    Wikicite.getString('wikicite.wikidata.progress.import-identifier.no-identifiers')
                 );
             }
         }
         catch {
             progress.updateLine(
                 'error',
-                'Adding citation(s) by identifier failed'
+                Wikicite.getString('wikicite.wikidata.progress.import-identifier.error')
             );
         }
         progress.close();
