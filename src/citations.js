@@ -232,9 +232,18 @@ export default class {
                             counters.orphanedCitations += 1;
                         } else {
                             // the citation doesn't have a Wikidata OCI yet
-                            remoteAddCitations[itemId].push(localCitedQid);
-                            counters.remoteAddCitations += 1;
-                            remoteEntitiesToUpdate.add(sourceItem.qid);
+                            if (remoteAddCitations[itemId].includes(localCitedQid)) {
+                                // in case of duplicate local citations
+                                // do not add "cites work" statement remotely twice
+                                debug(
+                                    'Will not create duplicate "cites work" statement for ' +
+                                    localCitedQid
+                                );
+                            } else {
+                                remoteAddCitations[itemId].push(localCitedQid);
+                                counters.remoteAddCitations += 1;
+                                remoteEntitiesToUpdate.add(sourceItem.qid);
+                            }
                         }
                     }
                 } else {

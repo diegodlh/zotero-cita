@@ -51,6 +51,7 @@ var typeMapping = {
 	"Q571": "book",
 	"Q3331189": "book", // Edition
 	"Q47461344": "book", // written work
+	"Q7725634": "book", // literary work
 	"Q1980247": "bookSection",
 	"Q2334719": "case",
 	"Q40056": "computerProgram",
