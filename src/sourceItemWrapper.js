@@ -505,9 +505,10 @@ class SourceItemWrapper extends ItemWrapper {
         );
     }
 
-    // get Identifier from clipboard (DOI/ISBN/ArXiV/...)
-    // - also supports multiple items
+    // import citation by identifier (DOI/ISBN/ArXiV/PMID...)
+    // - also supports multiple items (but only one type at once)
     async addCitationsByIdentifier() {
+        // open a new window where the user can paste in identifier strings
         const args = {
             Wikicite: Wikicite
         };
@@ -519,67 +520,67 @@ class SourceItemWrapper extends ItemWrapper {
             args,
             retVals
         );
-        // Consider using a textbox instead of getting from clipboard
-        // var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
-        // var identifiers = Zotero.Utilities.Internal.extractIdentifiers(str);
-        var identifiers = Zotero.Utilities.Internal.extractIdentifiers(retVals.text);
 
-        const progress = new Progress(
-            'loading',
-            Wikicite.getString('wikicite.wikidata.progress.import-identifier.loading')
-        );
-
-        try {
-            if (identifiers.length > 0) {
-                var citations = [];
-                await Zotero.Schema.schemaUpdatePromise;
-                for (const identifier of identifiers) {
-                    let translation = new Zotero.Translate.Search();
-                    translation.setIdentifier(identifier);
-
-                    let jsonItems;
-                    try {
-                        // set libraryID to false so we don't save this item in the Zotero library
-                        jsonItems = await translation.translate({libraryID: false});
-                    } catch {
-                        debug('No items returned for identifier ' + identifier);
+        if (retVals.didImport){
+            const identifiers = Zotero.Utilities.Internal.extractIdentifiers(retVals.text);
+    
+            const progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.wikidata.progress.import-identifier.loading')
+            );
+    
+            try {
+                if (identifiers.length > 0) {
+                    let citations = [];
+                    await Zotero.Schema.schemaUpdatePromise;
+                    for (const identifier of identifiers) {
+                        let translation = new Zotero.Translate.Search();
+                        translation.setIdentifier(identifier);
+    
+                        let jsonItems;
+                        try {
+                            // set libraryID to false so we don't save this item in the Zotero library
+                            jsonItems = await translation.translate({libraryID: false});
+                        } catch {
+                            debug('No items returned for identifier ' + identifier);
+                        }
+    
+                        if (jsonItems) {
+                            let jsonItem = jsonItems[0]
+                            let newItem = new Zotero.Item(jsonItem.itemType);
+                            newItem.fromJSON(jsonItem);
+    
+                            let citation = new Citation({item: newItem, ocis: []}, this);
+                            citations.push(citation)
+                        }
                     }
-
-                    if (jsonItems) {
-                        let jsonItem = jsonItems[0]
-                        let newItem = new Zotero.Item(jsonItem.itemType);
-                        newItem.fromJSON(jsonItem);
-
-                        let citation = new Citation({item: newItem, ocis: []}, this);
-                        citations.push(citation)
+                    if (citations.length) {
+                        this.addCitations(citations);
+                        progress.updateLine(
+                            'done',
+                            Wikicite.formatString('wikicite.wikidata.progress.import-identifier.done', citations.length)
+                        );
+                    } else {
+                        progress.updateLine(
+                            'error',
+                            Wikicite.getString('wikicite.wikidata.progress.import-identifier.none-found')
+                        );
                     }
-                }
-                if (citations.length) {
-                    this.addCitations(citations);
-                    progress.updateLine(
-                        'done',
-                        Wikicite.formatString('wikicite.wikidata.progress.import-identifier.done', citations.length)
-                    );
                 } else {
                     progress.updateLine(
                         'error',
-                        Wikicite.getString('wikicite.wikidata.progress.import-identifier.none-found')
+                        Wikicite.getString('wikicite.wikidata.progress.import-identifier.no-identifiers')
                     );
                 }
-            } else {
+            }
+            catch {
                 progress.updateLine(
                     'error',
-                    Wikicite.getString('wikicite.wikidata.progress.import-identifier.no-identifiers')
+                    Wikicite.getString('wikicite.wikidata.progress.import-identifier.error')
                 );
             }
+            progress.close();
         }
-        catch {
-            progress.updateLine(
-                'error',
-                Wikicite.getString('wikicite.wikidata.progress.import-identifier.error')
-            );
-        }
-        progress.close();
     }
 
     exportToCroci(citationIndex) {
