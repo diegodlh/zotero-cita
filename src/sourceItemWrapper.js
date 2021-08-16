@@ -508,9 +508,21 @@ class SourceItemWrapper extends ItemWrapper {
     // get Identifier from clipboard (DOI/ISBN/ArXiV/...)
     // - also supports multiple items
     async addCitationsByIdentifier() {
+        const args = {
+            Wikicite: Wikicite
+        };
+        const retVals = {};
+        window.openDialog(
+            'chrome://cita/content/identifierImporter.xul',
+            '',
+            'chrome,dialog=no,modal,centerscreen,resizable=yes',
+            args,
+            retVals
+        );
         // Consider using a textbox instead of getting from clipboard
-        var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
-        var identifiers = Zotero.Utilities.Internal.extractIdentifiers(str);
+        // var str = Zotero.Utilities.Internal.getClipboard("text/unicode");
+        // var identifiers = Zotero.Utilities.Internal.extractIdentifiers(str);
+        var identifiers = Zotero.Utilities.Internal.extractIdentifiers(retVals.text);
 
         const progress = new Progress(
             'loading',
