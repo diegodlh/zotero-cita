@@ -386,6 +386,17 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.syncWithWikidata()
         );
 
+        // Fetch QIDs menu item
+
+        const itemFetchCitationQIDs = doc.createElement('menuitem');
+        itemFetchCitationQIDs.setAttribute('id', 'item-menu-fetch-citation-qids');
+        itemFetchCitationQIDs.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.fetch-citation-qids')
+        );
+        itemFetchCitationQIDs.addEventListener(
+            'command', () => this._sourceItem.fetchCitationQIDs()
+        );
+
         // Get Crossref citations menu item
 
         const itemCrossrefGet = doc.createElement('menuitem');
@@ -496,6 +507,7 @@ const zoteroOverlay = {
 
 
         itemMenu.appendChild(itemWikidataSync);
+        itemMenu.appendChild(itemFetchCitationQIDs);
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
         itemMenu.appendChild(itemPdfExtract);
@@ -523,6 +535,15 @@ const zoteroOverlay = {
         );
         citationWikidataSync.addEventListener(
             'command', () => this._sourceItem.syncWithWikidata(this._citationIndex)
+        );
+
+        const citationFetchQID = doc.createElement('menuitem');
+        citationFetchQID.setAttribute('id', 'citation-menu-fetch-citation-qid');
+        citationFetchQID.setAttribute(
+            'label', Wikicite.getString('wikicite.citation-menu.fetch-citation-qid')
+        );
+        citationFetchQID.addEventListener(
+            'command', () => this._sourceItem.fetchCitationQIDs(this._citationIndex)
         );
 
         const itemFileExport = doc.createElement('menuitem');
@@ -570,6 +591,7 @@ const zoteroOverlay = {
         }
 
         citationMenu.appendChild(citationWikidataSync);
+        citationMenu.appendChild(citationFetchQID);
         citationMenu.appendChild(itemFileExport);
         citationMenu.appendChild(itemCrociExport);
         citationMenu.appendChild(ociMenu);
@@ -636,6 +658,7 @@ const zoteroOverlay = {
         const sourceQid = sourceItem.qid;
 
         const itemWikidataSync = document.getElementById('item-menu-wikidata-sync');
+        const itemFetchCitationQIDs = document.getElementById('item-menu-fetch-citation-qids');
         const itemCrossrefGet = document.getElementById('item-menu-crossref-get');
         const itemOccGet = document.getElementById('item-menu-occ-get');
         const itemPdfExtract = document.getElementById('item-menu-pdf-extract');
@@ -644,6 +667,7 @@ const zoteroOverlay = {
         const itemCrociExport = document.getElementById('item-menu-croci-export');
 
         itemWikidataSync.disabled = !sourceQid;
+        itemFetchCitationQIDs.disabled = !hasCitations;
         itemCrossrefGet.disabled = !sourceDoi;
         itemOccGet.disabled = !sourceOcc;
         itemPdfExtract.disabled = !hasAttachments;
@@ -662,7 +686,8 @@ const zoteroOverlay = {
         const ociSuppliers = citation.ocis.map((oci) => oci.supplier);
 
         doc.getElementById('citation-menu-wikidata-sync').disabled = !sourceItem.qid || !targetItem.qid;
-        doc.getElementById('item-menu-file-export').disabled = false;
+        doc.getElementById('citation-menu-fetch-citation-qid').disabled = !Boolean(sourceItem.citations.length);
+        doc.getElementById('citation-menu-file-export').disabled = false;
         doc.getElementById('citation-menu-croci-export').disabled = !sourceItem.doi || !targetItem.doi;
         doc.getElementById('citation-menu-oci-crossref').disabled = !ociSuppliers.includes('crossref');
         doc.getElementById('citation-menu-oci-occ').disabled = !ociSuppliers.includes('occ');

@@ -7,6 +7,7 @@ import ItemWrapper from './itemWrapper';
 import Matcher from './matcher';
 import OpenCitations from './opencitations';
 import Progress from './progress';
+import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
 // Fixme: define this in the preferences
@@ -471,6 +472,30 @@ class SourceItemWrapper extends ItemWrapper {
 
         // offer to automatically link to zotero items: this should be handled by the
         // this.addCitation method
+    }
+
+    // fetch the QIDs of an item's citations
+    // As per the default behaviour of `Wikidata.reconcile`, only perfect matches will be selected if used for multiple items
+    // For a single item, a choice between approximate matches or the option to create a new Wikidata item will be offered
+    async fetchCitationQIDs(citationIndex){
+        this.loadCitations();
+        let citationsToFetchQIDs;
+        if (citationIndex === undefined){
+            citationsToFetchQIDs = this.citations;
+        }
+        else{
+            citationsToFetchQIDs = [this.citations[citationIndex]];
+        }
+
+        const items = citationsToFetchQIDs.map((citation) => citation.target);
+        const qidMap = await Wikidata.reconcile(items);
+        for (const item of items) {
+            const qid = qidMap.get(item);
+            // Note: need to disable saving of the item here - otherwise get error when ItemWrapper.saveHandler() is run
+            if (qid) item.setPID('QID', qid, false);
+        }
+        // Now save the source item, which will save all the citations
+        this.saveCitations()
     }
 
     getFromPDF(method, fetchDOIs, fetchQIDs) {
