@@ -404,7 +404,6 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
 
-
     // updateCitationLabels() {
     //     const items = this.citations.map((citation) => citation.item);
     //     // Wikicite.getItemLabels expects items to have a libraryID!
@@ -515,61 +514,79 @@ class SourceItemWrapper extends ItemWrapper {
         // offer to automatically link to zotero items
     }
 
-    // get citations from clipboard
-    // supports all formats supported by Zotero's import translator (BibTeX, RIS, ...)
+    // import citations from text or file
+    // supports all formats supported by Zotero's import translator (BibTeX, RIS, RDF, ...)
     // also supports multiple items
-    async importCitationsFromClipboard() {
-        const str = Zotero.Utilities.Internal.getClipboard("text/unicode");
-
-        // wait for Zotero's translation system to be ready
-        await Zotero.Schema.schemaUpdatePromise;
-        let translation = new Zotero.Translate.Import();
-        translation.setString(str);
-
-        const progress = new Progress(
-            'loading',
-            Wikicite.getString('wikicite.citation.import-clipboard.loading')
+    async importCitations() {
+        // open a new window where the user can paste in bibliographic text, or select a file
+        const args = {
+            Wikicite: Wikicite
+        };
+        const retVals = {};
+        window.openDialog(
+            'chrome://cita/content/citationImporter.xul',
+            '',
+            'chrome,dialog=no,modal,centerscreen,resizable=yes',
+            args,
+            retVals
         );
-        
-        try {
-            const citations = [];
-            const translators = await translation.getTranslators();
 
-            if (translators.length > 0){
-                // set libraryID to false so we don't save this item in the Zotero library
-                const jsonItems = await translation.translate({libraryID: false});
-
-                for (const jsonItem of jsonItems) {
-                    let newItem = new Zotero.Item(jsonItem.itemType);
-                    newItem.fromJSON(jsonItem);
-        
-                    const citation = new Citation({item: newItem, ocis: []}, this);
-                    citations.push(citation);
-                }
-            }
-            if (citations.length > 0){
-                this.addCitations(citations);
-                progress.updateLine(
-                    'done',
-                    Wikicite.formatString('wikicite.citation.import-clipboard.done', citations.length)
-                );
+        if (retVals.didImport){
+            // wait for Zotero's translation system to be ready
+            await Zotero.Schema.schemaUpdatePromise;
+            let translation = new Zotero.Translate.Import();
+            if (retVals.importedText){
+                translation.setString(retVals.text);
             }
             else{
-                // no translators were found, or no items were detected in text
+                translation.setLocation(Zotero.File.pathToFile(retVals.file));
+            }
+
+            const progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.citation.import.loading')
+            );
+
+            try {
+                const citations = [];
+                const translators = await translation.getTranslators();
+
+                if (translators.length > 0){
+                    // set libraryID to false so we don't save this item in the Zotero library
+                    const jsonItems = await translation.translate({libraryID: false});
+
+                    for (const jsonItem of jsonItems) {
+                        let newItem = new Zotero.Item(jsonItem.itemType);
+                        newItem.fromJSON(jsonItem);
+
+                        const citation = new Citation({item: newItem, ocis: []}, this);
+                        citations.push(citation);
+                    }
+                }
+                if (citations.length > 0){
+                    this.addCitations(citations);
+                    progress.updateLine(
+                        'done',
+                        Wikicite.formatString('wikicite.citation.import.done', citations.length)
+                    );
+                }
+                else{
+                    // no translators were found, or no items were detected in text
+                    progress.updateLine(
+                        'error',
+                        Wikicite.getString('wikicite.citation.import.none-imported')
+                    );
+                }
+            }
+            catch {
                 progress.updateLine(
                     'error',
-                    Wikicite.getString('wikicite.citation.import-clipboard.none-imported')
+                    Wikicite.getString('wikicite.citation.import.error')
                 );
             }
-        }
-        catch {
-            progress.updateLine(
-                'error',
-                Wikicite.getString('wikicite.citation.import-clipboard.error')
-            );
-        }
 
-        progress.close()
+            progress.close()
+        }
     }
 
     exportToFile(citationIndex) {
@@ -592,11 +609,11 @@ class SourceItemWrapper extends ItemWrapper {
                 citation.target.item.libraryID = this.item.libraryID;
                 return citation.target.item;
             });
-            
+
             exporter.items = citationItems;
             exporter.name = Wikicite.getString('wikicite.item-menu.export-file.filename');
             if(!exporter.items || !exporter.items.length) throw("no citations to export");
-            
+
             // opens Zotero export dialog box - can select format and file location
             exporter.save();
         }

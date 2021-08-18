@@ -1,0 +1,21 @@
+window#citation-importer {
+	width: 700px;
+	padding: 1em;
+}
+
+div#citation-importer-description {
+	margin-bottom: 10px;
+}
+
+div#citation-importer-textbox {
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+div#citation-importer-buttons {
+	text-align: right;
+}
+
+textarea#citation-input{
+	width: 100%
+}

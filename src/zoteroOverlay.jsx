@@ -438,7 +438,7 @@ const zoteroOverlay = {
             'label', Wikicite.getString('wikicite.item-menu.import-clipboard')
         );
         itemClipboardImport.addEventListener(
-            'command', () => this._sourceItem.importCitationsFromClipboard()
+            'command', () => this._sourceItem.importCitations()
         );
 
         // Export to file menu item
