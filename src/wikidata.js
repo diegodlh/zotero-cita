@@ -1016,10 +1016,18 @@ function getActionType(claims) {
 async function getTypeMapping() {
     // wait until translation service is ready
     await Zotero.Schema.schemaUpdatePromise;
-    // get the translator's code
-    const code = await Zotero.Translators.get(
+    let translator = Zotero.Translators.get(
         '51e5355d-9974-484f-80b9-f84d2b55782e'  // Wikidata QuickStatements
-    ).getCode();
+    );
+    // get the translator's code
+    let code;
+    try {
+        code = await translator.getCode();
+    } catch {
+        // translator.getCode no longer supported since translation modularization
+        // https://github.com/zotero/zotero/pull/2132
+        code = await Zotero.Translators.getCodeForTranslator(translator);
+    }
     // create a translator sandbox
     const sm = new Zotero.Translate.SandboxManager();
     // evaluate the translator's code and import the typeMapping object
