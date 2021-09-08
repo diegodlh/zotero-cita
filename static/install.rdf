@@ -15,12 +15,12 @@
                 <em:locale>en-US</em:locale>
                 <em:name>Cita</em:name>
                 <em:description>Citations metadata support for Zotero</em:description>
-                <em:creator>Diego de la Hera</em:creator>
+                <em:creator>Diego de la Hera, and others</em:creator>
                 <em:homepageURL>https://github.com/diegodlh/zotero-cita</em:homepageURL>
             </Description>
         </em:localized>
 
-        <em:creator>Diego de la Hera</em:creator>
+        <em:creator>Diego de la Hera, and others</em:creator>
         <em:homepageURL>https://github.com/diegodlh/zotero-cita</em:homepageURL>
         <em:optionsURL>chrome://cita/content/preferences.html</em:optionsURL>
         <em:type>2</em:type> <!-- type=extension -->
@@ -54,7 +54,7 @@
                 <em:locale>es</em:locale>
                 <em:name>Cita</em:name>
                 <em:description>Soporte para metadatos de citas en Zotero</em:description>
-                <em:creator>Diego de la Hera</em:creator>
+                <em:creator>Diego de la Hera, y otrxs</em:creator>
                 <em:homepageURL>https://github.com/diegodlh/zotero-cita</em:homepageURL>
             </Description>
         </em:localized>

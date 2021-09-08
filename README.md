@@ -114,7 +114,7 @@ have to be opened again. If someone knows of a way to prevent developer tools fr
 when connection is available again, or to have them open automatically via console, so it can be run
 immediately after Zotero, please let me know!
 
-## Third-party software
+## Acknowledgements
 
 Cita depends on:
 - maxlath's [wikibase-edit](https://github.com/maxlath/wikibase-edit) & [wikibase-sdk](https://github.com/maxlath/wikibase-sdk)
@@ -122,9 +122,11 @@ Cita depends on:
 - Tim Wölfle's [Local Citation Network](https://timwoelfle.github.io/Local-Citation-Network/)
 - [React](https://reactjs.org/)
 
+Support for importing/exporting citations from/to a file, among other contributions, were mostly implemented by Dominic DallOsto.
+
 ## License
 
-Copyright (C) 2021 Diego de la Hera.
+Copyright (C) 2021 Diego de la Hera, and contributors.
 
 This work is released under the terms of [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) or any later version.
 
