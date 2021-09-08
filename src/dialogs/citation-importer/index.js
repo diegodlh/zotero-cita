@@ -8,14 +8,12 @@ import ReactDOM from 'react-dom';
 // import Services into the new window
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-
 const {
 	Wikicite
 } = window.arguments[0];
 const retVals = window.arguments[1];
 
 function onCancel() {
-	retVals.didImport = false;
 	window.close()
 }
 
@@ -25,7 +23,11 @@ async function onImportFile() {
 
 	const filePicker = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
 
-	filePicker.init(window, Wikicite.getString("wikicite.citation-importer.file-picker.title"), nsIFilePicker.modeOpen);
+	filePicker.init(
+		window,
+		Wikicite.getString("wikicite.citation-importer.file-picker.title"),
+		nsIFilePicker.modeOpen
+	);
 	filePicker.appendFilters(nsIFilePicker.filterAll);
 
 	// wrap filePicker.open(callback) in a Promise so we can await it
@@ -39,22 +41,15 @@ async function onImportFile() {
 	const filePickerReturn = await filePickerShow();
 
 	if (filePickerReturn == nsIFilePicker.returnOK || filePickerReturn == nsIFilePicker.returnReplace) {
-		retVals.didImport = true;
-		retVals.importedText = false;
-		retVals.file = filePicker.file.path;
-	}
-	else {
+		retVals.path = filePicker.file.path;
 		// failing to load the file will close the menu as if `cancel` were clicked
 		// perhaps this should produce an error?
-		retVals.didImport = false;
 	}
 	window.close();
 }
 
-function onImportText() {
-	retVals.didImport = true;
-	retVals.importedText = true;
-	retVals.text = document.getElementById('citation-input').value;
+function onImportText(text) {
+	retVals.text = text;
 	window.close();
 }
 

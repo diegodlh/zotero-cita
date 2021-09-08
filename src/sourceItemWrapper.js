@@ -539,27 +539,27 @@ class SourceItemWrapper extends ItemWrapper {
             retVals
         );
 
-        if (retVals.didImport){
+        if (retVals.text || retVals.path) {
+            const progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.source-item.import.progress.loading')
+            );
+
             // wait for Zotero's translation system to be ready
             await Zotero.Schema.schemaUpdatePromise;
             let translation = new Zotero.Translate.Import();
-            if (retVals.importedText){
-                translation.setString(retVals.text);
-            }
-            else{
-                translation.setLocation(Zotero.File.pathToFile(retVals.file));
-            }
-
-            const progress = new Progress(
-                'loading',
-                Wikicite.getString('wikicite.citation.import.loading')
-            );
 
             try {
                 const citations = [];
+
+                if (retVals.text) {
+                    translation.setString(retVals.text);
+                } else {
+                    translation.setLocation(Zotero.File.pathToFile(retVals.path));
+                }
                 const translators = await translation.getTranslators();
 
-                if (translators.length > 0){
+                if (translators.length > 0) {
                     // set libraryID to false so we don't save this item in the Zotero library
                     const jsonItems = await translation.translate({libraryID: false});
 
@@ -571,25 +571,30 @@ class SourceItemWrapper extends ItemWrapper {
                         citations.push(citation);
                     }
                 }
-                if (citations.length > 0){
+                if (citations.length > 0) {
                     this.addCitations(citations);
                     progress.updateLine(
                         'done',
-                        Wikicite.formatString('wikicite.citation.import.done', citations.length)
+                        Wikicite.formatString(
+                            'wikicite.source-item.import.progress.done',
+                            citations.length
+                        )
                     );
                 }
-                else{
+                else {
                     // no translators were found, or no items were detected in text
                     progress.updateLine(
                         'error',
-                        Wikicite.getString('wikicite.citation.import.none-imported')
+                        Wikicite.getString(
+                            'wikicite.source-item.import.progress.none'
+                        )
                     );
                 }
             }
             catch {
                 progress.updateLine(
                     'error',
-                    Wikicite.getString('wikicite.citation.import.error')
+                    Wikicite.getString('wikicite.source-item.import.progress.error')
                 );
             }
 

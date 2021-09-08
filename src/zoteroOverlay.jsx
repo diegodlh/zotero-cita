@@ -430,14 +430,14 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.getFromPDF()
         );
 
-        // Import from clipboard menu item
+        // Import citations menu item
 
-        const itemClipboardImport = doc.createElement('menuitem');
-        itemClipboardImport.setAttribute('id', 'item-menu-clipboard-import');
-        itemClipboardImport.setAttribute(
-            'label', Wikicite.getString('wikicite.item-menu.import-clipboard')
+        const itemCitationsImport = doc.createElement('menuitem');
+        itemCitationsImport.setAttribute('id', 'item-menu-citations-import');
+        itemCitationsImport.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.import-citations')
         );
-        itemClipboardImport.addEventListener(
+        itemCitationsImport.addEventListener(
             'command', () => this._sourceItem.importCitations()
         );
 
@@ -511,7 +511,7 @@ const zoteroOverlay = {
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
         itemMenu.appendChild(itemPdfExtract);
-        itemMenu.appendChild(itemClipboardImport);
+        itemMenu.appendChild(itemCitationsImport);
         itemMenu.appendChild(itemFileExport);
         itemMenu.appendChild(itemCrociExport);
         itemMenu.appendChild(menuSort);
@@ -662,7 +662,7 @@ const zoteroOverlay = {
         const itemCrossrefGet = document.getElementById('item-menu-crossref-get');
         const itemOccGet = document.getElementById('item-menu-occ-get');
         const itemPdfExtract = document.getElementById('item-menu-pdf-extract');
-        const itemClipboardImport = document.getElementById('item-menu-clipboard-import');
+        const itemCitationsImport = document.getElementById('item-menu-citations-import');
         const itemFileExport = document.getElementById('item-menu-file-export');
         const itemCrociExport = document.getElementById('item-menu-croci-export');
 
@@ -671,7 +671,7 @@ const zoteroOverlay = {
         itemCrossrefGet.disabled = !sourceDoi;
         itemOccGet.disabled = !sourceOcc;
         itemPdfExtract.disabled = !hasAttachments;
-        itemClipboardImport.disabled = false;
+        itemCitationsImport.disabled = false;
         itemFileExport.disabled = !hasCitations;
         itemCrociExport.disabled = !hasCitations;
     },
