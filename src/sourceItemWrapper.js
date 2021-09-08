@@ -609,29 +609,34 @@ class SourceItemWrapper extends ItemWrapper {
 
             // export all citations, or only those selected?
             let citationsToExport;
-            if (citationIndex === undefined){
+            if (citationIndex === undefined) {
                 citationsToExport = this.citations;
             }
-            else{
+            else {
                 citationsToExport = [this.citations[citationIndex]];
             }
 
             // extract the Zotero items from the citations
-            const citationItems = citationsToExport.map((citation) => {
-                // Note: need to set the libraryID for the exported items, otherwise we get an error on export
-                citation.target.item.libraryID = this.item.libraryID;
-                return citation.target.item;
+            const citedItems = citationsToExport.map((citation) => {
+                // Note: need to set the libraryID for the exported items,
+                // otherwise we get an error on export
+                const tmpItem = new Zotero.Item();
+                tmpItem.fromJSON(citation.target.item.toJSON());
+                tmpItem.libraryID = this.item.libraryID;
+                return tmpItem;
             });
 
-            exporter.items = citationItems;
-            exporter.name = Wikicite.getString('wikicite.item-menu.export-file.filename');
-            if(!exporter.items || !exporter.items.length) throw("no citations to export");
+            exporter.items = citedItems;
+            exporter.name = Wikicite.getString('wikicite.source-item.export-file.filename');
+            if(!exporter.items || !exporter.items.length) {
+                throw new Error("no citations to export");
+            }
 
             // opens Zotero export dialog box - can select format and file location
             exporter.save();
         }
-        else{
-            throw("no citations to export")
+        else {
+            throw new Error("no citations to export");
         }
     }
 
