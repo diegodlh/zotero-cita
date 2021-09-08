@@ -478,28 +478,31 @@ class SourceItemWrapper extends ItemWrapper {
         // this.addCitation method
     }
 
-    // fetch the QIDs of an item's citations
-    // As per the default behaviour of `Wikidata.reconcile`, only perfect matches will be selected if used for multiple items
-    // For a single item, a choice between approximate matches or the option to create a new Wikidata item will be offered
-    async fetchCitationQIDs(citationIndex){
+    // Fetch the QIDs of an item's citations
+    // As per the default behaviour of `Wikidata.reconcile`,
+    // only perfect matches will be selected if used for multiple items.
+    // For a single item, a choice between approximate matches or
+    // the option to create a new Wikidata item will be offered
+    async fetchCitationQIDs(citationIndex) {
         this.loadCitations();
         let citationsToFetchQIDs;
-        if (citationIndex === undefined){
-            citationsToFetchQIDs = this.citations;
+        if (citationIndex === undefined) {
+            citationsToFetchQIDs = this._citations;
         }
-        else{
-            citationsToFetchQIDs = [this.citations[citationIndex]];
+        else {
+            citationsToFetchQIDs = [this._citations[citationIndex]];
         }
 
-        const items = citationsToFetchQIDs.map((citation) => citation.target);
-        const qidMap = await Wikidata.reconcile(items);
-        for (const item of items) {
+        const citedItems = citationsToFetchQIDs.map(
+            (citation) => citation.target
+        );
+        const qidMap = await Wikidata.reconcile(citedItems);
+        this.startBatch(true);  // noReload=true
+        for (const item of citedItems) {
             const qid = qidMap.get(item);
-            // Note: need to disable saving of the item here - otherwise get error when ItemWrapper.saveHandler() is run
-            if (qid) item.setPID('QID', qid, false);
+            if (qid) item.setPID('QID', qid);
         }
-        // Now save the source item, which will save all the citations
-        this.saveCitations()
+        this.endBatch();
     }
 
     getFromPDF(method, fetchDOIs, fetchQIDs) {

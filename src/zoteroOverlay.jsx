@@ -538,9 +538,9 @@ const zoteroOverlay = {
         );
 
         const citationFetchQID = doc.createElement('menuitem');
-        citationFetchQID.setAttribute('id', 'citation-menu-fetch-citation-qid');
+        citationFetchQID.setAttribute('id', 'citation-menu-fetch-qid');
         citationFetchQID.setAttribute(
-            'label', Wikicite.getString('wikicite.citation-menu.fetch-citation-qid')
+            'label', Wikicite.getString('wikicite.citation-menu.fetch-qid')
         );
         citationFetchQID.addEventListener(
             'command', () => this._sourceItem.fetchCitationQIDs(this._citationIndex)
@@ -686,7 +686,7 @@ const zoteroOverlay = {
         const ociSuppliers = citation.ocis.map((oci) => oci.supplier);
 
         doc.getElementById('citation-menu-wikidata-sync').disabled = !sourceItem.qid || !targetItem.qid;
-        doc.getElementById('citation-menu-fetch-citation-qid').disabled = !Boolean(sourceItem.citations.length);
+        doc.getElementById('citation-menu-fetch-qid').disabled = false;
         doc.getElementById('citation-menu-file-export').disabled = false;
         doc.getElementById('citation-menu-croci-export').disabled = !sourceItem.doi || !targetItem.doi;
         doc.getElementById('citation-menu-oci-crossref').disabled = !ociSuppliers.includes('crossref');
