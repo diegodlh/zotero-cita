@@ -215,7 +215,12 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     saveCitations() {
-        if (this._batch) return;
+        if (this._batch) {
+            debug(
+                'Skipping saveCitations because batch mode is on'
+            );
+            return;
+        }
         this.citations = this._citations;
         if (this.newRelations) {
             debug('Saving new item relations to source item');

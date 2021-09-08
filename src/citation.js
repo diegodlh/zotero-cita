@@ -39,7 +39,10 @@ class Citation {
         this.source = sourceItem;
 
         if (item instanceof Zotero.Item) {
-            this.target = new ItemWrapper(item, this.source.item.saveTx);
+            this.target = new ItemWrapper(
+                item,
+                this.source.saveCitations.bind(this.source)
+            );
         } else {
             if (!item.itemType) {
                 // use a default item type if it was not provided in the target item literal
@@ -48,7 +51,7 @@ class Citation {
             }
             this.target = new ItemWrapper(
                 new Zotero.Item(item.itemType),
-                this.source.item.saveTx
+                this.source.saveCitations.bind(this.source)
             );
             this.target.fromJSON(item);
         }
