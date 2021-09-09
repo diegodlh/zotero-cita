@@ -6,6 +6,7 @@ module.exports = {
     'chrome/content/main': './src/index.js',
     'chrome/content/preferences': './src/dialogs/preferences/index.js',
     'chrome/content/editor': './src/dialogs/editor/index.js',
+    'chrome/content/citation-importer': './src/dialogs/citation-importer/index.js',
     'chrome/content/identifier-importer': './src/dialogs/identifier-importer/index.js'
   },
   output: {
@@ -39,7 +40,9 @@ module.exports = {
     'zotero@components/button': 'commonjs components/button',
     'zotero@components/editable': 'commonjs components/editable',
     'zotero@components/form/input': 'commonjs components/form/input',
-    'zotero@react-intl': 'commonjs react-intl'
+    'zotero@react-intl': 'commonjs react-intl',
+    'zotero@zotero/filePicker': 'commonjs zotero/filePicker',
+    'zotero@zotero/modules/filePicker': 'commonjs zotero/modules/filePicker'  // support Zotero af597d9
   },
   plugins: [
     new CopyPlugin({

@@ -412,6 +412,17 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.syncWithWikidata()
         );
 
+        // Fetch QIDs menu item
+
+        const itemFetchCitationQIDs = doc.createElement('menuitem');
+        itemFetchCitationQIDs.setAttribute('id', 'item-menu-fetch-citation-qids');
+        itemFetchCitationQIDs.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.fetch-citation-qids')
+        );
+        itemFetchCitationQIDs.addEventListener(
+            'command', () => this._sourceItem.fetchCitationQIDs()
+        );
+
         // Get Crossref citations menu item
 
         const itemCrossrefGet = doc.createElement('menuitem');
@@ -456,26 +467,26 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.addCitationsByIdentifier()
         );
 
-        // Import from BibTeX menu item
+        // Import citations menu item
 
-        const itemBibTexImport = doc.createElement('menuitem');
-        itemBibTexImport.setAttribute('id', 'item-menu-bibtex-import');
-        itemBibTexImport.setAttribute(
-            'label', Wikicite.getString('wikicite.item-menu.import-bibtex')
+        const itemCitationsImport = doc.createElement('menuitem');
+        itemCitationsImport.setAttribute('id', 'item-menu-citations-import');
+        itemCitationsImport.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.import-citations')
         );
-        itemBibTexImport.addEventListener(
-            'command', () => this._sourceItem.getFromBibTeX()
+        itemCitationsImport.addEventListener(
+            'command', () => this._sourceItem.importCitations()
         );
 
-        // Export to BibTeX menu item
+        // Export to file menu item
 
-        const itemBibTexExport = doc.createElement('menuitem');
-        itemBibTexExport.setAttribute('id', 'item-menu-bibtex-export');
-        itemBibTexExport.setAttribute(
-            'label', Wikicite.getString('wikicite.item-menu.export-bibtext')
+        const itemFileExport = doc.createElement('menuitem');
+        itemFileExport.setAttribute('id', 'item-menu-file-export');
+        itemFileExport.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.export-file')
         );
-        itemBibTexExport.addEventListener(
-            'command', () => this._sourceItem.exportToBibTeX()
+        itemFileExport.addEventListener(
+            'command', () => this._sourceItem.exportToFile()
         );
 
         // Export to CROCI menu item
@@ -533,12 +544,13 @@ const zoteroOverlay = {
 
 
         itemMenu.appendChild(itemWikidataSync);
+        itemMenu.appendChild(itemFetchCitationQIDs);
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
         itemMenu.appendChild(itemPdfExtract);
         itemMenu.appendChild(itemIdentifierImport);
-        itemMenu.appendChild(itemBibTexImport);
-        itemMenu.appendChild(itemBibTexExport);
+        itemMenu.appendChild(itemCitationsImport);
+        itemMenu.appendChild(itemFileExport);
         itemMenu.appendChild(itemCrociExport);
         itemMenu.appendChild(menuSort);
         itemMenu.appendChild(autoLinkCitations);
@@ -563,13 +575,22 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.syncWithWikidata(this._citationIndex)
         );
 
-        const itemBibTexExport = doc.createElement('menuitem');
-        itemBibTexExport.setAttribute('id', 'citation-menu-bibtex-export');
-        itemBibTexExport.setAttribute(
-            'label', Wikicite.getString('wikicite.citation-menu.export-bibtex')
+        const citationFetchQID = doc.createElement('menuitem');
+        citationFetchQID.setAttribute('id', 'citation-menu-fetch-qid');
+        citationFetchQID.setAttribute(
+            'label', Wikicite.getString('wikicite.citation-menu.fetch-qid')
         );
-        itemBibTexExport.addEventListener(
-            'command', () => this._sourceItem.exportToBibTeX(this._citationIndex)
+        citationFetchQID.addEventListener(
+            'command', () => this._sourceItem.fetchCitationQIDs(this._citationIndex)
+        );
+
+        const itemFileExport = doc.createElement('menuitem');
+        itemFileExport.setAttribute('id', 'citation-menu-file-export');
+        itemFileExport.setAttribute(
+            'label', Wikicite.getString('wikicite.citation-menu.export-file')
+        );
+        itemFileExport.addEventListener(
+            'command', () => this._sourceItem.exportToFile(this._citationIndex)
         );
 
         const itemCrociExport = doc.createElement('menuitem');
@@ -608,7 +629,8 @@ const zoteroOverlay = {
         }
 
         citationMenu.appendChild(citationWikidataSync);
-        citationMenu.appendChild(itemBibTexExport);
+        citationMenu.appendChild(citationFetchQID);
+        citationMenu.appendChild(itemFileExport);
         citationMenu.appendChild(itemCrociExport);
         citationMenu.appendChild(ociMenu);
 
@@ -674,21 +696,23 @@ const zoteroOverlay = {
         const sourceQid = sourceItem.qid;
 
         const itemWikidataSync = document.getElementById('item-menu-wikidata-sync');
+        const itemFetchCitationQIDs = document.getElementById('item-menu-fetch-citation-qids');
         const itemCrossrefGet = document.getElementById('item-menu-crossref-get');
         const itemOccGet = document.getElementById('item-menu-occ-get');
         const itemPdfExtract = document.getElementById('item-menu-pdf-extract');
         const itemIdentifierImport = document.getElementById('item-menu-identifier-import');
-        const itemBibTexImport = document.getElementById('item-menu-bibtex-import');
-        const itemBibTexExport = document.getElementById('item-menu-bibtex-export');
+        const itemCitationsImport = document.getElementById('item-menu-citations-import');
+        const itemFileExport = document.getElementById('item-menu-file-export');
         const itemCrociExport = document.getElementById('item-menu-croci-export');
 
         itemWikidataSync.disabled = !sourceQid;
+        itemFetchCitationQIDs.disabled = !hasCitations;
         itemCrossrefGet.disabled = !sourceDoi;
         itemOccGet.disabled = !sourceOcc;
         itemPdfExtract.disabled = !hasAttachments;
+        itemCitationsImport.disabled = false;
+        itemFileExport.disabled = !hasCitations;
         itemIdentifierImport.disabled = false;
-        itemBibTexImport.disabled = false;
-        itemBibTexExport.disabled = !hasCitations;
         itemCrociExport.disabled = !hasCitations;
     },
 
@@ -702,7 +726,8 @@ const zoteroOverlay = {
         const ociSuppliers = citation.ocis.map((oci) => oci.supplier);
 
         doc.getElementById('citation-menu-wikidata-sync').disabled = !sourceItem.qid || !targetItem.qid;
-        doc.getElementById('item-menu-bibtex-export').disabled = false;
+        doc.getElementById('citation-menu-fetch-qid').disabled = false;
+        doc.getElementById('citation-menu-file-export').disabled = false;
         doc.getElementById('citation-menu-croci-export').disabled = !sourceItem.doi || !targetItem.doi;
         doc.getElementById('citation-menu-oci-crossref').disabled = !ociSuppliers.includes('crossref');
         doc.getElementById('citation-menu-oci-occ').disabled = !ociSuppliers.includes('occ');

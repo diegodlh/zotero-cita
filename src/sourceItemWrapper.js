@@ -7,6 +7,7 @@ import ItemWrapper from './itemWrapper';
 import Matcher from './matcher';
 import OpenCitations from './opencitations';
 import Progress from './progress';
+import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
 // Fixme: define this in the preferences
@@ -16,6 +17,7 @@ const SAVE_TO = 'note'; // extra
 /* global DOMParser */
 /* global Services */
 /* global Zotero */
+/* global Zotero_File_Exporter */
 /* global performance */
 /* global window */
 
@@ -407,7 +409,6 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
 
-
     // updateCitationLabels() {
     //     const items = this.citations.map((citation) => citation.item);
     //     // Wikicite.getItemLabels expects items to have a libraryID!
@@ -477,6 +478,33 @@ class SourceItemWrapper extends ItemWrapper {
         // this.addCitation method
     }
 
+    // Fetch the QIDs of an item's citations
+    // As per the default behaviour of `Wikidata.reconcile`,
+    // only perfect matches will be selected if used for multiple items.
+    // For a single item, a choice between approximate matches or
+    // the option to create a new Wikidata item will be offered
+    async fetchCitationQIDs(citationIndex) {
+        this.loadCitations();
+        let citationsToFetchQIDs;
+        if (citationIndex === undefined) {
+            citationsToFetchQIDs = this._citations;
+        }
+        else {
+            citationsToFetchQIDs = [this._citations[citationIndex]];
+        }
+
+        const citedItems = citationsToFetchQIDs.map(
+            (citation) => citation.target
+        );
+        const qidMap = await Wikidata.reconcile(citedItems);
+        this.startBatch(true);  // noReload=true
+        for (const item of citedItems) {
+            const qid = qidMap.get(item);
+            if (qid) item.setPID('QID', qid);
+        }
+        this.endBatch();
+    }
+
     getFromPDF(method, fetchDOIs, fetchQIDs) {
         Extraction.extract();
         // fail if no PDF attachments found
@@ -494,20 +522,122 @@ class SourceItemWrapper extends ItemWrapper {
         // offer to automatically link to zotero items
     }
 
-    getFromBibTeX() {
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.bibtex.import-citations.unsupported')
+    // import citations from text or file
+    // supports all formats supported by Zotero's import translator (BibTeX, RIS, RDF, ...)
+    // also supports multiple items
+    async importCitations() {
+        // open a new window where the user can paste in bibliographic text, or select a file
+        const args = {
+            Wikicite: Wikicite
+        };
+        const retVals = {};
+        window.openDialog(
+            'chrome://cita/content/citationImporter.xul',
+            '',
+            'chrome,dialog=no,modal,centerscreen,resizable=yes',
+            args,
+            retVals
         );
+
+        if (retVals.text || retVals.path) {
+            const progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.source-item.import.progress.loading')
+            );
+
+            // wait for Zotero's translation system to be ready
+            await Zotero.Schema.schemaUpdatePromise;
+            let translation = new Zotero.Translate.Import();
+
+            try {
+                const citations = [];
+
+                if (retVals.text) {
+                    translation.setString(retVals.text);
+                } else {
+                    translation.setLocation(Zotero.File.pathToFile(retVals.path));
+                }
+                const translators = await translation.getTranslators();
+
+                if (translators.length > 0) {
+                    // set libraryID to false so we don't save this item in the Zotero library
+                    const jsonItems = await translation.translate({libraryID: false});
+
+                    for (const jsonItem of jsonItems) {
+                        let newItem = new Zotero.Item(jsonItem.itemType);
+                        newItem.fromJSON(jsonItem);
+
+                        const citation = new Citation({item: newItem, ocis: []}, this);
+                        citations.push(citation);
+                    }
+                }
+                if (citations.length > 0) {
+                    this.addCitations(citations);
+                    progress.updateLine(
+                        'done',
+                        Wikicite.formatString(
+                            'wikicite.source-item.import.progress.done',
+                            citations.length
+                        )
+                    );
+                }
+                else {
+                    // no translators were found, or no items were detected in text
+                    progress.updateLine(
+                        'error',
+                        Wikicite.getString(
+                            'wikicite.source-item.import.progress.none'
+                        )
+                    );
+                }
+            }
+            catch {
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString('wikicite.source-item.import.progress.error')
+                );
+            }
+
+            progress.close()
+        }
     }
 
-    exportToBibTeX(citationIndex) {
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.bibtex.export-citations.unsupported')
-        );
+    exportToFile(citationIndex) {
+        this.loadCitations();
+        if (this.citations.length) {
+            let exporter = new Zotero_File_Exporter();
+
+            // export all citations, or only those selected?
+            let citationsToExport;
+            if (citationIndex === undefined) {
+                citationsToExport = this.citations;
+            }
+            else {
+                citationsToExport = [this.citations[citationIndex]];
+            }
+
+            // extract the Zotero items from the citations
+            const citedItems = citationsToExport.map((citation) => {
+                // Note: need to set the libraryID for the exported items,
+                // otherwise we get an error on export
+                const tmpItem = new Zotero.Item();
+                tmpItem.fromJSON(citation.target.item.toJSON());
+                tmpItem.libraryID = this.item.libraryID;
+                return tmpItem;
+            });
+
+            exporter.items = citedItems;
+            exporter.name = Wikicite.getString('wikicite.source-item.export-file.filename');
+            if(!exporter.items || !exporter.items.length) {
+                throw new Error("no citations to export");
+            }
+
+            // opens Zotero export dialog box - can select format and file location
+            exporter.save();
+        }
+        else {
+            throw new Error("no citations to export");
+        }
     }
 
     // import citation by identifier (DOI/ISBN/ArXiV/PMID...)
