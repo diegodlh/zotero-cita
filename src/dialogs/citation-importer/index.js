@@ -1,4 +1,5 @@
 import CitationImporter from './CitationImporter';
+import FilePicker from 'zotero@zotero/filePicker';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -18,30 +19,19 @@ function onCancel() {
 }
 
 async function onImportFile() {
-	// todo: update with zotero/filePicker - discussion about this here: https://groups.google.com/g/zotero-dev/c/a1IPUJ2m_3s
-	const nsIFilePicker = Components.interfaces.nsIFilePicker;
-
-	const filePicker = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+	const filePicker = new FilePicker();
 
 	filePicker.init(
 		window,
 		Wikicite.getString("wikicite.citation-importer.file-picker.title"),
-		nsIFilePicker.modeOpen
+		filePicker.modeOpen
 	);
-	filePicker.appendFilters(nsIFilePicker.filterAll);
+	filePicker.appendFilters(filePicker.filterAll);
 
-	// wrap filePicker.open(callback) in a Promise so we can await it
-	const filePickerShow = () => new Promise(
-		(resolve) => {
-			filePicker.open((response) => {
-				resolve(response);
-			});
-		}
-	);
-	const filePickerReturn = await filePickerShow();
+	const filePickerReturn = await filePicker.show();
 
-	if (filePickerReturn == nsIFilePicker.returnOK || filePickerReturn == nsIFilePicker.returnReplace) {
-		retVals.path = filePicker.file.path;
+	if (filePickerReturn == filePicker.returnOK) {
+		retVals.path = filePicker.file;
 		// failing to load the file will close the menu as if `cancel` were clicked
 		// perhaps this should produce an error?
 	}
