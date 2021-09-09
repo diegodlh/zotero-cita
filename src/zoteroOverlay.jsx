@@ -40,7 +40,16 @@ function refreshCitationsPane(event) {
     // if (event.target !== 'zotero-view-item') {
     //     zoteroOverlay.refreshCitationsPane(document, event.target);
     // }
-    zoteroOverlay.refreshCitationsPane(document, event.target);
+    let target;
+    if (event) {
+        target = event.target;
+    } else {
+        // if listener is called via an object's runListeners method,
+        // it is called without an event,
+        // but with the object as the listener's this value
+        target = { id: this.id }
+    }
+    zoteroOverlay.refreshCitationsPane(document, target);
 }
 
 function updateCitationsBoxSize() {
@@ -78,7 +87,12 @@ const zoteroOverlay = {
 
         // document.getElementById('zotero-view-tabbox').addEventListener('select', refreshCitationsPane, false);
         document.getElementById('zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
-        document.getElementById('zotero-items-tree').addEventListener('select', refreshCitationsPane, false);
+        Zotero.uiReadyPromise.then(
+            () => {
+                debug('Adding refreshCitationsPane listener to ZoteroPane.itemsView "select" listeners');
+                ZoteroPane.itemsView.onSelect.addListener(refreshCitationsPane);
+            }
+        );
 
         // Update citations box list height...
         // Fixme: Try and solve this using CSS alone!
@@ -119,7 +133,19 @@ const zoteroOverlay = {
         );
 
         document.getElementById('zotero-editpane-tabs').removeEventListener('select', refreshCitationsPane, false)
-        document.getElementById('zotero-items-tree').removeEventListener('select', refreshCitationsPane, false)
+        // todo: find a better way to remove event listener
+        // https://groups.google.com/g/zotero-dev/c/_HDsAc5HPac
+        let itemsViewSelectListeners;
+        if (ZoteroPane.itemsView._listeners) {
+            itemsViewSelectListeners = ZoteroPane.itemsView._listeners.select
+        } else if (ZoteroPane.itemsView._events && ZoteroPane.itemsView._events.select) {
+            // JSX-ified ZoteroPane
+            itemsViewSelectListeners = ZoteroPane.itemsView._events.select.listeners
+        }
+        if (itemsViewSelectListeners) {
+            debug('Removing refreshCitationsPane listener from ZoteroPane.itemsView "select" event listeners');
+            itemsViewSelectListeners.delete(refreshCitationsPane);
+        }
 
         window.removeEventListener('resize', updateCitationsBoxSize);
         document.getElementById('zotero-items-splitter').removeEventListener('mousemove', updateCitationsBoxSize, false);
