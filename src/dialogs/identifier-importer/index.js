@@ -14,12 +14,10 @@ const {
 const retVals = window.arguments[1];
 
 function onCancel() {
-	retVals.didImport = false;
 	window.close()
 }
 
 function onImport() {
-	retVals.didImport = true;
 	retVals.text = document.getElementById('identifier-input').value;
 	window.close();
 }

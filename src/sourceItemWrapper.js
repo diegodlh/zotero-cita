@@ -526,14 +526,14 @@ class SourceItemWrapper extends ItemWrapper {
             retVals
         );
 
-        if (retVals.didImport){
+        if (retVals.text !== undefined) {
             const identifiers = Zotero.Utilities.Internal.extractIdentifiers(retVals.text);
-    
+
             const progress = new Progress(
                 'loading',
-                Wikicite.getString('wikicite.wikidata.progress.import-identifier.loading')
+                Wikicite.getString('wikicite.source-item.add-identifier.progress.loading')
             );
-    
+
             try {
                 if (identifiers.length > 0) {
                     let citations = [];
@@ -541,7 +541,7 @@ class SourceItemWrapper extends ItemWrapper {
                     for (const identifier of identifiers) {
                         let translation = new Zotero.Translate.Search();
                         translation.setIdentifier(identifier);
-    
+
                         let jsonItems;
                         try {
                             // set libraryID to false so we don't save this item in the Zotero library
@@ -549,12 +549,12 @@ class SourceItemWrapper extends ItemWrapper {
                         } catch {
                             debug('No items returned for identifier ' + identifier);
                         }
-    
+
                         if (jsonItems) {
                             let jsonItem = jsonItems[0]
                             let newItem = new Zotero.Item(jsonItem.itemType);
                             newItem.fromJSON(jsonItem);
-    
+
                             let citation = new Citation({item: newItem, ocis: []}, this);
                             citations.push(citation)
                         }
@@ -563,25 +563,34 @@ class SourceItemWrapper extends ItemWrapper {
                         this.addCitations(citations);
                         progress.updateLine(
                             'done',
-                            Wikicite.formatString('wikicite.wikidata.progress.import-identifier.done', citations.length)
+                            Wikicite.formatString(
+                                'wikicite.source-item.add-identifier.progress.done',
+                                citations.length
+                            )
                         );
                     } else {
                         progress.updateLine(
                             'error',
-                            Wikicite.getString('wikicite.wikidata.progress.import-identifier.none-found')
+                            Wikicite.getString(
+                                'wikicite.source-item.add-identifier.progress.none'
+                            )
                         );
                     }
                 } else {
                     progress.updateLine(
                         'error',
-                        Wikicite.getString('wikicite.wikidata.progress.import-identifier.no-identifiers')
+                        Wikicite.getString(
+                            'wikicite.source-item.add-identifier.progress.invalid'
+                        )
                     );
                 }
             }
             catch {
                 progress.updateLine(
                     'error',
-                    Wikicite.getString('wikicite.wikidata.progress.import-identifier.error')
+                    Wikicite.getString(
+                        'wikicite.source-item.add-identifier.progress.error'
+                    )
                 );
             }
             progress.close();
