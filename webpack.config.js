@@ -6,7 +6,8 @@ module.exports = {
     'chrome/content/main': './src/index.js',
     'chrome/content/preferences': './src/dialogs/preferences/index.js',
     'chrome/content/editor': './src/dialogs/editor/index.js',
-    'chrome/content/citation-importer': './src/dialogs/citation-importer/index.js'
+    'chrome/content/citation-importer': './src/dialogs/citation-importer/index.js',
+    'chrome/content/identifier-importer': './src/dialogs/identifier-importer/index.js'
   },
   output: {
     filename: '[name].js',

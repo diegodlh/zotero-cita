@@ -456,6 +456,17 @@ const zoteroOverlay = {
             'command', () => this._sourceItem.getFromPDF()
         );
 
+        // Add citations by identifier menu item
+
+        const itemIdentifierImport = doc.createElement('menuitem');
+        itemIdentifierImport.setAttribute('id', 'item-menu-identifier-import');
+        itemIdentifierImport.setAttribute(
+            'label', Wikicite.getString('wikicite.item-menu.import-identifier')
+        );
+        itemIdentifierImport.addEventListener(
+            'command', () => this._sourceItem.addCitationsByIdentifier()
+        );
+
         // Import citations menu item
 
         const itemCitationsImport = doc.createElement('menuitem');
@@ -537,6 +548,7 @@ const zoteroOverlay = {
         itemMenu.appendChild(itemCrossrefGet);
         itemMenu.appendChild(itemOccGet);
         itemMenu.appendChild(itemPdfExtract);
+        itemMenu.appendChild(itemIdentifierImport);
         itemMenu.appendChild(itemCitationsImport);
         itemMenu.appendChild(itemFileExport);
         itemMenu.appendChild(itemCrociExport);
@@ -688,6 +700,7 @@ const zoteroOverlay = {
         const itemCrossrefGet = document.getElementById('item-menu-crossref-get');
         const itemOccGet = document.getElementById('item-menu-occ-get');
         const itemPdfExtract = document.getElementById('item-menu-pdf-extract');
+        const itemIdentifierImport = document.getElementById('item-menu-identifier-import');
         const itemCitationsImport = document.getElementById('item-menu-citations-import');
         const itemFileExport = document.getElementById('item-menu-file-export');
         const itemCrociExport = document.getElementById('item-menu-croci-export');
@@ -699,6 +712,7 @@ const zoteroOverlay = {
         itemPdfExtract.disabled = !hasAttachments;
         itemCitationsImport.disabled = false;
         itemFileExport.disabled = !hasCitations;
+        itemIdentifierImport.disabled = false;
         itemCrociExport.disabled = !hasCitations;
     },
 
