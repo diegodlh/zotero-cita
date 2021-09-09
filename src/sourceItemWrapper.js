@@ -510,6 +510,93 @@ class SourceItemWrapper extends ItemWrapper {
         );
     }
 
+    // import citation by identifier (DOI/ISBN/ArXiV/PMID...)
+    // - also supports multiple items (but only one type at once)
+    async addCitationsByIdentifier() {
+        // open a new window where the user can paste in identifier strings
+        const args = {
+            Wikicite: Wikicite
+        };
+        const retVals = {};
+        window.openDialog(
+            'chrome://cita/content/identifierImporter.xul',
+            '',
+            'chrome,dialog=no,modal,centerscreen,resizable=yes',
+            args,
+            retVals
+        );
+
+        if (retVals.text !== undefined) {
+            const identifiers = Zotero.Utilities.Internal.extractIdentifiers(retVals.text);
+
+            const progress = new Progress(
+                'loading',
+                Wikicite.getString('wikicite.source-item.add-identifier.progress.loading')
+            );
+
+            try {
+                if (identifiers.length > 0) {
+                    let citations = [];
+                    await Zotero.Schema.schemaUpdatePromise;
+                    for (const identifier of identifiers) {
+                        let translation = new Zotero.Translate.Search();
+                        translation.setIdentifier(identifier);
+
+                        let jsonItems;
+                        try {
+                            // set libraryID to false so we don't save this item in the Zotero library
+                            jsonItems = await translation.translate({libraryID: false});
+                        } catch {
+                            debug('No items returned for identifier ' + identifier);
+                        }
+
+                        if (jsonItems) {
+                            let jsonItem = jsonItems[0]
+                            let newItem = new Zotero.Item(jsonItem.itemType);
+                            newItem.fromJSON(jsonItem);
+
+                            let citation = new Citation({item: newItem, ocis: []}, this);
+                            citations.push(citation)
+                        }
+                    }
+                    if (citations.length) {
+                        this.addCitations(citations);
+                        progress.updateLine(
+                            'done',
+                            Wikicite.formatString(
+                                'wikicite.source-item.add-identifier.progress.done',
+                                citations.length
+                            )
+                        );
+                    } else {
+                        progress.updateLine(
+                            'error',
+                            Wikicite.getString(
+                                'wikicite.source-item.add-identifier.progress.none'
+                            )
+                        );
+                    }
+                } else {
+                    progress.updateLine(
+                        'error',
+                        Wikicite.getString(
+                            'wikicite.source-item.add-identifier.progress.invalid'
+                        )
+                    );
+                }
+            }
+            catch {
+                progress.updateLine(
+                    'error',
+                    Wikicite.getString(
+                        'wikicite.source-item.add-identifier.progress.error'
+                    )
+                );
+            }
+            progress.close();
+        }
+    }
+
     exportToCroci(citationIndex) {
         OpenCitations.exportCitations();
     }
