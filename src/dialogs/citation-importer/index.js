@@ -1,5 +1,4 @@
 import CitationImporter from './CitationImporter';
-import FilePicker from 'zotero@zotero/filePicker';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -19,6 +18,13 @@ function onCancel() {
 }
 
 async function onImportFile() {
+	let FilePicker;
+	try {
+		FilePicker = await import('zotero@zotero/filePicker').then((mod) => mod.default);
+	} catch {
+		// support Zotero af597d9
+		FilePicker = await import('zotero@zotero/modules/filePicker').then((mod) => mod.default);
+	}
 	const filePicker = new FilePicker();
 
 	filePicker.init(

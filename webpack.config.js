@@ -40,7 +40,8 @@ module.exports = {
     'zotero@components/editable': 'commonjs components/editable',
     'zotero@components/form/input': 'commonjs components/form/input',
     'zotero@react-intl': 'commonjs react-intl',
-    'zotero@zotero/filePicker': 'commonjs zotero/filePicker'
+    'zotero@zotero/filePicker': 'commonjs zotero/filePicker',
+    'zotero@zotero/modules/filePicker': 'commonjs zotero/modules/filePicker'  // support Zotero af597d9
   },
   plugins: [
     new CopyPlugin({
