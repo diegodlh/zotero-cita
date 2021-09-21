@@ -2,13 +2,8 @@
 A [Zotero](http://www.zotero.org/) plugin adding citation metadata support, with back and forth communication to
 [WikiData](https://www.wikidata.org/), citation extraction from file attachments, and local citation network visualization.
 
-Development of this plugin is supported by a [grant](https://meta.wikimedia.org/wiki/Wikicite/grant/WikiCite_addon_for_Zotero_with_citation_graph_support)
+Initial development of this plugin was supported by a [grant](https://meta.wikimedia.org/wiki/Wikicite/grant/WikiCite_addon_for_Zotero_with_citation_graph_support)
 from the Wikimedia Foundation.
-
-**WARNING: THIS PLUGIN HAS NOT BEEN TESTED THOROUGHLY AND MAY BREAK YOUR LIBRARY!**
-This plugin is under development and there is still much work to do and bugs to fix.
-Feel free to try it, but please use a [separate Zotero profile](https://www.zotero.org/support/kb/multiple_profiles)
-or [back up your database](https://www.zotero.org/support/zotero_data#backing_up_your_zotero_data) before proceeding.
 
 ## Description
 The plugin consists of four separate basic modules:
@@ -38,10 +33,6 @@ This module will send file attachments to local or remote citation extraction se
 retrieve parsed citations from them.
 
 ## Installation
-**WARNING: THIS PLUGIN HAS NOT BEEN TESTED THOROUGHLY AND MAY BREAK YOUR LIBRARY!**
-Feel free to try it, but please use a [separate Zotero profile](https://www.zotero.org/support/kb/multiple_profiles) or
-[back up your database](https://www.zotero.org/support/zotero_data#backing_up_your_zotero_data) before proceeding.
-
 Download the [latest XPI](https://github.com/diegodlh/zotero-cita/releases/latest) and [install](https://www.zotero.org/support/plugins) it in Zotero.
 
 ## Quickstart guide
