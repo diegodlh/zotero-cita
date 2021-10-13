@@ -1,6 +1,6 @@
 {
   "name": "zotero-cita",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Cita: a Wikidata addon for Zotero",
   "scripts": {
     "postinstall": "patch-package",
