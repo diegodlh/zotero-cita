@@ -440,7 +440,12 @@ export default class {
             }
 
             if (Object.values(results).every((result) => result === 'ok')) {
-                progress.updateLine('done', '');
+                progress.updateLine(
+                    'done',
+                    Wikicite.getString(
+                        'wikicite.wikidata.progress.upload.done'
+                    )
+                );
             } else if (Object.values(results).some((result) => result === 'cancelled')) {
                 // user cancelled login for at least one of the entities to be edited
                 progress.updateLine(
