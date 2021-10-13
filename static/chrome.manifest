@@ -8,6 +8,8 @@ locale    cita    fa        chrome/locale/fa/
 locale    cita    fi        chrome/locale/fi/
 locale    cita    fr        chrome/locale/fr/
 locale    cita    he        chrome/locale/he/
+locale    cita    it        chrome/locale/it/
+locale    cita    ko        chrome/locale/ko/
 locale    cita    mk        chrome/locale/mk/
 locale    cita    pms       chrome/locale/pms/
 locale    cita    pt        chrome/locale/pt-br/
