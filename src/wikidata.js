@@ -235,7 +235,7 @@ export default class {
             }
             progress.close();
             let cancelled = false;
-            items.forEach((item, i) => {
+            for (const [i, item] of items.entries()) {
                 if (cancelled) {
                     return;
                 }
@@ -249,6 +249,8 @@ export default class {
                     if (match) {
                         qids.set(item, match.id);
                     } else if (candidates.length && options.partial) {
+                        const candidateIds = candidates.map((candidate) => candidate.id);
+                        const years = await this.getYears(candidateIds);
                         const choices = [
                             Wikicite.getString(
                                 'wikicite.wikidata.reconcile.approx.none'
@@ -256,6 +258,7 @@ export default class {
                             ...candidates.map(
                                 (candidate) => {
                                     let candidateStr = candidate.id + ': ' + candidate.name;
+                                    if (years.hasOwnProperty(candidate.id)) candidateStr += ' (' + years[candidate.id].toString() + ')'
                                     const typeNames = candidate.type.map((type) => type.name);
                                     if (typeNames.length) {
                                         candidateStr += ' (' + typeNames.join('; ') + ')';
@@ -306,7 +309,7 @@ export default class {
                     // or query failed altogether
                     // remains 'undefined' in the qids map
                 }
-            })
+            }
         } else {
             // no searchable items, or qids known already
             progress.newLine(
@@ -710,6 +713,49 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             // for an item that might have a QID already!
         }
         return qid
+    }
+
+    /**
+     * Gets year of publication (in P577) from Wikidata for one or more entities
+     * @param {Array} sourceQIDs - Array of one or more entity QIDs
+     * @returns {Promise} year map { entityQID: year }
+     */
+     static async getYears(sourceQIDs) {
+        if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
+        // Fixme: alternatively, use the SPARQL endpoint to get more than 50
+        // entities per request
+        const urls = wdk.getManyEntities({
+            ids: sourceQIDs,
+            props: "claims",
+            format: 'json'
+        });
+        const years = {};
+        while (urls.length) {
+            const url = urls.shift();
+            try {
+                const xmlhttp = await Zotero.HTTP.request(
+                    'GET',
+                    url,
+                    {
+                        headers: {
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
+                        }
+                    }
+                );
+                // Fixme: handle entities undefined
+                const { entities } = JSON.parse(xmlhttp.response);
+                for (const id of Object.keys(entities)) {
+                    const entity = entities[id];
+                    const publicationDate = wdk.simplify.propertyClaims(entity.claims[properties.publicationDate]);
+                    if (publicationDate.length > 0) {
+                        years[id] = new Date(publicationDate[0]).getFullYear()
+                    }
+                }
+            } catch (err) {
+                debug('Getting properties failed', err);
+            }
+        }
+        return years;
     }
 
     /**
