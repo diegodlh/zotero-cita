@@ -107,25 +107,22 @@ export default class {
                     v: cleanISBN
                 })
             }
-            // multiple matching creators decrease rather than increase
-            // matching score
-            // see https://www.wikidata.org/wiki/Wikidata_talk:Tools/OpenRefine#Reconcile_using_several_authors
-            // const creators = item.item.getCreatorsJSON();
-            // if (creators) {
-            //     queryProps.push({
-            //         pid: [properties.author, properties.authorNameString].join('|'),
-            //         v: creators.map(
-            //             (creator) => [creator.firstName, creator.lastName].join(' ').trim()
-            //         )
-            //     })
-            // }
-            // const year = Zotero.Date.strToDate(item.item.getField('date')).year;
-            // if (year) {
-            //     queryProps.push({
-            //         pid: properties.publicationDate + '@year',
-            //         v: year
-            //     })
-            // }
+            const creators = item.item.getCreatorsJSON();
+            if (creators) {
+                queryProps.push({
+                    pid: [properties.author, properties.authorNameString].join('|'),
+                    v: creators.map(
+                        (creator) => [creator.firstName, creator.lastName].join(' ').trim()
+                    )
+                })
+            }
+            const year = Zotero.Date.strToDate(item.item.getField('date')).year;
+            if (year) {
+                queryProps.push({
+                    pid: properties.publicationDate + '@year',
+                    v: year
+                })
+            }
             if (!item.title && !queryProps.length) {
                 // if no title nor supported properties, skip to next item
                 continue;
