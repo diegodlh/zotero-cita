@@ -495,8 +495,40 @@ class SourceItemWrapper extends ItemWrapper {
     // if provided, sync to wikidata, export to croci, etc, only for that citation
     // if not, do it for all
 
-    getFromCrossref() {
-        Crossref.getCitations();
+    async getFromCrossref() {
+        if (this.doi){
+            const progress = new Progress(
+                'loading',
+                "Getting item citations from CrossRef"
+            );
+            const newCitedItems = await Crossref.getCitations(this.doi);
+            if (newCitedItems.length > 0){
+                let newCitations = [];
+                for (let newItem of newCitedItems){
+                    const citation = new Citation({item: newItem, ocis: []}, this);
+                    newCitations.push(citation)
+                }
+                this.addCitations(newCitations);
+                progress.updateLine(
+                    'done',
+                    "Got item citations from CrossRef"
+                );
+            }
+            else{
+                progress.updateLine(
+                    'error',
+                    "Couldn't get any citations from CrossRef"
+                );
+            }
+        }
+        else{
+            // Actually, should the menu item only be enabled if the item has a DOI?
+            Services.prompt.alert(
+                window,
+                "Can't get CrossRef references without DOI",
+                "Item has no DOI so can't get reference data from CrossRef."
+            );
+        }
         // fail if item doesn't have a DOI specified
         // In general I would say to try and get DOI with another plugin if not available locally
         // call the crossref api
