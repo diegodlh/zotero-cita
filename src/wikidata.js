@@ -28,6 +28,8 @@ const properties = {
     'authorNameString': 'P2093',
     'citesWork': 'P2860',
     'doi': 'P356',
+    'familyName': 'P734',
+    'givenName': 'P735',
     'instanceOf': 'P31',
     'isbn10': 'P957',
     'isbn13': 'P212',
@@ -250,18 +252,22 @@ export default class {
                         qids.set(item, match.id);
                     } else if (candidates.length && options.partial) {
                         const candidateIds = candidates.map((candidate) => candidate.id);
-                        const years = await this.getYears(candidateIds);
+                        const matchesData = await this.getProperties(candidateIds, [properties.publicationDate, properties.author, properties.authorNameString]);
+                        const authorStrings = await this.getAuthors(matchesData);
+                        const formatDateFromData = (idProperties) => new Date(idProperties[properties.publicationDate]).getFullYear().toString();
+
                         const choices = [
                             Wikicite.getString(
                                 'wikicite.wikidata.reconcile.approx.none'
                             ),
                             ...candidates.map(
                                 (candidate) => {
-                                    let candidateStr = candidate.id + ': ' + candidate.name;
-                                    if (years.hasOwnProperty(candidate.id)) candidateStr += ' (' + years[candidate.id].toString() + ')'
+                                    let candidateStr = `${candidate.id}: ${candidate.name}`;
+                                    if (authorStrings.hasOwnProperty(candidate.id)) candidateStr += ` - ${authorStrings[candidate.id].join(', ')}`;
+                                    if (matchesData.hasOwnProperty(candidate.id)) candidateStr += ` [${formatDateFromData(matchesData[candidate.id])}]`;
                                     const typeNames = candidate.type.map((type) => type.name);
                                     if (typeNames.length) {
-                                        candidateStr += ' (' + typeNames.join('; ') + ')';
+                                        candidateStr += ` (${typeNames.join('; ')})`;
                                     }
                                     return candidateStr;
                                 }
@@ -716,12 +722,14 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
     }
 
     /**
-     * Gets year of publication (in P577) from Wikidata for one or more entities
+     * Gets properties from Wikidata for one or more entities
      * @param {Array} sourceQIDs - Array of one or more entity QIDs
-     * @returns {Promise} year map { entityQID: year }
+     * @param {Array} properties - Array of one or more Wikidata properties to get (eg. 'P356' for doi)
+     * @returns {Promise} { entityQID: {property1: value1, property2: value2} }
      */
-     static async getYears(sourceQIDs) {
+     static async getProperties(sourceQIDs, properties) {
         if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
+        if (!Array.isArray(properties)) properties = [properties];
         // Fixme: alternatively, use the SPARQL endpoint to get more than 50
         // entities per request
         const urls = wdk.getManyEntities({
@@ -729,7 +737,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             props: "claims",
             format: 'json'
         });
-        const years = {};
+        const data = {};
         while (urls.length) {
             const url = urls.shift();
             try {
@@ -746,16 +754,69 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                 const { entities } = JSON.parse(xmlhttp.response);
                 for (const id of Object.keys(entities)) {
                     const entity = entities[id];
-                    const publicationDate = wdk.simplify.propertyClaims(entity.claims[properties.publicationDate]);
-                    if (publicationDate.length > 0) {
-                        years[id] = new Date(publicationDate[0]).getFullYear()
+                    data[id] = {};
+                    for (let property of properties){
+                        data[id][property] = wdk.simplify.propertyClaims(entity.claims[property]);
                     }
                 }
             } catch (err) {
                 debug('Getting properties failed', err);
             }
         }
-        return years;
+        return data;
+    }
+
+    /**
+     * Gets author details from Wikidata for one or more entities.
+     * If author name strings are provided, use them, else get strings from author QIDs
+     * @param {Array} entityData - Dictionary from getProperties function, of form: {entityQID: {P50: [authors], P2903: [author name strings]}}
+     * @returns {Promise} author string map { entityQID: [author list] }
+     */
+     static async getAuthors(entityData) {
+        let authorStringMap = {};
+        let idsToQuery = [];
+        let entityIdsOfAuthors = {};
+        for (let key of Object.keys(entityData)){
+            authorStringMap[key] = [];
+            if(entityData[key][properties.author].length > 0){
+                for (let authorID of entityData[key][properties.author]){
+                    idsToQuery.push(authorID);
+                    entityIdsOfAuthors[authorID] = key;
+                }
+            }
+            if(entityData[key][properties.authorNameString].length > 0){
+                authorStringMap[key] = authorStringMap[key].concat(entityData[key][properties.authorNameString]);
+            }
+        }
+
+        const urls = wdk.getManyEntities({
+            ids: idsToQuery,
+            props: "labels",
+            languages: 'en',
+            format: 'json'
+        });
+        while (urls.length) {
+            const url = urls.shift();
+            try {
+                const xmlhttp = await Zotero.HTTP.request(
+                    'GET',
+                    url,
+                    {
+                        headers: {
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
+                        }
+                    }
+                );
+                // Fixme: handle entities undefined
+                const { entities } = JSON.parse(xmlhttp.response);
+                for (const id of Object.keys(entities)) {
+                    authorStringMap[entityIdsOfAuthors[id]].push(entities[id].labels.en.value);
+                }
+            } catch (err) {
+                debug('Getting properties failed', err);
+            }
+        }
+        return authorStringMap;
     }
 
     /**
