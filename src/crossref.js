@@ -4,54 +4,31 @@ import Wikicite from './wikicite';
 
 export default class Crossref{
 	static async getCitations(doi) {
-        let url = "https://api.crossref.org/works/" + doi;
+        const JSONResponse = await Crossref.getDOI(doi);
 
-        const getRequestJSON = function(url) {
-            return new Promise((resolve) => {
-                Zotero.HTTP.doGet(url, function (response){
-                    if (response.status == 200){
-                        resolve(JSON.parse(response.responseText));
-                    }
-                    else{
-                        Zotero.debug("Couldn't access URL: " + url);
-                        resolve(null);
-                    }
-                });
-            });
-        }
-        const JSONResponse = await getRequestJSON(url);
         if (JSONResponse){
             const references = JSONResponse.message.reference
-            let referenceItems = [];
             if (references && references.length > 0){
-                for (let reference of references){
-                    const referenceItem = await Crossref.parseReferenceItem(reference);
-                    if (referenceItem){
-                        referenceItems.push(referenceItem);
-                    }
-                }
+                const parsedReferences = await Promise.all(references.map(async (reference) => {
+                    const parsedReference = await Crossref.parseReferenceItem(reference);
+                    return parsedReference;
+                }));
+                return parsedReferences.filter(Boolean);
             }
             else{
-                // Message: we found the item in CrossRef but there were no references
+                Zotero.debug("Item found in Crossref but doesn't contain any references");
             }
-            return referenceItems;
         }
-        else{
-            return [];
-        }
+        return [];
 	}
 
     static async parseReferenceItem(crossrefItem){
         let newItem = null;
-        let identifier;
         if (crossrefItem.DOI){
-            identifier = {DOI: crossrefItem.DOI};
+            newItem = await this.getItemFromIdentifier({DOI: crossrefItem.DOI});
         }
         else if(crossrefItem.isbn){
-            identifier = {ISBN: crossrefItem.ISBN};
-        }
-        if (identifier){
-            newItem = await this.getItemFromIdentifier(identifier);
+            newItem = await this.getItemFromIdentifier({ISBN: crossrefItem.ISBN});
         }
         else{
             newItem = this.getItemFromCrossrefReference(crossrefItem);
@@ -73,7 +50,7 @@ export default class Crossref{
         }
 
         if (jsonItems) {
-            const jsonItem = jsonItems[0]
+            const jsonItem = jsonItems[0];
             const newItem = new Zotero.Item(jsonItem.itemType);
             newItem.fromJSON(jsonItem);
             return newItem;
@@ -94,7 +71,7 @@ export default class Crossref{
             jsonItem.title = crossrefItem['volume-title'];
         }
         else if(crossrefItem.unstructured){
-            // Implement reference text parsing here
+            // todo: Implement reference text parsing here
             Zotero.debug("Couldn't parse Crossref reference - unstructured references are not yet supported. " + JSON.stringify(crossrefItem));
             return null;
         }
@@ -121,7 +98,18 @@ export default class Crossref{
         return newItem;
     }
 
-	static getDOI() {
+	static async getDOI(doi) {
+        let url = "https://api.crossref.org/works/" + doi;
+        let JSONResponse;
 
+        try{
+            const response = await Zotero.HTTP.request('GET', url);
+            JSONResponse = JSON.parse(response.responseText);
+        }
+        catch {
+            Zotero.debug("Couldn't access URL: " + url);
+        }
+
+        return JSONResponse;
 	}
 }
