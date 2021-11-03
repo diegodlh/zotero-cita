@@ -1,5 +1,3 @@
-import Wikicite from './wikicite';
-
 /* global Zotero */
 
 export default class Crossref{

@@ -499,7 +499,7 @@ class SourceItemWrapper extends ItemWrapper {
         if (this.doi){
             const progress = new Progress(
                 'loading',
-                "Getting item citations from CrossRef"
+                Wikicite.getString('wikicite.crossref.get-citations.loading')
             );
             const newCitedItems = await Crossref.getCitations(this.doi);
             if (newCitedItems.length > 0){
@@ -511,38 +511,24 @@ class SourceItemWrapper extends ItemWrapper {
                 this.addCitations(newCitations);
                 progress.updateLine(
                     'done',
-                    "Got item citations from CrossRef"
+                    Wikicite.getString('wikicite.crossref.get-citations.done')
                 );
             }
             else{
                 progress.updateLine(
                     'error',
-                    "Couldn't get any citations from CrossRef"
+                    Wikicite.getString('wikicite.crossref.get-citations.none')
                 );
             }
         }
         else{
-            // Actually, should the menu item only be enabled if the item has a DOI?
+            // Should never be called because the menu option is only enabled when the item has a DOI
             Services.prompt.alert(
                 window,
-                "Can't get CrossRef references without DOI",
-                "Item has no DOI so can't get reference data from CrossRef."
+                Wikicite.getString('wikicite.crossref.get-citations.no-doi-title'),
+                Wikicite.getString('wikicite.crossref.get-citations.no-doi-message')
             );
         }
-        // fail if item doesn't have a DOI specified
-        // In general I would say to try and get DOI with another plugin if not available locally
-        // call the crossref api
-        // the zotero-citationcounts already calls crossref for citations. Check it
-        // call this.add multiple times, or provide an aray
-        // if citation retrieved has doi, check if citation already exists locally
-        // if yes, set providers.crossref to true
-        // decide whether to ignore citations retrieved without doi
-        // or if I will check if they exist already using other fields (title, etc)
-
-        // offer to automatically get QID from wikidata for target items
-        // using Wikidata.getQID(items)
-
-        // offer to automatically link to zotero items
     }
 
     getFromOcc() {
