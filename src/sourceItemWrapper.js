@@ -663,32 +663,33 @@ class SourceItemWrapper extends ItemWrapper {
                 'loading',
                 Wikicite.getString('wikicite.source-item.add-identifier.progress.loading')
             );
-
             try {
                 if (identifiers.length > 0) {
-                    let citations = [];
                     await Zotero.Schema.schemaUpdatePromise;
-                    for (const identifier of identifiers) {
-                        let translation = new Zotero.Translate.Search();
+                    let citations = await Promise.all(identifiers.map(async (identifier) => {
+                        var translation = new Zotero.Translate.Search();
                         translation.setIdentifier(identifier);
+                        let translators = await translation.getTranslators();
+                        translation.setTranslator(translators);
 
                         let jsonItems;
                         try {
                             // set libraryID to false so we don't save this item in the Zotero library
                             jsonItems = await translation.translate({libraryID: false});
-                        } catch {
-                            debug('No items returned for identifier ' + identifier);
+                            if (jsonItems.length > 0){
+                                const jsonItem = jsonItems[0];
+                                const newItem = new Zotero.Item(jsonItem.itemType);
+                                newItem.fromJSON(jsonItem);
+                                return new Citation({item: newItem, ocis: []}, this);
+                            }
                         }
-
-                        if (jsonItems) {
-                            let jsonItem = jsonItems[0]
-                            let newItem = new Zotero.Item(jsonItem.itemType);
-                            newItem.fromJSON(jsonItem);
-
-                            let citation = new Citation({item: newItem, ocis: []}, this);
-                            citations.push(citation)
+                        catch (e) {
+                            // Catch errors so we don't abort the Promise.all
+                            Zotero.logError(e);
                         }
-                    }
+                    }));
+                    citations = citations.filter(Boolean); // filter out null values if no item found
+
                     if (citations.length) {
                         this.addCitations(citations);
                         progress.updateLine(
