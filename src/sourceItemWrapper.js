@@ -503,11 +503,7 @@ class SourceItemWrapper extends ItemWrapper {
             );
             const newCitedItems = await Crossref.getCitations(this.doi);
             if (newCitedItems.length > 0){
-                let newCitations = [];
-                for (let newItem of newCitedItems){
-                    const citation = new Citation({item: newItem, ocis: []}, this);
-                    newCitations.push(citation)
-                }
+                const newCitations = newCitedItems.map((newItem) => new Citation({item: newItem, ocis: []}, this));
                 this.addCitations(newCitations);
                 progress.updateLine(
                     'done',
