@@ -170,27 +170,33 @@ const zoteroOverlay = {
                     return '';
                 }
                 else if (col.id == Wikicite.getString('wikicite.item-tree.column-title.qid')) {
-                    const QID = new SourceItemWrapper(item).getPID('QID');
-                    if (QID === undefined) return '';
-                    return `${QID}`;
+                    return `${new SourceItemWrapper(item).getPID('QID') || ''}`;
                 }
                 else if (col.id == Wikicite.getString('wikicite.item-tree.column-title.citations')) {
-                    const numCitations = new SourceItemWrapper(item).citations.length;
-                    if (numCitations === undefined) return '';
-                    return `${numCitations}`;
+                    return `${new SourceItemWrapper(item).citations.length || '0'}`;
                 }
                 else return getCellText_original.apply(this, arguments);
             };
         }
 
-        // need to do this or we get an error when trying to sort by the new columns
-        const getFieldIDFromTypeAndBase_original = Zotero.ItemFields.getFieldIDFromTypeAndBase;
-        // todo: set a proper base type for the new columns so they can be used for sorting
-        Zotero.ItemFields.getFieldIDFromTypeAndBase = function (itemType, baseField) {
-            if (baseField.toString().toLowerCase() != Wikicite.getString('wikicite.item-tree.column-label.qid').toLowerCase() && baseField.toString().toLowerCase() != Wikicite.getString('wikicite.item-tree.column-label.citations').toLowerCase()) {
-                return getFieldIDFromTypeAndBase_original.apply(this, arguments);
+        // To be able to sort by the QID or citations columns - need .toLowerCase() becase 'QID' stays 'QID' but 'Citations' becomes 'citations' for field names
+        const getField_original = Zotero.Item.prototype.getField;
+        Zotero.Item.prototype.getField = function (field, unformatted, includeBaseMapped) {
+            try {
+                if (typeof field === 'string'){
+                    switch (field.toLowerCase()) {
+                        case Wikicite.getString('wikicite.item-tree.column-label.qid').toLowerCase():
+                            return `${new SourceItemWrapper(this).getPID('QID') || ''}`;
+                        case Wikicite.getString('wikicite.item-tree.column-label.citations').toLowerCase():
+                            return `${new SourceItemWrapper(this).citations.length || 0}`;
+                    }
+                }
             }
-            else return false;
+            catch (err) {
+                console.error('patched getField:', {field, unformatted, includeBaseMapped, err})
+            }
+
+            return getField_original.apply(this, arguments)
         };
 
     },
