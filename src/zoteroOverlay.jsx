@@ -166,10 +166,7 @@ const zoteroOverlay = {
             const getCellText_original = Zotero.ItemTreeView.prototype.getCellText;
             Zotero.ItemTreeView.prototype.getCellText = function (row, col) {
                 const item = this.getRow(row).ref;
-                if (!item.isRegularItem()) {
-                    return '';
-                }
-                else if (col.id == Wikicite.getString('wikicite.item-tree.column-title.qid')) {
+                if (col.id == Wikicite.getString('wikicite.item-tree.column-title.qid')) {
                     return `${new SourceItemWrapper(item).getPID('QID') || ''}`;
                 }
                 else if (col.id == Wikicite.getString('wikicite.item-tree.column-title.citations')) {
