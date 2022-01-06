@@ -1,4 +1,5 @@
 import Wikicite, { debug } from './wikicite';
+import Citation from './citation';
 import Citations from './citations';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
 import Crossref from './crossref';
@@ -118,6 +119,32 @@ const zoteroOverlay = {
         this.switcherObserver = observer;
 
         this.installTranslators();
+
+        Zotero.Server.Endpoints["/zotero-cita/add-citations"] = function() {return {
+            supportedMethods: ["POST"],
+
+            init: function (postData, sendResponseCallback) {
+                if (postData.libraryID && postData.itemID && postData.citedItemsIDs){
+                    try{
+                        const item = Zotero.Items.getByLibraryAndKey(postData.libraryID, postData.itemID);
+                        const sourceItem = new SourceItemWrapper(item);
+                        const citationsToAdd = postData.citedItemsIDs.map((citedItemKey) => {
+                            const citedItem = Zotero.Items.getByLibraryAndKey(postData.libraryID, citedItemKey);
+                            return new Citation({item: citedItem, ocis: []}, sourceItem)
+                        });
+                        sourceItem.addCitations(citationsToAdd);
+
+                        sendResponseCallback(200, "text/plain", `Successfully add ${citationsToAdd.length} citations to item`);
+                    }
+                    catch (error) {
+                        sendResponseCallback(404, "text/plain", `Error occurred add citations:\n${error}`);
+                    }
+                }
+                else{
+                    sendResponseCallback(404, "text/plain", 'Please provide `libraryID` `itemID` and `citedItemsIDs` in post request');
+                }
+            }
+        }}
     },
 
     unload: function() {
@@ -153,6 +180,8 @@ const zoteroOverlay = {
         this.switcherObserver.disconnect();
 
         this.uninstallTranslators();
+
+        delete Zotero.Server.Endpoints["/zotero-cita/test"];
     },
 
     /******************************************/
