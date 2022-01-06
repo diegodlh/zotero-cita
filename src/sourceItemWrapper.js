@@ -667,7 +667,7 @@ class SourceItemWrapper extends ItemWrapper {
         }
     }
 
-    exportToFile(citationIndex) {
+    async exportToFile(citationIndex) {
         this.loadCitations();
         if (this.citations.length) {
             let exporter = new Zotero_File_Exporter();
@@ -695,6 +695,7 @@ class SourceItemWrapper extends ItemWrapper {
 
             // Make sure items have better bibtex citation keys for export (if BetterBibTeX is installed) #145
             if(Zotero.BetterBibTeX){
+                await Zotero.BetterBibTeX.ready;
                 const proposed_keys = [];
                 for (let item of citedItems){
                     const extra = item.getField('extra');
