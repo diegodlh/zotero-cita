@@ -181,7 +181,7 @@ const zoteroOverlay = {
 
         this.uninstallTranslators();
 
-        delete Zotero.Server.Endpoints["/zotero-cita/test"];
+        delete Zotero.Server.Endpoints["/zotero-cita/add-citations"];
     },
 
     /******************************************/
