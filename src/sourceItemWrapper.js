@@ -693,6 +693,19 @@ class SourceItemWrapper extends ItemWrapper {
                 return tmpItem;
             });
 
+            // Make sure items have better bibtex citation keys for export (if BetterBibTeX is installed) #145
+            if(Zotero.BetterBibTeX){
+                const proposed_keys = [];
+                for (let item of citedItems){
+                    const extra = item.getField('extra');
+                    if (!extra.match(/(\n|^)Citation Key:/i)) {
+                        const proposal = Zotero.BetterBibTeX.KeyManager.propose(item, proposed_keys).citekey
+                        proposed_keys.push(proposal)
+                        item.setField('extra', `${extra}\nCitation Key: ${proposal}`.trim())
+                    }
+                }
+            }
+
             exporter.items = citedItems;
             exporter.name = Wikicite.getString('wikicite.source-item.export-file.filename');
             if(!exporter.items || !exporter.items.length) {
