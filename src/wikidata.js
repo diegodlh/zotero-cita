@@ -20,6 +20,7 @@ const WBK_SPARQL = 'https://query.wikidata.org/sparql';
 const RECONCILE_API = 'https://wikidata.reconci.link/$lng/api';
 
 const entities = {
+    'creative_work': 'Q17537576',
     'work': 'Q386724'
 }
 
@@ -135,7 +136,7 @@ export default class {
             const query = item.title.replace(/^(\w+):/, "$1");
             queries[queryId] = {
                 query,
-                type: entities.work,
+                type: entities.creative_work,
                 properties: queryProps,
                 // limit: 3,                                ]
             };
