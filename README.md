@@ -117,7 +117,7 @@ Support for importing/exporting citations from/to a file, among other contributi
 
 ## License
 
-Copyright (C) 2021 Diego de la Hera, and contributors.
+Copyright (C) 2022 Diego de la Hera, Dominic Dall'Osto, and contributors.
 
 This work is released under the terms of [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) or any later version.
 
