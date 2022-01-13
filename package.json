@@ -11,7 +11,10 @@
     "type": "git",
     "url": "git+https://github.com/diegodlh/zotero-cita.git"
   },
-  "author": "Diego de la Hera",
+  "author": "Diego de la Hera (https://diegodlh.conversodromo.com.ar/)",
+  "contributors": [
+    "Dominic Dall'Osto"
+  ],
   "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/diegodlh/zotero-cita/issues"
