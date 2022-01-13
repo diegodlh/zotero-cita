@@ -698,11 +698,11 @@ class SourceItemWrapper extends ItemWrapper {
                 await Zotero.BetterBibTeX.ready;
                 const proposed_keys = [];
                 for (let item of citedItems){
-                    const extra = item.getField('extra');
-                    if (!extra.match(/(\n|^)Citation Key:/i)) {
+                    const citationKeyMatch = Wikicite.getExtraField(item, 'Citation Key');
+                    if (citationKeyMatch.values.length != 1) {
                         const proposal = Zotero.BetterBibTeX.KeyManager.propose(item, proposed_keys).citekey
                         proposed_keys.push(proposal)
-                        item.setField('extra', `${extra}\nCitation Key: ${proposal}`.trim())
+                        Wikicite.setExtraField(item, 'Citation Key', proposal)
                     }
                 }
             }
