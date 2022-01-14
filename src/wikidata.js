@@ -135,8 +135,8 @@ export default class {
             const query = item.title.replace(/^(\w+):/, "$1");
             queries[queryId] = {
                 query,
-                type: entities.work,
-                properties: queryProps,
+                // type: entities.work, // broadly typed query may time out, see #149
+                properties: queryProps
                 // limit: 3,                                ]
             };
 
