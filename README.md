@@ -57,6 +57,26 @@ to have Zotero run the plugin directly from the `dist` directory.
 	the developer tools
 6. For distribution, pack the contents of the `dist` directory into a ZIP file and change its extension to `.xpi`.
 
+## Publishing
+1. Decide new version number vX.Y.Z using [Semantic Versioning](https://semver.org/).
+2. Update version number in:
+   - `/package.json`
+   - `/static/install.rdf`
+3. Update `version` and `updateLink`s in `/update.rdf`.
+4. Run `git clean -xdf` to remove untracked files, including `/dist` and `/node_modules`.
+5. Run `npm install`. This will also update `/package-lock.json` with the new version.
+6. Zip the contents of `/dist` into a zip file. Rename it to `zotero-cita-vX.Y.Z.xpi`.
+7. Until integration tests have been implemented (#30), install the new version
+on a fresh Zotero profile and run some manual tests.
+8. Run `git commit -m "Bump vX.Y.Z"` and `git push`.
+10. Run `git tag vX.Y.Z` and `git push --tags`.
+11. On GitHub, create a new release:
+    1.  Choose tag vX.Y.Z.
+    2.  Set release title "vX.Y.Z".
+    3.  In the description, list changes since last release.
+    4.  Attach the xpi file created above.
+    5.  Click "Publish release" and hope everything is alright.
+
 ### Debugging
 To debug, you need to build Zotero with debugging support. Follow the instructions
 [here](https://www.zotero.org/support/dev/client_coding/building_the_standalone_client) to:
