@@ -132,13 +132,6 @@ export default class {
             const queryId = `q${i}`;
             // Workaround until #84 can be fixed
             const query = item.title.replace(/^(\w+):/, "$1");
-            queries[queryId] = {
-                query,
-                // type: entities.work, // broadly typed query may time out, see #149
-                properties: queryProps
-                // limit: 3,                                ]
-            };
-
             // Add type-specific queries (#101)
             const mappedType = typeMapping[item.type];
             if (mappedType) {
@@ -147,6 +140,15 @@ export default class {
                 queries[queryId + 't'] = {
                     query,
                     type: mappedType,
+                    properties: queryProps
+                };
+            }
+            if (options.partial){
+                // always treat untyped matches as partial matches, so only run them
+                // if we're generating partial matches (reconciling a single item) #153
+                queries[queryId + 'u'] = {
+                    query,
+                    // type: entities.work, // broadly typed query may time out, see #149
                     properties: queryProps
                 };
             }
@@ -179,16 +181,33 @@ export default class {
                 const tmpResponse = JSON.parse(req.response);
                 for (let i=0; i<items.length; i++) {
                     const queryId = `q${i}`;
-                    if (!tmpResponse[queryId]) continue;
-                    const typedQuery = tmpResponse[queryId + 't'];
-                    const result = typedQuery ? typedQuery.result : [];
-                    for (const candidate of tmpResponse[queryId].result) {
-                        if (!result.map((candidate) => candidate.id).includes(candidate.id)) {
-                            // candidates from default (i.e., not type-specific) query
-                            // should not be exact matches
-                            candidate.match = false;
-                            result.push(candidate);
+                    const typedQueryId = `q${i}t`;
+                    const untypedQueryId = `q${i}u`;
+                    const result = [];
+                    if (tmpResponse[typedQueryId]){
+                        const typedQuery = tmpResponse[typedQueryId];
+                        if (typedQuery.result.length == 1){
+                            // If there's just one typed match - it's an exact match
+                            typedQuery.result[0].match = true;
+                            response[queryId] = {"result": [typedQuery.result[0]]};
+                            continue;
+                        } else if (options.partial){
+                            // Otherwise, store all potential matches as partial matches
+                            typedQuery.result.forEach((candidate) => {
+                                candidate.match = false;
+                                result.push(candidate);
+                            });
                         }
+                    }
+                    if(options.partial && tmpResponse[untypedQueryId]){
+                        // If a partial match, also store untyped matches we don't already have
+                        const resultIDs = result.map((candidate) => candidate.id);
+                        tmpResponse[untypedQueryId].result.forEach((candidate) => {
+                            if (!resultIDs.includes(candidate.id)) {
+                                candidate.match = false;
+                                result.push(candidate);
+                            }
+                        });
                     }
                     result.sort((a, b) => b.score - a.score);
                     response[queryId] = { result };
