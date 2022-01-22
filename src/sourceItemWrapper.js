@@ -666,29 +666,30 @@ class SourceItemWrapper extends ItemWrapper {
             try {
                 if (identifiers.length > 0) {
                     await Zotero.Schema.schemaUpdatePromise;
+                    // look up each identifier asynchronously in parallel - multiple web requests
+                    // can run at the same time, so this speeds things up a lot #141
                     let citations = await Promise.all(identifiers.map(async (identifier) => {
-                        var translation = new Zotero.Translate.Search();
+                        const translation = new Zotero.Translate.Search();
                         translation.setIdentifier(identifier);
-                        let translators = await translation.getTranslators();
-                        translation.setTranslator(translators);
 
                         let jsonItems;
                         try {
                             // set libraryID to false so we don't save this item in the Zotero library
                             jsonItems = await translation.translate({libraryID: false});
-                            if (jsonItems.length > 0){
-                                const jsonItem = jsonItems[0];
-                                const newItem = new Zotero.Item(jsonItem.itemType);
-                                newItem.fromJSON(jsonItem);
-                                return new Citation({item: newItem, ocis: []}, this);
-                            }
+                        } catch {
+                            // `translation.translate` throws an error if no item was found for an identifier.
+                            // Catch these errors so we don't abort the `Promise.all`.
+                            debug(`No items returned for identifier: ${identifier}`);
                         }
-                        catch (e) {
-                            // Catch errors so we don't abort the Promise.all
-                            Zotero.logError(e);
+                        if (jsonItems && jsonItems.length > 0){
+                            const jsonItem = jsonItems[0];
+                            const newItem = new Zotero.Item(jsonItem.itemType);
+                            newItem.fromJSON(jsonItem);
+                            return new Citation({item: newItem, ocis: []}, this);
                         }
+                        else return false; // no item added
                     }));
-                    citations = citations.filter(Boolean); // filter out null values if no item found
+                    citations = citations.filter(Boolean); // filter out if no item found
 
                     if (citations.length) {
                         this.addCitations(citations);
