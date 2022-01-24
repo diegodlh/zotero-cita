@@ -663,13 +663,13 @@ class SourceItemWrapper extends ItemWrapper {
                 'loading',
                 Wikicite.getString('wikicite.source-item.add-identifier.progress.loading')
             );
-
             try {
                 if (identifiers.length > 0) {
-                    let citations = [];
                     await Zotero.Schema.schemaUpdatePromise;
-                    for (const identifier of identifiers) {
-                        let translation = new Zotero.Translate.Search();
+                    // look up each identifier asynchronously in parallel - multiple web requests
+                    // can run at the same time, so this speeds things up a lot #141
+                    let citations = await Promise.all(identifiers.map(async (identifier) => {
+                        const translation = new Zotero.Translate.Search();
                         translation.setIdentifier(identifier);
 
                         let jsonItems;
@@ -677,18 +677,20 @@ class SourceItemWrapper extends ItemWrapper {
                             // set libraryID to false so we don't save this item in the Zotero library
                             jsonItems = await translation.translate({libraryID: false});
                         } catch {
-                            debug('No items returned for identifier ' + identifier);
+                            // `translation.translate` throws an error if no item was found for an identifier.
+                            // Catch these errors so we don't abort the `Promise.all`.
+                            debug(`No items returned for identifier: ${identifier}`);
                         }
-
-                        if (jsonItems) {
-                            let jsonItem = jsonItems[0]
-                            let newItem = new Zotero.Item(jsonItem.itemType);
+                        if (jsonItems && jsonItems.length > 0){
+                            const jsonItem = jsonItems[0];
+                            const newItem = new Zotero.Item(jsonItem.itemType);
                             newItem.fromJSON(jsonItem);
-
-                            let citation = new Citation({item: newItem, ocis: []}, this);
-                            citations.push(citation)
+                            return new Citation({item: newItem, ocis: []}, this);
                         }
-                    }
+                        else return false; // no item added
+                    }));
+                    citations = citations.filter(Boolean); // filter out if no item found
+
                     if (citations.length) {
                         this.addCitations(citations);
                         progress.updateLine(
