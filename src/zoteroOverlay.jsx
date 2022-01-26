@@ -935,7 +935,7 @@ const zoteroOverlay = {
             const sourceItem = new SourceItemWrapper(item);
             const citationsToAdd = postData.citedItemKeys.map((citedItemKey) => {
                 const citedItem = Zotero.Items.getByLibraryAndKey(postData.libraryID, citedItemKey);
-                return new Citation({item: citedItem, ocis: []}, sourceItem)
+                return new Citation({item: citedItem, ocis: [], zotero: citedItemKey}, sourceItem)
             });
             sourceItem.addCitations(citationsToAdd);
 
