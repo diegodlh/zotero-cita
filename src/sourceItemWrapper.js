@@ -495,36 +495,8 @@ class SourceItemWrapper extends ItemWrapper {
     // if provided, sync to wikidata, export to croci, etc, only for that citation
     // if not, do it for all
 
-    async getFromCrossref() {
-        if (this.doi){
-            const progress = new Progress(
-                'loading',
-                Wikicite.getString('wikicite.crossref.get-citations.loading')
-            );
-            const newCitedItems = await Crossref.getCitations(this.doi);
-            if (newCitedItems.length > 0){
-                const newCitations = newCitedItems.map((newItem) => new Citation({item: newItem, ocis: []}, this));
-                this.addCitations(newCitations);
-                progress.updateLine(
-                    'done',
-                    Wikicite.getString('wikicite.crossref.get-citations.done')
-                );
-            }
-            else{
-                progress.updateLine(
-                    'error',
-                    Wikicite.getString('wikicite.crossref.get-citations.none')
-                );
-            }
-        }
-        else{
-            // Should never be called because the menu option is only enabled when the item has a DOI
-            Services.prompt.alert(
-                window,
-                Wikicite.getString('wikicite.crossref.get-citations.no-doi-title'),
-                Wikicite.getString('wikicite.crossref.get-citations.no-doi-message')
-            );
-        }
+    getFromCrossref() {
+        Crossref.addCrossrefCitationsToItems([this]);
     }
 
     getFromOcc() {

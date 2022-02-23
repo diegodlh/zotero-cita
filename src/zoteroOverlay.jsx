@@ -1,4 +1,5 @@
 import Wikicite, { debug } from './wikicite';
+import Citation from './citation';
 import Citations from './citations';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
 import Crossref from './crossref';
@@ -360,12 +361,15 @@ const zoteroOverlay = {
         }
     },
 
-    getFromCrossref: function(menuName) {
+    getFromCrossref: async function(menuName) {
         // get items selected
         // filter items with doi
         // generate batch call to crossref
         // only add items not available locally yet
-        Crossref.getCitations();
+        const items = await this.getSelectedItems(menuName, true);
+        if (items.length){
+            Crossref.addCrossrefCitationsToItems(items);
+        }
     },
 
     getFromOCC: function(menuName) {
@@ -861,7 +865,7 @@ const zoteroOverlay = {
         doc.getElementById('citation-menu-fetch-qid').disabled = false;
         doc.getElementById('citation-menu-file-export').disabled = false;
         doc.getElementById('citation-menu-croci-export').disabled = !sourceItem.doi || !targetItem.doi;
-        doc.getElementById('citation-menu-oci-crossref').disabled = !ociSuppliers.includes('crossref');
+        doc.getElementById('citation-menu-oci-crossref').disabled = !sourceItem.doi || !ociSuppliers.includes('crossref');
         doc.getElementById('citation-menu-oci-occ').disabled = !ociSuppliers.includes('occ');
         doc.getElementById('citation-menu-oci-wikidata').disabled = !ociSuppliers.includes('wikidata');
     },
