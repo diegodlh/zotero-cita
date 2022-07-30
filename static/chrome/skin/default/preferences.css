@@ -1,0 +1,15 @@
+.preference-dialog-footer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+}
+
+button {
+    min-width: 79px;
+    margin: 5px 6px 3px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    text-shadow: none;
+    font-size: inherit;
+}

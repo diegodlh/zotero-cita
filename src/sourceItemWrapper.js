@@ -10,9 +10,6 @@ import Progress from './progress';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
-// Fixme: define this in the preferences
-const SAVE_TO = 'note'; // extra
-
 /* global Components */
 /* global DOMParser */
 /* global Services */
@@ -49,7 +46,8 @@ class SourceItemWrapper extends ItemWrapper {
             }
             return value;
         }
-        if (SAVE_TO === 'extra') {
+        const storage = window.Wikicite.Prefs.get('storage');
+        if (storage === 'extra') {
             const jsonCitations = citations.map(
                 (citation) => {
                     let json = JSON.stringify(
@@ -64,7 +62,7 @@ class SourceItemWrapper extends ItemWrapper {
             );
             Wikicite.setExtraField(this.item, 'citation', jsonCitations);
             this.saveHandler();
-        } else if (SAVE_TO === 'note') {
+        } else if (storage === 'note') {
             let note = Wikicite.getCitationsNote(this.item);
             if (!citations.length && note) {
                 note.eraseTx();
@@ -149,7 +147,8 @@ class SourceItemWrapper extends ItemWrapper {
         const t0 = performance.now();
         const citations = [];
         const corruptCitations = [];
-        if (SAVE_TO === 'extra') {
+        const storage = window.Wikicite.Prefs.get('storage');
+        if (storage === 'extra') {
             const rawCitations = Wikicite.getExtraField(this.item, 'citation').values;
             rawCitations.forEach((rawCitation, index) => {
                 try {
@@ -163,7 +162,7 @@ class SourceItemWrapper extends ItemWrapper {
                     debug(`Citation #${index} is corrupt`);
                 }
             });
-        } else if (SAVE_TO === 'note') {
+        } else if (storage === 'note') {
             const note = Wikicite.getCitationsNote(this.item);
             if (note) {
                 let parser;
