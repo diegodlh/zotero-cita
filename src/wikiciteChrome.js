@@ -34,8 +34,7 @@ WikiciteChrome.showUpgradeMessage = function() {
 WikiciteChrome.openPreferences = function() {
     if (!('_preferencesWindow' in this) || this._preferencesWindow === null ||
         this._preferencesWindow.closed) {
-        var featureStr = 'chrome, titlebar, toolbar=yes, resizable, ' +
-            'centerscreen, ';
+        var featureStr = 'chrome, titlebar, toolbar=yes, centerscreen, ';
         var modalStr = Services.prefs.
             getBoolPref('browser.preferences.instantApply')?
             'dialog=no' : 'modal';
