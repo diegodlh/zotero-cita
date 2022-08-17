@@ -32,8 +32,11 @@ const PreferenceDialog = (props) => {
     return <div orient="vertical">
         <fieldset>
             <legend>{props.getString('wikicite.prefs.citation-storage')}</legend>
+            <span>{props.getString('wikicite.prefs.citation-storage-desc')}</span>
+            <br />
             <input id="radio-storage-note" type="radio" name="citation-storage" value="note" checked={storage === 'note'} onClick={() => setStorage('note')} />
             <label htmlFor="radio-storage-note">{props.getString('wikicite.prefs.citation-storage-note')}</label>
+            <br />
             <input id="radio-storage-extra" type="radio" name="citation-storage" value="extra" checked={storage === 'extra'} onClick={() => setStorage('extra')} />
             <label htmlFor="radio-storage-extra">{props.getString('wikicite.prefs.citation-storage-extra')}</label>
         </fieldset>

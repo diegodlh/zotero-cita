@@ -1,3 +1,7 @@
+#wikicite-preferences-window {
+	width: 400px;
+}
+
 .preference-dialog-footer {
     display: flex;
     flex-direction: row;
