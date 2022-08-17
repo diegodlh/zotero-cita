@@ -24,10 +24,11 @@ class SourceItemWrapper extends ItemWrapper {
     // given that the citation is a link between two objects (according to the OC model)
     // so check if any methods here make sense to be moved to the Citation class instead
 
-    constructor(item) {
+    constructor(item, storage) {
         super(item, item.saveTx.bind(item));
         this._citations = [];
         this._batch = false;
+        this._storage = storage;
         this.newRelations = false;  // Whether new item relations have been queued
         this.loadCitations(false);
     }
@@ -46,8 +47,7 @@ class SourceItemWrapper extends ItemWrapper {
             }
             return value;
         }
-        const storage = window.Wikicite.Prefs.get('storage');
-        if (storage === 'extra') {
+        if (this._storage === 'extra') {
             const jsonCitations = citations.map(
                 (citation) => {
                     let json = JSON.stringify(
@@ -62,10 +62,12 @@ class SourceItemWrapper extends ItemWrapper {
             );
             Wikicite.setExtraField(this.item, 'citation', jsonCitations);
             this.saveHandler();
-        } else if (storage === 'note') {
+        } else if (this._storage === 'note') {
             let note = Wikicite.getCitationsNote(this.item);
-            if (!citations.length && note) {
-                note.eraseTx();
+            if (!citations.length) {
+                if (note) {
+                    note.eraseTx();
+                }
                 return;
             }
             if (!note) {
@@ -147,8 +149,7 @@ class SourceItemWrapper extends ItemWrapper {
         const t0 = performance.now();
         const citations = [];
         const corruptCitations = [];
-        const storage = window.Wikicite.Prefs.get('storage');
-        if (storage === 'extra') {
+        if (this._storage === 'extra') {
             const rawCitations = Wikicite.getExtraField(this.item, 'citation').values;
             rawCitations.forEach((rawCitation, index) => {
                 try {
@@ -162,7 +163,7 @@ class SourceItemWrapper extends ItemWrapper {
                     debug(`Citation #${index} is corrupt`);
                 }
             });
-        } else if (storage === 'note') {
+        } else if (this._storage === 'note') {
             const note = Wikicite.getCitationsNote(this.item);
             if (note) {
                 let parser;
@@ -212,6 +213,26 @@ class SourceItemWrapper extends ItemWrapper {
             this.corruptCitations = this.corruptCitations.concat(corruptCitations);
         }
         debug(`Getting citations from source item took ${performance.now() - t0}`)
+    }
+
+    /**
+     * Migrate citations to a new storage location
+     * @param {string} [to] The new storage location
+     */
+    migrateCitations(to) {
+        const oldStorage = this._storage;
+        this._storage = to;
+        if (this._citations.length > 0) {
+            this.saveCitations();
+            if (oldStorage === 'extra') {
+                Wikicite.setExtraField(this.item, 'citation', []);
+            } else if (oldStorage === 'note') {
+                let note = Wikicite.getCitationsNote(this.item);
+                if (note) {
+                    note.eraseTx();
+                }
+            }
+        }
     }
 
     saveCitations() {

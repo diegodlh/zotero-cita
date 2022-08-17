@@ -25,7 +25,7 @@ function CitationsBoxContainer(props) {
     const [sourceItem, setSourceItem] = useState(
         // If the initial state is the result of an expensive computation,
         // one may provide a function instead, which will be executed only on the initial render.
-        () => new SourceItemWrapper(props.item)
+        () => new SourceItemWrapper(props.item, window.Wikicite.Prefs.get('storage'))
     );
 
     // Option 2, set sourceItem as an instance-like variable with useRef.
@@ -33,7 +33,7 @@ function CitationsBoxContainer(props) {
     // And passing sourceItem.current as useEffect dependency is bad idea
     // https://github.com/facebook/react/issues/14387#issuecomment-503616820
     // const sourceItem = useRef(
-    //   new SourceItemWrapper(props.item)
+    //   new SourceItemWrapper(props.item, window.Wikicite.Prefs.get('storage'))
     // );
 
     // Option 3, set sourceItem as an instance-like variable with useCallback.
@@ -44,7 +44,7 @@ function CitationsBoxContainer(props) {
     //   console.log('Running callback...');
     //   setCitations(sourceItem.citations);
     // }, []);
-    // sourceItem.current = new SourceItemWrapper(props.item);
+    // sourceItem.current = new SourceItemWrapper(props.item, window.Wikicite.Prefs.get('storage'));
 
     // I don't need a create button next to wikicite field
     // I only have a fetch button. If when fetching no item is found
@@ -80,7 +80,7 @@ function CitationsBoxContainer(props) {
                         debug('Item observer has been triggered...');
                         // This may cause two re-renders: one when sourceItem is reset,
                         // and another after sourceItem-dependent useEffect run above is run.
-                        setSourceItem(new SourceItemWrapper(props.item));
+                        setSourceItem(new SourceItemWrapper(props.item, window.Wikicite.Prefs.get('storage')));
 
                         // If sourceItem is a ref, state must be updated from here,
                         // because including sourceItem.current in a useEffect dependency array won't work
@@ -93,7 +93,7 @@ function CitationsBoxContainer(props) {
                         // setQid(Wikicite.getExtraField(props.item.getField('extra'), 'qid'));
                     } else if (false) {
                         // I have to check if the target item of one of the linked citations has been modified
-                        setSourceItem(new SourceItemWrapper(props.item));
+                        setSourceItem(new SourceItemWrapper(props.item, window.Wikicite.Prefs.get('storage')));
                     }
                 }
             }

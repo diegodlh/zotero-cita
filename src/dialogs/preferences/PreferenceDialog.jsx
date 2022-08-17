@@ -1,13 +1,35 @@
 import React, { useState } from 'react';
+import Progress from '../../progress';
 import PropTypes from 'prop-types';
+import SourceItemWrapper from '../../sourceItemWrapper';
 
 /* global window */
+/* global Zotero */
 
 const PreferenceDialog = (props) => {
     const [storage, setStorage] = useState(props.Prefs.get('storage'));
 
+    async function migrateStorageLocation(from, to) {
+        const progress = new Progress(
+            'loading',
+            props.getString('wikicite.prefs.citation-storage.progress.migrating')
+        );
+        const items = await Zotero.Items.getAll(Zotero.Libraries.userLibraryID).filter((item) => item.isRegularItem());
+        let migratedItems = 0;
+        for (let item of items) {
+            item = new SourceItemWrapper(item, from);
+            item.migrateCitations(to);
+            progress.updateLine('loading', props.getString('wikicite.prefs.citation-storage.progress.migrated-n-items', [++migratedItems, items.length]));
+        }
+        progress.updateLine('done', props.getString('wikicite.prefs.citation-storage.progress.done'));
+        progress.close();
+    }
+
     function save() {
-        props.Prefs.set('storage', storage);
+        if (props.Prefs.get('storage') !== storage) {
+            // migrate citation storage location for all items
+            migrateStorageLocation(props.Prefs.get('storage'), storage).then(() => props.Prefs.set('storage', storage));
+        }
         window.close();
     }
 
