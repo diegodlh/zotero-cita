@@ -1,27 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 /* global window */
 
 const PreferenceDialog = (props) => {
-    const [storage, setStorage] = useState('');
-
-    useEffect(() => {
-        init();
-    }, []);
-
-    function init() {
-        // note: this is an ugly hack required because window.Wikicite is only set after the window has loaded, and is thus not available when the PreferenceDialog is first rendered
-        if (window.Wikicite === undefined) {
-            setTimeout(init, 50);
-            return;
-        }
-
-        setStorage(window.Wikicite.Prefs.get('storage'));
-    }
+    const [storage, setStorage] = useState(props.Prefs.get('storage'));
 
     function save() {
-        window.Wikicite.Prefs.set('storage', storage);
+        props.Prefs.set('storage', storage);
         window.close();
     }
 
@@ -48,7 +34,8 @@ const PreferenceDialog = (props) => {
 }
 
 PreferenceDialog.propTypes = {
-    getString: PropTypes.func
+    getString: PropTypes.func,
+    Prefs: PropTypes.any
 };
 
 export default PreferenceDialog;

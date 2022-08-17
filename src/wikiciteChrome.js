@@ -45,7 +45,7 @@ WikiciteChrome.openPreferences = function() {
                 'chrome://cita/content/preferences.html',
                 'wikicite-prefs-window',
                 featureStr,
-                { Wikicite }
+                { Wikicite: Wikicite, Prefs: window.Wikicite.Prefs }
             );
     }
 

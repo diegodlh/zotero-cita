@@ -113,8 +113,10 @@ const Wikicite = {
         .getInterface(Components.interfaces.nsIDOMWindow)
 
       domWindow.addEventListener('load', function listener() {
-        domWindow.removeEventListener('load', listener, false);
-        Wikicite.loadWindowChrome(domWindow);
+        domWindow.removeEventListener('load', listener, false)
+        if (domWindow.document.documentElement.getAttribute('windowtype') == 'navigator:browser') {
+          Wikicite.loadWindowChrome(domWindow);
+        }
       }, false)
     },
     onCloseWindow: function(_xulWindow) {},
