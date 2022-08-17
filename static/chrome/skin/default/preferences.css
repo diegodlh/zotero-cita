@@ -1,5 +1,6 @@
-#wikicite-preferences-window {
+window#wikicite-preferences-window {
 	width: 400px;
+    padding: 1em;
 }
 
 .preference-dialog-footer {
@@ -14,6 +15,7 @@ button {
     margin: 5px 6px 3px;
     padding-top: 1px;
     padding-bottom: 1px;
+    color: ButtonText;
     text-shadow: none;
     font-size: inherit;
 }
