@@ -1,4 +1,5 @@
 import Wikicite, { debug } from './wikicite';
+import Citation from './citation';
 import Citations from './citations';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
 import Crossref from './crossref';
@@ -118,6 +119,8 @@ const zoteroOverlay = {
         this.switcherObserver = observer;
 
         this.installTranslators();
+
+        this.addEndpoints();
     },
 
     unload: function() {
@@ -153,6 +156,8 @@ const zoteroOverlay = {
         this.switcherObserver.disconnect();
 
         this.uninstallTranslators();
+
+        this.removeEndpoints();
     },
 
     /******************************************/
@@ -877,12 +882,107 @@ const zoteroOverlay = {
                 zoteroOverlay[functionName](menuName)
             }, false)
         return menuFunc;
-    }
+    },
 
     // /******************************************/
     // // Zotero item selection and sorting
     // /******************************************/
 
+
+    /******************************************/
+    // Server Endpoints
+    /******************************************/
+    addEndpoints: function(){
+        Zotero.Server.Endpoints["/cita/citation/add"] = this.createEndpoint('POST', this.addItemCitations);
+        Zotero.Server.Endpoints["/cita/citation/delete"] = this.createEndpoint('POST', this.deleteItemCitations);
+        Zotero.Server.Endpoints["/cita/citation/list"] = this.createEndpoint('POST', this.getItemCitations);
+    },
+
+    removeEndpoints: function(){
+        delete Zotero.Server.Endpoints["/cita/citation/add"];
+        delete Zotero.Server.Endpoints["/cita/citation/delete"];
+        delete Zotero.Server.Endpoints["/cita/citation/list"];
+    },
+
+    createEndpoint: function(endpointType, endpointFunction){
+        return function(){
+            return {
+                supportedMethods: [endpointType],
+
+                init: function (postData, sendResponseCallback) {
+                    try {
+                        const returnMessage = endpointFunction(postData);
+                        sendResponseCallback(200, "text/json", `${JSON.stringify(returnMessage)}`);
+                    } catch (error) {
+                        sendResponseCallback(404, "text/plain", `Cita endpoint - error occurred:\n${error}`);
+                    }
+                }
+            }
+        }
+    },
+
+    /**
+     * Add items in a Zotero library as citations to a source item
+     * @param {Object} postData - An object containing:
+     * - `libraryID` {int} the library ID for the source and cited items
+     * - `sourceItemKey` {string} the item key of the source item
+     * - `citedItemKeys` {string[]} array of the item keys for the cited items
+     * @returns {string} statusMessage - Result of the operation.
+     */
+    addItemCitations: function(postData){
+        if (postData && postData.libraryID && postData.sourceItemKey && postData.citedItemKeys){
+            const item = Zotero.Items.getByLibraryAndKey(postData.libraryID, postData.sourceItemKey);
+            const sourceItem = new SourceItemWrapper(item);
+            const citationsToAdd = postData.citedItemKeys.map((citedItemKey) => {
+                const citedItem = Zotero.Items.getByLibraryAndKey(postData.libraryID, citedItemKey);
+                return new Citation({item: citedItem, ocis: [], zotero: citedItemKey}, sourceItem)
+            });
+            sourceItem.addCitations(citationsToAdd);
+
+            return `Successfully added ${citationsToAdd.length} citations to item "${sourceItem.title}"`;
+        } else {
+            throw new Error('Please provide `libraryID` `sourceItemKey` and `citedItemKeys` in post request');
+        }
+    },
+
+    /**
+     * Delete citations from a source item
+     * @param {Object} postData - An object containing:
+     * - `libraryID` {int} the library ID for the source and cited items
+     * - `sourceItemKey` {string} the item key of the source item
+     * - `citedItemIndices` {int[]} array of the indices of the source item to be deleted
+     * @returns {string} statusMessage - Result of the operation.
+     */
+     deleteItemCitations: function(postData){
+        if (postData && postData.libraryID && postData.sourceItemKey && postData.citedItemIndices){
+            const item = Zotero.Items.getByLibraryAndKey(postData.libraryID, postData.sourceItemKey);
+            const sourceItem = new SourceItemWrapper(item);
+            // sort in descending order so the indices don't change when removing citations
+            postData.citedItemIndices.sort((a, b) => b-a).forEach((indexToRemove) => {
+                sourceItem.deleteCitation(indexToRemove);
+            });
+
+            return `Successfully deleted ${postData.citedItemIndices.length} citations from item "${sourceItem.title}"`;
+        } else {
+            throw new Error('Please provide `libraryID` `sourceItemKey` and `citedItemIndices` in post request');
+        }
+    },
+
+    /**
+     * Add items in a Zotero library as citations to a source item
+     * @param {Object} postData - An object containing:
+     * - `libraryID` {int} the library ID for the source and cited items
+     * - `sourceItemKey` {string} the item key of the source item
+     * @returns {Zotero.Item[]} citedItems - Zotero items that are cited by the source item
+     */
+     getItemCitations: function(postData){
+        if (postData && postData.libraryID && postData.sourceItemKey){
+            const item = new SourceItemWrapper(Zotero.Items.getByLibraryAndKey(postData.libraryID, postData.sourceItemKey));
+            return item.citations;
+        } else {
+            throw new Error('Please provide `libraryID` and `sourceItemKey` in post request');
+        }
+    }
 };
 
 export default zoteroOverlay;
