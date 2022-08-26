@@ -19,7 +19,7 @@ const PreferenceDialog = (props) => {
         for (let item of items) {
             item = new SourceItemWrapper(item, from);
             item.migrateCitations(to);
-            progress.updateLine('loading', props.getString('wikicite.prefs.citation-storage.progress.migrated-n-items', [++migratedItems, items.length]));
+            progress.updateLine('loading', props.formatString('wikicite.prefs.citation-storage.progress.migrated-n-items', [++migratedItems, items.length]));
         }
         progress.updateLine('done', props.getString('wikicite.prefs.citation-storage.progress.done'));
         progress.close();
@@ -56,6 +56,7 @@ const PreferenceDialog = (props) => {
 }
 
 PreferenceDialog.propTypes = {
+    formatString: PropTypes.func,
     getString: PropTypes.func,
     Prefs: PropTypes.any
 };
