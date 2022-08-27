@@ -130,13 +130,13 @@ const zoteroOverlay = {
             itemTree.prototype.getColumns = function () {
                 const columns = getColumns_original.apply(this, arguments);
                 columns.push({
-                    dataKey: Wikicite.getString('wikicite.item-tree.column-id.qid'),
+                    dataKey: 'qid',
                     label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
                     flex: '1',
                     zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
                 });
                 columns.push({
-                    dataKey: Wikicite.getString('wikicite.item-tree.column-id.citations'),
+                    dataKey: 'citations',
                     label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
                     flex: '1',
                     zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
@@ -147,7 +147,7 @@ const zoteroOverlay = {
 
             const renderCell_original = itemTree.prototype._renderCell;
             itemTree.prototype._renderCell = function (index, data, col) {
-                if (col.id != Wikicite.getString('wikicite.item-tree.column-id.qid') && col.id != Wikicite.getString('wikicite.item-tree.column-id.citations')) {
+                if (!['qid', 'itemID'].includes(col.id)) {
                     return renderCell_original.apply(this, arguments);
                 }
 
@@ -166,25 +166,32 @@ const zoteroOverlay = {
             const getCellText_original = Zotero.ItemTreeView.prototype.getCellText;
             Zotero.ItemTreeView.prototype.getCellText = function (row, col) {
                 const item = this.getRow(row).ref;
-                if (col.id == Wikicite.getString('wikicite.item-tree.column-id.qid')) {
+                if (col.id == 'qid') {
                     return `${new SourceItemWrapper(item).getPID('QID') || ''}`;
                 }
-                else if (col.id == Wikicite.getString('wikicite.item-tree.column-id.citations')) {
+                else if (col.id == 'citations') {
                     return `${new SourceItemWrapper(item).citations.length || '0'}`;
                 }
                 else return getCellText_original.apply(this, arguments);
             };
         }
 
-        // To be able to sort by the QID or citations columns - need .toLowerCase() becase 'QID' stays 'QID' but 'Citations' becomes 'citations' for field names
+        const isFieldOfBase_original = Zotero.ItemFields.isFieldOfBase;
+        Zotero.ItemFields.isFieldOfBase = function (field, _baseField) {
+            if (['qid', 'itemID'].includes(field)) return false
+            return isFieldOfBase_original.apply(this, arguments)
+        }
+
+
+        // To be able to sort by the QID or citations columns
         const getField_original = Zotero.Item.prototype.getField;
         Zotero.Item.prototype.getField = function (field, unformatted, includeBaseMapped) {
             try {
-                if (typeof field === 'string'){
-                    switch (field.toLowerCase()) {
-                        case Wikicite.getString('wikicite.item-tree.column-id.qid').toLowerCase():
+                if (typeof field === 'string' && this.isRegularItem()){
+                    switch (field) {
+                        case 'qid':
                             return `${new SourceItemWrapper(this).getPID('QID') || ''}`;
-                        case Wikicite.getString('wikicite.item-tree.column-id.citations').toLowerCase():
+                        case 'citations':
                             return `${new SourceItemWrapper(this).citations.length || 0}`;
                     }
                 }
@@ -440,9 +447,9 @@ const zoteroOverlay = {
             splitter.setAttribute('class', 'tree-splitter');
             return splitter;
         }
-        const treecolQID_ID = Wikicite.getString('wikicite.item-tree.column-id.qid');
+        const treecolQID_ID = 'qid';
         const treecolQID = getTreecol(treecolQID_ID, Wikicite.getString('wikicite.item-tree.column-label.qid'));
-        const treecolCitations_ID = Wikicite.getString('wikicite.item-tree.column-id.citations');
+        const treecolCitations_ID = 'citations';
         const treecolCitations = getTreecol(treecolCitations_ID, Wikicite.getString('wikicite.item-tree.column-label.citations'));
         tree.appendChild(getSplitter());
         tree.appendChild(treecolQID);
