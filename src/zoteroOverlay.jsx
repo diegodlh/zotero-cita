@@ -18,6 +18,12 @@ const TRANSLATOR_LABELS = [
     'Wikidata QuickStatements'
 ];
 
+const COLUMN_IDS = {
+    QID: 'qid',
+    CITATIONS: 'citations'
+}
+const CITA_COLUMNS = [COLUMN_IDS.QID, COLUMN_IDS.CITATIONS];
+
 /* global AddonManager */
 /* global window, document, Components, MutationObserver*/
 /* global Services */
@@ -130,13 +136,13 @@ const zoteroOverlay = {
             itemTree.prototype.getColumns = function () {
                 const columns = getColumns_original.apply(this, arguments);
                 columns.push({
-                    dataKey: 'qid',
+                    dataKey: COLUMN_IDS.QID,
                     label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
                     flex: '1',
                     zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
                 });
                 columns.push({
-                    dataKey: 'citations',
+                    dataKey: COLUMN_IDS.CITATIONS,
                     label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
                     flex: '1',
                     zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
@@ -147,7 +153,7 @@ const zoteroOverlay = {
 
             const renderCell_original = itemTree.prototype._renderCell;
             itemTree.prototype._renderCell = function (index, data, col) {
-                if (!['qid', 'itemID'].includes(col.id)) {
+                if (!CITA_COLUMNS.includes(col.id)) {
                     return renderCell_original.apply(this, arguments);
                 }
 
@@ -166,10 +172,10 @@ const zoteroOverlay = {
             const getCellText_original = Zotero.ItemTreeView.prototype.getCellText;
             Zotero.ItemTreeView.prototype.getCellText = function (row, col) {
                 const item = this.getRow(row).ref;
-                if (col.id == 'qid') {
+                if (col.id == COLUMN_IDS.QID) {
                     return `${new SourceItemWrapper(item).getPID('QID') || ''}`;
                 }
-                else if (col.id == 'citations') {
+                else if (col.id == COLUMN_IDS.CITATIONS) {
                     return `${new SourceItemWrapper(item).citations.length || '0'}`;
                 }
                 else return getCellText_original.apply(this, arguments);
@@ -178,7 +184,7 @@ const zoteroOverlay = {
 
         const isFieldOfBase_original = Zotero.ItemFields.isFieldOfBase;
         Zotero.ItemFields.isFieldOfBase = function (field, _baseField) {
-            if (['qid', 'itemID'].includes(field)) return false
+            if (CITA_COLUMNS.includes(field)) return false
             return isFieldOfBase_original.apply(this, arguments)
         }
 
@@ -186,23 +192,28 @@ const zoteroOverlay = {
         // To be able to sort by the QID or citations columns
         const getField_original = Zotero.Item.prototype.getField;
         Zotero.Item.prototype.getField = function (field, unformatted, includeBaseMapped) {
-            try {
-                if (typeof field === 'string' && this.isRegularItem()){
-                    switch (field) {
-                        case 'qid':
-                            return `${new SourceItemWrapper(this).getPID('QID') || ''}`;
-                        case 'citations':
-                            return `${new SourceItemWrapper(this).citations.length || 0}`;
+            if (!CITA_COLUMNS.includes(field)) {
+                return getField_original.apply(this, arguments);
+            }
+
+            if (this.isRegularItem()){
+                try{
+                    if (field == COLUMN_IDS.QID){
+                        return `${new SourceItemWrapper(this).getPID('QID') || ''}`;
+                    }
+                    else if (field == COLUMN_IDS.CITATIONS){
+                        return `${new SourceItemWrapper(this).citations.length || 0}`;
                     }
                 }
+                catch (err){
+                    Zotero.logError(err)
+                    return 'error';
+                }
             }
-            catch (err) {
-                console.error('patched getField:', {field, unformatted, includeBaseMapped, err})
+            else{
+                return '';
             }
-
-            return getField_original.apply(this, arguments)
-        };
-
+        }
     },
 
     unload: function () {
@@ -447,9 +458,9 @@ const zoteroOverlay = {
             splitter.setAttribute('class', 'tree-splitter');
             return splitter;
         }
-        const treecolQID_ID = 'qid';
+        const treecolQID_ID = COLUMN_IDS.QID;
         const treecolQID = getTreecol(treecolQID_ID, Wikicite.getString('wikicite.item-tree.column-label.qid'));
-        const treecolCitations_ID = 'citations';
+        const treecolCitations_ID = COLUMN_IDS.CITATIONS;
         const treecolCitations = getTreecol(treecolCitations_ID, Wikicite.getString('wikicite.item-tree.column-label.citations'));
         tree.appendChild(getSplitter());
         tree.appendChild(treecolQID);
