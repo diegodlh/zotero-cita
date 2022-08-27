@@ -254,7 +254,8 @@ export default class {
                         const candidateIds = candidates.map((candidate) => candidate.id);
                         const matchesData = await this.getProperties(candidateIds, [properties.publicationDate, properties.author, properties.authorNameString]);
                         const authorStrings = await this.getAuthors(matchesData);
-                        const formatDateFromData = (idProperties) => new Date(idProperties[properties.publicationDate]).getFullYear().toString();
+                        const formatDateFromData = (idProperties) => new Date(idProperties).getFullYear().toString();
+                        const formatAuthorsFromData = (authorStrings) => (authorStrings.length <= 2 ? authorStrings.join(' & ') : authorStrings[0] + ' et al.')
 
                         const choices = [
                             Wikicite.getString(
@@ -263,8 +264,8 @@ export default class {
                             ...candidates.map(
                                 (candidate) => {
                                     let candidateStr = `${candidate.id}: ${candidate.name}`;
-                                    if (authorStrings.hasOwnProperty(candidate.id)) candidateStr += ` - ${authorStrings[candidate.id].join(', ')}`;
-                                    if (matchesData.hasOwnProperty(candidate.id)) candidateStr += ` [${formatDateFromData(matchesData[candidate.id])}]`;
+                                    if (authorStrings[candidate.id].length > 0) candidateStr += ` - ${formatAuthorsFromData(authorStrings[candidate.id])}`;
+                                    if (matchesData[candidate.id][properties.publicationDate].length > 0) candidateStr += ` [${formatDateFromData(matchesData[candidate.id][properties.publicationDate][0])}]`;
                                     const typeNames = candidate.type.map((type) => type.name);
                                     if (typeNames.length) {
                                         candidateStr += ` (${typeNames.join('; ')})`;
