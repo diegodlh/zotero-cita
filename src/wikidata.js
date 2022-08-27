@@ -186,9 +186,9 @@ export default class {
                     const result = [];
                     if (tmpResponse[typedQueryId]){
                         const typedQuery = tmpResponse[typedQueryId];
-                        if (typedQuery.result.length == 1){
-                            // If there's just one typed match - it's an exact match
-                            typedQuery.result[0].match = true;
+                        if (typedQuery.result.length == 1 && typedQuery.result[0].match){
+                            // If there's just one typed result and it's a match - accept it
+                            // still need to rely on the match result (or checking the score) - a single match can still be bad
                             response[queryId] = {"result": [typedQuery.result[0]]};
                             continue;
                         } else if (options.partial){
