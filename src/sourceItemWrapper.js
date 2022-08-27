@@ -75,7 +75,8 @@ class SourceItemWrapper extends ItemWrapper {
                 note.libraryID = this.item.libraryID;
                 note.parentKey = this.item.key;
             }
-            const jsonCitations = JSON.stringify(citations, replacer, 2);
+            // use Option to escape HTML characters here (eg. <), otherwise parsing the HTML will fail #178
+            const jsonCitations = new Option(JSON.stringify(citations, replacer, 2)).innerHTML;
             note.setNote(
                 '<h1>Citations</h1>\n' +
                 '<p>Do not edit this note manually!</p>' +
