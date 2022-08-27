@@ -237,84 +237,74 @@ export default class {
             }
             progress.close();
             let cancelled = false;
-            for (const [i, item] of items.entries()) {
+            for (const [queryID, query] of Object.entries(response)) {
                 if (cancelled) {
                     return;
                 }
-                if (item.qid && !options.overwrite) {
-                    return;
-                }
-                const query = response[`q${i}`];
-                if (query) {
-                    const candidates = query.result;
-                    const match = candidates.filter((candidate) => candidate.match)[0];
-                    if (match) {
-                        qids.set(item, match.id);
-                    } else if (candidates.length && options.partial) {
-                        const candidateIds = candidates.map((candidate) => candidate.id);
-                        const matchesData = await this.getProperties(candidateIds, [properties.publicationDate, properties.author, properties.authorNameString]);
-                        const authorStrings = await this.getAuthors(matchesData);
-                        const formatDateFromData = (idProperties) => new Date(idProperties).getFullYear().toString();
-                        const formatAuthorsFromData = (authorStrings) => (authorStrings.length <= 2 ? authorStrings.join(' & ') : authorStrings[0] + ' et al.')
+                const item = items[parseInt(queryID.slice(1), 10)];
+                const candidates = query.result;
+                const match = candidates.filter((candidate) => candidate.match)[0];
+                if (match) {
+                    qids.set(item, match.id);
+                } else if (candidates.length && options.partial) {
+                    const candidateIds = candidates.map((candidate) => candidate.id);
+                    const matchesData = await this.getProperties(candidateIds, [properties.publicationDate, properties.author, properties.authorNameString]);
+                    const authorStrings = await this.getAuthors(matchesData);
+                    const formatDateFromData = (idProperties) => new Date(idProperties).getFullYear().toString();
+                    const formatAuthorsFromData = (authorStrings) => (authorStrings.length <= 2 ? authorStrings.join(' & ') : authorStrings[0] + ' et al.')
 
-                        const choices = [
-                            Wikicite.getString(
-                                'wikicite.wikidata.reconcile.approx.none'
-                            ),
-                            ...candidates.map(
-                                (candidate) => {
-                                    let candidateStr = `${candidate.id}: ${candidate.name}`;
-                                    if (authorStrings[candidate.id].length > 0) candidateStr += ` - ${formatAuthorsFromData(authorStrings[candidate.id])}`;
-                                    if (matchesData[candidate.id][properties.publicationDate].length > 0) candidateStr += ` [${formatDateFromData(matchesData[candidate.id][properties.publicationDate][0])}]`;
-                                    const typeNames = candidate.type.map((type) => type.name);
-                                    if (typeNames.length) {
-                                        candidateStr += ` (${typeNames.join('; ')})`;
-                                    }
-                                    return candidateStr;
+                    const choices = [
+                        Wikicite.getString(
+                            'wikicite.wikidata.reconcile.approx.none'
+                        ),
+                        ...candidates.map(
+                            (candidate) => {
+                                let candidateStr = `${candidate.id}: ${candidate.name}`;
+                                if (authorStrings[candidate.id].length > 0) candidateStr += ` - ${formatAuthorsFromData(authorStrings[candidate.id])}`;
+                                if (matchesData[candidate.id][properties.publicationDate].length > 0) candidateStr += ` [${formatDateFromData(matchesData[candidate.id][properties.publicationDate][0])}]`;
+                                const typeNames = candidate.type.map((type) => type.name);
+                                if (typeNames.length) {
+                                    candidateStr += ` (${typeNames.join('; ')})`;
                                 }
-                            )
-                        ]
-                        const selection = {};
-                        const select = Services.prompt.select(
-                            window,
-                            Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
-                            Wikicite.formatString(
-                                'wikicite.wikidata.reconcile.approx.message',
-                                [
-                                    item.title,
-                                    Zotero.ItemTypes.getLocalizedString(item.type)
-                                ]
-                            ),
-                            choices.length,
-                            choices,
-                            selection
-                        );
-                        if (select) {
-                            if (selection.value > 0) {
-                                const index = selection.value - 1;
-                                qids.set(item, candidates[index].id);
-                            } else {
-                                // user chose 'none', meaning no candidate is relevant
-                                // set qid to 'null' meaning no results where found
-                                qids.set(item, null);
+                                return candidateStr;
                             }
+                        )
+                    ]
+                    const selection = {};
+                    const select = Services.prompt.select(
+                        window,
+                        Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
+                        Wikicite.formatString(
+                            'wikicite.wikidata.reconcile.approx.message',
+                            [
+                                item.title,
+                                Zotero.ItemTypes.getLocalizedString(item.type)
+                            ]
+                        ),
+                        choices.length,
+                        choices,
+                        selection
+                    );
+                    if (select) {
+                        if (selection.value > 0) {
+                            const index = selection.value - 1;
+                            qids.set(item, candidates[index].id);
                         } else {
-                            // user cancelled
-                            // leave qid 'undefined' in qids map
-                            cancelled = true;
+                            // user chose 'none', meaning no candidate is relevant
+                            // set qid to 'null' meaning no results where found
+                            qids.set(item, null);
                         }
                     } else {
-                        // item is in the response
-                        // but response is empty
-                        // meaning it wasn't found in Wikidata
-                        // make it 'null' in the qids maps
-                        qids.set(item, null);
+                        // user cancelled
+                        // leave qid 'undefined' in qids map
+                        cancelled = true;
                     }
                 } else {
-                    // item not in the response:
-                    // either not included in the query
-                    // or query failed altogether
-                    // remains 'undefined' in the qids map
+                    // item is in the response
+                    // but response is empty
+                    // meaning it wasn't found in Wikidata
+                    // make it 'null' in the qids maps
+                    qids.set(item, null);
                 }
             }
         } else {
