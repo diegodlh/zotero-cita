@@ -18,6 +18,12 @@ const TRANSLATOR_LABELS = [
     'Wikidata QuickStatements'
 ];
 
+const COLUMN_IDS = {
+    QID: 'qid',
+    CITATIONS: 'citations'
+}
+const CITA_COLUMNS = [COLUMN_IDS.QID, COLUMN_IDS.CITATIONS];
+
 /* global AddonManager */
 /* global window, document, Components, MutationObserver*/
 /* global Services */
@@ -118,6 +124,96 @@ const zoteroOverlay = {
         this.switcherObserver = observer;
 
         this.installTranslators();
+
+        // Code from better Bibtex used as example:
+        // https://github.com/retorquere/zotero-better-bibtex/blob/d6b21b855237f05e7ab48b5a52d0188227dd044e/content/better-bibtex.ts#L267
+        // This first half of the if statement is for compatibility with newer versions of Zotero after this commit:
+        // https://github.com/zotero/zotero/commit/cbbff600a60c9e7a7407d6f2e4053309bf28b872#diff-f9d76d8fc0067fd30009f09edd0404cd7e58fd2b3366cd15bc1982e168da1db9
+        if (typeof Zotero.ItemTreeView === 'undefined') {
+            const itemTree = require('zotero@zotero/itemTree');
+
+            const getColumns_original = itemTree.prototype.getColumns;
+            itemTree.prototype.getColumns = function () {
+                const columns = getColumns_original.apply(this, arguments);
+                columns.push({
+                    dataKey: COLUMN_IDS.QID,
+                    label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
+                    flex: '1',
+                    zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
+                });
+                columns.push({
+                    dataKey: COLUMN_IDS.CITATIONS,
+                    label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
+                    flex: '1',
+                    zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
+                });
+
+                return columns
+            };
+
+            const renderCell_original = itemTree.prototype._renderCell;
+            itemTree.prototype._renderCell = function (index, data, col) {
+                if (!CITA_COLUMNS.includes(col.id)) {
+                    return renderCell_original.apply(this, arguments);
+                }
+
+                const text = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+                text.className = 'cell-text';
+                text.innerText = data;
+
+                const cell = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+                cell.className = `cell ${col.className}`;
+                cell.append(text);
+
+                return cell;
+            };
+        }
+        else {
+            const getCellText_original = Zotero.ItemTreeView.prototype.getCellText;
+            Zotero.ItemTreeView.prototype.getCellText = function (row, col) {
+                const item = this.getRow(row).ref;
+                if (col.id == COLUMN_IDS.QID) {
+                    return `${new SourceItemWrapper(item).getPID('QID') || ''}`;
+                }
+                else if (col.id == COLUMN_IDS.CITATIONS) {
+                    return `${new SourceItemWrapper(item).citations.length || '0'}`;
+                }
+                else return getCellText_original.apply(this, arguments);
+            };
+        }
+
+        const isFieldOfBase_original = Zotero.ItemFields.isFieldOfBase;
+        Zotero.ItemFields.isFieldOfBase = function (field, _baseField) {
+            if (CITA_COLUMNS.includes(field)) return false
+            return isFieldOfBase_original.apply(this, arguments)
+        }
+
+
+        // To be able to sort by the QID or citations columns
+        const getField_original = Zotero.Item.prototype.getField;
+        Zotero.Item.prototype.getField = function (field, unformatted, includeBaseMapped) {
+            if (!CITA_COLUMNS.includes(field)) {
+                return getField_original.apply(this, arguments);
+            }
+
+            if (this.isRegularItem()){
+                try{
+                    if (field == COLUMN_IDS.QID){
+                        return `${new SourceItemWrapper(this).getPID('QID') || ''}`;
+                    }
+                    else if (field == COLUMN_IDS.CITATIONS){
+                        return `${new SourceItemWrapper(this).citations.length || 0}`;
+                    }
+                }
+                catch (err){
+                    Zotero.logError(err)
+                    return 'error';
+                }
+            }
+            else{
+                return '';
+            }
+        }
     },
 
     unload: function() {
@@ -203,14 +299,14 @@ const zoteroOverlay = {
 
     uninstallTranslator: function(label) {
         try {
-          const fileName = Zotero.Translators.getFileNameFromLabel(label)
-          const destFile = Zotero.getTranslatorsDirectory()
-          destFile.append(fileName)
-          if (destFile.exists()) {
-            destFile.remove(false)
-          }
+            const fileName = Zotero.Translators.getFileNameFromLabel(label)
+            const destFile = Zotero.getTranslatorsDirectory()
+            destFile.append(fileName)
+            if (destFile.exists()) {
+                destFile.remove(false)
+            }
         } catch (err) {
-          debug(`Failed to remove translator ${label}`, err)
+            debug(`Failed to remove translator ${label}`, err)
         }
     },
 
@@ -336,6 +432,42 @@ const zoteroOverlay = {
         const mainWindow = doc.getElementById('main-window');
         zoteroOverlay.itemPopupMenu(doc, mainWindow);
         zoteroOverlay.citationPopupMenu(doc, mainWindow);
+
+        // we only want to run this for older versions of Zotero
+        if (typeof Zotero.ItemTreeView !== 'undefined') {
+            const itemTreeColumnHeader = doc.getElementById('zotero-items-columns-header');
+            zoteroOverlay.itemTreeColumnHeaders(doc, itemTreeColumnHeader);
+        }
+    },
+
+    /******************************************/
+    // Item tree functions
+    /******************************************/
+    // Create QID column header in item tree
+    itemTreeColumnHeaders: function (doc, tree) {
+        const getTreecol = (treecolID, label) => {
+            const treecol = doc.createElement('treecol');
+            treecol.setAttribute('id', treecolID);
+            treecol.setAttribute('label', label);
+            treecol.setAttribute('flex', '1');
+            treecol.setAttribute('zotero-persist', 'width ordinal hidden sortActive sortDirection');
+            return treecol;
+        }
+        const getSplitter = () => {
+            const splitter = doc.createElement('splitter');
+            splitter.setAttribute('class', 'tree-splitter');
+            return splitter;
+        }
+        const treecolQID_ID = COLUMN_IDS.QID;
+        const treecolQID = getTreecol(treecolQID_ID, Wikicite.getString('wikicite.item-tree.column-label.qid'));
+        const treecolCitations_ID = COLUMN_IDS.CITATIONS;
+        const treecolCitations = getTreecol(treecolCitations_ID, Wikicite.getString('wikicite.item-tree.column-label.citations'));
+        tree.appendChild(getSplitter());
+        tree.appendChild(treecolQID);
+        tree.appendChild(getSplitter());
+        tree.appendChild(treecolCitations);
+        WikiciteChrome.registerXUL(treecolQID_ID, doc);
+        WikiciteChrome.registerXUL(treecolCitations_ID, doc);
     },
 
     prefsMenuItem: function(doc, menuPopup) {
@@ -659,10 +791,10 @@ const zoteroOverlay = {
                             item={item}
                             editable={ZoteroPane.collectionsView.editable}
                             onSourceItem={this.handleSourceItem}
-                            // citationIndexRef={this._citationIndex}
-                            // In principle I don't need a ref; I may have to use it if I need to force blur
-                            // ref={_citationsBox}
-                            // onResetSelection={focusItemsList}
+                        // citationIndexRef={this._citationIndex}
+                        // In principle I don't need a ref; I may have to use it if I need to force blur
+                        // ref={_citationsBox}
+                        // onResetSelection={focusItemsList}
                         />,
                         document.getElementById('citations-box-container'),
                         () => this.updateCitationsBoxSize(document)
