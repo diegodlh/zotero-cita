@@ -18,6 +18,16 @@ import Wikidata from './wikidata';
 /* global performance */
 /* global window */
 
+
+// replacer function for JSON.stringify
+function replacer(key, value) {
+    if (!value) {
+        // do not include property if value is null or undefined
+        return undefined;
+    }
+    return value;
+}
+
 class SourceItemWrapper extends ItemWrapper {
     // When I thought of this originally, I wasn't giving the source item to the citation creator
     // but then I understood it made sense I passed some reference to the source object
@@ -39,14 +49,6 @@ class SourceItemWrapper extends ItemWrapper {
 
     set citations(citations) {
         const t0 = performance.now()
-        // replacer function for JSON.stringify
-        function replacer(key, value) {
-            if (!value) {
-                // do not include property if value is null or undefined
-                return undefined;
-            }
-            return value;
-        }
         if (this._storage === 'extra') {
             const jsonCitations = citations.map(
                 (citation) => {
@@ -86,6 +88,46 @@ class SourceItemWrapper extends ItemWrapper {
         }
         this._citations = citations;
         debug(`Saving citations to source item took ${performance.now() - t0}`);
+    }
+
+    async setCitations(citations) {
+        if (this._storage === 'extra') {
+            const jsonCitations = citations.map(
+                (citation) => {
+                    let json = JSON.stringify(
+                        citation,
+                        replacer,
+                        1  // insert 1 whitespace into the output JSON
+                    );
+                    json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
+                    json = json.replace(/\n/g, ""); // remove line-breaks
+                    return json;
+                }
+            );
+            Wikicite.setExtraField(this.item, 'citation', jsonCitations);
+            await this.item.save();
+        } else if (this._storage === 'note') {
+            let note = Wikicite.getCitationsNote(this.item);
+            if (!citations.length) {
+                if (note) {
+                    await note.erase();
+                }
+                return;
+            }
+            if (!note) {
+                note = new Zotero.Item('note');
+                note.libraryID = this.item.libraryID;
+                note.parentKey = this.item.key;
+            }
+            const jsonCitations = JSON.stringify(citations, replacer, 2);
+            note.setNote(
+                '<h1>Citations</h1>\n' +
+                '<p>Do not edit this note manually!</p>' +
+                `<pre>${jsonCitations}</pre>`
+            );
+            await note.save();
+        }
+        this._citations = citations;
     }
 
     get corruptCitations() {
@@ -216,22 +258,24 @@ class SourceItemWrapper extends ItemWrapper {
     }
 
     /**
-     * Migrate citations to a new storage location
+     * Migrate citations to a new storage location.
+     * Note: This needs to be executed inside a Zotero DB transaction (Zotero.DB.executeTransaction).
      * @param {string} [to] The new storage location
      */
-    migrateCitations(to) {
+    async migrateCitations(to) {
         const oldStorage = this._storage;
         this._storage = to;
         if (this._citations.length > 0) {
-            this.saveCitations();
+            await this.setCitations(this._citations);
             if (oldStorage === 'extra') {
                 Wikicite.setExtraField(this.item, 'citation', []);
             } else if (oldStorage === 'note') {
                 let note = Wikicite.getCitationsNote(this.item);
                 if (note) {
-                    note.eraseTx();
+                    await note.erase();
                 }
             }
+            await this.item.save();
         }
     }
 
