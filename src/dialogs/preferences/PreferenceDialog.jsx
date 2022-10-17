@@ -53,7 +53,7 @@ const PreferenceDialog = (props) => {
                 if (failedItemTitles.length != 0) {
                     let message = props.getString('wikicite.prefs.citation-storage.alert.failed-explanation') + '\n';
                     for (let i = 0; i < failedItemTitles.length; i++) {
-                        message += failedItemTitles[i] + '\n';
+                        message += '• ' + failedItemTitles[i] + '\n';
                     }
                     Services.prompt.alert(
                         null,
