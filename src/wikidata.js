@@ -730,9 +730,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             props: ['claims'],
             format: 'json'
         });
-        const citesWorkClaims = {};
-        while (urls.length) {
-            const url = urls.shift();
+        const claims = await Promise.all(urls.map(async (url) => {
+            let citesWorkClaims = {}
             try {
                 const xmlhttp = await Zotero.HTTP.request(
                     'GET',
@@ -761,11 +760,12 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         );
                     }
                 }
+                return citesWorkClaims;
             } catch (err) {
                 debug('Getting "cites work" claims failed', err);
             }
-        }
-        return citesWorkClaims;
+        }));
+        return Object.assign(...claims);
     }
 
     /**
@@ -774,43 +774,82 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
      * @returns {Promise} - Map of QIDs and their corresponding Zotero item
      */
     static async getItems(qids) {
-        const itemMap = new Map(
-            qids.map((qid) => [qid, undefined])
-        );
+        const urls = wdk.getManyEntities({
+            ids: qids,
+            props: ['claims'],
+            format: 'json'
+        });
+        const items = await Promise.all(urls.map(async (url) => {
+            try {
+                const xmlhttp = await Zotero.HTTP.request(
+                    'GET',
+                    url,
+                    {
+                        headers: {
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
+                        }
+                    }
+                );
+                // Fixme: handle entities undefined
+                const translate = new Zotero.Translate.Import();
+                translate.setTranslator('3599d5a3-75c7-4fd5-b8e7-4976ce464e55');  // Wikidata JSON
+                translate.setString(JSON.stringify(JSON.parse(xmlhttp.response)));
+                const jsonItems = await translate.translate({libraryID: false});
+                return jsonItems;
+            } catch (err) {
+                debug('Getting items failed', err);
+            }
+        }));
+        // fix: this isn't the right type
+        return [].concat(...items);
+
+        function chunkArrayInGroups(arr, size) {
+            let groups = [];
+            for (var i=0; i<arr.length; i+=size){
+                groups.push(arr.slice(i, i+size));
+            }
+            return groups;
+        }
+        const qidChunks = chunkArrayInGroups(qids, 50); // Can only get 50 items at a time from Wikidata API - do it async
         // this seems to fix that Zotero.Translate.Search() would fail if called
         // too early
         await Zotero.Schema.schemaUpdatePromise;
-        const translate = new Zotero.Translate.Search();
-        translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
-        translate.search = qids.map((qid) => ({extra: `qid: ${qid}`}));
-        // Fixme: handle "no items returned from any translator" error
-        let jsonItems;
-        try {
-            translate.requestHeaders = {
-                'User-Agent': `${Wikicite.getUserAgent()} zotero/${Zotero.version}`
-            }
-            jsonItems = await translate.translate({libraryID: false});
-        } catch (err) {
-            if (err === translate.ERROR_NO_RESULTS) {
-                jsonItems = [];
-            } else {
-                throw err;
-            }
-        }
-        for (const jsonItem of jsonItems) {
-            // delete irrelevant fields to avoid warnings in Item#fromJSON
-            delete jsonItem['notes'];
-            delete jsonItem['seeAlso'];
-            delete jsonItem['attachments'];
+        const itemMaps = await Promise.all(qidChunks.map(async (qids) => {
+            let itemMap = [];
 
-            // convert JSON item returned by translator into full Zotero item
-            const item = new Zotero.Item();
-            item.fromJSON(jsonItem);
+            const translate = new Zotero.Translate.Search();
+            translate.setTranslator('fb15ed4a-7f58-440e-95ac-61e10aa2b4d8');  // Wikidata API
+            translate.search = qids.map((qid) => ({extra: `qid: ${qid}`}));
+            // Fixme: handle "no items returned from any translator" error
+            let jsonItems;
+            try {
+                translate.requestHeaders = {
+                    'User-Agent': `${Wikicite.getUserAgent()} zotero/${Zotero.version}`
+                }
+                jsonItems = await translate.translate({libraryID: false});
+            } catch (err) {
+                if (err === translate.ERROR_NO_RESULTS) {
+                    jsonItems = [];
+                } else {
+                    throw err;
+                }
+            }
+            for (const jsonItem of jsonItems) {
+                // delete irrelevant fields to avoid warnings in Item#fromJSON
+                delete jsonItem['notes'];
+                delete jsonItem['seeAlso'];
+                delete jsonItem['attachments'];
 
-            const qid = Wikicite.getExtraField(item, 'qid').values[0];
-            itemMap.set(qid, item);
-        }
-        return itemMap;
+                // convert JSON item returned by translator into full Zotero item
+                const item = new Zotero.Item();
+                item.fromJSON(jsonItem);
+
+                const qid = Wikicite.getExtraField(item, 'qid').values[0];
+                itemMap.push([qid,item]);
+            }
+            return itemMap;
+        }));
+        return new Map(...itemMaps);
     }
 
     static async updateCitesWorkClaims(citesWorkClaims) {

@@ -377,7 +377,7 @@ export default class {
             );
             try {
                 targetItems = await Wikidata.getItems(downloadQids);
-            } catch {
+            } catch (err) {
                 progress.updateLine(
                     'error',
                     Wikicite.getString(
