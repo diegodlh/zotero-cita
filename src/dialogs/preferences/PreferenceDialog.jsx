@@ -16,26 +16,31 @@ const PreferenceDialog = (props) => {
             'loading',
             props.getString('wikicite.prefs.citation-storage.progress.migrating')
         );
-        const items = await Zotero.Items.getAll(Zotero.Libraries.userLibraryID).filter((item) => item.isRegularItem());
-        let migratedItems = 0;
         let failedItemTitles = [];
         try {
-            await Zotero.DB.executeTransaction(async () => {
+            await Zotero.DB.executeTransaction(async function() {
+                let loadedItems = 0;
+                let migratedItems = 0;
+                const items = await Zotero.Items.getAll(Zotero.Libraries.userLibraryID).filter((item) => item.isRegularItem());
+                const wrappers = [];
                 for (let item of items) {
                     try {
-                        item = new SourceItemWrapper(item, from);
-                        await item.migrateCitations(to);
+                        wrappers.push(new SourceItemWrapper(item, from));
                     } catch (e) {
                         debug(e);
                         failedItemTitles.push(item.getField('title'));
                     }
-                    progress.updateLine('loading', props.formatString('wikicite.prefs.citation-storage.progress.migrated-n-items', [++migratedItems, items.length]));
+                    progress.updateLine('loading', props.formatString('wikicite.prefs.citation-storage.progress.loaded-n-items', [++loadedItems, items.length]));
                 }
                 if (failedItemTitles.length > 0) {
                     throw new Error('Failed to migrate some items');
                 }
+                for (let wrapper of wrappers) {
+                    await wrapper.migrateCitations(to);
+                    progress.updateLine('loading', props.formatString('wikicite.prefs.citation-storage.progress.migrated-n-items', [++migratedItems, items.length]));
+                }
                 props.Prefs.set('storage', storage);
-            });
+            }, { skipDateModifiedUpdate: true, skipSelect: true });
             progress.updateLine('done', props.getString('wikicite.prefs.citation-storage.progress.done'));
         } catch (e) {
             debug(e);
