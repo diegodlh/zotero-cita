@@ -13,8 +13,6 @@ import { debug } from '../wikicite';
 
 function CitationsBoxContainer(props) {
     debug('CitationsBoxContainer will render...');
-    // fix: where to get citations from (extra field or note) should be configurable
-    // therefore, it may be better to have two separate functions
 
     // this CitationsBox container knows about the current
     // sortBy preference value
