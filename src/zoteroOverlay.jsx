@@ -173,10 +173,10 @@ const zoteroOverlay = {
             Zotero.ItemTreeView.prototype.getCellText = function (row, col) {
                 const item = this.getRow(row).ref;
                 if (col.id == COLUMN_IDS.QID) {
-                    return `${new SourceItemWrapper(item).getPID('QID') || ''}`;
+                    return `${new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).getPID('QID') || ''}`;
                 }
                 else if (col.id == COLUMN_IDS.CITATIONS) {
-                    return `${new SourceItemWrapper(item).citations.length || '0'}`;
+                    return `${new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).citations.length || '0'}`;
                 }
                 else return getCellText_original.apply(this, arguments);
             };
@@ -199,10 +199,10 @@ const zoteroOverlay = {
             if (this.isRegularItem()){
                 try{
                     if (field == COLUMN_IDS.QID){
-                        return `${new SourceItemWrapper(this).getPID('QID') || ''}`;
+                        return `${new SourceItemWrapper(this, window.Wikicite.Prefs.get('storage')).getPID('QID') || ''}`;
                     }
                     else if (field == COLUMN_IDS.CITATIONS){
-                        return `${new SourceItemWrapper(this).citations.length || 0}`;
+                        return `${new SourceItemWrapper(this, window.Wikicite.Prefs.get('storage')).citations.length || 0}`;
                     }
                 }
                 catch (err){
@@ -340,7 +340,7 @@ const zoteroOverlay = {
             }
         }
         items = items.filter((item) => item.isRegularItem());
-        if (wrap) items = items.map((item) => new SourceItemWrapper(item));
+        if (wrap) items = items.map((item) => new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')));
         return items;
     },
 

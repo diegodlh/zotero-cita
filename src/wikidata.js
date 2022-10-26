@@ -28,6 +28,8 @@ const properties = {
     'authorNameString': 'P2093',
     'citesWork': 'P2860',
     'doi': 'P356',
+    'familyName': 'P734',
+    'givenName': 'P735',
     'instanceOf': 'P31',
     'isbn10': 'P957',
     'isbn13': 'P212',
@@ -107,25 +109,22 @@ export default class {
                     v: cleanISBN
                 })
             }
-            // multiple matching creators decrease rather than increase
-            // matching score
-            // see https://www.wikidata.org/wiki/Wikidata_talk:Tools/OpenRefine#Reconcile_using_several_authors
-            // const creators = item.item.getCreatorsJSON();
-            // if (creators) {
-            //     queryProps.push({
-            //         pid: [properties.author, properties.authorNameString].join('|'),
-            //         v: creators.map(
-            //             (creator) => [creator.firstName, creator.lastName].join(' ').trim()
-            //         )
-            //     })
-            // }
-            // const year = Zotero.Date.strToDate(item.item.getField('date')).year;
-            // if (year) {
-            //     queryProps.push({
-            //         pid: properties.publicationDate + '@year',
-            //         v: year
-            //     })
-            // }
+            const creators = item.item.getCreatorsJSON();
+            if (creators) {
+                queryProps.push({
+                    pid: [properties.author, properties.authorNameString].join('|'),
+                    v: creators.map(
+                        (creator) => [creator.firstName, creator.lastName].join(' ').trim()
+                    )
+                })
+            }
+            const year = Zotero.Date.strToDate(item.item.getField('date')).year;
+            if (year) {
+                queryProps.push({
+                    pid: properties.publicationDate + '@year',
+                    v: year
+                })
+            }
             if (!item.title && !queryProps.length) {
                 // if no title nor supported properties, skip to next item
                 continue;
@@ -133,13 +132,6 @@ export default class {
             const queryId = `q${i}`;
             // Workaround until #84 can be fixed
             const query = item.title.replace(/^(\w+):/, "$1");
-            queries[queryId] = {
-                query,
-                // type: entities.work, // broadly typed query may time out, see #149
-                properties: queryProps
-                // limit: 3,                                ]
-            };
-
             // Add type-specific queries (#101)
             const mappedType = typeMapping[item.type];
             if (mappedType) {
@@ -148,6 +140,15 @@ export default class {
                 queries[queryId + 't'] = {
                     query,
                     type: mappedType,
+                    properties: queryProps
+                };
+            }
+            if (options.partial){
+                // always treat untyped matches as partial matches, so only run them
+                // if we're generating partial matches (reconciling a single item) #153
+                queries[queryId + 'u'] = {
+                    query,
+                    // type: entities.work, // broadly typed query may time out, see #149
                     properties: queryProps
                 };
             }
@@ -180,16 +181,33 @@ export default class {
                 const tmpResponse = JSON.parse(req.response);
                 for (let i=0; i<items.length; i++) {
                     const queryId = `q${i}`;
-                    if (!tmpResponse[queryId]) continue;
-                    const typedQuery = tmpResponse[queryId + 't'];
-                    const result = typedQuery ? typedQuery.result : [];
-                    for (const candidate of tmpResponse[queryId].result) {
-                        if (!result.map((candidate) => candidate.id).includes(candidate.id)) {
-                            // candidates from default (i.e., not type-specific) query
-                            // should not be exact matches
-                            candidate.match = false;
-                            result.push(candidate);
+                    const typedQueryId = `q${i}t`;
+                    const untypedQueryId = `q${i}u`;
+                    const result = [];
+                    if (tmpResponse[typedQueryId]){
+                        const typedQuery = tmpResponse[typedQueryId];
+                        if (typedQuery.result.length == 1 && typedQuery.result[0].match){
+                            // If there's just one typed result and it's a match - accept it
+                            // still need to rely on the match result (or checking the score) - a single match can still be bad
+                            response[queryId] = {"result": [typedQuery.result[0]]};
+                            continue;
+                        } else if (options.partial){
+                            // Otherwise, store all potential matches as partial matches
+                            typedQuery.result.forEach((candidate) => {
+                                candidate.match = false;
+                                result.push(candidate);
+                            });
                         }
+                    }
+                    if(options.partial && tmpResponse[untypedQueryId]){
+                        // If a partial match, also store untyped matches we don't already have
+                        const resultIDs = result.map((candidate) => candidate.id);
+                        tmpResponse[untypedQueryId].result.forEach((candidate) => {
+                            if (!resultIDs.includes(candidate.id)) {
+                                candidate.match = false;
+                                result.push(candidate);
+                            }
+                        });
                     }
                     result.sort((a, b) => b.score - a.score);
                     response[queryId] = { result };
@@ -238,78 +256,76 @@ export default class {
             }
             progress.close();
             let cancelled = false;
-            items.forEach((item, i) => {
+            for (const [queryID, query] of Object.entries(response)) {
                 if (cancelled) {
                     return;
                 }
-                if (item.qid && !options.overwrite) {
-                    return;
-                }
-                const query = response[`q${i}`];
-                if (query) {
-                    const candidates = query.result;
-                    const match = candidates.filter((candidate) => candidate.match)[0];
-                    if (match) {
-                        qids.set(item, match.id);
-                    } else if (candidates.length && options.partial) {
-                        const choices = [
-                            Wikicite.getString(
-                                'wikicite.wikidata.reconcile.approx.none'
-                            ),
-                            ...candidates.map(
-                                (candidate) => {
-                                    let candidateStr = candidate.id + ': ' + candidate.name;
-                                    const typeNames = candidate.type.map((type) => type.name);
-                                    if (typeNames.length) {
-                                        candidateStr += ' (' + typeNames.join('; ') + ')';
-                                    }
-                                    return candidateStr;
+                const item = items[parseInt(queryID.slice(1), 10)];
+                const candidates = query.result;
+                const match = candidates.filter((candidate) => candidate.match)[0];
+                if (match) {
+                    qids.set(item, match.id);
+                } else if (candidates.length && options.partial) {
+                    const candidateIds = candidates.map((candidate) => candidate.id);
+                    const matchesData = await this.getProperties(candidateIds, [properties.publicationDate, properties.author, properties.authorNameString]);
+                    const authorStrings = await this.getAuthors(matchesData);
+                    const formatDateFromData = (idProperties) => new Date(idProperties).getFullYear().toString();
+                    const formatAuthorsFromData = (authorStrings) => (authorStrings.length <= 2 ? authorStrings.join(' & ') : authorStrings[0] + ' et al.')
+
+                    const choices = [
+                        Wikicite.getString(
+                            'wikicite.wikidata.reconcile.approx.none'
+                        ),
+                        ...candidates.map(
+                            (candidate) => {
+                                let candidateStr = `${candidate.id}: ${candidate.name}`;
+                                if (authorStrings[candidate.id].length > 0) candidateStr += ` - ${formatAuthorsFromData(authorStrings[candidate.id])}`;
+                                if (matchesData[candidate.id][properties.publicationDate].length > 0) candidateStr += ` [${formatDateFromData(matchesData[candidate.id][properties.publicationDate][0])}]`;
+                                const typeNames = candidate.type.map((type) => type.name);
+                                if (typeNames.length) {
+                                    candidateStr += ` (${typeNames.join('; ')})`;
                                 }
-                            )
-                        ]
-                        const selection = {};
-                        const select = Services.prompt.select(
-                            window,
-                            Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
-                            Wikicite.formatString(
-                                'wikicite.wikidata.reconcile.approx.message',
-                                [
-                                    item.title,
-                                    Zotero.ItemTypes.getLocalizedString(item.type)
-                                ]
-                            ),
-                            choices.length,
-                            choices,
-                            selection
-                        );
-                        if (select) {
-                            if (selection.value > 0) {
-                                const index = selection.value - 1;
-                                qids.set(item, candidates[index].id);
-                            } else {
-                                // user chose 'none', meaning no candidate is relevant
-                                // set qid to 'null' meaning no results where found
-                                qids.set(item, null);
+                                return candidateStr;
                             }
+                        )
+                    ]
+                    const selection = {};
+                    const select = Services.prompt.select(
+                        window,
+                        Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
+                        Wikicite.formatString(
+                            'wikicite.wikidata.reconcile.approx.message',
+                            [
+                                item.title,
+                                Zotero.ItemTypes.getLocalizedString(item.type)
+                            ]
+                        ),
+                        choices.length,
+                        choices,
+                        selection
+                    );
+                    if (select) {
+                        if (selection.value > 0) {
+                            const index = selection.value - 1;
+                            qids.set(item, candidates[index].id);
                         } else {
-                            // user cancelled
-                            // leave qid 'undefined' in qids map
-                            cancelled = true;
+                            // user chose 'none', meaning no candidate is relevant
+                            // set qid to 'null' meaning no results where found
+                            qids.set(item, null);
                         }
                     } else {
-                        // item is in the response
-                        // but response is empty
-                        // meaning it wasn't found in Wikidata
-                        // make it 'null' in the qids maps
-                        qids.set(item, null);
+                        // user cancelled
+                        // leave qid 'undefined' in qids map
+                        cancelled = true;
                     }
                 } else {
-                    // item not in the response:
-                    // either not included in the query
-                    // or query failed altogether
-                    // remains 'undefined' in the qids map
+                    // item is in the response
+                    // but response is empty
+                    // meaning it wasn't found in Wikidata
+                    // make it 'null' in the qids maps
+                    qids.set(item, null);
                 }
-            })
+            }
         } else {
             // no searchable items, or qids known already
             progress.newLine(
@@ -713,6 +729,104 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             // for an item that might have a QID already!
         }
         return qid
+    }
+
+    /**
+     * Gets properties from Wikidata for one or more entities
+     * @param {Array} sourceQIDs - Array of one or more entity QIDs
+     * @param {Array} properties - Array of one or more Wikidata properties to get (eg. 'P356' for doi)
+     * @returns {Promise} { entityQID: {property1: value1, property2: value2} }
+     */
+     static async getProperties(sourceQIDs, properties) {
+        if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
+        if (!Array.isArray(properties)) properties = [properties];
+        // Fixme: alternatively, use the SPARQL endpoint to get more than 50
+        // entities per request
+        const urls = wdk.getManyEntities({
+            ids: sourceQIDs,
+            props: "claims",
+            format: 'json'
+        });
+        const data = {};
+        while (urls.length) {
+            const url = urls.shift();
+            try {
+                const xmlhttp = await Zotero.HTTP.request(
+                    'GET',
+                    url,
+                    {
+                        headers: {
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
+                        }
+                    }
+                );
+                // Fixme: handle entities undefined
+                const { entities } = JSON.parse(xmlhttp.response);
+                for (const id of Object.keys(entities)) {
+                    const entity = entities[id];
+                    data[id] = {};
+                    for (let property of properties){
+                        data[id][property] = wdk.simplify.propertyClaims(entity.claims[property]);
+                    }
+                }
+            } catch (err) {
+                debug('Getting properties failed', err);
+            }
+        }
+        return data;
+    }
+
+    /**
+     * Gets author details from Wikidata for one or more entities.
+     * If author name strings are provided, use them, else get strings from author QIDs
+     * @param {Array} entityData - Dictionary from getProperties function, of form: {entityQID: {P50: [authors], P2903: [author name strings]}}
+     * @returns {Promise} author string map { entityQID: [author list] }
+     */
+     static async getAuthors(entityData) {
+        let authorStringMap = {};
+        let idsToQuery = [];
+        let entityIdsOfAuthors = {};
+        for (let key of Object.keys(entityData)){
+            authorStringMap[key] = [];
+            if(entityData[key][properties.author].length > 0){
+                for (let authorID of entityData[key][properties.author]){
+                    idsToQuery.push(authorID);
+                    entityIdsOfAuthors[authorID] = key;
+                }
+            }
+            if(entityData[key][properties.authorNameString].length > 0){
+                authorStringMap[key] = authorStringMap[key].concat(entityData[key][properties.authorNameString]);
+            }
+        }
+
+        const urls = wdk.getManyEntities({
+            ids: idsToQuery,
+            props: "labels",
+            languages: 'en',
+            format: 'json'
+        });
+        while (urls.length) {
+            const url = urls.shift();
+            try {
+                const xmlhttp = await Zotero.HTTP.request(
+                    'GET',
+                    url,
+                    {
+                        headers: {
+                            'User-Agent': `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || '?'}`
+                        }
+                    }
+                );
+                // Fixme: handle entities undefined
+                const { entities } = JSON.parse(xmlhttp.response);
+                for (const id of Object.keys(entities)) {
+                    authorStringMap[entityIdsOfAuthors[id]].push(entities[id].labels.en.value);
+                }
+            } catch (err) {
+                debug('Getting properties failed', err);
+            }
+        }
+        return authorStringMap;
     }
 
     /**

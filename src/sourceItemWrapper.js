@@ -10,9 +10,6 @@ import Progress from './progress';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
-// Fixme: define this in the preferences
-const SAVE_TO = 'note'; // extra
-
 /* global Components */
 /* global DOMParser */
 /* global Services */
@@ -21,16 +18,27 @@ const SAVE_TO = 'note'; // extra
 /* global performance */
 /* global window */
 
+
+// replacer function for JSON.stringify
+function replacer(key, value) {
+    if (!value) {
+        // do not include property if value is null or undefined
+        return undefined;
+    }
+    return value;
+}
+
 class SourceItemWrapper extends ItemWrapper {
     // When I thought of this originally, I wasn't giving the source item to the citation creator
     // but then I understood it made sense I passed some reference to the source object
     // given that the citation is a link between two objects (according to the OC model)
     // so check if any methods here make sense to be moved to the Citation class instead
 
-    constructor(item) {
+    constructor(item, storage) {
         super(item, item.saveTx.bind(item));
         this._citations = [];
         this._batch = false;
+        this._storage = storage;
         this.newRelations = false;  // Whether new item relations have been queued
         this.loadCitations(false);
     }
@@ -41,15 +49,7 @@ class SourceItemWrapper extends ItemWrapper {
 
     set citations(citations) {
         const t0 = performance.now()
-        // replacer function for JSON.stringify
-        function replacer(key, value) {
-            if (!value) {
-                // do not include property if value is null or undefined
-                return undefined;
-            }
-            return value;
-        }
-        if (SAVE_TO === 'extra') {
+        if (this._storage === 'extra') {
             const jsonCitations = citations.map(
                 (citation) => {
                     let json = JSON.stringify(
@@ -64,10 +64,12 @@ class SourceItemWrapper extends ItemWrapper {
             );
             Wikicite.setExtraField(this.item, 'citation', jsonCitations);
             this.saveHandler();
-        } else if (SAVE_TO === 'note') {
+        } else if (this._storage === 'note') {
             let note = Wikicite.getCitationsNote(this.item);
-            if (!citations.length && note) {
-                note.eraseTx();
+            if (!citations.length) {
+                if (note) {
+                    note.eraseTx();
+                }
                 return;
             }
             if (!note) {
@@ -86,6 +88,46 @@ class SourceItemWrapper extends ItemWrapper {
         }
         this._citations = citations;
         debug(`Saving citations to source item took ${performance.now() - t0}`);
+    }
+
+    async setCitations(citations) {
+        if (this._storage === 'extra') {
+            const jsonCitations = citations.map(
+                (citation) => {
+                    let json = JSON.stringify(
+                        citation,
+                        replacer,
+                        1  // insert 1 whitespace into the output JSON
+                    );
+                    json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
+                    json = json.replace(/\n/g, ""); // remove line-breaks
+                    return json;
+                }
+            );
+            Wikicite.setExtraField(this.item, 'citation', jsonCitations);
+            await this.item.save();
+        } else if (this._storage === 'note') {
+            let note = Wikicite.getCitationsNote(this.item);
+            if (!citations.length) {
+                if (note) {
+                    await note.erase();
+                }
+                return;
+            }
+            if (!note) {
+                note = new Zotero.Item('note');
+                note.libraryID = this.item.libraryID;
+                note.parentKey = this.item.key;
+            }
+            const jsonCitations = JSON.stringify(citations, replacer, 2);
+            note.setNote(
+                '<h1>Citations</h1>\n' +
+                '<p>Do not edit this note manually!</p>' +
+                `<pre>${jsonCitations}</pre>`
+            );
+            await note.save();
+        }
+        this._citations = citations;
     }
 
     get corruptCitations() {
@@ -149,7 +191,7 @@ class SourceItemWrapper extends ItemWrapper {
         const t0 = performance.now();
         const citations = [];
         const corruptCitations = [];
-        if (SAVE_TO === 'extra') {
+        if (this._storage === 'extra') {
             const rawCitations = Wikicite.getExtraField(this.item, 'citation').values;
             rawCitations.forEach((rawCitation, index) => {
                 try {
@@ -163,7 +205,7 @@ class SourceItemWrapper extends ItemWrapper {
                     debug(`Citation #${index} is corrupt`);
                 }
             });
-        } else if (SAVE_TO === 'note') {
+        } else if (this._storage === 'note') {
             const note = Wikicite.getCitationsNote(this.item);
             if (note) {
                 let parser;
@@ -213,6 +255,28 @@ class SourceItemWrapper extends ItemWrapper {
             this.corruptCitations = this.corruptCitations.concat(corruptCitations);
         }
         debug(`Getting citations from source item took ${performance.now() - t0}`)
+    }
+
+    /**
+     * Migrate citations to a new storage location.
+     * Note: This needs to be executed inside a Zotero DB transaction (Zotero.DB.executeTransaction).
+     * @param {string} [to] The new storage location
+     */
+    async migrateCitations(to) {
+        const oldStorage = this._storage;
+        this._storage = to;
+        if (this._citations.length > 0) {
+            await this.setCitations(this._citations);
+            if (oldStorage === 'extra') {
+                Wikicite.setExtraField(this.item, 'citation', []);
+            } else if (oldStorage === 'note') {
+                let note = Wikicite.getCitationsNote(this.item);
+                if (note) {
+                    await note.erase();
+                }
+            }
+            await this.item.save();
+        }
     }
 
     saveCitations() {

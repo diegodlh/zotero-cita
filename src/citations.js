@@ -28,7 +28,7 @@ export default class {
 
     static getItemQids(items, includingCitations=false, overwrite=false) {
         const sourceItems = items.map(
-            (item) => new SourceItemWrapper(item)
+            (item) => new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage'))
         );
         const unique_ids = [];
         const id_mappings = {
@@ -542,7 +542,7 @@ export default class {
                     }
                     // Fixme: the number of localAddCitations and localFlagCitations
                     // shown in the confirmation message above may be wrong, as the
-                    // addCitations method below may find duplicate citations and 
+                    // addCitations method below may find duplicate citations and
                     // decide to flag them instead of creating new ones.
                     // Use this info to show a message to the user (see #26)
                     sourceItem.addCitations(newCitations);

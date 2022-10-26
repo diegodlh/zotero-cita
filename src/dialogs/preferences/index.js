@@ -1,14 +1,17 @@
+import PreferenceDialog from './PreferenceDialog';
+import React from 'react';
+import ReactDOM from 'react-dom';
+
 /* global document, window */
 
-const { Wikicite } = window.arguments[0];
+const { Wikicite, Prefs } = window.arguments[0];
 
 document.title = Wikicite.getString('wikicite.prefs.title');
-document.body.appendChild(
-	document.createElement('p').appendChild(
-		document.createTextNode(
-			Wikicite.getString('wikicite.prefs.unsupported')
-		)
-	)
+ReactDOM.render(
+    <PreferenceDialog
+        formatString={(name, params) => Wikicite.formatString(name, params)}
+        getString={(name) => Wikicite.getString(name)}
+        Prefs={Prefs}
+    />,
+    document.getElementById('root')
 );
-
-// ReactDOM.render();
