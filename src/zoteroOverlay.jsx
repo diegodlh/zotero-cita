@@ -340,7 +340,7 @@ const zoteroOverlay = {
             }
         }
         items = items.filter((item) => item.isRegularItem());
-        if (wrap) items = items.map((item) => new SourceItemWrapper(item));
+        if (wrap) items = items.map((item) => new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')));
         return items;
     },
 

@@ -154,7 +154,7 @@ Wikicite.Prefs = {
     const defaults = Services.prefs.getDefaultBranch(PREF_BRANCH);
     // defaults.setIntPref(prefName, prefValue);
     defaults.setCharPref('sortBy', 'ordinal');  // 'ordinal', 'authors', 'title', 'date'
-    defaults.setCharPref('storage', 'extra');  // 'extra' || 'note'
+    defaults.setCharPref('storage', 'note');  // 'extra' || 'note'
     // defaults.setBoolPref();
   },
 

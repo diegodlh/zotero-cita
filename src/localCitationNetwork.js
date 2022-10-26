@@ -36,9 +36,9 @@ export default class LCN{
         // Using Promise.all hoping that it would wrap them in parallel
         // But there seems to be no difference.
         const wrappedItems = await Promise.all(this.items.map(
-            (item) => new Promise((resolve) => resolve(new SourceItemWrapper(item)))
+            (item) => new Promise((resolve) => resolve(new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage'))))
         ));
-        // const wrappedItems = this.items.map((item) => new SourceItemWrapper(item));
+        // const wrappedItems = this.items.map((item) => new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')));
         this.progress.updateLine('done');
 
         this.progress.newLine(
