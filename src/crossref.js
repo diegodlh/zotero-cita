@@ -40,14 +40,36 @@ export default class Crossref{
         );
 
         try{
-            // fix: this await is broken by an error
-            await Promise.allSettled(sourceItemsWithDOI.forEach(async (sourceItem) => {
-                const newCitedItems = await Crossref.getCitations(sourceItem.doi);
-                if (newCitedItems.length > 0){
-                    const newCitations = newCitedItems.map((newItem) => new Citation({item: newItem, ocis: []}, sourceItem));
-                    sourceItem.addCitations(newCitations);
-                }
+            const sourceItemCitations = await Promise.all(sourceItemsWithDOI.map(async (sourceItem) => {
+                return await Crossref.getCitations(sourceItem.doi);
             }));
+
+            const numberOfCitations = sourceItemCitations.map((citations) => citations.length);
+            const itemsToBeUpdated = numberOfCitations.filter((number) => number > 0).length;
+            const citationsToBeAdded = numberOfCitations.reduce((sum, value) => sum + value, 0);
+
+            const confirmed = Services.prompt.confirm(
+                window,
+                'Add citations from Crossref',
+                `${itemsToBeUpdated} item(s) will be updated\n${citationsToBeAdded} citation(s) will be added.`
+            )
+            
+            if (confirmed){
+                await Zotero.DB.executeTransaction(async function() {
+                    for (let i = 0; i < sourceItemsWithDOI.length; i++){
+                        const sourceItem = sourceItemsWithDOI[i];
+                        const newCitedItems = sourceItemCitations[i];
+                        if (newCitedItems.length > 0){
+                            const newCitations = newCitedItems.map((newItem) => new Citation({item: newItem, ocis: []}, sourceItem));
+                            sourceItem.addCitations(newCitations);
+                        }
+                    }
+                })
+                progress.updateLine(
+                    'done',
+                    Wikicite.getString('wikicite.crossref.get-citations.done')
+                );
+            }
         }
         catch (error){
             progress.updateLine(
@@ -55,13 +77,10 @@ export default class Crossref{
                 Wikicite.getString('wikicite.crossref.get-citations.none')
             );
             debug(error);
-            return;
         }
-
-        progress.updateLine(
-            'done',
-            Wikicite.getString('wikicite.crossref.get-citations.done')
-        );
+        finally {
+            progress.close();
+        }
     }
 
 	static async getCitations(doi) {
@@ -112,6 +131,11 @@ export default class Crossref{
 
         if (jsonItems) {
             const jsonItem = jsonItems[0];
+            // delete irrelevant fields to avoid warnings in Item#fromJSON
+            delete jsonItem['notes'];
+            delete jsonItem['seeAlso'];
+            delete jsonItem['attachments'];
+
             const newItem = new Zotero.Item(jsonItem.itemType);
             newItem.fromJSON(jsonItem);
             return newItem;
