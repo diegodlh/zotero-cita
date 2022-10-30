@@ -49,12 +49,20 @@ export default class Crossref{
         const numberOfCitations = sourceItemReferences.map((references) => references.length);
         const itemsToBeUpdated = numberOfCitations.filter((number) => number > 0).length;
         const citationsToBeAdded = numberOfCitations.reduce((sum, value) => sum + value, 0);
+        if (numberOfCitations == 0){
+            progress.updateLine(
+                'error',
+                'Found no Crossref references for items.'
+            );
+            return;
+        }
         const confirmed = Services.prompt.confirm(
             window,
             'Add citations from Crossref',
             `Found references for ${itemsToBeUpdated} out of ${sourceItems.length} item(s).\n${citationsToBeAdded} citation(s) will be parsed.`
         )
         if (!confirmed){
+            progress.close();
             return;
         }
             
