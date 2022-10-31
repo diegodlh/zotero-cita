@@ -49,7 +49,7 @@ export default class Crossref{
         const numberOfCitations = sourceItemReferences.map((references) => references.length);
         const itemsToBeUpdated = numberOfCitations.filter((number) => number > 0).length;
         const citationsToBeAdded = numberOfCitations.reduce((sum, value) => sum + value, 0);
-        if (numberOfCitations == 0){
+        if (citationsToBeAdded == 0){
             progress.updateLine(
                 'error',
                 Wikicite.getString('wikicite.crossref.get-citations.no-references')
