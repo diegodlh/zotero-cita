@@ -39,7 +39,7 @@ export default class Crossref{
         catch (error){
             progress.updateLine(
                 'error',
-                'Failed to get references for items from Crossref.'
+                Wikicite.getString('wikicite.crossref.get-citations.error-getting-references')
             );
             debug(error);
             return;
@@ -52,14 +52,14 @@ export default class Crossref{
         if (numberOfCitations == 0){
             progress.updateLine(
                 'error',
-                'Found no Crossref references for items.'
+                Wikicite.getString('wikicite.crossref.get-citations.no-references')
             );
             return;
         }
         const confirmed = Services.prompt.confirm(
             window,
-            'Add citations from Crossref',
-            `Found references for ${itemsToBeUpdated} out of ${sourceItems.length} item(s).\n${citationsToBeAdded} citation(s) will be parsed.`
+            Wikicite.getString('wikicite.crossref.get-citations.confirm-title'),
+            Wikicite.formatString('wikicite.crossref.get-citations.confirm-message', [itemsToBeUpdated, sourceItems.length, citationsToBeAdded])
         )
         if (!confirmed){
             progress.close();
@@ -69,7 +69,7 @@ export default class Crossref{
         // Parse this reference information, then add to sourceItems
         progress.updateLine(
             'loading',
-            'Parsing CrossRef references'
+            Wikicite.getString('wikicite.crossref.get-citations.parsing')
         );
 
         try {
@@ -84,7 +84,7 @@ export default class Crossref{
                 parsedItemReferences.push(await Crossref.parseReferences(sourceItemReferenceList));
                 progress.updateLine(
                     'loading',
-                    `Parsed references for ${++parsedItems} out of ${itemsToBeUpdated} item(s).`
+                    Wikicite.formatString('wikicite.crossref.get-citations.parsing-progress', [++parsedItems, itemsToBeUpdated])
                 );
             }
             
@@ -107,7 +107,7 @@ export default class Crossref{
         catch (error){
             progress.updateLine(
                 'error',
-                'Failed to parse Crossref references'
+                Wikicite.getString('wikicite.crossref.get-citations.error-parsing-references')
             );
             debug(error);
         }
