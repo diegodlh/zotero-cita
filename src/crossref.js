@@ -123,12 +123,22 @@ export default class Crossref{
      * @returns {Promise<string[]>} list of references, or [] if none.
      */
     static async getReferences(doi) {
-        const JSONResponse = await Crossref.getCrossrefDOI(doi);
-        if (!JSONResponse || !JSONResponse.message.reference) {
-            return [];
-        }
+        const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(
+            doi
+        )}`;
+        const options = {
+            headers: {
+                "User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+            },
+            responseType: "json",
+        };
 
-        return JSONResponse.message.reference;
+        const response = await Zotero.HTTP.request("GET", url, options).catch(() =>
+            debug("Couldn't access URL: " + url)
+        );
+        if (!response) return [];
+
+        return response.response.message.reference || [];
     }
 
     /**
@@ -136,35 +146,26 @@ export default class Crossref{
      * @param {string[]} crossrefReferences - Array of Crossref references to parse to Zotero items.
      * @returns {Promise<Zotero.Item[]>} Zotero items parsed from references (where parsing is possible).
      */
-    static async parseReferences(crossrefReferences){
-        if (!crossrefReferences.length){
+     static async parseReferences(crossrefReferences) {
+        if (!crossrefReferences.length) {
             debug("Item found in Crossref but doesn't contain any references");
             return [];
         }
 
-        const parsedReferences = await Promise.all(
-            crossrefReferences.map(async (reference) => await Crossref.parseReferenceItem(reference))
-        );
-        return parsedReferences.filter(Boolean);
-    }
+        const parsedReferences = await Zotero.Promise.allSettled(
+            crossrefReferences.map(async (crossrefItem) => {
+                if (crossrefItem.DOI)
+                    return this.getItemFromIdentifier({ DOI: crossrefItem.DOI });
 
-    /**
-     * Parse a single item in JSON Crossref format to a Zotero Item.
-     * @param {string} crossrefItem - An reference item in JSON Crossref format.
-     * @returns {Promise<Zotero.Item | null>} Zotero item parsed from the Crossref reference, or null if parsing failed.
-     */
-    static async parseReferenceItem(crossrefItem){
-        let newItem = null;
-        if (crossrefItem.DOI){
-            newItem = await this.getItemFromIdentifier({DOI: crossrefItem.DOI});
-        }
-        else if(crossrefItem.isbn){
-            newItem = await this.getItemFromIdentifier({ISBN: crossrefItem.ISBN});
-        }
-        else{
-            newItem = this.parseItemFromCrossrefReference(crossrefItem);
-        }
-        return newItem;
+                if (crossrefItem.isbn)
+                    return this.getItemFromIdentifier({ ISBN: crossrefItem.ISBN });
+
+                return this.parseItemFromCrossrefReference(crossrefItem);
+            })
+        );
+        return parsedReferences
+            .map((reference) => reference.value || null)
+            .filter(Boolean);
     }
 
     /**
@@ -204,7 +205,7 @@ export default class Crossref{
     /**
      * Get a Zotero Item from a Crossref reference item that doesn't include an identifier.
      * @param {string} crossrefItem - A reference item in JSON Crossref format.
-     * @returns {Promise<Zotero.Item | null>} Zotero item parsed from the identifier, or null if parsing failed.
+     * @returns {Promise<Zotero.Item>} Zotero item parsed from the identifier, or null if parsing failed.
      */
     static parseItemFromCrossrefReference(crossrefItem){
         let jsonItem = {};
@@ -218,12 +219,10 @@ export default class Crossref{
         }
         else if(crossrefItem.unstructured){
             // todo: Implement reference text parsing here
-            debug("Couldn't parse Crossref reference - unstructured references are not yet supported. " + JSON.stringify(crossrefItem));
-            return null;
+            return Promise.reject("Couldn't parse Crossref reference - unstructured references are not yet supported. " + JSON.stringify(crossrefItem));
         }
         else{
-            debug("Couldn't determine type of Crossref reference - doesn't contain `journal-title` or `volume-title` field. " + JSON.stringify(crossrefItem));
-            return null;
+            return Promise.reject("Couldn't determine type of Crossref reference - doesn't contain `journal-title` or `volume-title` field. " + JSON.stringify(crossrefItem));
         }
         jsonItem.date = crossrefItem.year;
         jsonItem.pages = crossrefItem['first-page'];
@@ -241,32 +240,6 @@ export default class Crossref{
         }
         const newItem = new Zotero.Item(jsonItem.itemType);
         newItem.fromJSON(jsonItem);
-        return newItem;
-    }
-
-    /**
-     * Get the information about an item from Crossref via DOI lookup.
-     * @param {string} doi - DOI for the item of interest.
-     * @returns {Promise<string>} JSON Crossref item. Format described at https://api.crossref.org/swagger-ui/index.html#/Works/get_works__doi_
-     */
-    static async getCrossrefDOI(doi) {
-        let url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(doi)}`;
-        let JSONResponse;
-
-        try{
-            const response = await Zotero.HTTP.request('GET',
-            url,
-            {
-                headers: { 
-                    'User-Agent': `${Wikicite.getUserAgent()} mailto:cita@duck.com` 
-                }
-            });
-            JSONResponse = JSON.parse(response.responseText);
-        }
-        catch {
-            debug("Couldn't access URL: " + url);
-        }
-
-        return JSONResponse;
+        return Promise.resolve(newItem);
     }
 }
