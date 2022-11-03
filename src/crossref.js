@@ -73,32 +73,29 @@ export default class Crossref{
         );
 
         try {
-            let parsedItemReferences = [];
             let parsedItems = 0;
-            for (let sourceItemReferenceList of sourceItemReferences) {
-                if (!sourceItemReferenceList.length) {
-                    parsedItemReferences.push([]);
-                    continue;
-                }
-
-                parsedItemReferences.push(await Crossref.parseReferences(sourceItemReferenceList));
+            const parsedItemReferences = await Promise.all(sourceItemReferences.map(async (sourceItemReferenceList) => {
+                if (!sourceItemReferenceList.length)
+                    return [];
+                
+                const parsedReferences = await Crossref.parseReferences(sourceItemReferenceList);
                 progress.updateLine(
                     'loading',
                     Wikicite.formatString('wikicite.crossref.get-citations.parsing-progress', [++parsedItems, itemsToBeUpdated])
                 );
-            }
+                return parsedReferences;
+            }));
             
             // Add these citations to the items
             await Zotero.DB.executeTransaction(async function() {
-                for (let i = 0; i < sourceItemsWithDOI.length; i++){
-                    const sourceItem = sourceItemsWithDOI[i];
-                    const newCitedItems = parsedItemReferences[i];
+                sourceItemsWithDOI.forEach((sourceItem, index) => {
+                    const newCitedItems = parsedItemReferences[index];
                     if (newCitedItems.length > 0){
                         const newCitations = newCitedItems.map((newItem) => new Citation({item: newItem, ocis: []}, sourceItem));
                         sourceItem.addCitations(newCitations);
                     }
-                }
-            })
+                });
+            });
             progress.updateLine(
                 'done',
                 Wikicite.getString('wikicite.crossref.get-citations.done')
