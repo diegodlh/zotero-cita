@@ -6,7 +6,7 @@
         <em:id>zotero-wikicite@wikidata.org</em:id>
         <em:name>Cita</em:name>
         <em:description>Citations metadata support for Zotero</em:description>
-        <em:version>0.4.0</em:version>
+        <em:version>0.5.2-beta</em:version>
         <em:multiprocessCompatible>true</em:multiprocessCompatible>
         <em:updateURL>https://raw.githubusercontent.com/diegodlh/zotero-cita/master/update-beta.rdf</em:updateURL>
 
