@@ -332,7 +332,7 @@ const zoteroOverlay = {
                 if (collectionTreeRow.isCollection()) {
                     const collection = ZoteroPane.getSelectedCollection();
                     items = collection.getChildItems();
-                } else if (collectionTreeRow.isLibrary()) {
+                } else if (collectionTreeRow.isLibrary() || collectionTreeRow.isGroup()) { // Also account for group libraries #193
                     const libraryID = ZoteroPane.getSelectedLibraryID();
                     items = await Zotero.Items.getAll(libraryID);
                 }
@@ -940,7 +940,8 @@ const zoteroOverlay = {
             if (
                 collectionTreeRow &&
                 !collectionTreeRow.isCollection() &&
-                !collectionTreeRow.isLibrary()
+                !collectionTreeRow.isLibrary() &&
+                !collectionTreeRow.isGroup()
             ) {
                 showSubmenu = false;
             }
