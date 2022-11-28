@@ -685,9 +685,11 @@ class SourceItemWrapper extends ItemWrapper {
             const citedItems = citationsToExport.map((citation) => {
                 // Note: need to set the libraryID for the exported items,
                 // otherwise we get an error on export
+                // Need to set it before calling `fromJSON` (this sets it to 
+                // `Zotero.Libraries.userLibraryID` by default, and then it can't be changed)
                 const tmpItem = new Zotero.Item();
-                tmpItem.fromJSON(citation.target.item.toJSON());
                 tmpItem.libraryID = this.item.libraryID;
+                tmpItem.fromJSON(citation.target.item.toJSON());
                 return tmpItem;
             });
 
