@@ -415,7 +415,7 @@ const zoteroOverlay = {
         zoteroOverlay.overlayZoteroPane(document)
     },
 
-    overlayZoteroPane: function(doc) {
+    overlayZoteroPane: async function(doc) {
         // add wikicite preferences command to tools popup menu
         var menuPopup
         menuPopup = doc.getElementById('menu_ToolsPopup')
@@ -427,6 +427,16 @@ const zoteroOverlay = {
         // Add Citations tab to item pane
         var itemPaneTabbox = doc.getElementById('zotero-view-tabbox');
         zoteroOverlay.citationsPane(doc, itemPaneTabbox);
+
+        //Add Citations tab to the item pane of the pdf reader
+        var itemPaneTabboxReader = doc.getElementsByClassName('zotero-view-tabbox')[1];
+        while (itemPaneTabboxReader == undefined) {
+            // wait for PDF reader to be loaded
+            // fix: do this properly
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            var itemPaneTabboxReader = doc.getElementsByClassName('zotero-view-tabbox')[1];
+        }
+        zoteroOverlay.citationsPane(doc, itemPaneTabboxReader);
 
         // Add popup menus to main window
         const mainWindow = doc.getElementById('main-window');
