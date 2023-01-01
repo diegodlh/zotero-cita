@@ -75,7 +75,7 @@ const zoteroOverlay = {
     /******************************************/
     // Window load handling
     /******************************************/
-    init: function() {
+    init: async function() {
         // retrieve and set addon version
         AddonManager.getAddonByID(Wikicite.id, (addon) => {
             Wikicite.version = addon.version
@@ -214,6 +214,8 @@ const zoteroOverlay = {
                 return '';
             }
         }
+
+        this.addNewTabListener()
     },
 
     unload: function() {
@@ -249,6 +251,40 @@ const zoteroOverlay = {
         this.switcherObserver.disconnect();
 
         this.uninstallTranslators();
+        this.removeNewTabListener()
+    },
+
+    addNewTabListener: function() {
+        this.notifierID = Zotero.Notifier.registerObserver(this.tabEventCallback, ["tab"])
+    },
+
+    removeNewTabListener: function() {
+        Zotero.Notifier.unregisterObserver(this.notifierID);
+    },
+
+    tabEventCallback: {
+        notify: async function(event, type, ids, extraData){
+            console.log(`tab event - [${event}, ${type}, ${ids}, ${extraData}]`)
+            if (event == "select" && type == "tab" && extraData[ids[0]].type == "reader"){
+                // opening a new reader tab
+                let reader = Zotero.Reader.getByTabID(ids[0]);
+                let delayCount = 0;
+                while (!reader && delayCount < 10) {
+                    await Zotero.Promise.delay(100);
+                    reader = Zotero.Reader.getByTabID(ids[0]);
+                    delayCount++;
+                }
+                await reader?._initPromise;
+                // get HTML tab
+                const pdfReaderTabbox = document.getElementById(`${ids[0]}-context`).querySelector(".zotero-view-tabbox")
+                if (!pdfReaderTabbox.querySelector('#citations-pane')) {
+                    console.log('opening PDF reader tab for the first time')
+                    // need to add the citations pane and refresh listener to this tab
+                    zoteroOverlay.citationsPane(document, pdfReaderTabbox);
+                    pdfReaderTabbox.querySelector('.zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
+                }
+            }
+        }
     },
 
     /******************************************/
@@ -427,16 +463,6 @@ const zoteroOverlay = {
         // Add Citations tab to item pane
         var itemPaneTabbox = doc.getElementById('zotero-view-tabbox');
         zoteroOverlay.citationsPane(doc, itemPaneTabbox);
-
-        //Add Citations tab to the item pane of the pdf reader
-        var itemPaneTabboxReader = doc.getElementsByClassName('zotero-view-tabbox')[1];
-        while (itemPaneTabboxReader == undefined) {
-            // wait for PDF reader to be loaded
-            // fix: do this properly
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            var itemPaneTabboxReader = doc.getElementsByClassName('zotero-view-tabbox')[1];
-        }
-        zoteroOverlay.citationsPane(doc, itemPaneTabboxReader);
 
         // Add popup menus to main window
         const mainWindow = doc.getElementById('main-window');
@@ -781,37 +807,47 @@ const zoteroOverlay = {
     },
 
     refreshCitationsPane: function(document, target) {
-        var selectedItems = ZoteroPane.getSelectedItems()
-        if (selectedItems.length == 1) {
-            var item = selectedItems[0];
-            if (item.isRegularItem()  && !item.isFeedItem) {
-                var zoteroViewTabbox = ZoteroPane.document.getElementById('zotero-view-tabbox');
-                // fix: should I get any of these references from when they were created above?
-                const editPaneTabs = document.getElementById('zotero-editpane-tabs');
-                const citationsTabIndex = Array.from(editPaneTabs.children).findIndex(child => child.id === 'zotero-editpane-citations-tab');
-                if (zoteroViewTabbox.selectedIndex === citationsTabIndex) {
-                    // fix: runs twice when tab is changed to Citations
-                    debug(`Refreshing citations pane... (${target.id})`);
-                    const t0 = performance.now();
-                    ReactDOM.render(
-                        <CitationsBoxContainer
-                            //Having the key change, makes the CitationsBoxComntainer
-                            //component unmount when the item selected changes
-                            key={"citationsBox-" + item.id}
-                            item={item}
-                            editable={ZoteroPane.collectionsView.editable}
-                            onSourceItem={this.handleSourceItem}
-                        // citationIndexRef={this._citationIndex}
-                        // In principle I don't need a ref; I may have to use it if I need to force blur
-                        // ref={_citationsBox}
-                        // onResetSelection={focusItemsList}
-                        />,
-                        document.getElementById('citations-box-container'),
-                        () => this.updateCitationsBoxSize(document)
-                    );
-                    const t1 = performance.now();
-                    debug(`Rendering CitationsBoxContainer took ${t1-t0}ms.`);
-                }
+        var item, zoteroViewTabbox, editPaneTabs;
+        // different ways of getting the selected item if we're in the library or PDF reader
+        const selectedTab = Zotero_Tabs._tabs[Zotero_Tabs.selectedIndex];
+        if (selectedTab.type == "library"){
+            const selectedItems = ZoteroPane.getSelectedItems();
+            if (selectedItems.length == 1) {
+                var item = selectedItems[0];
+            }
+            zoteroViewTabbox = document.getElementById('zotero-view-tabbox');
+            editPaneTabs = document.getElementById('zotero-editpane-tabs');
+        }
+        else if (selectedTab.type == "reader"){
+            item = Zotero.Items.get(selectedTab.data.itemID).parentItem;
+            zoteroViewTabbox = document.querySelector(`#${selectedTab.id}-context .zotero-view-tabbox`);
+            editPaneTabs = document.querySelector(`#${selectedTab.id}-context .zotero-editpane-tabs`);
+        }
+        
+        if (item && item.isRegularItem() && !item.isFeedItem) {
+            const citationsTabIndex = Array.from(editPaneTabs.children).findIndex(child => child.id === 'zotero-editpane-citations-tab');
+            if (zoteroViewTabbox.selectedIndex === citationsTabIndex) {
+                // fix: runs twice when tab is changed to Citations
+                debug(`Refreshing citations pane... (${target.id})`);
+                const t0 = performance.now();
+                ReactDOM.render(
+                    <CitationsBoxContainer
+                        //Having the key change, makes the CitationsBoxComntainer
+                        //component unmount when the item selected changes
+                        key={"citationsBox-" + item.id}
+                        item={item}
+                        editable={ZoteroPane.collectionsView.editable}
+                        onSourceItem={this.handleSourceItem}
+                    // citationIndexRef={this._citationIndex}
+                    // In principle I don't need a ref; I may have to use it if I need to force blur
+                    // ref={_citationsBox}
+                    // onResetSelection={focusItemsList}
+                    />,
+                    zoteroViewTabbox.querySelector('#citations-box-container'), // only the active one appears
+                    () => this.updateCitationsBoxSize(document)
+                );
+                const t1 = performance.now();
+                debug(`Rendering CitationsBoxContainer took ${t1-t0}ms.`);
             }
         }
     },
@@ -883,10 +919,19 @@ const zoteroOverlay = {
      */
     updateCitationsBoxSize: function(document) {
         // Based on ZoteroPane.updateTagsBoxSize()
+        // check whether we're in the library or PDF Reader
+        let citationBoxParent;
+        const selectedTab = Zotero_Tabs._tabs[Zotero_Tabs.selectedIndex];
+        if (selectedTab.type == "library"){
+            citationBoxParent = document.getElementById('zotero-item-pane-content')
+        }
+        else if (selectedTab.type == "reader"){
+            citationBoxParent = document.getElementById(`${selectedTab.id}-context`)
+        }
         var pane = document.querySelector('#zotero-item-pane');
-        var header = document.querySelector('#zotero-item-pane .citations-box-header');
-        var list = document.querySelector('#zotero-item-pane .citations-box-list');
-        var footer = document.querySelector('#zotero-item-pane .citations-box-footer');
+        var header = citationBoxParent.querySelector('.citations-box-header');
+        var list = citationBoxParent.querySelector('.citations-box-list');
+        var footer = citationBoxParent.querySelector('.citations-box-footer');
         if (pane && header && list && footer) {
             let height =
                 pane.getBoundingClientRect().height -
