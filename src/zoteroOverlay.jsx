@@ -75,7 +75,7 @@ const zoteroOverlay = {
     /******************************************/
     // Window load handling
     /******************************************/
-    init: async function() {
+    init: function() {
         // retrieve and set addon version
         AddonManager.getAddonByID(Wikicite.id, (addon) => {
             Wikicite.version = addon.version
@@ -461,7 +461,7 @@ const zoteroOverlay = {
         zoteroOverlay.overlayZoteroPane(document)
     },
 
-    overlayZoteroPane: async function(doc) {
+    overlayZoteroPane: function(doc) {
         // add wikicite preferences command to tools popup menu
         var menuPopup
         menuPopup = doc.getElementById('menu_ToolsPopup')
