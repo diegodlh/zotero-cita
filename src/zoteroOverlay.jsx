@@ -254,6 +254,11 @@ const zoteroOverlay = {
         this.removeNewTabListener()
     },
 
+    /******************************************/
+    // Notifiers
+    /******************************************/
+    // Listen for the creation of a new PDF reader tab, then add the citations menu to it
+
     addNewTabListener: function() {
         this.notifierID = Zotero.Notifier.registerObserver(this.tabEventCallback, ["tab"])
     },
@@ -262,26 +267,31 @@ const zoteroOverlay = {
         Zotero.Notifier.unregisterObserver(this.notifierID);
     },
 
+    // Approach from Zotero PDF Translate
+    // https://github.com/windingwind/zotero-pdf-translate/blob/307b6e4169a925d4152a0dc0bb88fdeba238222e/src/events.ts#L21
     tabEventCallback: {
         notify: async function(event, type, ids, extraData){
-            console.log(`tab event - [${event}, ${type}, ${ids}, ${extraData}]`)
+            // adding the Citations menu when selecting a tab for the first time seems
+            // more robust than doing it when the tab is created
             if (event == "select" && type == "tab" && extraData[ids[0]].type == "reader"){
-                // opening a new reader tab
                 let reader = Zotero.Reader.getByTabID(ids[0]);
                 let delayCount = 0;
+                // Wait for the reader tab to be ready
                 while (!reader && delayCount < 10) {
                     await Zotero.Promise.delay(100);
                     reader = Zotero.Reader.getByTabID(ids[0]);
                     delayCount++;
                 }
                 await reader?._initPromise;
-                // get HTML tab
-                const pdfReaderTabbox = document.getElementById(`${ids[0]}-context`).querySelector(".zotero-view-tabbox")
-                if (!pdfReaderTabbox.querySelector('#citations-pane')) {
-                    console.log('opening PDF reader tab for the first time')
-                    // need to add the citations pane and refresh listener to this tab
-                    zoteroOverlay.citationsPane(document, pdfReaderTabbox);
-                    pdfReaderTabbox.querySelector('.zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
+                
+                // Only add a citations tab if the PDF has a parent item to add citations to
+                if (Zotero.Items.get(reader.itemID).parentItem) {
+                    const pdfReaderTabbox = document.getElementById(`${ids[0]}-context`).querySelector(".zotero-view-tabbox")
+                    // only add the citations pane and refresh listener to this tab if they aren't already
+                    if (!pdfReaderTabbox.querySelector('#citations-pane')) {
+                        zoteroOverlay.citationsPane(document, pdfReaderTabbox);
+                        pdfReaderTabbox.querySelector('.zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
+                    }
                 }
             }
         }
@@ -832,7 +842,7 @@ const zoteroOverlay = {
                 const t0 = performance.now();
                 ReactDOM.render(
                     <CitationsBoxContainer
-                        //Having the key change, makes the CitationsBoxComntainer
+                        //Having the key change, makes the CitationsBoxContainer
                         //component unmount when the item selected changes
                         key={"citationsBox-" + item.id}
                         item={item}
@@ -928,6 +938,7 @@ const zoteroOverlay = {
         else if (selectedTab.type == "reader"){
             citationBoxParent = document.getElementById(`${selectedTab.id}-context`)
         }
+
         var pane = document.querySelector('#zotero-item-pane');
         var header = citationBoxParent.querySelector('.citations-box-header');
         var list = citationBoxParent.querySelector('.citations-box-list');
