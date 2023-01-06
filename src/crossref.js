@@ -130,9 +130,12 @@ export default class Crossref{
             responseType: "json",
         };
 
-        const response = await Zotero.HTTP.request("GET", url, options).catch((e) =>
-            debug(`Couldn't access URL: ${url}. Got status ${e.xmlhttp.status}.`)
-        );
+        const response = await Zotero.HTTP.request("GET", url, options).catch((e) => {
+            debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
+            if (e.status == 429) {
+                throw new Error("Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time.")
+            }
+        });
         if (!response) return [];
 
         return response.response.message.reference || [];
