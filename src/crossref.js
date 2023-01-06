@@ -130,8 +130,8 @@ export default class Crossref{
             responseType: "json",
         };
 
-        const response = await Zotero.HTTP.request("GET", url, options).catch(() =>
-            debug("Couldn't access URL: " + url)
+        const response = await Zotero.HTTP.request("GET", url, options).catch((e) =>
+            debug(`Couldn't access URL: ${url}. Got status ${e.xmlhttp.status}.`)
         );
         if (!response) return [];
 
@@ -180,7 +180,12 @@ export default class Crossref{
             // set libraryID to false so we don't save this item in the Zotero library
             jsonItems = await translation.translate({libraryID: false});
         } catch {
-            debug('No items returned for identifier ' + identifier);
+            debug(`No items returned for identifier ${identifier}`);
+            // We could get a 429 error inside the translation if we make too many
+            // requests to Crossref too quickly. Would need to be fixed in Zotero...
+            // I don't think we can identify this here unfortunately...
+            // (See https://forums.zotero.org/discussion/84985/new-odd-result-when-importing-pmids-with-magic-wand)
+            }
         }
 
         if (jsonItems) {
