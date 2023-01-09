@@ -1,5 +1,6 @@
 import Wikicite, { debug } from './wikicite';
 import Citations from './citations';
+import Citation from './citation';
 import CitationsBoxContainer from './containers/citationsBoxContainer';
 import Crossref from './crossref';
 import Extraction from './extract';
@@ -10,6 +11,7 @@ import ReactDOM from 'react-dom';
 import SourceItemWrapper from './sourceItemWrapper';
 import WikiciteChrome from './wikiciteChrome';
 import Wikidata from './wikidata';
+import wikicite from './wikicite';
 
 const TRANSLATORS_PATH = 'chrome://cita/content/translators/'
 const TRANSLATOR_LABELS = [
@@ -428,7 +430,7 @@ const zoteroOverlay = {
         Extraction.extract();
     },
 
-    addAsCitations: function(menuName) {
+    addAsCitations: async function(menuName) {
         // Add items selected as citation target items of one or more source items
         // 1. open selectItemsDialog.xul; allow one or more item selection
         // 2. create citation objects for each of the target items selected
@@ -436,11 +438,47 @@ const zoteroOverlay = {
         // 4. run addCitations and pass it the citation objects created above
         // 5. finally, link citations to the Zotero items
         // see #39
-        Services.prompt.alert(
-            window,
-            Wikicite.getString('wikicite.global.unsupported'),
-            Wikicite.getString('wikicite.citations.from-items.unsupported')
+
+        const citations = [];
+
+        // get citation target items
+        const sourceItems = await this.getSelectedItems(menuName);
+        //const targetItems = ZoteroPane.getSelectedItems();
+
+        // 1. Open selectItemsDialog to select sourceItem
+        const io = {singleSelection: false, dataOut: null};
+        window.openDialog(
+            'chrome://zotero/content/selectItemsDialog.xul',
+            '',
+            'chrome,dialog=no,modal,centerscreen,resizable=yes',
+            io
         );
+        if (!io.dataOut || !io.dataOut.length) {
+            return;
+        }
+        const ids = io.dataOut[0];
+
+        // to help debug
+        debug('target: '+ JSON.stringify(sourceItem));
+        debug('source: '+ JSON.stringify(targetItem));
+        debug('id: '+ id);
+
+        // 2. add items as citations to sourceItem
+        for (const sourceItem of sourceItems) {
+            // sourceItem.setSourceItem(targetItem)
+            const citations = new Citation({item: sourceItem, ocis: []}, targetItem);
+        }
+
+        // 3. wrap targets in SourceItemWraper
+        for (const id of ids) {
+            const targetItem = new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage'));
+        }
+
+        // 4. run addCitations
+        targetItem.addCitations(citations);
+
+        // 5. link items
+
     },
 
     localCitationNetwork: async function(menuName) {

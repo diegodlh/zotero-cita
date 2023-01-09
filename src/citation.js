@@ -44,6 +44,7 @@ class Citation {
                 this.source.saveCitations.bind(this.source)
             );
         } else {
+            debug('Zotero.Item : false');
             if (!item.itemType) {
                 // use a default item type if it was not provided in the target item literal
                 // fix: move this default value out to another file or module
