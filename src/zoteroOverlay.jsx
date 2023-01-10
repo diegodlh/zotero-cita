@@ -442,11 +442,11 @@ const zoteroOverlay = {
         const citations = [];
 
         // get citation target items
-        const sourceItems = await this.getSelectedItems(menuName);
+        const targetItems = await this.getSelectedItems(menuName);
         //const targetItems = ZoteroPane.getSelectedItems();
 
         // 1. Open selectItemsDialog to select sourceItem
-        const io = {singleSelection: false, dataOut: null};
+        const io = {singleSelection: true, dataOut: null};
         window.openDialog(
             'chrome://zotero/content/selectItemsDialog.xul',
             '',
@@ -458,24 +458,17 @@ const zoteroOverlay = {
         }
         const ids = io.dataOut[0];
 
-        // to help debug
-        debug('target: '+ JSON.stringify(sourceItem));
-        debug('source: '+ JSON.stringify(targetItem));
-        debug('id: '+ id);
-
-        // 2. add items as citations to sourceItem
-        for (const sourceItem of sourceItems) {
-            // sourceItem.setSourceItem(targetItem)
-            const citations = new Citation({item: sourceItem, ocis: []}, targetItem);
-        }
-
         // 3. wrap targets in SourceItemWraper
         for (const id of ids) {
-            const targetItem = new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage'));
+            const sourceItem = new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage'));
         }
 
-        // 4. run addCitations
-        targetItem.addCitations(citations);
+        // 2.-4. add items as citations to sourceItem AND run addCitations
+        for (const targetItem of targetItems) {
+            // sourceItem.setSourceItem(targetItem)
+            const citations = new Citation({item: targetItem, ocis: []}, sourceItem);
+            sourceItem.addCitations(citations);
+        }
 
         // 5. link items
 
