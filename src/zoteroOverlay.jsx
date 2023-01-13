@@ -456,12 +456,11 @@ const zoteroOverlay = {
         if (!io.dataOut || !io.dataOut.length) {
             return;
         }
-        const ids = io.dataOut[0];
+        const id = io.dataOut[0];
 
         // 3. wrap targets in SourceItemWraper
-        for (const id of ids) {
-            const sourceItem = new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage'));
-        }
+        const sourceItem = new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage'));
+        
 
         // 2.-4. add items as citations to sourceItem AND run addCitations
         for (const targetItem of targetItems) {
@@ -471,7 +470,7 @@ const zoteroOverlay = {
         }
 
         // 5. link items
-
+        sourceItem.autoLinkCitations();
     },
 
     localCitationNetwork: async function(menuName) {
