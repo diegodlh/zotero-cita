@@ -1,15 +1,20 @@
 import Wikicite from './wikicite';
 import Wikidata from './wikidata';
 
-/* global Services */
-/* global Zotero */
-/* global window */
+declare const Services: any;
+declare const Zotero: any;
 
 // Fixme: maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
 // for source items, and the source item's saveTx for target items
 export default class ItemWrapper{
-	constructor(item, saveHandler) {
+    key: string;
+    saveHandler: any;
+    item: any;
+    // item(item: any): any {
+    //     throw new Error('Method not implemented.');
+    // }
+	constructor(item?: any, saveHandler?: any) {
         if (item === undefined) item = new Zotero.Item();
         if (saveHandler === undefined) saveHandler = item.saveTx;
 
@@ -117,7 +122,7 @@ export default class ItemWrapper{
         return pidTypes;
     }
 
-    async fetchPID(type, autosave=true) {
+    async fetchPID(type: string, autosave=true) {
         type = type.toUpperCase();
         let pid;
         switch (type) {
@@ -141,7 +146,7 @@ export default class ItemWrapper{
         }
     }
 
-    getPID(type, clean=false) {
+    getPID(type: string, clean=false) {
         type = type.toUpperCase();
         let pid;
         switch (type) {
@@ -158,7 +163,7 @@ export default class ItemWrapper{
         return pid;
     }
 
-    getPidUrl(type) {
+    getPidUrl(type: string) {
         type = type.toUpperCase();
         const cleanPID = this.getPID(type, true);
         let url;
@@ -187,7 +192,7 @@ export default class ItemWrapper{
         return url;
     }
 
-    setPID(type, value, save=true) {
+    setPID(type: string, value: string, save=true) {
         type = type.toUpperCase();
         switch (type) {
             case 'DOI':
@@ -206,7 +211,7 @@ export default class ItemWrapper{
         if (save) this.saveHandler();
     }
 
-    isValidField(fieldName) {
+    isValidField(fieldName: string) {
         return Zotero.ItemFields.isValidForType(
             Zotero.ItemFields.getID(fieldName),
             this.item.itemTypeID
@@ -231,7 +236,7 @@ export default class ItemWrapper{
         return label;
     }
 
-    fromJSON(json) {
+    fromJSON(json: any) {
         // Adapted from Zotero.Item.fromJSON for faster performance
         const itemTypeID = Zotero.ItemTypes.getID(json.itemType);
         this.item.setType(itemTypeID);
@@ -247,14 +252,14 @@ export default class ItemWrapper{
 
     toJSON() {
         // Adapted from Zotero.Item.toJSON for faster performance
-        const json = {
+        const json: { [key: string]: any } = {
             itemType: Zotero.ItemTypes.getName(this.item.itemTypeID),
             creators: this.item.getCreatorsJSON()
         }
         for (const i in this.item._itemData) {
             const val = String(this.item.getField(i));
             if (val !== '') {
-                json[Zotero.ItemFields.getName(i)] = val;
+                json[Zotero.ItemFields.getName(i) as string] = val;
             }
         }
         return json;

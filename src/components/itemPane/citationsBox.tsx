@@ -12,11 +12,10 @@ import SourceItemWrapper from '../../sourceItemWrapper';
 import WikidataButton from './wikidataButton';
 import ZoteroButton from './zoteroButton';
 
-/* global Services */
-/* global window */
-/* global Zotero */
+declare const Services: any;
+declare const Zotero: any;
 
-function CitationsBox(props) {
+function CitationsBox(props: any) {
     const [citations, setCitations] = useState([]);
     const [pidTypes, setPidTypes] = useState([]);
     const [sortedIndices, setSortedIndices] = useState([]);
@@ -39,7 +38,7 @@ function CitationsBox(props) {
     }, [pidTypes])
 
     useEffect(() => {
-        const items = props.sourceItem.citations.map((citation, index) => {
+        const items = props.sourceItem.citations.map((citation: Citation, index: number) => {
             let value;
             switch (props.sortBy) {
                 case 'ordinal':
@@ -60,8 +59,8 @@ function CitationsBox(props) {
             }
             return {index: index, value: value}
         });
-        items.sort((a, b) => (a.value > b.value ? 1 : -1));
-        setSortedIndices(items.map((item) => item.index));
+        items.sort((a: any, b: any) => (a.value > b.value ? 1 : -1));
+        setSortedIndices(items.map((item: any) => item.index));
     }, [props.sortBy, props.sourceItem])
 
     /**
@@ -69,12 +68,12 @@ function CitationsBox(props) {
      * @param {Citation} citation - Citation to be edited.
      * @returns {Zotero.Item} - Edited cited item.
      */
-    function openEditor(citation) {
+    function openEditor(citation: Citation) {
         const args = {
             citation: citation,
             Wikicite: Wikicite
         };
-        const retVals = {};
+        const retVals: { [key: string]: any } = {};
         window.openDialog(
             'chrome://cita/content/citationEditor.xul',
             '',
@@ -148,7 +147,7 @@ function CitationsBox(props) {
         props.sourceItem.citations = newCitations;
     }
 
-    async function handleCitationDelete(index) {
+    async function handleCitationDelete(index: number) {
         let sync = false;
         const citation = citations[index];
         if (citation.getOCI('wikidata')) {
@@ -187,7 +186,7 @@ function CitationsBox(props) {
         await props.sourceItem.deleteCitation(index, sync);
     }
 
-    function handleCitationMove(index, shift) {
+    function handleCitationMove(index: number, shift: number) {
         const newCitations = props.sourceItem.citations;
         const citation = newCitations.splice(index, 1)[0];
         const newIndex = index + shift;
@@ -195,7 +194,7 @@ function CitationsBox(props) {
         props.sourceItem.citations = newCitations;
     }
 
-    function handleCitationSync(index) {
+    function handleCitationSync(index: number) {
         // Fixme: consider making this a Citation method
         const citation = citations[index];
         const syncable = citation.source.qid && citation.target.qid;
@@ -231,7 +230,7 @@ function CitationsBox(props) {
         }
     }
 
-    function renderCitationRow(citation, index) {
+    function renderCitationRow(citation: Citation, index: number) {
         let item = citation.target.item;
         const itemType = Zotero.ItemTypes.getName(item.itemTypeID);
 
@@ -295,7 +294,7 @@ function CitationsBox(props) {
                     <button
                         title={removeStr}
                         onClick={ () => handleCitationDelete(index) }
-                        tabIndex="-1"
+                        tabIndex={-1}
                     >
                         <img
                             alt={removeStr}
@@ -335,14 +334,33 @@ function CitationsBox(props) {
                         </button>
                     </div>
                 }
-                <Button 
-                    className="citations-box-actions"
-                    isMenu={true}
-                    onClick={props.onItemPopup}
-                    text={Wikicite.getString('wikicite.citations-pane.more')}
-                    title=""
-                    size="sm"
-                />
+                <IntlProvider
+                    locale={Zotero.locale}
+                    // Fixme: improve messages object
+                    messages={{
+                        'wikicite.citations-pane.more': Wikicite.getString(
+                            'wikicite.citations-pane.more'
+                        )
+                    }}
+                >
+                    {/* Used to be a Button, but got some TS error so changed to div */}
+                    <Button
+                        /*icon={
+                            <span>
+                                <img
+                                    height="16px"
+                                    src="chrome://cita/skin/wikicite.png"
+                                />
+                            </span>
+                        }*/
+                        className="citations-box-actions"
+                        isMenu={true}
+                        onClick={props.onItemPopup}
+                        text="wikicite.citations-pane.more"
+                        title=""
+                        size="sm"
+                    />
+                </IntlProvider>
             </div>
             <div className="citations-box-list-container">
                 <ul className="citations-box-list">

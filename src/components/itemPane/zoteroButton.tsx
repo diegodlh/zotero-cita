@@ -3,12 +3,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import Wikicite from '../../wikicite';
 
-/* global Services */
-/* global Zotero */
-/* global ZoteroPane */
-/* global window */
+declare const Services: any;
+declare const Zotero: any;
+declare const ZoteroPane: any;
 
-function ZoteroButton(props) {
+function ZoteroButton(props: any) {
     const key = props.citation.target.key;
     function handleClick() {
         if (key) {

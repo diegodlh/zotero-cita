@@ -13,11 +13,17 @@ const codes = new Map(
 	lookup.map(({c, code}) => [String(c), Number(code)])
 );
 
-
-/* global Zotero */
+declare const Zotero: any;
 
 export default class {
-	static getOci(supplierName, citingId, citedId) {
+	public citingId: string;
+	public citedId: string;
+	public idType: string;
+	public oci: string;
+	public supplier: {prefix: string, name: string, id: string};
+    public valid: boolean;
+
+	static getOci(supplierName: string, citingId: string, citedId: string) {
 		const supplier = suppliers.filter((supplier) => supplier.name === supplierName)[0];
 		if (!supplier) {
 			throw new Error('Unsupported OCI supplier');
@@ -36,10 +42,10 @@ export default class {
 			} else if (supplier.id === 'occ') {
 				pattern = /^([0-9])+$/;
 			}
-			citingId = citingId.match(pattern);
-			citedId = citedId.match(pattern);
-			citingId = citingId ? citingId[1] : '';
-			citedId = citedId ? citedId[1] : '';
+			const citingIdMatch = citingId.match(pattern);
+			const citedIdMatch = citedId.match(pattern);
+			citingId = citingIdMatch ? citingIdMatch[1] : '';
+			citedId = citedIdMatch ? citedIdMatch[1] : '';
 		}
 		if (citingId && citedId) {
 			if (supplier.id === 'doi') {
@@ -53,7 +59,7 @@ export default class {
 		return `${prefix}${citingId}-${prefix}${citedId}`;
 	}
 
-	static parseOci(oci, supplierName) {
+	static parseOci(oci: string, supplierName?: string) {
 		const match = oci.match(/^([0-9]{3})([0-9]+)-([0-9]{3})([0-9]+)$/)
 		if (!match) {
 			throw new Error('Wrong OCI format');
@@ -85,13 +91,13 @@ export default class {
 			citingId,
 			citedId,
 			idType: supplier.id,
-			supplier: supplier.name
+			supplier: supplier
 		};
 	}
 
-	static decodeId(encodedId) {
+	static decodeId(encodedId: string) {
 		const map = new Map(
-			Array.from(codes, (code) => code.reverse())
+			Array.from(codes, (codeString,codeNumber) => [codeNumber, codeString])
 		);
 		let id = ''
 		let code = ''
@@ -113,7 +119,7 @@ export default class {
 		return id;
 	}
 
-	static encodeId(id) {
+	static encodeId(id: string) {
 		let encodedId = '';
 		for (const char of id) {
 			const code = codes.get(char);
@@ -130,7 +136,7 @@ export default class {
      * Resolve OCI with OCI Resolution Service
      * @param {String} oci - OCI to resolve
  	*/
-	static resolve(oci) {
+	static resolve(oci: string) {
 		if (this.parseOci(oci)) {
 			Zotero.launchURL(
 				'https://opencitations.net/oci?oci=' +
@@ -138,22 +144,4 @@ export default class {
 			);
 		}
 	}
-
-	// constructor({supplier, oci, citingId, citedId } = {}) {
-	// 	if (oci) {
-	// 		[supplier, citingId, citedId] = this.parseOci(oci, supplier);
-	// 	} else if (supplier && citingId && citedId) {
-	// 		if (!suppliers.filter((supplier) => supplier.name === supplier)) {
-	// 			throw new Error('Unsupported OCI supplier' + supplier);
-	// 		}
-	// 		oci = this.getOci(supplier, citingId, citedId);
-	// 	} else {
-	// 		throw new Error('Either provide OCI, or supplier and citing and cited IDs');
-	// 	}
-	// 	this.oci = oci;
-	// 	this.citingId = citingId;
-	// 	this.citedId = citedId;
-	// 	this.supplier = supplier;
-	// 	return this;
-	// }
 }
