@@ -3,8 +3,7 @@ import ItemWrapper from '../../itemWrapper';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-/* global Components */
-/* global document, window */
+declare const Components: any;
 
 // import Services into the new window
 Components.utils.import("resource://gre/modules/Services.jsm");
@@ -15,7 +14,7 @@ const {
 } = window.arguments[0];
 const retVals = window.arguments[1];
 
-let newItem;
+let newItem: any;
 
 function onCancel() {
 	retVals.item = false;
@@ -33,7 +32,7 @@ function onSave() {
 	window.close();
 }
 
-function checkPID(type, value) {
+function checkPID(type: string, value: string) {
 	return citation.source.checkPID(
 		type,
 		value,
@@ -52,7 +51,7 @@ window.addEventListener("load", () => {
 	// itemBox.removeCreator is calling itemBox.item.saveTx
     // even if itemBox.saveOnEdit is set to false;
     // overwrite saveTx as workaround
-    newItem.item.saveTx = () => document.getElementById('citation-editor-item-box').refresh();
+    newItem.item.saveTx = () => (document.getElementById('citation-editor-item-box') as any).refresh();
 	ReactDOM.render(
 		<CitationEditor
 			checkCitationPID={checkPID}

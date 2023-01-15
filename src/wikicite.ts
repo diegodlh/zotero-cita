@@ -1,14 +1,20 @@
 import Wikidata from './wikidata';
 
-/* global Components, Services */
-Components.utils.import("resource://gre/modules/Services.jsm");
+declare const Components: any;
+declare const Services: any;
+declare const Zotero: any;
+declare global {
+    interface Window { openDialog: (url: string, name: string, features: string, args:Object, retVals?: Object) => any; }
+}
 
-/* global Zotero */
-/* global window */
+
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 // Provides an alternative CSL Engine to obtain labels for the citation items
 // However, it is very slow so an alternative approach will be used instead
 class CiteProc {
+    sys: { items: any[]; retrieveItem: (index: any) => any; retrieveLocale: (lang: any) => any; };
+    cslEngine: any;
     constructor() {
         // Based on Zotero.Style.prototype.getCiteProc()
         this.sys = {
@@ -71,7 +77,7 @@ export default {
         'chrome://cita/content/locale/en-US/wikicite.properties'
     ),
 
-    cleanPID: function(type, value) {
+    cleanPID: function(type: string, value: string) {
         type = type.toUpperCase();
         value = value || '';
         switch (type) {
@@ -104,11 +110,11 @@ export default {
      * @returns {extra} extra - Extra field after desired extra field fields have been extracted.
      * @returns {values} values - Array of values for the desired extra field field.
      */
-    getExtraField: function(item, fieldName) {
+    getExtraField: function(item: any, fieldName: string) {
         const pattern = new RegExp(`^${fieldName}:(.+)$`, 'i')
-        const extra = item.getField('extra');
+        const extra = item.getField('extra') as string;
         const lines = extra.split(/\n/g);
-        const values = []
+        const values: string[] = []
         const newExtra = lines.filter((line) => {
             let match = line.match(pattern);
             if (!match) {
@@ -131,7 +137,7 @@ export default {
      * @param {string} fieldName - The name of the extra field that wants to be set.
      * @param {String[]} values - An array of values for the field that wants to be set.
      */
-    setExtraField: function(item, fieldName, values) {
+    setExtraField: function(item: any, fieldName: string, values: string[]) {
         if (!Array.isArray(values)) {
             values = [values];
         }
@@ -151,7 +157,7 @@ export default {
     getCitationsNote: function(item) {
         // Fixme: consider moving to SourceItemWrapper
         const notes = Zotero.Items.get(item.getNotes()).filter(
-            (note) => note.getNoteTitle() === 'Citations'
+            (note: any) => note.getNoteTitle() === 'Citations'
         );
         if (notes.length > 1) {
             Services.prompt.alert(
@@ -163,7 +169,7 @@ export default {
         return notes[0];
     },
 
-    getString: function(name) {
+    getString: function(name: string) {
         // convert camelCase to hyphen-divided for translatewiki.net
         name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
         const nameParts = name.split('.');
@@ -181,7 +187,7 @@ export default {
         }
     },
 
-    formatString: function(name, params) {
+    formatString: function(name: string, params: any|any[]) {
         if (!Array.isArray(params)) params = [params];
         // convert camelCase to hyphen-divided for translatewiki.net
         name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
@@ -204,7 +210,7 @@ export default {
 
     selectItem: function() {
         // Adapted from Zotero's bindings/relatedbox.xml
-        const io = {singleSelection: true, dataOut: null};
+        const io = {singleSelection: true, dataOut: null as Number[]};
         window.openDialog(
             'chrome://zotero/content/selectItemsDialog.xul',
             '',
@@ -244,7 +250,7 @@ export default {
     // }
 }
 
-export function debug(msg, err) {
+export function debug(msg: string, err?: Error) {
     if (err) {
         Zotero.debug(`{Cita} ${new Date} error: ${msg} (${err} ${err.stack})`);
     } else {
