@@ -4,24 +4,23 @@ import PropTypes from 'prop-types';
 import SourceItemWrapper from '../../sourceItemWrapper';
 import { debug } from '../../wikicite';
 
-/* global Services */
-/* global window */
-/* global Zotero */
+declare const Services: any;
+declare const Zotero: any;
 
-const PreferenceDialog = (props) => {
+const PreferenceDialog = (props: any) => {
     const [storage, setStorage] = useState(props.Prefs.get('storage'));
 
-    async function migrateStorageLocation(from, to) {
+    async function migrateStorageLocation(from: string, to: string) {
         const progress = new Progress(
             'loading',
             props.getString('wikicite.prefs.citation-storage.progress.migrating')
         );
-        let failedItemTitles = [];
+        let failedItemTitles: string[] = [];
         try {
             await Zotero.DB.executeTransaction(async function() {
                 let loadedItems = 0;
                 let migratedItems = 0;
-                const items = await Zotero.Items.getAll(Zotero.Libraries.userLibraryID).filter((item) => item.isRegularItem());
+                const items = await Zotero.Items.getAll(Zotero.Libraries.userLibraryID).filter((item: any) => item.isRegularItem());
                 const wrappers = [];
                 for (let item of items) {
                     try {
@@ -75,7 +74,9 @@ const PreferenceDialog = (props) => {
         window.close();
     }
 
-    return <div orient="vertical">
+    // TS gives an error about using orient here
+    // return <div orient="vertical">
+    return <div>
         <fieldset>
             <legend>{props.getString('wikicite.prefs.citation-storage')}</legend>
             <span>{props.getString('wikicite.prefs.citation-storage-desc')}</span>

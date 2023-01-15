@@ -3,11 +3,13 @@ import React, {
 } from 'react';
 import PropTypes from 'prop-types';
 
-const CitationImporter = (props) => {
+const CitationImporter = (props: any) => {
     const [text, setText] = useState("");
 
     return(
-        <div orient="vertical">
+        // TS doesn't like orient in div
+        // <div orient="vertical">
+        <div>
             <div id="citation-importer-description">
                 <label>
                     {props.getString('citation-importer.description')}
@@ -17,7 +19,7 @@ const CitationImporter = (props) => {
                 <textarea
                     id="citation-input"
                     onChange={(event) => setText(event.target.value)}
-                    rows="15"
+                    rows={15}
                     value={text}
                 />
             </div>

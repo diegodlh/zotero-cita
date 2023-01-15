@@ -7,9 +7,9 @@ import React, {
 import Editable from 'zotero@components/editable';
 import PropTypes from 'prop-types';
 
-/* global Zotero */
+declare const Zotero: any;
 
-function PIDRow(props) {
+function PIDRow(props: any) {
     const textboxRef = useRef(null);
     const [selected, setSelected] = useState(false);
     const [value, setValue] = useState(props.item.getPID(props.type));
@@ -27,7 +27,7 @@ function PIDRow(props) {
         setSelected(false);
     }
 
-    function handleCommit(newPid, hasChanged) {
+    function handleCommit(newPid: string, hasChanged: boolean) {
         if (hasChanged) {
             if (newPid && props.validate && !props.validate(props.type, newPid)) {
                 return;
@@ -78,7 +78,7 @@ function PIDRow(props) {
                     // For the autoComplete workaround to work above,
                     // a getSuggestions function must be provided.
                     // Have it return an empty suggestions array.
-                    getSuggestions={() => []}
+                    getSuggestions={(): any => []}
                     // ...and a ref too
                     ref={textboxRef}
                     autoFocus

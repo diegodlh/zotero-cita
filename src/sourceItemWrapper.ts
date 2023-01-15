@@ -29,6 +29,7 @@ function replacer(key, value) {
 }
 
 class SourceItemWrapper extends ItemWrapper {
+    newRelations: any;
     // When I thought of this originally, I wasn't giving the source item to the citation creator
     // but then I understood it made sense I passed some reference to the source object
     // given that the citation is a link between two objects (according to the OC model)

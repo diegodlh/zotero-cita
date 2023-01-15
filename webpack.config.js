@@ -3,11 +3,11 @@ const CopyPlugin = require("copy-webpack-plugin");
 module.exports = {
   mode: 'development',
   entry: {
-    'chrome/content/main': './src/index.js',
-    'chrome/content/preferences': './src/dialogs/preferences/index.js',
-    'chrome/content/editor': './src/dialogs/editor/index.js',
-    'chrome/content/citation-importer': './src/dialogs/citation-importer/index.js',
-    'chrome/content/identifier-importer': './src/dialogs/identifier-importer/index.js'
+    'chrome/content/main': './src/index.ts',
+    'chrome/content/preferences': './src/dialogs/preferences/index.ts',
+    'chrome/content/editor': './src/dialogs/editor/index.ts',
+    'chrome/content/citation-importer': './src/dialogs/citation-importer/index.ts',
+    'chrome/content/identifier-importer': './src/dialogs/identifier-importer/index.ts'
   },
   output: {
     filename: '[name].js',
@@ -16,14 +16,14 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.tsx?$/,
+        use: ['ts-loader'],
         exclude: /node_modules/,
-        use: ['babel-loader']
       }
     ]
   },
   resolve: {
-    extensions: ['*', '.js', '.jsx'],
+    extensions: ['.tsx', '.ts'],
     fallback: {
       'querystring': require.resolve("querystring-es3"),
       'http': false, //require.resolve('stream-http'),

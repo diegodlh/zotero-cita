@@ -1168,6 +1168,7 @@ function resetCookies() {
 }
 
 export class CitesWorkClaim {
+    remove: boolean;
     constructor(citesWorkClaimValue={}) {
         this.id = citesWorkClaimValue.id;
         this.value = citesWorkClaimValue.value;
