@@ -59,8 +59,13 @@ class Citation {
         this.ocis = [];
         ocis.forEach((oci) => this.addOCI(oci));
 
-        // zotero item key the target item of this citation is linked to
         this.target.key = zotero;
+        // if a Zotero item key is provided for the target item,
+        // and the target item is a Zotero Item (not a raw citation)
+        // then automatically link the source and target items
+        if (zotero && item instanceof Zotero.Item){
+            this.linkToZoteroItem(item);
+        }
 
         // Issue: Save and upload information about citations order
         // this.series_ordinal;
