@@ -44,7 +44,6 @@ class Citation {
                 this.source.saveCitations.bind(this.source)
             );
         } else {
-            debug('Zotero.Item : false');
             if (!item.itemType) {
                 // use a default item type if it was not provided in the target item literal
                 // fix: move this default value out to another file or module
@@ -62,7 +61,7 @@ class Citation {
 
         this.target.key = zotero;
         // if a Zotero item key is provided for the target item,
-        // and the target item is a Zotero Item (not an existing citation)
+        // and the target item is a Zotero Item (not a raw citation)
         // then automatically link the source and target items
         if (zotero && item instanceof Zotero.Item){
             this.linkToZoteroItem(item);
