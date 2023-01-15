@@ -2,8 +2,7 @@ import IdentifierImporter from './IdentifierImporter';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-/* global Components */
-/* global document, window */
+declare const Components: any;
 
 // import Services into the new window
 Components.utils.import("resource://gre/modules/Services.jsm");
@@ -18,7 +17,7 @@ function onCancel() {
 }
 
 function onImport() {
-	retVals.text = document.getElementById('identifier-input').value;
+	retVals.text = (document.getElementById('identifier-input') as HTMLInputElement).value;
 	window.close();
 }
 

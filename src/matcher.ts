@@ -27,7 +27,7 @@ export default class Matcher {
             this._getQIDs(),
             this._getYears(),
             this._getTitles(),
-            this._getCreators(),
+            this._getCreators()
             // new Promise((resolve) => setTimeout(() => {resolve()}, 1000))
         ]);
 

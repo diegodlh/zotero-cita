@@ -2,16 +2,18 @@ import React, {
     useEffect,
     useState
 } from 'react';
-import CitationsBox from '../components/itemPane/citationsBox.jsx';
+import CitationsBox from '../components/itemPane/citationsBox.js';
 import SourceItemWrapper from '../sourceItemWrapper';
 import PropTypes from 'prop-types';
 import { debug } from '../wikicite';
 
-/* global document, window */
-/* global Services */
-/* global Zotero */
+declare const Services: any;
+declare const Zotero: any;
+declare global {
+    interface Window { Wikicite: any; WikiciteChrome: any;}
+}
 
-function CitationsBoxContainer(props) {
+function CitationsBoxContainer(props: any) {
     debug('CitationsBoxContainer will render...');
 
     // this CitationsBox container knows about the current
@@ -66,14 +68,14 @@ function CitationsBoxContainer(props) {
     useEffect(() => {
         debug('First run, or props.item has changed')
         var observer = {
-            notify: async function (action, type, ids, extraData) {
+            notify: async function (action: any, type: string, ids: string[], extraData: any) {
                 // This observer will be triggered as long as the component remains mounted
                 // That is, until the item selected changes.
                 if (type === 'item') {
-                    const notes = Zotero.Items.get(ids).filter((item) => item.isNote());
+                    const notes = Zotero.Items.get(ids).filter((item: any) => item.isNote());
                     if (
                         ids.includes(props.item.id) ||
-                        notes.map((note) => note.parentID).includes(props.item.id)
+                        notes.map((note: any) => note.parentID).includes(props.item.id)
                     ) {
                         debug('Item observer has been triggered...');
                         // This may cause two re-renders: one when sourceItem is reset,
@@ -107,7 +109,7 @@ function CitationsBoxContainer(props) {
     useEffect(() => {
         // single-run effect to register listeners for preference-change topics
         const observers = {
-            observe: function(subject, topic, data) {
+            observe: function(subject: any, topic: string, data: any) {
                 switch (topic) {
                     case 'wikicite-sortby-update':
                         setSortBy(window.Wikicite.Prefs.get('sortBy'));
@@ -135,15 +137,15 @@ function CitationsBoxContainer(props) {
     /**
      * Display citing-item actions pop-up menu at the event's coordinates
      */
-    function handleItemPopup(event) {
-        const itemPopupMenu = document.getElementById('citations-box-item-menu');
+    function handleItemPopup(event: Event) {
+        const itemPopupMenu = document.getElementById('citations-box-item-menu') as any;
         event.preventDefault();
         itemPopupMenu.openPopup(event.target, 'end_before', 0, 0, true);
     }
 
-    function handleCitationPopup(event, citationIndex) {
+    function handleCitationPopup(event: Event, citationIndex: Number) {
         window.WikiciteChrome.zoteroOverlay.setCitationIndex(citationIndex);
-        const citationPopupMenu = document.getElementById('citations-box-citation-menu');
+        const citationPopupMenu = document.getElementById('citations-box-citation-menu') as any;
         citationPopupMenu.openPopup(event.target, 'end_before', 0, 0, true);
     }
 
