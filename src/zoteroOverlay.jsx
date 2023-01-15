@@ -430,23 +430,15 @@ const zoteroOverlay = {
         Extraction.extract();
     },
 
+    /** 
+     * Add selected items as citation target items of one or more source items
+     */
     addAsCitations: async function(menuName) {
-        // Add items selected as citation target items of one or more source items
-        // 1. open selectItemsDialog.xul; allow one or more item selection
-        // 2. create citation objects for each of the target items selected
-        // 3. for each of the source items selected, wrap it into a SourceItemWrapper
-        // 4. run addCitations and pass it the citation objects created above
-        // 5. finally, link citations to the Zotero items
-        // see #39
+        // get citation target items (currently selected) - don't wrap them
+        const targetItems = await this.getSelectedItems(menuName, false);
 
-        const citations = [];
-
-        // get citation target items
-        const targetItems = await this.getSelectedItems(menuName);
-        //const targetItems = ZoteroPane.getSelectedItems();
-
-        // 1. Open selectItemsDialog to select sourceItem
-        const io = {singleSelection: true, dataOut: null};
+        // open selectItemsDialog to get source items
+        const io = {singleSelection: false, dataOut: null};
         window.openDialog(
             'chrome://zotero/content/selectItemsDialog.xul',
             '',
@@ -456,21 +448,16 @@ const zoteroOverlay = {
         if (!io.dataOut || !io.dataOut.length) {
             return;
         }
-        const id = io.dataOut[0];
+        const sourceItemIDs = io.dataOut;
 
-        // 3. wrap targets in SourceItemWraper
-        const sourceItem = new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage'));
-        
+        // wrap source items in SourceItemWrapper
+        const sourceItems = sourceItemIDs.map((id) => new SourceItemWrapper(Zotero.Items.get(id), window.Wikicite.Prefs.get('storage')));
 
-        // 2.-4. add items as citations to sourceItem AND run addCitations
-        for (const targetItem of targetItems) {
-            // sourceItem.setSourceItem(targetItem)
-            const citations = new Citation({item: targetItem, ocis: []}, sourceItem);
+        // create a citation between each source and target item, giving the Zotero item key so they're automatically linked
+        for (const sourceItem of sourceItems) {
+            const citations = targetItems.map((targetItem) => new Citation({item: targetItem, ocis: [], zotero: targetItem.key}, sourceItem));
             sourceItem.addCitations(citations);
         }
-
-        // 5. link items
-        sourceItem.autoLinkCitations();
     },
 
     localCitationNetwork: async function(menuName) {
