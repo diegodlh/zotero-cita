@@ -5,7 +5,7 @@ import React, {
 import PIDRow from '../../components/pidRow';
 import PropTypes from 'prop-types';
 
-/* global Zotero */
+declare const Zotero: any;
 
 const visibleBaseFieldNames = [
     'title',
@@ -16,7 +16,7 @@ const visibleBaseFieldNames = [
 // Fixme: as a Citation Editor (not a target item editor)
 // consider providing at least some read only information about the citation
 // such as label of the source item, OCIs, and Zotero link status
-const CitationEditor = (props) => {
+const CitationEditor = (props: any) => {
     const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
 
     useEffect(() => {
@@ -67,7 +67,7 @@ const CitationEditor = (props) => {
         props.itemBox.refresh();
     }
 
-    function setHiddenFields(itemTypeID) {
+    function setHiddenFields(itemTypeID: string) {
         const visibleFieldIDs = visibleBaseFieldNames.map(
             (fieldName) => Zotero.ItemFields.getFieldIDFromTypeAndBase(
                 itemTypeID, fieldName
@@ -76,17 +76,19 @@ const CitationEditor = (props) => {
         props.itemBox.hiddenFields = Zotero.ItemFields.getItemTypeFields(
             itemTypeID
         )
-        .filter((fieldID) => !visibleFieldIDs.includes(fieldID))
-        .map((fieldID) => Zotero.ItemFields.getName(fieldID))
+        .filter((fieldID: string) => !visibleFieldIDs.includes(fieldID))
+        .map((fieldID: string) => Zotero.ItemFields.getName(fieldID))
         .concat(['dateAdded', 'dateModified']);
     }
 
     return(
-        <div orient="vertical">
+        // TS gives an error about using orient here
+        // <div orient="vertical">
+        <div>
             <ul className="pid-list">
             {
                 pidTypes.map(
-                    (pidType) =>  <PIDRow
+                    (pidType: string) =>  <PIDRow
                         autosave={false}
                         editable={true}
                         item={props.item}

@@ -1,15 +1,17 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-const IdentifierImporter = (props) => (
-    <div orient="vertical">
+const IdentifierImporter = (props: any) => (
+    // TS gives an error about using orient here
+    // <div orient="vertical">
+    <div>
         <div id="identifier-importer-description">
             <label>
                 {props.getString('identifier-importer.description')}
             </label>
         </div>
         <div id="identifier-importer-textbox">
-            <textarea id="identifier-input" rows="5" autoFocus/>
+            <textarea id="identifier-input" rows={5} autoFocus/>
         </div>
         <div id="identifier-importer-buttons">
             <button onClick={props.onCancel}>

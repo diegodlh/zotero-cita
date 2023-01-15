@@ -1,16 +1,19 @@
 import Wikicite, { debug } from './wikicite';
 import Wikidata, { CitesWorkClaim } from './wikidata';
 import ItemWrapper from './itemWrapper';
+import SourceItemWrapper from './sourceItemWrapper';
 import Matcher from './matcher';
 import OCI from './oci';
 import Progress from './progress';
 
-/* global Services */
-/* global window */
-/* global Zotero */
+declare const Zotero: any;
 
 /** Class representing a citation */
 class Citation {
+    source: SourceItemWrapper;
+    target: ItemWrapper;
+    ocis: OCI[];
+
     /**
      * Create a citation.
      * @param {Object} citation - A Citation literal.
@@ -25,10 +28,14 @@ class Citation {
         {
             item,
             ocis,
-            zotero
+            zotero,
+        }: {
+            item: any,
+            ocis: string[],
+            zotero?: string,
         },
         // index,  // knowing the index in the citationList may be important
-        sourceItem  // should the parent CitationList (with its source item and methods to save) be passed instead?
+        sourceItem: SourceItemWrapper  // should the parent CitationList (with its source item and methods to save) be passed instead?
     ) {
         // Fixme: improve type checking of the citation object passed as argument
         if (!item || !ocis) {
@@ -77,7 +84,7 @@ class Citation {
         // I may limit author types to author and editor
     }
 
-    addOCI(oci) {
+    addOCI(oci: string) {
         const { citingId, citedId, idType, supplier } = OCI.parseOci(oci);
 
         // commented out because not really needed (yet) and was causing
@@ -91,7 +98,7 @@ class Citation {
         // recalculate OCI and compare against OCI given
         let newOci = '';
         try {
-            newOci = OCI.getOci(supplier, this.source[idType], this.target[idType]);
+            newOci = OCI.getOci(supplier.name, this.source[idType], this.target[idType]);
         } catch {
             //
         }
@@ -157,7 +164,11 @@ class Citation {
         return success;
     }
 
-    getOCI(supplier) {
+    getOCI(supplier: {
+        prefix: string;
+        name: string;
+        id: string;
+    }) {
         const ocis = this.ocis.filter((oci) => oci.supplier === supplier);
         if (ocis.length > 1) {
             throw new Error('Unexpected multiple OCIs for supplier ' + supplier);
@@ -165,7 +176,11 @@ class Citation {
         return ocis[0];
     }
 
-    removeOCI(supplier) {
+    removeOCI(supplier: {
+        prefix: string;
+        name: string;
+        id: string;
+    }) {
         this.ocis = this.ocis.filter((oci) => oci.supplier !== supplier);
     }
 
@@ -262,8 +277,6 @@ class Citation {
 
     // link the citation target item to an item in the zotero library
     linkToZoteroItem(item) {
-        const key = item.key;
-
         if (item === this.source.item) {
             Services.prompt.alert(
                 null,
