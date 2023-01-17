@@ -223,9 +223,10 @@ const zoteroOverlay = {
     },
 
     unload: function() {
-        var toolsPopup = document.getElementById('menu_ToolsPopup')
-        toolsPopup.removeEventListener('popupshowing',
-            zoteroOverlay.prefsSeparatorListener, false)
+        // This event listener is never added
+        // var toolsPopup = document.getElementById('menu_ToolsPopup')
+        // toolsPopup.removeEventListener('popupshowing',
+        //     zoteroOverlay.prefsSeparatorListener, false)
 
         document.getElementById('zotero-itemmenu').removeEventListener(
             'popupshowing', refreshItemSubmenu, false
@@ -290,7 +291,7 @@ const zoteroOverlay = {
                 
                 // Only add a citations tab if the PDF has a parent item to add citations to
                 if (Zotero.Items.get(reader.itemID).parentItem) {
-                    const pdfReaderTabbox = document.getElementById(`${ids[0]}-context`).querySelector(".zotero-view-tabbox")
+                    const pdfReaderTabbox = document.getElementById(`${ids[0]}-context`).querySelector(".zotero-view-tabbox") as HTMLElement;
                     // only add the citations pane and refresh listener to this tab if they aren't already
                     if (!pdfReaderTabbox.querySelector('#citations-pane')) {
                         zoteroOverlay.citationsPane(document, pdfReaderTabbox);
@@ -836,7 +837,7 @@ const zoteroOverlay = {
     },
 
     refreshCitationsPane: function(document: Document, target: any) {
-        let item: any, zoteroViewTabbox: HTMLElement, editPaneTabs: HTMLElement;
+        let item: any, zoteroViewTabbox: HTMLSelectElement, editPaneTabs: HTMLElement;
         // different ways of getting the selected item if we're in the library or PDF reader
         const selectedTab = Zotero_Tabs._tabs[Zotero_Tabs.selectedIndex];
         if (selectedTab.type == "library"){
@@ -844,7 +845,7 @@ const zoteroOverlay = {
             if (selectedItems.length == 1) {
                 item = selectedItems[0];
             }
-            zoteroViewTabbox = document.getElementById('zotero-view-tabbox');
+            zoteroViewTabbox = document.getElementById('zotero-view-tabbox') as HTMLSelectElement; // chose this type for compatibility with .selectedIndex below
             editPaneTabs = document.getElementById('zotero-editpane-tabs');
         }
         else if (selectedTab.type == "reader"){
@@ -882,8 +883,8 @@ const zoteroOverlay = {
         }
     },
 
-    _sourceItem: SourceItemWrapper = undefined,
-    _citationIndex: number = undefined,
+    // _sourceItem: SourceItemWrapper = undefined,
+    // _citationIndex: number = undefined,
     // Fixme: make zoteroOverlay a class and this a getter/setter property
     setSourceItem: function(sourceItem: SourceItemWrapper) {
         this._sourceItem = sourceItem;
