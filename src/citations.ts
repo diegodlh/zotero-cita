@@ -6,8 +6,7 @@ import OCI from './oci';
 import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
 
-/* global Services */
-/* global window */
+declare const Services: any;
 
 // Fixme: Consider moving these as static methods of the CitationList class
 // These are methods used to run batch actions on multiple items, where
@@ -16,6 +15,8 @@ import SourceItemWrapper from './sourceItemWrapper';
 // items with QID, it would be more efficient to call Wikidata once, than to
 // call it for each item.
 export default class {
+    static itemIds: {[key: string] : {source_ids: any[], target_ids: any}};
+
     static getFromCrossref(itemIDs) {
         // check which of the items provided have DOI
         // the zotero-citationcounts already calls crossref for citations. Check it
@@ -46,7 +47,7 @@ export default class {
             // if includingCitations=true, check citations as well
             const key = sourceItem.item.key;
             const sourceIds = []
-            itemIds[key] = {
+            this.itemIds[key] = {
                 source_ids: [],
                 target_ids: {}
             }
@@ -149,25 +150,26 @@ export default class {
         // in Wikidata
         const orphanedCitations = {};
 
-        const counters = {};
-        // local citation actions counters
-        counters.localAddCitations = 0;
-        counters.localFlagCitations = 0;
-        counters.localUnflagCitations = 0;
-        counters.localDeleteCitations = 0;
-
-        // remote citation actions counters
-        counters.remoteAddCitations = 0;
-
-        // special counters
-        counters.orphanedCitations = 0;
-
-        // citations which already have a Wikidata OCI
-        counters.syncedCitation = 0;
-        // citations for which their target item qids are unknown
-        counters.noQidCitations = 0;
-        // citations with an invalid Wikidata OCI
-        counters.invalidOci = 0;
+        const counters = {
+            // local citation actions counters
+            localAddCitations: 0,
+            localFlagCitations: 0,
+            localUnflagCitations: 0,
+            localDeleteCitations: 0,
+    
+            // remote citation actions counters
+            remoteAddCitations: 0,
+    
+            // special counters
+            orphanedCitations: 0,
+    
+            // citations which already have a Wikidata OCI
+            syncedCitations: 0,
+            // citations for which their target item qids are unknown
+            noQidCitations: 0,
+            // citations with an invalid Wikidata OCI
+            invalidOci: 0,
+        };
 
         const localItemsToUpdate = new Set();
         const remoteEntitiesToUpdate = new Set();
@@ -263,7 +265,7 @@ export default class {
 
         // Ask the user what to do with orphaned citations
         const orphanedActions = ['keep', 'remove', 'upload'];
-        const orphanedActionSelection = {}
+        const orphanedActionSelection: {value?: number} = {}
         if (counters.orphanedCitations) {
             const result = Services.prompt.select(
                 window,
@@ -365,7 +367,7 @@ export default class {
         if (counters.localAddCitations) {
             // create an array of QIDs whose metadata must be downloaded
             const downloadQids = Object.values(localAddCitations).reduce(
-                (qids, citedQids) => qids.concat(citedQids)
+                (qids: any, citedQids: any) => qids.concat(citedQids)
             );
 
             // download target items metadata
@@ -745,7 +747,7 @@ function composeConfirmation(
 
 // Compose information message about what failed when uploading
 // changes to Wikidata
-function composeUploadErrorMsg(results) {
+function composeUploadErrorMsg(results: {[key: string]: any}) {
     // compose an information message saying that something went wrong
     let uploadErrorMsg = Wikicite.getString(
         'wikicite.wikidata.upload.error.header'

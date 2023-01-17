@@ -3,14 +3,19 @@
 		"outDir": "./dist/",
 		"sourceMap": true,
 		"noImplicitAny": false,
-		"module": "es6",
-		"target": "es5",
+		"module": "commonjs",
+		"target": "es2017",
 		"jsx": "react",
 		"allowJs": true,
+		"downlevelIteration": true,
 		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
 	},
+	"include": [
+		"src/**/*",
+	],
 	"exclude": [
-		"./translators"
+		"translators",
+		"node_modules"
 	]
 }
