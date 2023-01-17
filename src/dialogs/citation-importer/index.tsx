@@ -2,8 +2,7 @@ import CitationImporter from './CitationImporter';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-/* global Components */
-/* global document, window */
+declare const Components: any;
 
 // import Services into the new window
 Components.utils.import("resource://gre/modules/Services.jsm");

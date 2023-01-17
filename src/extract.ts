@@ -1,7 +1,6 @@
 import Wikicite from './wikicite';
 
-/* global Services */
-/* global window */
+declare const Services: any;
 
 export default class Extraction{
 	static extract() {

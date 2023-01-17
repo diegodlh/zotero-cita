@@ -6,6 +6,7 @@ import Matcher from './matcher';
 import OCI from './oci';
 import Progress from './progress';
 
+declare const Services: any;
 declare const Zotero: any;
 
 /** Class representing a citation */
@@ -130,7 +131,9 @@ class Citation {
      */
     async deleteRemotely() {
         let success;
-        const wikidataOci = this.getOCI('wikidata')
+        // fix: what is this doing?
+        // const wikidataOci = this.getOCI('wikidata')
+        const wikidataOci = this.getOCI({prefix:'wikidata',name:'wikidata',id:'wikidata'})
         if (wikidataOci && wikidataOci.valid) {
             try {
                 // fetch cites work statements
