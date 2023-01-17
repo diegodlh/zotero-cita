@@ -4,10 +4,16 @@ import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
 import Wikicite from './wikicite';
 
-/* global Zotero ZoteroPane */
-/* global window */
+declare const Zotero: any;
+declare const ZoteroPane: any;
 
 export default class LCN{
+    items: any[];
+    itemMap: Map<any, any>;
+    inputKeys: string[];
+    libraryID: number;
+    progress: Progress;
+
     constructor(items) {
         if (!items.length) return;
         this.items = items;
@@ -35,9 +41,9 @@ export default class LCN{
         // Wrapping items (with citations) takes the most.
         // Using Promise.all hoping that it would wrap them in parallel
         // But there seems to be no difference.
-        const wrappedItems = await Promise.all(this.items.map(
+        const wrappedItems: SourceItemWrapper[] = await Promise.all(this.items.map(
             (item) => new Promise((resolve) => resolve(new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage'))))
-        ));
+        )) as SourceItemWrapper[];
         // const wrappedItems = this.items.map((item) => new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')));
         this.progress.updateLine('done');
 

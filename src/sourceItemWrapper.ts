@@ -10,13 +10,11 @@ import Progress from './progress';
 import Wikidata from './wikidata';
 // import { getExtraField } from './wikicite';
 
-/* global Components */
-/* global DOMParser */
-/* global Services */
-/* global Zotero */
-/* global Zotero_File_Exporter */
-/* global performance */
-/* global window */
+declare const Components: any;
+declare const DOMParser: any;
+declare const Services: any;
+declare const Zotero: any;
+declare const Zotero_File_Exporter: any;
 
 
 // replacer function for JSON.stringify
@@ -30,6 +28,9 @@ function replacer(key, value) {
 
 class SourceItemWrapper extends ItemWrapper {
     newRelations: any;
+    _citations: any[];
+    _batch: boolean;
+    _storage: string;
     // When I thought of this originally, I wasn't giving the source item to the citation creator
     // but then I understood it made sense I passed some reference to the source object
     // given that the citation is a link between two objects (according to the OC model)
@@ -46,6 +47,10 @@ class SourceItemWrapper extends ItemWrapper {
 
     get citations() {
         return this._citations;
+    }
+
+    get batch() {
+        return this._batch;
     }
 
     set citations(citations) {
@@ -445,7 +450,7 @@ class SourceItemWrapper extends ItemWrapper {
         }
     ) {
         const cleanPID = Wikicite.cleanPID(type, value);
-        let conflict = false;
+        let conflict = '';
         if (cleanPID) {
             const cleanCitingPID = this.getPID(type, true);
             if (cleanCitingPID === cleanPID) {
@@ -596,7 +601,7 @@ class SourceItemWrapper extends ItemWrapper {
         const args = {
             Wikicite: Wikicite
         };
-        const retVals = {};
+        const retVals: {text?: string, path?: string} = {};
         window.openDialog(
             'chrome://cita/content/citationImporter.xul',
             '',
@@ -715,7 +720,7 @@ class SourceItemWrapper extends ItemWrapper {
         const args = {
             Wikicite: Wikicite
         };
-        const retVals = {};
+        const retVals: {text?: string} = {};
         window.openDialog(
             'chrome://cita/content/identifierImporter.xul',
             '',

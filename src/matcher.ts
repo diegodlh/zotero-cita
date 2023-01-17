@@ -1,15 +1,26 @@
 import Wikicite, { debug } from './wikicite';
 
-/* global Zotero */
+declare const Zotero: any;
 
 // Widely based on Zotero.Duplicates._findDuplicates
 export default class Matcher {
+    _libraryID: number;
+    _scopeIDs: any;
+    _isbnCache: any;
+    _isbnMap: any;
+    _doiCache: any;
+    _doiMap: any;
+    _qidCache: any;
+    _qidMap: any;
+    _titleMap: any;
+    _creatorsCache: any;
+    _yearCache: any;
     /**
      * Create a Matcher
      * @param {Number} libraryID Target library ID
      * @param {Array} [scopeIDs] Array of item IDs to limit matches to
      */
-    constructor(libraryID, scopeIDs) {
+    constructor(libraryID, scopeIDs?) {
         if (!Zotero.Libraries.exists(libraryID)) {
             throw new Error('Invalid library ID');
         }
@@ -36,6 +47,10 @@ export default class Matcher {
             `for ${Object.keys(this._yearCache).length} items`
         );
     }
+    // fix: disabled this
+    // _yearCache(_yearCache: any) {
+    //     throw new Error('Method not implemented.');
+    // }
 
     findMatches(item) {
         if (
