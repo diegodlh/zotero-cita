@@ -4,10 +4,9 @@ import WBK from 'wikibase-sdk';
 import qs2wbEdit from 'quickstatements-to-wikibase-edit';
 import wbEdit from 'wikibase-edit';
 
-/* global Components */
-/* global Services */
-/* global Zotero */
-/* global window */
+declare const Components: any;
+declare const Services: any;
+declare const Zotero: any;
 
 const wbSdkVersion = require('wikibase-sdk/package.json').version;
 const wbEditVersion = require('wikibase-edit/package.json').version;
@@ -56,6 +55,8 @@ const wdEdit = wbEdit({
 });
 
 export default class {
+    wdk: any;
+
     constructor() {
         this.wdk = WBK({
             instance: WBK_INSTANCE,
@@ -85,7 +86,7 @@ export default class {
         }
         const typeMapping = await getTypeMapping();
         // create item -> qid map that will be returned at the end
-        const qids = new Map(items.map((item) => [item, item.qid]));
+        const qids: Map<any, string> = new Map(items.map((item) => [item, item.qid]));
         // iterate over the items to create the qXX query objects
         const queries = {};
         for (let i=0; i<items.length; i++) {
@@ -212,7 +213,7 @@ export default class {
                     result.sort((a, b) => b.score - a.score);
                     response[queryId] = { result };
                 }
-                if (Object.values(response).some((query) => query.result.length)) {
+                if (Object.values(response).some((query: any) => query.result.length)) {
                     // query batch succeeded and at least one query returned results
                     progress.updateLine(
                         'done',
@@ -261,7 +262,7 @@ export default class {
                     return;
                 }
                 const item = items[parseInt(queryID.slice(1), 10)];
-                const candidates = query.result;
+                const candidates = (query as any).result;
                 const match = candidates.filter((candidate) => candidate.match)[0];
                 if (match) {
                     qids.set(item, match.id);
@@ -289,7 +290,7 @@ export default class {
                             }
                         )
                     ]
-                    const selection = {};
+                    const selection: any = {};
                     const select = Services.prompt.select(
                         window,
                         Wikicite.getString('wikicite.wikidata.reconcile.approx.title'),
@@ -637,7 +638,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                         const requestConfig = {
                             anonymous: login.anonymous,
                             credentials: login.credentials,
-                            userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
+                            userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`,
+                            summary: ''
                         };
                         resetCookies();
                         try {
@@ -997,6 +999,12 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 
 // error to be displayed at top, explains why you need to log in
 class Login {
+    cancelled: any;
+    anonymous: any;
+    error: boolean;
+    username: any;
+    password: any;
+    save: boolean;
     constructor() {
         this.error = false;
     }
@@ -1011,29 +1019,30 @@ class Login {
         return credentials;
     }
 
-    onError(error) {
+    onError(error: Error) {
         this.error = false;
         if (error.name == 'badtoken') {
             if (this.anonymous) {
                 // See https://github.com/maxlath/wikibase-edit/issues/63
-                this.error = 'unsupportedAnonymous';
+                // fix: not sure if this should be bool or string?
+                this.error = true; //'unsupportedAnonymous';
             } else {
                 debug(
                     'Unexpected login error',
                     error
                 )
-                this.error = 'unknown';
+                this.error = true; // = 'unknown';
             }
         } else if (error.message.split(':')[0] == 'failed to login') {
             const reason = error.message.split(':')[1].trim();
             if (reason === 'invalid username/password') {
-                this.error = 'wrongCredentials';
+                this.error = true; // = 'wrongCredentials';
             } else {
                 debug(
                     'Unexpected login error',
                     error
                 );
-                this.error = 'unknown';
+                this.error = true; // = 'unknown';
             }
         }
         // I don't want permissiondenied errors to be treated as
@@ -1169,7 +1178,11 @@ function resetCookies() {
 
 export class CitesWorkClaim {
     remove: boolean;
-    constructor(citesWorkClaimValue={}) {
+    id: any;
+    value: any;
+    references: any;
+    qualifiers: any;
+    constructor(citesWorkClaimValue:{[key: string]: any}={}) {
         this.id = citesWorkClaimValue.id;
         this.value = citesWorkClaimValue.value;
         this.references = citesWorkClaimValue.references;

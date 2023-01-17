@@ -1,6 +1,6 @@
 import Wikicite from './wikicite';
 
-/* global Zotero */
+declare const Zotero: any;
 
 const icons = new Map([
     ['loading', 'chrome://zotero/skin/arrow_refresh.png'],
@@ -10,7 +10,9 @@ const icons = new Map([
 const delay = 3000;
 
 export default class Progress{
-    constructor(...args) {
+    progressWin: any;
+    progress: any[];
+    constructor(status?: string, message?: string) {
         // Fixme: there seems to be a bug with Zotero.ProgressWindow if
         // closeOnClick=false. Apparently, if one does click on the little
         // window while the close timer is running, then the window never
@@ -23,12 +25,12 @@ export default class Progress{
         );
         this.progressWin.show();
         this.progress = [];
-        if (args.length) {
-            this.newLine(...args);
+        if (status || message) {
+            this.newLine(status, message);
         }
     }
 
-    newLine(status, message) {
+    newLine(status?: string, message?: string) {
         const progress = new this.progressWin.ItemProgress(
             icons.get(status),
             message
@@ -40,7 +42,7 @@ export default class Progress{
         this.progress.push(progress);
     }
 
-    updateLine(status, message) {
+    updateLine(status?: string, message?: string) {
         const progress = this.progress.slice(-1)[0];
         if (status === 'error') {
             progress.setError();
