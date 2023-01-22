@@ -12,7 +12,6 @@ import SourceItemWrapper from './sourceItemWrapper';
 import WikiciteChrome from './wikiciteChrome';
 import Wikidata from './wikidata';
 import wikicite from './wikicite';
-import wikidata from './wikidata';
 
 const TRANSLATORS_PATH = 'chrome://cita/content/translators/'
 const TRANSLATOR_LABELS = [
