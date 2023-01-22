@@ -12,6 +12,7 @@ import SourceItemWrapper from './sourceItemWrapper';
 import WikiciteChrome from './wikiciteChrome';
 import Wikidata from './wikidata';
 import wikicite from './wikicite';
+import wikidata from './wikidata';
 
 const TRANSLATORS_PATH = 'chrome://cita/content/translators/'
 const TRANSLATOR_LABELS = [
@@ -398,6 +399,29 @@ const zoteroOverlay = {
         for (const item of items) {
             const qid = qidMap.get(item);
             if (qid) item.qid = qid;
+        }
+    },
+
+    /**
+     * Set the URL value of a Zotero item with the value of it's P953 wikidata element statement 
+     */
+    fetchOpenAccessUrls: async function(menuName) {
+        const items = await this.getSelectedItems(menuName);
+
+        for (const item of items) {
+            // get the QID of the item
+            const qid = item.getPID('QID');
+
+            debug('QID : ' + qid);
+
+            // fetch the value of the P953 of the element
+            const OpenAccessUrl = await Wikidata.getProperties(qid, 'openAccessUrl');
+            
+            debug('Open Access URL fetched as : ' + JSON.stringify(OpenAccessUrl));
+            // debug ex: Open Access URL fetched as : {"Q115183044":{"openAccessUrl":[]}}
+
+            // for each targetItem set the url field with the new Open Access url
+            item.setPID('url', OpenAccessUrl);
         }
     },
 
@@ -1057,6 +1081,7 @@ const zoteroOverlay = {
     createMenuItems: function(menuName, menuPopup, IDPrefix, elementsAreRoot, doc) {
         const menuFunctions = [
             'fetchQIDs',
+            'fetchOpenAccessUrls',
             'syncWithWikidata',
             'getFromCrossref',
             'getFromOCC',

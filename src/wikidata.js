@@ -36,7 +36,8 @@ const properties = {
     'publicationDate': 'P577',
     'statedIn': 'P248',
     'refUrl': 'P854',
-    'citoIntention': 'P3712'
+    'citoIntention': 'P3712',
+    'openAccessUrl': 'P953'
 };
 
 // Fixme: have it as a global variable like this,
