@@ -413,11 +413,13 @@ const zoteroOverlay = {
 
             debug('QID : ' + qid);
 
-            // fetch the value of the P953 of the element
-            const OpenAccessUrl = await Wikidata.getProperties(qid, 'openAccessUrl');
-            
-            debug('Open Access URL fetched as : ' + JSON.stringify(OpenAccessUrl));
-            // debug ex: Open Access URL fetched as : {"Q115183044":{"openAccessUrl":[]}}
+            // fetch the value of the P953 of the element via the Hub
+            const OpenAccessUrl = await Zotero.HTTP.request(
+                'GET',
+                'https://hub.toolforge.org/' + qid + '?property=P953'
+            );
+
+            debug('Open Access URL fetched as : ' + OpenAccessUrl);
 
             // for each targetItem set the url field with the new Open Access url
             item.setPID('url', OpenAccessUrl);
