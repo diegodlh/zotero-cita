@@ -39,6 +39,35 @@ const properties = {
     'citoIntention': 'P3712'
 };
 
+// variable to match citation intentions from the CiTO with their corresponding wikidata element
+export const cito = {
+    'citesAsAuthority':	'Q96479983',
+    'usesMethodIn':	'Q96472102',
+    'discusses':	'Q96471822',
+    'usesDataFrom':	'Q101149476',
+    'extends':	'Q96472100',
+    'citesAsDataSource':	'Q96471820',
+    'citesForInformation':	'Q96479970',
+    'agreesWith':	'Q96604140',
+    'obtainsBackgroundFrom':	'Q96480394',
+    'updates':	'Q96473628',
+    'refutes':	'Q107710355',
+    'supports':	'Q110977857',
+    'citesAsRecommendedReading':	'Q111736358',
+    'citesAsPotentialSolution':	'Q105780079',
+    'confirms':	'Q96480427',
+    'critiques':	'Q105624924',
+    'citesAsEvidence':	'Q111736347',
+    'repliesTo':	'Q107438271',
+    'containsAssertionFrom':	'Q111736383',
+    'providesMethodFor':	'Q116297119',
+    'sharesAuthorWith':	'Q116297154',
+    'retracts':	'Q111329371',
+    'citesAsSourceDocument':	'Q111736247',
+    'corrects':	'Q111330212',
+    'obtainsSupportFrom':	'Q115470993'
+}
+
 // Fixme: have it as a global variable like this,
 // or as an instance variable like below? Pros and cons of each?
 // This isn't redeclared each time the module is imported, is it?
