@@ -4,6 +4,8 @@ import React, {
 } from 'react';
 import PIDRow from '../../components/pidRow';
 import PropTypes from 'prop-types';
+import { cito } from '../../wikidata.js';
+import Wikicite, { debug } from '../../wikicite.js';
 
 /* global Zotero */
 
@@ -96,6 +98,12 @@ const CitationEditor = (props) => {
                     />
                 )
             }
+            <label htmlFor="dropdown-menu">{Wikicite.getString('wikicite.editor.cito-label-field')} </label>
+            <select multiple={true} >
+              {Object.keys(cito).map(key => (
+                <option key={key} value={cito[key]}>{Wikicite.getString('wikicite.cito.' + key)}</option>
+              ))}
+            </select>
             </ul>
             <div id="citation-editor-buttons">
                 <button onClick={props.onCancel}>
