@@ -20,7 +20,8 @@ const visibleBaseFieldNames = [
 // such as label of the source item, OCIs, and Zotero link status
 const CitationEditor = (props) => {
     const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
-
+    const [intentions, setIntentions] = useState(Wikicite.getExtraField(props.item.item, 'CITO').values);
+    
     useEffect(() => {
         // const addCreatorRow = props.itemBox.addCreatorRow.bind(props.itemBox);
         // props.itemBox.addCreatorRow = function(creatorData, creatorTypeIDOrName, unsaved, defaultRow) {
@@ -83,6 +84,9 @@ const CitationEditor = (props) => {
         .concat(['dateAdded', 'dateModified']);
     }
 
+    // setCitoFields() is a function to update the extra fields of the citation element with the selected intentions
+
+
     return(
         <div orient="vertical">
             <ul className="pid-list">
@@ -99,9 +103,13 @@ const CitationEditor = (props) => {
                 )
             }
             <label htmlFor="dropdown-menu">{Wikicite.getString('wikicite.editor.cito-label-field')} </label>
-            <select multiple={true} >
+            <select multiple={true} value={intentions} onChange={(event) => {
+              const selectedKeys = Array.from(event.target.selectedOptions, option => option.value);
+              Wikicite.setExtraField(props.item.item, 'CITO', selectedKeys);
+              setIntentions(selectedKeys);
+            }}>
               {Object.keys(cito).map(key => (
-                <option key={key} value={cito[key]}>{Wikicite.getString('wikicite.cito.' + key)}</option>
+                <option key={key} value={key}>{Wikicite.getString('wikicite.cito.' + key)}</option>
               ))}
             </select>
             </ul>
