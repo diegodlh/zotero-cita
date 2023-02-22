@@ -84,9 +84,6 @@ const CitationEditor = (props) => {
         .concat(['dateAdded', 'dateModified']);
     }
 
-    // setCitoFields() is a function to update the extra fields of the citation element with the selected intentions
-
-
     return(
         <div orient="vertical">
             <ul className="pid-list">
