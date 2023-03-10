@@ -1205,13 +1205,13 @@ export class CitesWorkClaim {
         this.remove = false;
     }
 
-    // get intentions() {
-    //     return this.qualifiers[properties.citoIntention];
-    // }
+    get intentions() {
+        return this.qualifiers[properties.citoIntention];
+    }
 
-    // set intentions(intentionQualifiers) {
-    //     this.qualifiers[properties.citoIntention] = intentionQualifiers;
-    // }
+    set intentions(intentionQualifiers) {
+        this.qualifiers[properties.citoIntention] = intentionQualifiers;
+    }
 
     // addReference() {}
 
