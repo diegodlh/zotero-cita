@@ -261,7 +261,7 @@ export default class {
                             counters.orphanedCitations += 1;
                         } else {
                             // the citation doesn't have a Wikidata OCI yet
-                            if (remoteAddCitations[itemId].includes(localCitation)) {
+                            if (remoteAddCitations[itemId].includes(localCitation.value)) {
                                 // in case of duplicate local citations
                                 // do not add "cites work" statement remotely twice
                                 debug(
