@@ -1,4 +1,4 @@
-import Wikidata, { CitesWorkClaim } from './wikidata';
+import Wikidata, { CitesWorkClaim, cito } from './wikidata';
 import Wikicite, { debug } from './wikicite';
 import Citation from './citation';
 import Matcher from './matcher';
@@ -182,15 +182,35 @@ export default class {
             localDeleteCitations[itemId] = [];
             remoteAddCitations[itemId] = [];
             orphanedCitations[itemId] = [];
-
+       
+            let remoteCitations = new Set();
+            remoteCitations = pulledCitesWorkClaims[sourceItem.qid].map(
+                (claim) => new CitesWorkClaim(claim)
+            );
+            // make an array of remote citation's QIDs for comparaison
             const remoteCitedQids = pulledCitesWorkClaims[sourceItem.qid].map(
                 (claim) => claim.value
             );
-
+            
             let localCitedQids = new Set();
+            let localCitations = new Set();
             // first iterate over local citations
             for (const citation of sourceItem.citations) {
-                const localCitedQid = citation.target.qid;
+
+                // translate the citation's intentions from text to QIDs 
+                const translatedTargetIntentions = []; 
+                const targetIntentions = citation.target.intentions;
+                for (const targetIntention of targetIntentions) {
+                    translatedTargetIntentions.push(cito[targetIntention]);
+                }
+
+                let localCitation = new CitesWorkClaim({
+                    value : citation.target.qid,
+                    qualifiers : {
+                        "P3712" : translatedTargetIntentions
+                    }
+                });
+
                 const wikidataOci = citation.getOCI('wikidata');
                 // First check if the citation has an invalid wikidata oci.
                 // These citations will be ignored (i.e., they won't be
@@ -207,19 +227,28 @@ export default class {
                     // add the invalid oci's target qid to the array of local cited qids
                     // because we don't want to create a new local citation for this
                     // target item
-                    localCitedQids.add(wikidataOci.citedId);
+                    localCitations.add(new CitesWorkClaim({ value : wikidataOci.CitedId }));
                     continue;
                 }
-                if (localCitedQid) {
-                    localCitedQids.add(localCitedQid);
-                    if (remoteCitedQids.includes(localCitedQid)) {
+                if (localCitation.value) {
+                    localCitations.add(localCitation);
+                    // save local citation's QIDs in a set for later comparaison
+                    localCitedQids.add(localCitation.value);
+
+                    if (remoteCitedQids.includes(localCitation.value)) {
                         // the citation exists in Wikidata as well
                         if (wikidataOci) {
                             // the citation already has a valid up-to-date wikidata oci
+
+                            // !!!
+                            // if the citation intentions aren't the same between remote and local,
+                            // then re-upload the whole citation via remoteAddCitations
+                            // else -> counters.syncedCitations +=1;
+
                             counters.syncedCitations += 1;
                         } else {
                             // the citation doesn't have a wikidata oci yet
-                            localFlagCitations[itemId].push(localCitedQid);
+                            localFlagCitations[itemId].push(localCitation);
                             counters.localFlagCitations += 1;
                             localItemsToUpdate.add(itemId);
                         }
@@ -228,19 +257,19 @@ export default class {
                         if (wikidataOci) {
                             // the citation has a valid Wikidata oci
                             // hence, it existed in Wikidata before
-                            orphanedCitations[itemId].push(localCitedQid);
+                            orphanedCitations[itemId].push(localCitation);
                             counters.orphanedCitations += 1;
                         } else {
                             // the citation doesn't have a Wikidata OCI yet
-                            if (remoteAddCitations[itemId].includes(localCitedQid)) {
+                            if (remoteAddCitations[itemId].includes(localCitation)) {
                                 // in case of duplicate local citations
                                 // do not add "cites work" statement remotely twice
                                 debug(
                                     'Will not create duplicate "cites work" statement for ' +
-                                    localCitedQid
+                                    localCitation.value
                                 );
                             } else {
-                                remoteAddCitations[itemId].push(localCitedQid);
+                                remoteAddCitations[itemId].push(localCitation);
                                 counters.remoteAddCitations += 1;
                                 remoteEntitiesToUpdate.add(sourceItem.qid);
                             }
@@ -252,12 +281,18 @@ export default class {
                 }
             }
             // then iterate over remote Wikidata citations
-            for (const remoteCitedQid of remoteCitedQids) {
-                if (!localCitedQids.has(remoteCitedQid)) {
-                    localAddCitations[itemId].push(remoteCitedQid);
+            for (const remoteCitation of remoteCitations) {
+                if (!localCitedQids.has(remoteCitation.value)) {
+                    localAddCitations[itemId].push(remoteCitation);
                     counters.localAddCitations += 1;
                     localItemsToUpdate.add(itemId);
                 }
+
+                // !!!
+                // elif the citation intentions aren't the same between remote and local,
+                // then -> re-add citation intentions to the local citation via remoteAddCitations ?
+                // Or a new action array called remoteModifiedCitations ?
+                // else do nothing
             }
         }
 
@@ -364,9 +399,12 @@ export default class {
         let targetItems;
         if (counters.localAddCitations) {
             // create an array of QIDs whose metadata must be downloaded
-            const downloadQids = Object.values(localAddCitations).reduce(
-                (qids, citedQids) => qids.concat(citedQids)
-            );
+            const downloadQids = [];
+            for (const itemKey of Object.keys(localAddCitations)) {
+                for (const citation of localAddCitations[itemKey]) {
+                    downloadQids.push(citation.value);
+                }
+            }
 
             // download target items metadata
             progress.newLine(
@@ -408,10 +446,7 @@ export default class {
                     // item not in the list of items to update; skip
                     continue;
                 }
-                const newCitesWorkClaims = remoteAddCitations[sourceItem.item.id].map(
-                    (targetQid) => new CitesWorkClaim({ value: targetQid })
-                )
-                pushCitesWorkClaims[sourceItem.qid] = newCitesWorkClaims;
+                pushCitesWorkClaims[sourceItem.qid] = remoteAddCitations[sourceItem.item.id];
             }
             // Fixme: in the future, support editing cites work claims as well;
             // for example, to add references or qualifiers
@@ -427,11 +462,11 @@ export default class {
                     // and uploads where succesful
                     // flag citations immediately as available in Wikidata
                     sourceItem.startBatch();
-                    for (const targetQid of remoteAddCitations[itemId]) {
-                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
+                    for (const targetCitation of remoteAddCitations[itemId]) {
+                        const { citations } = sourceItem.getCitations(targetCitation.value, 'qid');
                         for (const citation of citations) {
                             citation.addOCI(
-                                OCI.getOci('wikidata', sourceItem.qid, targetQid)
+                                OCI.getOci('wikidata', sourceItem.qid, targetCitation.value)
                             );
                         }
                     }
@@ -519,10 +554,10 @@ export default class {
                         await matchers[libraryID].init();
                     }
                     const newCitations = [];
-                    for (const targetQid of addCitations) {
-                        const targetItem = targetItems.get(targetQid);
+                    for (const targetCitation of addCitations) {
+                        const targetItem = targetItems.get(targetCitation.value);
                         if (targetItem) {
-                            const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
+                            const oci = OCI.getOci('wikidata', sourceItem.qid, targetCitation.value);
                             const citation = new Citation(
                                 {
                                     item: targetItem,
@@ -531,6 +566,20 @@ export default class {
                                 sourceItem
                             );
                             citation.autoLink(matchers[libraryID]);
+                            
+                            // add the intentions of the citations to add
+                            const intentions = targetCitation.intentions;
+                            if (intentions) {
+                                // if there is intentions
+                                const translatedIntentions = [];
+                                for (const intention of intentions) {
+                                    // for every intention QIDs, find its corresponding key in the cito variable
+                                    const [translatedIntention = null] = Object.entries(cito).find(([k, v]) => v === intention) || [];
+                                    translatedIntentions.push(translatedIntention);
+                                }
+                                citation.target.intentions = translatedIntentions;
+                            }
+
                             newCitations.push(citation)
                         } else {
                             // targetQid won't be found in targetItems map
@@ -551,16 +600,16 @@ export default class {
                 // citations to flag
                 const flagCitations = localFlagCitations[sourceItem.item.id];
                 if (flagCitations.length) {
-                    for (const targetQid of flagCitations) {
-                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
+                    for (const targetCitation of flagCitations) {
+                        const { citations } = sourceItem.getCitations(targetCitation.value, 'qid');
                         if (citations.length) {
                             for (const citation of citations) {
                                 citation.addOCI(
-                                    OCI.getOci('wikidata', sourceItem.qid, targetQid)
+                                    OCI.getOci('wikidata', sourceItem.qid, targetCitation.value)
                                 );
                             }
                         } else {
-                            debug('No matching citations for QID ' + targetQid);
+                            debug('No matching citations for QID ' + targetCitation.value);
                         }
                     }
                 }
@@ -568,14 +617,14 @@ export default class {
                 // citations to unflag
                 const unflagCitations = localUnflagCitations[sourceItem.item.id];
                 if (unflagCitations.length) {
-                    for (const targetQid of unflagCitations) {
-                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
+                    for (const targetCitation of unflagCitations) {
+                        const { citations } = sourceItem.getCitations(targetCitation.value, 'qid');
                         if (citations.length) {
                             for (const citation of citations) {
                                 citation.removeOCI('wikidata');
                             }
                         } else {
-                            throw new Error('No matching citations for QID ' + targetQid);
+                            throw new Error('No matching citations for QID ' + targetCitation.value);
                         }
                     }
                 }
@@ -583,14 +632,14 @@ export default class {
                 // citations to delete
                 const deleteCitations = localDeleteCitations[sourceItem.item.id];
                 if (deleteCitations.length) {
-                    for (const targetQid of deleteCitations) {
-                        const { indices } = sourceItem.getCitations(targetQid, 'qid');
+                    for (const targetCitation of deleteCitations) {
+                        const { indices } = sourceItem.getCitations(targetCitation.value, 'qid');
                         if (indices.length) {
                             for (const index of indices) {
                                 sourceItem.deleteCitation(index);
                             }
                         } else {
-                                throw new Error('No matching citations for QID ' + targetQid);
+                                throw new Error('No matching citations for QID ' + targetCitation.value);
                         }
                     }
                 }
