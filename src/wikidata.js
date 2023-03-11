@@ -979,6 +979,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
                 };
 
+                debug('id : ' + id);
+                debug('citesWorkClaims : ' + JSON.stringify(citesWorkClaims[id]));
                 try {
                     resetCookies();
                     const res = await wdEdit.entity.edit(
@@ -1211,6 +1213,35 @@ export class CitesWorkClaim {
 
     set intentions(intentionQualifiers) {
         this.qualifiers[properties.citoIntention] = intentionQualifiers;
+    }
+
+    /**
+     * Compares the intentions of two CitesWorkClaim object and returns a boolean whether they are the same or not
+     * @param {Object} [citation] Initialized CitesWorkClaim object with intentions set
+     */
+    compareIntentions(citation) {
+
+        if (this.intentions && !citation.intentions) {
+            return false;
+        }
+        if (!this.intentions && citation.intentions){
+            return false;
+        }
+
+        const AIntentions = this.intentions;
+        const BIntentions = citation.intentions;
+        
+        for (const AIntention of AIntentions) {
+            if (!BIntentions.includes(AIntention)) {
+                return false;
+            }
+        }
+        for (const BIntention of BIntentions) {
+            if (!AIntentions.includes(BIntention)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // addReference() {}

@@ -144,6 +144,10 @@ function CitationsBox(props) {
         }
         citation.target.item = item;
 
+        // if the user as saved, expect the citation to be modified
+        // so unflag it to be handled as such on next sync with wikidata
+        citation.removeOCI('wikidata');
+
         const newCitations = props.sourceItem.citations;
         newCitations[index] = citation;
         props.sourceItem.citations = newCitations;
