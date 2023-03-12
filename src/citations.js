@@ -213,7 +213,7 @@ export default class {
                 let localCitation = new CitesWorkClaim({
                     value : citation.target.qid,
                     qualifiers : {
-                        "P3712" : translatedTargetIntentions
+                        P3712: translatedTargetIntentions
                     }
                 });
                 let remoteCitation;
@@ -251,10 +251,6 @@ export default class {
                         // the citation exists in Wikidata as well
                         if (wikidataOci) {
                             // the citation already has a valid up-to-date wikidata oci
-                            debug('compare with OCI : ' + localCitations.size);
-                            debug('remoteCitation : ' + JSON.stringify(remoteCitation));
-                            debug('localCitation : ' + JSON.stringify(localCitation));
-                            debug('compareIntentions output : ' + remoteCitation.compareIntentions(localCitation));
                             if (!remoteCitation.compareIntentions(localCitation)) {
                                 // the local and remote citation's itentions are not the same
                                 // hence, the intentions has been modified in wikidata
@@ -267,18 +263,19 @@ export default class {
                             }
                         } else {
                             // the citation doesn't have a wikidata oci yet
-                            debug('compare without OCI : ' + localCitations.size);
-                            debug('remoteCitation : ' + JSON.stringify(remoteCitation));
-                            debug('localCitation : ' + JSON.stringify(localCitation));
-                            debug('compareIntentions output : ' + remoteCitation.compareIntentions(localCitation));
                             if (!remoteCitation.compareIntentions(localCitation)) {
                                 // the local and remote citation's itentions are not the same
                                 // hence, it has been modified locally by the user
-                                debug('localCitation.id : ' + localCitation.id);
-                                debug('remoteCitation.id : ' + remoteCitation.id);
+
+                                // set the guid to update the claim
                                 localCitation.id = remoteCitation.id;
-                                debug('localCitation.id : ' + localCitation.id);
-                                debug('localCitation : ' + JSON.stringify(localCitation));
+                                // implement the references and qualifiers from
+                                // the existing claim to not remove them on wikidata
+                                localCitation.references = remoteCitation.references;
+                                if (remoteCitation.qualifiers["P1545"]) {
+                                    localCitation.qualifiers["P1545"] = remoteCitation.qualifiers["P1545"];
+                                }
+
                                 remoteModifyCitations[itemId].push(localCitation)
                                 counters.remoteModifyCitations += 1;
                                 remoteEntitiesToUpdate.add(sourceItem.qid);
@@ -477,26 +474,20 @@ export default class {
                     // item not in the list of items to update; skip
                     continue;
                 }
-                debug('remoteAddCitations : ' + JSON.stringify(remoteAddCitations));
-                debug('remoteModifyCitations : ' + JSON.stringify(remoteModifyCitations));
+
+                // this is a workaround to correctly format the request to the API
                 if (remoteAddCitations[sourceItem.item.id].length && remoteModifyCitations[sourceItem.item.id].length) {
-                    debug('remoteAddCitations && remoteModifyCitations is true !');
                     pushCitesWorkClaims[sourceItem.qid] = remoteAddCitations[sourceItem.item.id];
                     pushCitesWorkClaims[sourceItem.qid].push(remoteModifyCitations[sourceItem.item.id]);
                 } else if (remoteAddCitations[sourceItem.item.id].length) {
-                    debug('remoteAddCitations = ...');
                     pushCitesWorkClaims[sourceItem.qid] = remoteAddCitations[sourceItem.item.id];
                 } else if (remoteModifyCitations[sourceItem.item.id].length) {
-                    debug('remoteModifyCitations = ...');
                     pushCitesWorkClaims[sourceItem.qid] = remoteModifyCitations[sourceItem.item.id];
                 }
-                debug('pushCitesWorkClaims : ' + JSON.stringify(pushCitesWorkClaims));
             }
             // Fixme: in the future, support editing cites work claims as well;
             // for example, to add references or qualifiers
             const results = await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
-
-            debug('results : ' + JSON.stringify(results));
             
             // After Wikidata edits have been submitted,
             // iterate through source items again,
@@ -508,7 +499,7 @@ export default class {
                     // and uploads where succesful
                     // flag citations immediately as available in Wikidata
                     sourceItem.startBatch();
-                    for (const targetCitation of remoteAddCitations[itemId]) {
+                    for (const targetCitation of remoteAddCitations[itemId].concat(remoteModifyCitations[itemId])) {
                         const { citations } = sourceItem.getCitations(targetCitation.value, 'qid');
                         for (const citation of citations) {
                             citation.addOCI(

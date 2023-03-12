@@ -978,9 +978,6 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     credentials: login.credentials,
                     userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
                 };
-
-                debug('id : ' + id);
-                debug('citesWorkClaims : ' + JSON.stringify(citesWorkClaims[id]));
                 try {
                     resetCookies();
                     const res = await wdEdit.entity.edit(
