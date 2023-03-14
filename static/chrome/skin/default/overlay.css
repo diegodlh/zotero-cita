@@ -31,8 +31,6 @@
 	 margin-right: 5px;
 }
  .citations-box ul.citations-box-list {
-	 display: flex;
-	 flex-wrap: wrap;
 	 list-style: none;
 	 padding: 2px 0 0;
 	 overflow-y: auto;
@@ -52,11 +50,9 @@
  	filter: grayscale(100%) opacity(50%);
  }
  .citations-box .editable-container {
-	 display: flex;
 	 flex-grow: 1;
 	 margin: 0 2px;
 	 width: 282px;
-	 overflow: hidden;
 }
  .citations-box ul.citations-box-list > li .editable-container {
 	 padding: 0 1px;
