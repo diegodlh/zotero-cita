@@ -267,9 +267,11 @@ function CitationsBox(props) {
                             {label}
                         </div>
                         <div className="intentions">
+                            <ul>
                             {intentions.map((intention) =>
-                                Wikicite.getString('wikicite.cito.' + intention)
+                                <li>{Wikicite.getString('wikicite.cito.' + intention)}</li>
                             )}
+                            </ul>
                         </div>
                     </div>
                 </div>

@@ -61,10 +61,6 @@
  .citations-box ul.citations-box-list > li .editable-container {
 	 padding: 0 1px;
 }
- .citations-box ul.citations-box-list > li .editable-container .intentions > li * {
-	 justify-content: center;
-	 margin: 0px 5px 5px 0px;
- }
  .citations-box input.editable-control {
 	 width: 100px;
 	 font-family: inherit;
