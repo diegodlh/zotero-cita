@@ -23,7 +23,7 @@ const entities = {
     'work': 'Q386724'
 }
 
-const properties = {
+export const properties = {
     'author': 'P50',
     'authorNameString': 'P2093',
     'citesWork': 'P2860',
