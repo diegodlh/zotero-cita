@@ -31,16 +31,15 @@
 	 margin-right: 5px;
 }
  .citations-box ul.citations-box-list {
+	 display: flex;
+	 flex-wrap: wrap;
 	 list-style: none;
-	 margin: 0;
 	 padding: 2px 0 0;
 	 overflow-y: auto;
 }
  .citations-box ul.citations-box-list > li {
 	 display: flex;
 	 margin: 3px 6px;
-	 align-items: center;
-	 height: 1.5em;
 }
  .citations-box ul.citations-box-list > li button {
 	 border: 0;
@@ -53,13 +52,19 @@
  	filter: grayscale(100%) opacity(50%);
  }
  .citations-box .editable-container {
+	 display: flex;
 	 flex-grow: 1;
 	 margin: 0 2px;
 	 width: 282px;
+	 overflow: hidden;
 }
  .citations-box ul.citations-box-list > li .editable-container {
 	 padding: 0 1px;
 }
+ .citations-box ul.citations-box-list > li .editable-container .intentions > li * {
+	 justify-content: center;
+	 margin: 0px 5px 5px 0px;
+ }
  .citations-box input.editable-control {
 	 width: 100px;
 	 font-family: inherit;

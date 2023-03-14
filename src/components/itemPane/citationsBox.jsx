@@ -244,6 +244,7 @@ function CitationsBox(props) {
         const isLastCitation = index === citations.length - 1;
 
         const label = citation.target.getLabel();
+        const intentions = citation.target.intentions;
         return (
             <li
                 className="citation"
@@ -264,6 +265,11 @@ function CitationsBox(props) {
                     >
                         <div className="zotero-clicky editable-content">
                             {label}
+                        </div>
+                        <div className="intentions">
+                            {intentions.map((intention) =>
+                                Wikicite.getString('wikicite.cito.' + intention)
+                            )}
                         </div>
                     </div>
                 </div>
