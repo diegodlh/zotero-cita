@@ -1,4 +1,4 @@
-import Wikidata, { CitesWorkClaim, cito } from './wikidata';
+import Wikidata, { CitesWorkClaim, cito, properties } from './wikidata';
 import Wikicite, { debug } from './wikicite';
 import Citation from './citation';
 import Matcher from './matcher';
@@ -272,8 +272,8 @@ export default class {
                                 // implement the references and qualifiers from
                                 // the existing claim to not remove them on wikidata
                                 localCitation.references = remoteCitation.references;
-                                if (remoteCitation.qualifiers["P1545"]) {
-                                    localCitation.qualifiers["P1545"] = remoteCitation.qualifiers["P1545"];
+                                if (remoteCitation.qualifiers[properties.seriesOrdinal]) {
+                                    localCitation.qualifiers[properties.seriesOrdinal] = remoteCitation.qualifiers[properties.seriesOrdinal];
                                 }
 
                                 remoteModifyCitations[itemId].push(localCitation)

@@ -36,7 +36,8 @@ const properties = {
     'publicationDate': 'P577',
     'statedIn': 'P248',
     'refUrl': 'P854',
-    'citoIntention': 'P3712'
+    'citoIntention': 'P3712',
+    'seriesOrdinal': 'P1545'
 };
 
 // variable to match citation intentions from the CiTO with their corresponding wikidata element
