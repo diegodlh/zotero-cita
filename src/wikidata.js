@@ -58,7 +58,7 @@ export const cito = {
     'credits': 'Q117121919',
     'critiques': 'Q105624924',
     'derides': 'Q117121920',
-    'disagreesWith': 'Q117121921',
+    'disagreesWith': 'Q107687829',
     'discusses': 'Q96471822',
     'discribes': 'Q117121922',
     'disputes': 'Q117121923',
