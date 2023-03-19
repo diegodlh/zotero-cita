@@ -6,7 +6,6 @@ import React, {
 import Wikicite, { debug } from '../../wikicite';
 import { Button } from '../button';
 import Citation from '../../citation';
-import { IntlProvider } from 'react-intl';
 import PIDRow from '../pidRow';
 import PropTypes from 'prop-types';
 import SourceItemWrapper from '../../sourceItemWrapper';
@@ -336,32 +335,14 @@ function CitationsBox(props) {
                         </button>
                     </div>
                 }
-                <IntlProvider
-                    locale={Zotero.locale}
-                    // Fixme: improve messages object
-                    messages={{
-                        'wikicite.citations-pane.more': Wikicite.getString(
-                            'wikicite.citations-pane.more'
-                        )
-                    }}
-                >
-                    <Button
-                        /*icon={
-                            <span>
-                                <img
-                                    height="16px"
-                                    src="chrome://cita/skin/wikicite.png"
-                                />
-                            </span>
-                        }*/
-                        className="citations-box-actions"
-                        isMenu={true}
-                        onClick={props.onItemPopup}
-                        text="wikicite.citations-pane.more"
-                        title=""
-                        size="sm"
-                    />
-                </IntlProvider>
+                <Button 
+                    className="citations-box-actions"
+                    isMenu={true}
+                    onClick={props.onItemPopup}
+                    text={Wikicite.getString('wikicite.citations-pane.more')}
+                    title=""
+                    size="sm"
+                />
             </div>
             <div className="citations-box-list-container">
                 <ul className="citations-box-list">
