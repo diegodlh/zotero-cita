@@ -62,6 +62,7 @@ to have Zotero run the plugin directly from the `dist` directory.
 2. Update version number in:
    - `/package.json`
    - `/static/install.rdf`
+     - **Note:** Choose the correct update script in `em:updateURL` depending on beta/full release
 3. Update `version` and `updateLink`s in `/update.rdf` or `./update-beta.rdf` (for the beta release).
 4. Run `git clean -xdf` to remove untracked files, including `/dist` and `/node_modules`.
 5. Run `npm install`. This will also update `/package-lock.json` with the new version.
