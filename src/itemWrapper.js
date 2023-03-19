@@ -1,4 +1,4 @@
-import Wikicite from './wikicite';
+import Wikicite, { debug } from './wikicite';
 import Wikidata from './wikidata';
 
 /* global Services */
@@ -78,6 +78,14 @@ export default class ItemWrapper{
 	set qid(qid) {
         this.setPID('QID', qid);
 	}
+
+    get intentions() {
+        return Wikicite.getExtraField(this.item, 'CITO').values;
+    }
+
+    set intentions(intentions) {
+        Wikicite.setExtraField(this.item, 'CITO', intentions);
+    }
 
     // OpenCitations Corpus Internal Identifier
     get occ() {

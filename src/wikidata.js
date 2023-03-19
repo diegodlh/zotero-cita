@@ -23,7 +23,7 @@ const entities = {
     'work': 'Q386724'
 }
 
-const properties = {
+export const properties = {
     'author': 'P50',
     'authorNameString': 'P2093',
     'citesWork': 'P2860',
@@ -36,8 +36,54 @@ const properties = {
     'publicationDate': 'P577',
     'statedIn': 'P248',
     'refUrl': 'P854',
-    'citoIntention': 'P3712'
+    'citoIntention': 'P3712',
+    'seriesOrdinal': 'P1545'
 };
+
+// variable to match citation intentions from the CiTO with their corresponding wikidata element
+export const cito = {
+    'agreesWith': 'Q96604140',
+    'citesAsAuthority': 'Q96479983',
+    'citesAsDataSource': 'Q96471820',
+    'citesAsEvidence': 'Q111736347',
+    'citesAsMetadataDocument': 'Q117121916',
+    'citesAsPotentialSolution': 'Q105780079',
+    'citesAsRecommendedReading': 'Q111736358',
+    'citesAsRelated': 'Q117121917',
+    'citesAsSourceDocument': 'Q111736247',
+    'citesForInformation': 'Q96479970',
+    'containsAssertionFrom': 'Q111736383',
+    'compiles': 'Q117121918',
+    'corrects': 'Q111330212',
+    'credits': 'Q117121919',
+    'critiques': 'Q105624924',
+    'derides': 'Q117121920',
+    'disagreesWith': 'Q107687829',
+    'discusses': 'Q96471822',
+    'discribes': 'Q117121922',
+    'disputes': 'Q117121923',
+    'documents': 'Q117121924',
+    'includesExcerptFrom': 'Q117121925',
+    'includesQuotationFrom': 'Q117121926',
+    'extends': 'Q96472100',
+    'linksTo': 'Q117121927',
+    'obtainsBackgroundFrom': 'Q96480394',
+    'obtainsSupportFrom': 'Q115470993',
+    'parodies': 'Q117121928',
+    'plagiarizes': 'Q117121929',
+    'qualifies': 'Q117121930',
+    'refutes': 'Q107710355',
+    'repliesTo': 'Q107438271',
+    'retracts': 'Q111329371',
+    'reviews': 'Q117121931',
+    'ridicules': 'Q117121932',
+    'speculatesOn': 'Q117121933',
+    'supports': 'Q110977857',
+    'updates': 'Q96473628',
+    'usesConclusionsFrom': 'Q117121934',
+    'usesDataFrom': 'Q101149476',
+    'usesMethodIn': 'Q96472102'
+}
 
 // Fixme: have it as a global variable like this,
 // or as an instance variable like below? Pros and cons of each?
@@ -949,7 +995,6 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
                     credentials: login.credentials,
                     userAgent: `${Wikicite.getUserAgent()} wikibase-edit/v${wbEditVersion || '?'}`
                 };
-
                 try {
                     resetCookies();
                     const res = await wdEdit.entity.edit(
@@ -1176,13 +1221,42 @@ export class CitesWorkClaim {
         this.remove = false;
     }
 
-    // get intentions() {
-    //     return this.qualifiers[properties.citoIntention];
-    // }
+    get intentions() {
+        return this.qualifiers[properties.citoIntention];
+    }
 
-    // set intentions(intentionQualifiers) {
-    //     this.qualifiers[properties.citoIntention] = intentionQualifiers;
-    // }
+    set intentions(intentionQualifiers) {
+        this.qualifiers[properties.citoIntention] = intentionQualifiers;
+    }
+
+    /**
+     * Compares the intentions of two CitesWorkClaim object and returns a boolean whether they are the same or not
+     * @param {Object} [citation] Initialized CitesWorkClaim object with intentions set
+     */
+    compareIntentions(citation) {
+
+        if (this.intentions && !citation.intentions) {
+            return false;
+        }
+        if (!this.intentions && citation.intentions){
+            return false;
+        }
+
+        const AIntentions = this.intentions;
+        const BIntentions = citation.intentions;
+        
+        for (const AIntention of AIntentions) {
+            if (!BIntentions.includes(AIntention)) {
+                return false;
+            }
+        }
+        for (const BIntention of BIntentions) {
+            if (!AIntentions.includes(BIntention)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // addReference() {}
 
