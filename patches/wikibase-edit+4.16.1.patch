@@ -1,0 +1,16 @@
+diff --git a/node_modules/wikibase-edit/lib/request/login.js b/node_modules/wikibase-edit/lib/request/login.js
+index 7bae86f..059c03e 100644
+--- a/node_modules/wikibase-edit/lib/request/login.js
++++ b/node_modules/wikibase-edit/lib/request/login.js
+@@ -42,6 +42,11 @@ const getSessionCookies = (loginUrl, config, headers) => async ({ cookies, token
+ 
+   const resBody = await parseResponseBody(res)
+   if (resBody.login.result !== 'Success') {
++    if (
++      resBody.login.reason == 'Unable to continue login. Your session most likely timed out.'
++    ) {
++      throw error_.new('failed to login: session timed out or no login cookies provided')
++    }
+     throw error_.new('failed to login: invalid username/password')
+   }
+ 
