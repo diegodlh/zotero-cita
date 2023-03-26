@@ -11,6 +11,9 @@ import { debug } from '../../wikicite';
 const PreferenceDialog = (props) => {
     const [storage, setStorage] = useState(props.Prefs.get('storage'));
 
+    const [username, setUsername] = useState(Zotero.Prefs.get('wikidata-username'));
+    const [password, setPassword] = useState(Zotero.Prefs.get('wikidata-password'));
+
     async function migrateStorageLocation(from, to) {
         const progress = new Progress(
             'loading',
@@ -68,6 +71,15 @@ const PreferenceDialog = (props) => {
                 }
             });
         }
+
+        // save credentials if there are defined (the conditions are there to avoid bug with Zotero.Prefs.set();)
+        if (username !== undefined) {
+            Zotero.Prefs.set('wikidata-username', username);
+        }
+        if (password !== undefined) {
+            Zotero.Prefs.set('wikidata-password', password);
+        }
+
         window.close();
     }
 
@@ -76,6 +88,16 @@ const PreferenceDialog = (props) => {
     }
 
     return <div orient="vertical">
+        <fieldset>
+            <legend>{props.getString('wikicite.prefs.wikidata-credentials')}</legend>
+            <span>{props.getString('wikicite.prefs.wikidata-credentials-desc')}</span>
+            <br />
+            <label htmlFor="wikidata-credentials-username">{props.getString('wikicite.prefs.wikidata-credentials-username')}</label>
+            <input id="text-credentials-username" type="text" value={username} onChange={(event) => setUsername(event.target.value)} />
+            <br />
+            <label htmlFor="wikidata-credentials-password">{props.getString('wikicite.prefs.wikidata-credentials-password')}</label>
+            <input id="text-credentials-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+        </fieldset>
         <fieldset>
             <legend>{props.getString('wikicite.prefs.citation-storage')}</legend>
             <span>{props.getString('wikicite.prefs.citation-storage-desc')}</span>
