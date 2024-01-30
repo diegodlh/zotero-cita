@@ -18,3 +18,12 @@ locale    cita    sk        chrome/locale/sk/
 locale    cita    sv        chrome/locale/sv/
 locale    cita    tr        chrome/locale/tr/
 locale    cita    uk        chrome/locale/uk/
+locale    cita    ar        chrome/locale/ar/
+locale    cita    hi        chrome/locale/hi/
+locale    cita    io        chrome/locale/io/
+locale    cita    lt        chrome/locale/lt/
+locale    cita    ro        chrome/locale/ro/
+locale    cita    sl        chrome/locale/sl/
+locale    cita    tk        chrome/locale/tk/
+locale    cita    zh-hans   chrome/locale/zh-hans/
+locale    cita    zh-hant   chrome/locale/zh-hant/
