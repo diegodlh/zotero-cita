@@ -667,7 +667,7 @@ class SourceItemWrapper extends ItemWrapper {
         }
     }
 
-    exportToFile(citationIndex) {
+    async exportToFile(citationIndex) {
         this.loadCitations();
         if (this.citations.length) {
             let exporter = new Zotero_File_Exporter();
@@ -692,6 +692,20 @@ class SourceItemWrapper extends ItemWrapper {
                 tmpItem.fromJSON(citation.target.item.toJSON());
                 return tmpItem;
             });
+
+            // Make sure items have better bibtex citation keys for export (if BetterBibTeX is installed) #145
+            if(Zotero.BetterBibTeX){
+                await Zotero.BetterBibTeX.ready;
+                const proposed_keys = [];
+                for (let item of citedItems){
+                    const citationKeyMatch = Wikicite.getExtraField(item, 'Citation Key');
+                    if (citationKeyMatch.values.length != 1) {
+                        const proposal = Zotero.BetterBibTeX.KeyManager.propose(item, proposed_keys).citekey
+                        proposed_keys.push(proposal)
+                        Wikicite.setExtraField(item, 'Citation Key', proposal)
+                    }
+                }
+            }
 
             exporter.items = citedItems;
             exporter.name = Wikicite.getString('wikicite.source-item.export-file.filename');
