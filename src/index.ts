@@ -1,16 +1,29 @@
-import Citations from './citations';
-import Wikicite from './wikicite';
-import WikiciteChrome from './wikiciteChrome';
-import Wikidata from './wikidata';
-import zoteroOverlay from './zoteroOverlay';
-/* global window */
+import { BasicTool } from "zotero-plugin-toolkit/dist/basic";
+import Addon from "./addon";
+import { config } from "../package.json";
 
-// window.Wikicite = Wikicite;
+const basicTool = new BasicTool();
 
-// Fixme: now I'm working with modules, do I still need to have these
-// namespaces on the `window` object? Can use imports instead?
-// window.Wikicite.Citations = Citations;
-// window.Wikicite.Wikidata = Wikidata;
+if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
+	defineGlobal("window");
+	defineGlobal("document");
+	defineGlobal("ZoteroPane");
+	defineGlobal("Zotero_Tabs");
+	_globalThis.addon = new Addon();
+	defineGlobal("ztoolkit", () => {
+		return _globalThis.addon.data.ztoolkit;
+	});
+	Zotero[config.addonInstance] = addon;
+	ztoolkit;
+}
 
-window.WikiciteChrome = WikiciteChrome;
-window.WikiciteChrome.zoteroOverlay = zoteroOverlay;
+function defineGlobal(name: Parameters<BasicTool["getGlobal"]>[0]): void;
+function defineGlobal(name: string, getter: () => any): void;
+function defineGlobal(name: string, getter?: () => any) {
+	Object.defineProperty(_globalThis, name, {
+		get() {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+			return getter ? getter() : basicTool.getGlobal(name);
+		},
+	});
+}
