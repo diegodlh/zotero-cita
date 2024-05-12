@@ -1,21 +1,36 @@
+// {
+// 	"compilerOptions": {
+// 		// "outDir": "./dist/",
+// 		"sourceMap": true,
+// 		// "noImplicitAny": false,
+// 		"module": "commonjs",
+// 		// "target": "es2017",
+// 		"target": "ES2016",
+// 		// "jsx": "react",
+// 		// "allowJs": true,
+// 		// "downlevelIteration": true,
+// 		// "moduleResolution": "node",
+// 		"allowSyntheticDefaultImports": true,
+// 		"experimentalDecorators": true,
+// 		"resolveJsonModule": true,
+// 		"skipLibCheck": true,
+// 		"strict": true,
+// 		"removeComments": false
+// 	},
+// 	"include": ["src/*", "typings", "node_modules/zotero-types"],
+// 	"exclude": ["build", "addon", "translators", "node_modules"]
+// }
 {
 	"compilerOptions": {
-		"outDir": "./dist/",
-		"sourceMap": true,
-		"noImplicitAny": false,
+		"experimentalDecorators": true,
 		"module": "commonjs",
-		"target": "es2017",
-		"jsx": "react",
-		"allowJs": true,
-		"downlevelIteration": true,
-		"moduleResolution": "node",
-		"allowSyntheticDefaultImports": true,
+		"target": "ES2016",
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"removeComments": false,
+		"sourceMap": true
 	},
-	"include": [
-		"src/**/*",
-	],
-	"exclude": [
-		"translators",
-		"node_modules"
-	]
+	"include": ["src/*", "typings", "node_modules/zotero-types"],
+	"exclude": ["build", "addon"]
 }

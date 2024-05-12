@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Progress from '../../progress';
+import Progress from '../../cita/progress';
 import PropTypes from 'prop-types';
-import SourceItemWrapper from '../../sourceItemWrapper';
-import { debug } from '../../wikicite';
+import SourceItemWrapper from '../../cita/sourceItemWrapper';
+import { debug } from '../../cita/wikicite';
 
 declare const Services: any;
 declare const Zotero: any;
