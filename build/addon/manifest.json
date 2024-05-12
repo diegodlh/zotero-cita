@@ -1,0 +1,20 @@
+{
+	"manifest_version": 2,
+	"name": "Zotero Cita",
+	"version": "0.6.0",
+	"description": "Cita: a Wikidata addon for Zotero",
+	"homepage_url": "https://github.com/diegodlh/zotero-cita",
+	"author": "Diego de la Hera (https://diegodlh.conversodromo.com.ar/)",
+	"icons": {
+		"48": "chrome/content/icons/favicon.png",
+		"96": "chrome/content/icons/favicon@2x.png"
+	},
+	"applications": {
+		"zotero": {
+			"id": "zotero-wikicite@wikidata.org",
+			"update_url": "https://github.com/diegodlh/zotero-cita/releases/latest/download/update.json",
+			"strict_min_version": "6.999",
+			"strict_max_version": "7.0.*"
+		}
+	}
+}
