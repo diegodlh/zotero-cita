@@ -3,9 +3,9 @@ import React, {
     useState
 } from 'react';
 import CitationsBox from '../components/itemPane/citationsBox.js';
-import SourceItemWrapper from '../sourceItemWrapper';
+import SourceItemWrapper from '../cita/sourceItemWrapper.js';
 import PropTypes from 'prop-types';
-import { debug } from '../wikicite';
+import { debug } from '../cita/wikicite.js';
 
 declare const Services: any;
 declare const Zotero: any;

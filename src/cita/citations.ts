@@ -2,7 +2,7 @@ import Wikidata, { CitesWorkClaim } from './wikidata';
 import Wikicite, { debug } from './wikicite';
 import Citation from './citation';
 import Matcher from './matcher';
-import OCI from './oci';
+import OCI from '../oci';
 import Progress from './progress';
 import SourceItemWrapper from './sourceItemWrapper';
 
