@@ -1,4 +1,4 @@
-import Citation from '../../citation';
+import Citation from '../../cita/citation';
 import PropTypes from 'prop-types';
 import React from 'react';
 

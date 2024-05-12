@@ -1,54 +1,149 @@
 {
-  "name": "zotero-cita",
-  "version": "0.5.5",
-  "description": "Cita: a Wikidata addon for Zotero",
-  "scripts": {
-    "lint": "eslint . --ext .ts --cache --cache-location .eslintcache/",
-    "postinstall": "patch-package",
-    "watch": "webpack --watch",
-    "build": "webpack"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/diegodlh/zotero-cita.git"
-  },
-  "author": "Diego de la Hera (https://diegodlh.conversodromo.com.ar/)",
-  "contributors": [
-    "Dominic Dall'Osto"
-  ],
-  "license": "GPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/diegodlh/zotero-cita/issues"
-  },
-  "homepage": "https://github.com/diegodlh/zotero-cita#readme",
-  "devDependencies": {
-    "@babel/cli": "^7.12.1",
-    "@babel/core": "^7.12.3",
-    "@babel/preset-env": "^7.12.1",
-    "@babel/preset-react": "^7.12.5",
-    "@types/react-dom": "^18.0.10",
-    "@typescript-eslint/eslint-plugin": "^5.48.1",
-    "babel-eslint": "^10.1.0",
-    "babel-loader": "^8.2.2",
-    "copy-webpack-plugin": "^7.0.0",
-    "eslint": "^8.32.0",
-    "eslint-plugin-react": "^7.21.5",
-    "patch-package": "^6.2.2",
-    "ts-loader": "^9.4.2",
-    "typescript": "^4.9.4",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^4.2.0"
-  },
-  "dependencies": {
-    "prop-types": "^15.7.2",
-    "querystring-es3": "^0.2.1",
-    "quickstatements-to-wikibase-edit": "^1.0.3",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "wikibase-edit": "^4.16.1",
-    "wikibase-sdk": "^7.8.0"
-  },
-  "engines": {
-    "npm": ">=8.1"
-  }
+	"name": "zotero-cita",
+	"version": "0.6.0",
+	"description": "Cita: a Wikidata addon for Zotero",
+	"config": {
+		"addonName": "Zotero Cita",
+		"addonID": "zotero-wikicite@wikidata.org",
+		"addonRef": "zotero-wikicite",
+		"addonInstance": "ZoteroCita",
+		"prefsPrefix": "extensions.cita",
+		"releasePage": "https://github.com/diegodlh/zotero-cita/releases",
+		"updateJSON": "https://github.com/diegodlh/zotero-cita/releases/latest/download/update.json"
+	},
+	"main": "src/index.ts",
+	"scripts": {
+		"start": "node scripts/server.mjs",
+		"build": "tsc --noEmit && node scripts/build.mjs production",
+		"stop": "node scripts/stop.mjs",
+		"lint": "prettier --write . && eslint . --ext .ts --fix",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"release": "release-it --only-version --preReleaseId=beta",
+		"update-deps": "npm update --save"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/diegodlh/zotero-cita.git"
+	},
+	"author": "Diego de la Hera (https://diegodlh.conversodromo.com.ar/)",
+	"contributors": [
+		"Dominic Dall'Osto"
+	],
+	"license": "GPL-3.0-or-later",
+	"bugs": {
+		"url": "https://github.com/diegodlh/zotero-cita/issues"
+	},
+	"homepage": "https://github.com/diegodlh/zotero-cita",
+	"dependencies": {
+		"zotero-plugin-toolkit": "^2.3.15",
+		"prop-types": "^15.7.2",
+		"querystring-es3": "^0.2.1",
+		"quickstatements-to-wikibase-edit": "^1.0.3",
+		"wikibase-edit": "^4.11.8",
+		"wikibase-sdk": "^7.8.0"
+	},
+	"devDependencies": {
+		"@types/node": "^20.10.4",
+		"@typescript-eslint/eslint-plugin": "^7.0.2",
+		"@typescript-eslint/parser": "^7.0.2",
+		"chokidar": "^3.5.3",
+		"compressing": "^1.10.0",
+		"esbuild": "^0.20.1",
+		"eslint": "^8.55.0",
+		"eslint-config-prettier": "^9.1.0",
+		"prettier": "^3.1.1",
+		"release-it": "^17.0.1",
+		"replace-in-file": "^7.0.2",
+		"typescript": "^5.3.3",
+		"zotero-types": "^1.3.10"
+	},
+	"eslintConfig": {
+		"env": {
+			"browser": true,
+			"es2021": true
+		},
+		"root": true,
+		"extends": [
+			"eslint:recommended",
+			"plugin:@typescript-eslint/recommended",
+			"plugin:@typescript-eslint/eslint-recommended",
+			"plugin:@typescript-eslint/recommended-requiring-type-checking",
+			"prettier"
+		],
+		"overrides": [],
+		"parser": "@typescript-eslint/parser",
+		"parserOptions": {
+			"ecmaVersion": "latest",
+			"sourceType": "module",
+			"project": [
+				"tsconfig.json"
+			]
+		},
+		"plugins": [
+			"@typescript-eslint"
+		],
+		"rules": {
+			"@typescript-eslint/ban-ts-comment": [
+				"warn",
+				{
+					"ts-expect-error": "allow-with-description",
+					"ts-ignore": "allow-with-description",
+					"ts-nocheck": "allow-with-description",
+					"ts-check": "allow-with-description"
+				}
+			],
+			"@typescript-eslint/no-unused-vars": "off",
+			"@typescript-eslint/no-explicit-any": [
+				"off",
+				{
+					"ignoreRestArgs": true
+				}
+			],
+			"@typescript-eslint/no-non-null-assertion": "off"
+		},
+		"ignorePatterns": [
+			"**/build/**",
+			"**/logs/**",
+			"**/dist/**",
+			"**/node_modules/**",
+			"**/scripts/**",
+			"**/*.js",
+			"**/*.bak"
+		]
+	},
+	"prettier": {
+		"printWidth": 80,
+		"useTabs": true,
+		"tabWidth": 4,
+		"endOfLine": "lf",
+		"overrides": [
+			{
+				"files": [
+					"*.xhtml"
+				],
+				"options": {
+					"htmlWhitespaceSensitivity": "css"
+				}
+			}
+		]
+	},
+	"release-it": {
+		"git": {
+			"tagName": "v${version}"
+		},
+		"npm": {
+			"publish": false
+		},
+		"github": {
+			"release": false,
+			"assets": [
+				"build/*.xpi",
+				"update.json"
+			]
+		},
+		"hooks": {
+			"before:init": "npm run lint",
+			"after:bump": "npm run build"
+		}
+	}
 }

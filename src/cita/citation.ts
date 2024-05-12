@@ -3,7 +3,7 @@ import Wikidata, { CitesWorkClaim } from './wikidata';
 import ItemWrapper from './itemWrapper';
 import SourceItemWrapper from './sourceItemWrapper';
 import Matcher from './matcher';
-import OCI from './oci';
+import OCI from '../oci';
 import Progress from './progress';
 
 declare const Services: any;
