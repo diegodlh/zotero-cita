@@ -1,0 +1,64 @@
+# Messages for Arabic (العربية)
+# Exported from translatewiki.net
+# Author: Dr-Taher
+# Author: محمد أحمد عبد الفتاح
+
+zotero-wikicite-wikicite.citation.auto-link.failure.title=فشل الربط التلقائي
+zotero-wikicite-wikicite.citation.auto-link.failure.message=لم يُعثر على عناصر مطابقة. هل ترغب في اختيار واحد يدويًا؟
+zotero-wikicite-wikicite.citation.auto-link.progress.loading=جاري محاولة الربط تلقائيًا ...
+zotero-wikicite-wikicite.citation.auto-link.progress.success=نجح الربط التلقائي
+zotero-wikicite-wikicite.citation.auto-link.progress.failure=فشل الربط التلقائي
+zotero-wikicite-wikicite.citation.link.error.duplicate=هناك رابط اقتباس آخر لهذا العنصر بالفعل.
+zotero-wikicite-wikicite.citation.link.error.library=لا يمكنك الربط بعنصر في مكتبة أخرى.
+zotero-wikicite-wikicite.citation.link.error.source-item=لا يمكنك الربط بعنصر مصدر الاقتباس.
+zotero-wikicite-wikicite.citation.sync.error=لا يمكن مزامنة الاقتباس
+zotero-wikicite-wikicite.citation.sync.error.qid=يجب أن يكون لكل من العناصر المقتبس منها والمذكورة QID
+zotero-wikicite-wikicite.citation-importer.cancel=إلغاء
+zotero-wikicite-wikicite.citation-importer.description=الصق بيانات الاقتباس أدناه، أو قم باستيراد الاقتباس (الاقتباسات) من ملف. تتضمن التنسيقات المدعومة BibTeX و RIS و RDF والمزيد.
+zotero-wikicite-wikicite.citation-importer.file-picker.title=اختر ملف للاستيراد
+zotero-wikicite-wikicite.citation-importer.import-file=استيراد من ملف
+zotero-wikicite-wikicite.citation-importer.import-text=الاستيراد من نص
+zotero-wikicite-wikicite.citation-importer.title=اقتباسات الاستيراد
+zotero-wikicite-wikicite.citation-menu.export-file=تصدير العنصر المقتبس إلى ملف
+zotero-wikicite-wikicite.citation-menu.export-croci=تصدير اقتباس إلى CROCI
+zotero-wikicite-wikicite.citation-menu.fetch-qid=جلب QID للعنصر المقتبس منه
+zotero-wikicite-wikicite.citation-menu.oci=انظر في OpenCitations
+zotero-wikicite-wikicite.citation-menu.oci.crossref=مورد Crossref
+zotero-wikicite-wikicite.citation-menu.oci.occ=مورد OCC
+zotero-wikicite-wikicite.citation-menu.oci.wikidata=مورد ويكي بيانات
+zotero-wikicite-wikicite.citation-menu.sync-wikidata=مزامنة الاقتباس مع ويكي بيانات
+zotero-wikicite-wikicite.citations.from-items.unsupported=إضافة عناصر كاقتباسات لعناصر أخرى غير مدعومة حتى الآن.
+zotero-wikicite-wikicite.citations-pane.add=أضف
+zotero-wikicite-wikicite.citations-pane.citations.count=%s من الاقتباسات:
+zotero-wikicite-wikicite.citations-pane.delete.remote.message=هذا الاقتباس متوفر في ويكي بيانات. هل ترغب في إزالته من ويكي بيانات أيضًا؟
+zotero-wikicite-wikicite.citations-pane.delete.remote.remember=تذكر خياري
+zotero-wikicite-wikicite.citations-pane.delete.remote.title=إزالة من ويكي بيانات؟
+zotero-wikicite-wikicite.citations-pane.label=اقتباسات
+zotero-wikicite-wikicite.citations-pane.linked.confirm.go=اذهب
+zotero-wikicite-wikicite.citations-pane.linked.confirm.message=هذا الاقتباس مرتبط بالعنصر "%s" في مكتبتك. ماذا تريد أن تفعل؟
+zotero-wikicite-wikicite.citations-pane.linked.confirm.title=اقتباس مرتبط
+zotero-wikicite-wikicite.citations-pane.linked.confirm.unlink=إزالة الوصلات
+zotero-wikicite-wikicite.citations-pane.more=المزيد...
+zotero-wikicite-wikicite.crossref.get-citations.unsupported=لم يجري دعم الحصول على اقتباسات من Crossref حتى الآن
+zotero-wikicite-wikicite.editor.cancel=إلغاء
+zotero-wikicite-wikicite.editor.save=حفظ
+zotero-wikicite-wikicite.editor.title=محرر الاستشهادات
+zotero-wikicite-wikicite.extract.unsupported=لم يجري دعم استخراج الاقتباسات من مرفقات الملفات حتى الآن.
+zotero-wikicite-wikicite.global.unsupported=غير مدعوم
+zotero-wikicite-wikicite.item-menu.autolink-citations=ارتباط تلقائي بالاقتباسات بعناصر Zotero
+zotero-wikicite-wikicite.item-menu.export-file=تصدير الاقتباسات إلى ملف
+zotero-wikicite-wikicite.item-menu.export-croci=تصدير الاقتباسات إلى CROCI
+zotero-wikicite-wikicite.item-menu.fetch-citation-qids=إحضار QIDs للعناصر المذكورة
+zotero-wikicite-wikicite.item-menu.get-crossref=احصل على اقتباسات من Crossref
+zotero-wikicite-wikicite.item-menu.get-occ=احصل على اقتباسات من OpenCitations Corpus
+zotero-wikicite-wikicite.item-menu.get-pdf=استخراج الاقتباسات من المرفقات
+zotero-wikicite-wikicite.item-menu.import-citations=استيراد الاستشهادات
+zotero-wikicite-wikicite.identifier-importer.cancel=إلغاء
+zotero-wikicite-wikicite.identifier-importer.add=أضف
+zotero-wikicite-wikicite.lcn.window.filter.select.authors=المؤلفون
+zotero-wikicite-wikicite.prefs.title=تفضيلات الاستشهاد
+zotero-wikicite-wikicite.wikidata.login.title=تسجيل الدخول إلى ويكي بيانات
+zotero-wikicite-wikicite.wikidata.orphaned.action.keep=احتفظ بالاستشهادات المحلية
+zotero-wikicite-wikicite.wikidata.orphaned.action.remove=إزالة الاستشهادات المحلية
+zotero-wikicite-wikicite.wikidata.orphaned.action.upload=احتفظ بالاقتباسات المحلية وقم بتحميلها على ويكي بيانات مرة أخرى
+zotero-wikicite-wikicite.wikidata.progress.upload.loading=رفع التعديلات إلى ويكي بيانات
