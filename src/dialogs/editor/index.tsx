@@ -1,5 +1,5 @@
 import CitationEditor from './CitationEditor';
-import ItemWrapper from '../../itemWrapper';
+import ItemWrapper from '../../cita/itemWrapper';
 import React from 'react';
 import ReactDOM from 'react-dom';
 

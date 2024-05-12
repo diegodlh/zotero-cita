@@ -1,7 +1,7 @@
-import Citation from '../../citation';
+import Citation from '../../cita/citation';
 import PropTypes from 'prop-types';
 import React from 'react';
-import Wikicite from '../../wikicite';
+import Wikicite from '../../cita/wikicite';
 
 declare const Services: any;
 declare const Zotero: any;

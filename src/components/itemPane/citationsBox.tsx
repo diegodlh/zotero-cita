@@ -3,12 +3,13 @@ import React, {
     useEffect,
     useState
 } from 'react';
-import Wikicite, { debug } from '../../wikicite';
+import Wikicite, { debug } from '../../cita/wikicite';
 import { Button } from '../button';
-import Citation from '../../citation';
+import Citation from '../../cita/citation';
+import { IntlProvider } from 'react-intl';
 import PIDRow from '../pidRow';
 import PropTypes from 'prop-types';
-import SourceItemWrapper from '../../sourceItemWrapper';
+import SourceItemWrapper from '../../cita/sourceItemWrapper';
 import WikidataButton from './wikidataButton';
 import ZoteroButton from './zoteroButton';
 

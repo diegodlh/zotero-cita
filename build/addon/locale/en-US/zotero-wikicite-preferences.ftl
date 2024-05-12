@@ -1,0 +1,26 @@
+zotero-wikicite-pref-title = Zotero Reading List Settings
+zotero-wikicite-pref-show-icons =
+    .label = Show icons along with an item's read status
+zotero-wikicite-pref-enable-keyboard-shortcuts =
+    .label = Enable keyboard shortcuts (Alt+0,1,2,3,4,5)
+zotero-wikicite-pref-label-new-items =
+    .label = Automatically label items as "New" when you add them to Zotero
+zotero-wikicite-pref-label-items-when-opening-file = 
+    .label = Automatically change the read status of items when opening an attached file
+zotero-wikicite-pref-help = { $name } Build { $version } { $time }
+zotero-wikicite-pref-statuslabeltable-title = Custom Reading Statuses
+zotero-wikicite-pref-statuslabeltable-header-number = Number
+zotero-wikicite-pref-statuslabeltable-header-statusicon = Status Icon
+zotero-wikicite-pref-statuslabeltable-header-statusname = Status Name
+zotero-wikicite-pref-statuslabeltable-header-reorder = Reorder
+zotero-wikicite-pref-statuslabeltable-button-add = Add New Status
+zotero-wikicite-pref-statuslabeltable-button-save = Save
+zotero-wikicite-pref-statuslabeltable-button-reset = Reset to Default
+
+zotero-wikicite-pref-openitemtable-title = Custom Status Changes When Opening Item
+zotero-wikicite-pref-openitemtable-header-statusfrom = Status From
+zotero-wikicite-pref-openitemtable-header-statusto = Status To
+zotero-wikicite-pref-openitemtable-header-delete = Delete
+zotero-wikicite-pref-openitemtable-button-add = Add New Status
+zotero-wikicite-pref-openitemtable-button-save = Save
+zotero-wikicite-pref-openitemtable-button-reset = Reset to Default
