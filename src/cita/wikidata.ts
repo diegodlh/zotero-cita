@@ -2,15 +2,16 @@ import Wikicite, { debug } from "./wikicite";
 import Progress from "./progress";
 // ignore until we find / make types for these packages
 // @ts-ignore
-import WBK from "wikibase-sdk";
+import WBK, { Entity, EntityId } from "wikibase-sdk";
 // @ts-ignore
 import qs2wbEdit from "quickstatements-to-wikibase-edit";
 // @ts-ignore
 import wbEdit from "wikibase-edit";
 import ItemWrapper from "./itemWrapper";
 
-const wbSdkVersion = require("wikibase-sdk/package.json").version;
-const wbEditVersion = require("wikibase-edit/package.json").version;
+// this is ugly but it automatically pulls the external package versions for us
+import { version as wbSdkVersion } from "../../node_modules/wikibase-sdk/package.json";
+import { version as wbEditVersion } from "../../node_modules/wikibase-edit/package.json";
 
 // Fixme: Wikibase instance and Sparql Endpoint should be
 // specified in the plugin preferences, to support other
@@ -792,7 +793,7 @@ export default class {
 	 * @param {Array} properties - Array of one or more Wikidata properties to get (eg. 'P356' for doi)
 	 * @returns {Promise} { entityQID: {property1: value1, property2: value2} }
 	 */
-	static async getProperties(sourceQIDs: string | string[], properties: string | string[]) {
+	static async getProperties(sourceQIDs: EntityId | EntityId[], properties: string | string[]) {
 		if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
 		if (!Array.isArray(properties)) properties = [properties];
 		// Fixme: alternatively, use the SPARQL endpoint to get more than 50
@@ -804,7 +805,7 @@ export default class {
 		});
 		const data: {[id: string] : {[id: string]: any}} = {};
 		while (urls.length) {
-			const url = urls.shift();
+			const url = urls.shift() as string;
 			try {
 				const xmlhttp = await Zotero.HTTP.request("GET", url, {
 					headers: {
@@ -837,13 +838,13 @@ export default class {
 	 */
 	static async getAuthors(entityData: {[id: string]: {[id: string]: string[]}}) {
 		let authorStringMap: {[id: string]: string[]} = {};
-		let idsToQuery = [];
+		let idsToQuery: EntityId[] = [];
 		let entityIdsOfAuthors: {[id: string]: string} = {};
 		for (let [key, value] of Object.entries(entityData)) {
 			authorStringMap[key] = [];
 			if (value[properties.author].length > 0) {
 				for (let authorID of value[properties.author]) {
-					idsToQuery.push(authorID);
+					idsToQuery.push(authorID as EntityId);
 					entityIdsOfAuthors[authorID] = key;
 				}
 			}
@@ -861,7 +862,7 @@ export default class {
 			format: "json",
 		});
 		while (urls.length) {
-			const url = urls.shift();
+			const url = urls.shift() as string;
 			try {
 				const xmlhttp = await Zotero.HTTP.request("GET", url, {
 					headers: {
@@ -887,7 +888,7 @@ export default class {
 	 * @param {Array} sourceQIDs - Array of one or more entity QIDs
 	 * @returns {Promise} Citations map { entityQID: [cites work QIDs]... }
 	 */
-	static async getCitesWorkClaims(sourceQIDs: string | string[]) {
+	static async getCitesWorkClaims(sourceQIDs: EntityId | EntityId[]) {
 		if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
 		// Fixme: alternatively, use the SPARQL endpoint to get more than 50
 		// entities per request, and to get only the claims I'm interested in
@@ -899,7 +900,7 @@ export default class {
 		});
 		const citesWorkClaims: {[id: string]: any} = {};
 		while (urls.length) {
-			const url = urls.shift();
+			const url = urls.shift() as string;
 			try {
 				const xmlhttp = await Zotero.HTTP.request("GET", url, {
 					headers: {

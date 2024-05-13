@@ -39,8 +39,8 @@
 		"prop-types": "^15.7.2",
 		"querystring-es3": "^0.2.1",
 		"quickstatements-to-wikibase-edit": "^1.0.3",
-		"wikibase-edit": "^4.11.8",
-		"wikibase-sdk": "^7.8.0"
+		"wikibase-edit": "^7.0.4",
+		"wikibase-sdk": "^10.0.2"
 	},
 	"devDependencies": {
 		"@types/node": "^20.10.4",

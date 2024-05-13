@@ -2,6 +2,7 @@ import { ColumnOptions } from "zotero-plugin-toolkit/dist/helpers/virtualizedTab
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import hooks from "./hooks";
 import WikiciteChrome from "./cita/wikiciteChrome";
+import zoteroOverlay from './cita/zoteroOverlay';
 import { createZToolkit } from "./utils/ztoolkit";
 
 class Addon {
@@ -23,6 +24,7 @@ class Addon {
 	// Lifecycle hooks
 	public hooks: typeof hooks;
 	public wikiciteChrome: typeof WikiciteChrome;
+	public wikiciteZoteroOverlay: typeof zoteroOverlay;
 	// APIs
 	public api: object;
 
@@ -34,6 +36,8 @@ class Addon {
 		};
 		this.hooks = hooks;
 		this.wikiciteChrome = WikiciteChrome;
+		this.wikiciteZoteroOverlay = zoteroOverlay;
+		this.wikiciteZoteroOverlay.init()
 		this.api = {};
 	}
 }
