@@ -80,9 +80,7 @@ export default {
 		"chrome://cita/content/locale/en-US/wikicite.properties",
 	),
 
-	cleanPID: function (type: string, value: string) {
-		type = type.toUpperCase();
-		value = value || "";
+	cleanPID: function (type: PIDType, value: string) {
 		switch (type) {
 			case "DOI":
 				return Zotero.Utilities.cleanDOI(value);
