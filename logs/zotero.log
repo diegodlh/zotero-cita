@@ -1,1 +1,2 @@
 Missing chrome or resource URL: chrome://global/skin/browser.css
+Crash Annotation GraphicsCriticalError: |[C0][GFX1-]: CompositorBridgeChild receives IPC close with reason=AbnormalShutdown (t=3392.5) [GFX1-]: CompositorBridgeChild receives IPC close with reason=AbnormalShutdown
