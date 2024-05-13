@@ -1,6 +1,7 @@
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 
+
 // maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
 // for source items, and the source item's saveTx for target items
@@ -63,7 +64,7 @@ export default class ItemWrapper {
 		return this.getPID("DOI");
 	}
 
-	set doi(doi) {
+	set doi(doi: string) {
 		this.setPID("DOI", doi);
 	}
 
@@ -71,7 +72,7 @@ export default class ItemWrapper {
 		return this.getPID("ISBN");
 	}
 
-	set isbn(isbn) {
+	set isbn(isbn: string) {
 		this.setPID("ISBN", isbn);
 	}
 
@@ -79,7 +80,7 @@ export default class ItemWrapper {
 		return this.getPID("QID");
 	}
 
-	set qid(qid) {
+	set qid(qid: string) {
 		this.setPID("QID", qid);
 	}
 
@@ -121,8 +122,7 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
-	async fetchPID(type: string, autosave = true) {
-		type = type.toUpperCase();
+	async fetchPID(type: PIDType, autosave = true) {
 		let pid;
 		switch (type) {
 			case "QID": {
@@ -145,8 +145,7 @@ export default class ItemWrapper {
 		}
 	}
 
-	getPID(type: string, clean = false) {
-		type = type.toUpperCase();
+	getPID(type: PIDType, clean = false) {
 		let pid;
 		switch (type) {
 			case "DOI":
@@ -154,16 +153,15 @@ export default class ItemWrapper {
 				pid = this.item.getField(type);
 				break;
 			default:
-				pid = Wikicite.getExtraField(this.item, type).values[0];
+				pid = Wikicite.getExtraField(this.item, type).values[0] as string;
 		}
 		if (clean) {
-			pid = Wikicite.cleanPID(type, pid);
+			pid = Wikicite.cleanPID(type, pid) as string;
 		}
 		return pid;
 	}
 
-	getPidUrl(type: string) {
-		type = type.toUpperCase();
+	getPidUrl(type: PIDType) {
 		const cleanPID = this.getPID(type, true);
 		let url;
 		if (cleanPID) {
@@ -192,8 +190,7 @@ export default class ItemWrapper {
 		return url;
 	}
 
-	setPID(type: string, value: string, save = true) {
-		type = type.toUpperCase();
+	setPID(type: PIDType, value: string, save = true) {
 		switch (type) {
 			case "DOI":
 			case "ISBN":

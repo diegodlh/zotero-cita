@@ -1,13 +1,13 @@
 import Wikicite, { debug } from "./wikicite";
 import Progress from "./progress";
+// ignore until we find / make types for these packages
+// @ts-ignore
 import WBK from "wikibase-sdk";
+// @ts-ignore
 import qs2wbEdit from "quickstatements-to-wikibase-edit";
+// @ts-ignore
 import wbEdit from "wikibase-edit";
 import ItemWrapper from "./itemWrapper";
-
-declare const Components: any;
-declare const Services: any;
-declare const Zotero: any;
 
 const wbSdkVersion = require("wikibase-sdk/package.json").version;
 const wbEditVersion = require("wikibase-edit/package.json").version;
@@ -75,11 +75,11 @@ export default class {
 	 * @returns {Map} item to qid map; qid is null if not found, and undefined if not queried
 	 */
 	static async reconcile(
-		items: ItemWrapper[],
+		items: ItemWrapper | ItemWrapper[],
 		options = {
 			overwrite: false,
-			partial: items.length === 1,
-			create: items.length === 1,
+			partial: !Array.isArray(items) || items.length === 1,
+			create: !Array.isArray(items) || items.length === 1,
 		},
 	) {
 		const progress = new Progress();
@@ -87,26 +87,32 @@ export default class {
 		if (!Array.isArray(items)) items = [items];
 		const typeMapping = await getTypeMapping();
 		// create item -> qid map that will be returned at the end
-		const qids: Map<any, string> = new Map(
-			items.map((item) => [item, item.qid]),
+		const qids: Map<ItemWrapper, string | null> = new Map(
+			items.map((item) => [item, item.qid as string]),
 		);
 		// iterate over the items to create the qXX query objects
-		const queries = {};
+		type QueryProperties = {pid: string, v: string | string[]};
+		type Query = {
+			query: string,
+			type?: string,
+			properties: QueryProperties[]
+		};
+		const queries: { [id: string]: Query } = {};
 		for (let i = 0; i < items.length; i++) {
 			const item = items[i];
 			if (item.qid && !options.overwrite) {
 				// current item has qid already
 				continue;
 			}
-			const queryProps = [];
-			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi);
+			const queryProps: QueryProperties[] = [];
+			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi as string);
 			if (cleanDOI) {
 				queryProps.push({
 					pid: properties.doi,
 					v: cleanDOI.toUpperCase(),
 				});
 			}
-			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn);
+			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn as string);
 			if (cleanISBN) {
 				queryProps.push({
 					pid: [properties.isbn10, properties.isbn13].join("|"),
@@ -124,7 +130,7 @@ export default class {
 					),
 				});
 			}
-			const year = Zotero.Date.strToDate(item.item.getField("date")).year;
+			const year = (Zotero.Date.strToDate(item.item.getField("date")) as any).year;
 			if (year) {
 				queryProps.push({
 					pid: properties.publicationDate + "@year",
@@ -167,7 +173,7 @@ export default class {
 				),
 			);
 			// send HTTP POST request
-			let response = {};
+			let response: {[id: string] : any} = {};
 			try {
 				const req = await Zotero.HTTP.request(
 					"POST",
@@ -189,7 +195,7 @@ export default class {
 					const queryId = `q${i}`;
 					const typedQueryId = `q${i}t`;
 					const untypedQueryId = `q${i}u`;
-					const result = [];
+					const result: any[] = [];
 					if (tmpResponse[typedQueryId]) {
 						const typedQuery = tmpResponse[typedQueryId];
 						if (
@@ -204,7 +210,7 @@ export default class {
 							continue;
 						} else if (options.partial) {
 							// Otherwise, store all potential matches as partial matches
-							typedQuery.result.forEach((candidate) => {
+							typedQuery.result.forEach((candidate: any) => {
 								candidate.match = false;
 								result.push(candidate);
 							});
@@ -216,7 +222,7 @@ export default class {
 							(candidate) => candidate.id,
 						);
 						tmpResponse[untypedQueryId].result.forEach(
-							(candidate) => {
+							(candidate: any) => {
 								if (!resultIDs.includes(candidate.id)) {
 									candidate.match = false;
 									result.push(candidate);
@@ -251,8 +257,8 @@ export default class {
 			} catch (err) {
 				// Handle too large batch error until openrefine-wikibase#109 is fixed
 				let largeBatch = false;
-				if (err.xmlhttp && err.xmlhttp.response) {
-					const details = JSON.parse(err.xmlhttp.response).details;
+				if ((err as any).xmlhttp && (err as any).xmlhttp.response) {
+					const details = JSON.parse((err as any).xmlhttp.response).details;
 					if (details) {
 						const match = details.match(
 							/url=URL\('https:\/\/query\.wikidata\.org\/sparql\?query=(.*)&format=json'\)/,
@@ -282,13 +288,13 @@ export default class {
 				const item = items[parseInt(queryID.slice(1), 10)];
 				const candidates = (query as any).result;
 				const match = candidates.filter(
-					(candidate) => candidate.match,
+					(candidate: any) => candidate.match,
 				)[0];
 				if (match) {
 					qids.set(item, match.id);
 				} else if (candidates.length && options.partial) {
 					const candidateIds = candidates.map(
-						(candidate) => candidate.id,
+						(candidate: any) => candidate.id,
 					);
 					const matchesData = await this.getProperties(candidateIds, [
 						properties.publicationDate,
@@ -296,9 +302,9 @@ export default class {
 						properties.authorNameString,
 					]);
 					const authorStrings = await this.getAuthors(matchesData);
-					const formatDateFromData = (idProperties) =>
+					const formatDateFromData = (idProperties: any) =>
 						new Date(idProperties).getFullYear().toString();
-					const formatAuthorsFromData = (authorStrings) =>
+					const formatAuthorsFromData = (authorStrings: string[]) =>
 						authorStrings.length <= 2
 							? authorStrings.join(" & ")
 							: authorStrings[0] + " et al.";
@@ -307,7 +313,7 @@ export default class {
 						Wikicite.getString(
 							"wikicite.wikidata.reconcile.approx.none",
 						),
-						...candidates.map((candidate) => {
+						...candidates.map((candidate: any) => {
 							let candidateStr = `${candidate.id}: ${candidate.name}`;
 							if (authorStrings[candidate.id].length > 0)
 								candidateStr += ` - ${formatAuthorsFromData(authorStrings[candidate.id])}`;
@@ -318,7 +324,7 @@ export default class {
 							)
 								candidateStr += ` [${formatDateFromData(matchesData[candidate.id][properties.publicationDate][0])}]`;
 							const typeNames = candidate.type.map(
-								(type) => type.name,
+								(type: any) => type.name,
 							);
 							if (typeNames.length) {
 								candidateStr += ` (${typeNames.join("; ")})`;
@@ -409,7 +415,7 @@ export default class {
 		return qids;
 	}
 
-	static cleanQID(qid) {
+	static cleanQID(qid: string) {
 		qid = qid.toUpperCase().trim();
 		if (qid[0] !== "Q") qid = "Q" + qid;
 		if (!qid.match(/^Q\d+$/)) qid = "";
@@ -420,154 +426,154 @@ export default class {
 	 * DEPRECATED - use this.reconcile() instead
 	 * Fetches QIDs for item wrappers provided and returns item -> QID map
 	 */
-	static async getQID(items, create = false) {
-		//, approximate, getCitations=true) {
-		const progress = new Progress();
-		// make sure an array of items was provided
-		if (!Array.isArray(items)) items = [items];
-		// create item -> qid map that will be returned at the end
-		const qidMap = new Map(items.map((item) => [item, item.qid]));
-		// one pool of identifiers to match against, across items and PID type
-		let identifiers = items.reduce((identifiers, item) => {
-			// Fixme: support more PIDs
-			// also support multiple PIDs per item (e.g., DOI & PMID)
-			// see #51
-			const cleanDoi = Zotero.Utilities.cleanDOI(item.doi);
-			const cleanIsbn = Zotero.Utilities.cleanISBN(item.isbn);
-			if (cleanDoi) {
-				// Wikidata's P356 (DOI) value is automatically transformed
-				// to uppercase https://www.wikidata.org/wiki/Property_talk:P356#Documentation
-				identifiers.push(cleanDoi.toUpperCase());
-			} else if (cleanIsbn) {
-				identifiers.push(cleanIsbn);
-			}
-			return identifiers;
-		}, []);
-		identifiers = [...new Set(identifiers)];
-		if (identifiers.length) {
-			// if at least one supported identifier available,
-			// run the SPARQL query
-			const identifierString = identifiers
-				.map((identifier) => `"${identifier}"`)
-				.join(" ");
-			const sparql = `
-SELECT ?item ?itemLabel ?doi ?isbn WHERE {
-    VALUES ?identifier { ${identifierString} }.
-    ?item (wdt:P356|wdt:P212|wdt:P957) ?identifier.
-    OPTIONAL {
-        ?item wdt:P356 ?doi.
-    }
-    OPTIONAL {
-        ?item wdt:P212 ?isbn
-    }    
-    OPTIONAL {
-        ?item wdt:P957 ?isbn
-    }
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
-}
-`;
-			const [url, body] = wdk.sparqlQuery(sparql).split("?");
-			progress.newLine(
-				"loading",
-				Wikicite.getString(
-					"wikicite.wikidata.progress.qid.fetch.loading",
-				),
-			);
-			let results;
-			try {
-				// make POST request in case query is too long
-				const xmlhttp = await Zotero.HTTP.request("POST", url, {
-					body: body,
-					headers: {
-						"User-Agent": `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || "?"}`,
-					},
-				});
-				results = wdk.simplify.sparqlResults(xmlhttp.response);
-			} catch {
-				progress.updateLine(
-					"error",
-					Wikicite.getString(
-						"wikicite.wikidata.progress.qid.fetch.error",
-					),
-				);
-			}
+// 	static async getQID(items: ItemWrapper | ItemWrapper[], create = false) {
+// 		//, approximate, getCitations=true) {
+// 		const progress = new Progress();
+// 		// make sure an array of items was provided
+// 		if (!Array.isArray(items)) items = [items];
+// 		// create item -> qid map that will be returned at the end
+// 		const qidMap = new Map(items.map((item) => [item, item.qid]));
+// 		// one pool of identifiers to match against, across items and PID type
+// 		let identifiers = items.reduce((identifiers, item) => {
+// 			// Fixme: support more PIDs
+// 			// also support multiple PIDs per item (e.g., DOI & PMID)
+// 			// see #51
+// 			const cleanDoi = Zotero.Utilities.cleanDOI(item.doi);
+// 			const cleanIsbn = Zotero.Utilities.cleanISBN(item.isbn);
+// 			if (cleanDoi) {
+// 				// Wikidata's P356 (DOI) value is automatically transformed
+// 				// to uppercase https://www.wikidata.org/wiki/Property_talk:P356#Documentation
+// 				identifiers.push(cleanDoi.toUpperCase());
+// 			} else if (cleanIsbn) {
+// 				identifiers.push(cleanIsbn);
+// 			}
+// 			return identifiers;
+// 		}, []);
+// 		identifiers = [...new Set(identifiers)];
+// 		if (identifiers.length) {
+// 			// if at least one supported identifier available,
+// 			// run the SPARQL query
+// 			const identifierString = identifiers
+// 				.map((identifier) => `"${identifier}"`)
+// 				.join(" ");
+// 			const sparql = `
+// SELECT ?item ?itemLabel ?doi ?isbn WHERE {
+//     VALUES ?identifier { ${identifierString} }.
+//     ?item (wdt:P356|wdt:P212|wdt:P957) ?identifier.
+//     OPTIONAL {
+//         ?item wdt:P356 ?doi.
+//     }
+//     OPTIONAL {
+//         ?item wdt:P212 ?isbn
+//     }    
+//     OPTIONAL {
+//         ?item wdt:P957 ?isbn
+//     }
+//     SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
+// }
+// `;
+// 			const [url, body] = wdk.sparqlQuery(sparql).split("?");
+// 			progress.newLine(
+// 				"loading",
+// 				Wikicite.getString(
+// 					"wikicite.wikidata.progress.qid.fetch.loading",
+// 				),
+// 			);
+// 			let results;
+// 			try {
+// 				// make POST request in case query is too long
+// 				const xmlhttp = await Zotero.HTTP.request("POST", url, {
+// 					body: body,
+// 					headers: {
+// 						"User-Agent": `${Wikicite.getUserAgent()} wikibase-sdk/v${wbSdkVersion || "?"}`,
+// 					},
+// 				});
+// 				results = wdk.simplify.sparqlResults(xmlhttp.response);
+// 			} catch {
+// 				progress.updateLine(
+// 					"error",
+// 					Wikicite.getString(
+// 						"wikicite.wikidata.progress.qid.fetch.error",
+// 					),
+// 				);
+// 			}
 
-			if (results.length) {
-				progress.updateLine(
-					"done",
-					Wikicite.getString(
-						"wikicite.wikidata.progress.qid.fetch.done",
-					),
-				);
-				for (const item of items) {
-					// matches are sparql results/entities whose doi or isbn
-					// match the current item doi or isbn
-					// Fixme: support other PIDs, see #51
-					let matches;
-					if (item.doi) {
-						matches = results.filter(
-							(result) => result.doi === item.doi.toUpperCase(),
-						);
-					} else if (item.isbn) {
-						matches = results.filter(
-							(result) => result.isbn === item.isbn,
-						);
-					}
-					if (matches.length) {
-						const qids = matches.map((match) => match.item.value);
-						// if multiple entities found, choose the oldest one
-						const qid = qids.sort()[0];
-						// add matching qid to the qidMap to be returned
-						qidMap.set(item, qid);
-					}
-				}
-			} else {
-				// no results from sparql query
-				progress.updateLine(
-					"error",
-					Wikicite.getString(
-						"wikicite.wikidata.progress.qid.fetch.zero",
-					),
-				);
-			}
-		} else {
-			// items provided have no supported PIDs (DOI, ISBN)
-			progress.newLine("error", "No valid unique identifiers provided");
-		}
-		// Fixme: approximate search should be available for all items for which a
-		// qid could not be returned before trying to create a new entity
-		if ([...qidMap.values()].some((qid) => typeof qid === "undefined")) {
-			// at least one of the items provided isn't mapped to a qid yet
-			Services.prompt.alert(
-				null,
-				"Title query unsupported",
-				"QID could not be fetched for some items, and title query not yet supported",
-			);
-			// approximate parameter to use fields other than UIDs
-			// this should either use MediaWiki API's wbsearchentities or query actions
-			// see https://stackoverflow.com/questions/37170179/wikidata-api-wbsearchentities-why-are-results-not-the-same-in-python-than-in-wi
-			// but as I understand one Api call would be made for each query, I would limit
-			// this to single item searches (i.e. not item arrays)
-			// if (items.length < 2) {}
-			// https://www.wikidata.org/w/api.php?action=wbsearchentities&search=social interaction and conceptual change&format=json&language=en
-			// I may have to show confirmation dialogs for user to confirm
-			// but maybe this is intrusive for automatic runs (install, or new item)
-			// maybe additional option too?
-		}
+// 			if (results.length) {
+// 				progress.updateLine(
+// 					"done",
+// 					Wikicite.getString(
+// 						"wikicite.wikidata.progress.qid.fetch.done",
+// 					),
+// 				);
+// 				for (const item of items) {
+// 					// matches are sparql results/entities whose doi or isbn
+// 					// match the current item doi or isbn
+// 					// Fixme: support other PIDs, see #51
+// 					let matches;
+// 					if (item.doi) {
+// 						matches = results.filter(
+// 							(result) => result.doi === item.doi.toUpperCase(),
+// 						);
+// 					} else if (item.isbn) {
+// 						matches = results.filter(
+// 							(result) => result.isbn === item.isbn,
+// 						);
+// 					}
+// 					if (matches.length) {
+// 						const qids = matches.map((match) => match.item.value);
+// 						// if multiple entities found, choose the oldest one
+// 						const qid = qids.sort()[0];
+// 						// add matching qid to the qidMap to be returned
+// 						qidMap.set(item, qid);
+// 					}
+// 				}
+// 			} else {
+// 				// no results from sparql query
+// 				progress.updateLine(
+// 					"error",
+// 					Wikicite.getString(
+// 						"wikicite.wikidata.progress.qid.fetch.zero",
+// 					),
+// 				);
+// 			}
+// 		} else {
+// 			// items provided have no supported PIDs (DOI, ISBN)
+// 			progress.newLine("error", "No valid unique identifiers provided");
+// 		}
+// 		// Fixme: approximate search should be available for all items for which a
+// 		// qid could not be returned before trying to create a new entity
+// 		if ([...qidMap.values()].some((qid) => typeof qid === "undefined")) {
+// 			// at least one of the items provided isn't mapped to a qid yet
+// 			Services.prompt.alert(
+// 				null,
+// 				"Title query unsupported",
+// 				"QID could not be fetched for some items, and title query not yet supported",
+// 			);
+// 			// approximate parameter to use fields other than UIDs
+// 			// this should either use MediaWiki API's wbsearchentities or query actions
+// 			// see https://stackoverflow.com/questions/37170179/wikidata-api-wbsearchentities-why-are-results-not-the-same-in-python-than-in-wi
+// 			// but as I understand one Api call would be made for each query, I would limit
+// 			// this to single item searches (i.e. not item arrays)
+// 			// if (items.length < 2) {}
+// 			// https://www.wikidata.org/w/api.php?action=wbsearchentities&search=social interaction and conceptual change&format=json&language=en
+// 			// I may have to show confirmation dialogs for user to confirm
+// 			// but maybe this is intrusive for automatic runs (install, or new item)
+// 			// maybe additional option too?
+// 		}
 
-		// handle offer create new one if not found
-		// maybe just send them to the webpage, idk
-		// issue #33
-		if (create) {
-			Services.prompt.alert(
-				window,
-				"Unsupported",
-				"Creating new entities in Wikidata not yet supported",
-			);
-		}
-		progress.close();
-		return qidMap;
-	}
+// 		// handle offer create new one if not found
+// 		// maybe just send them to the webpage, idk
+// 		// issue #33
+// 		if (create) {
+// 			Services.prompt.alert(
+// 				window,
+// 				"Unsupported",
+// 				"Creating new entities in Wikidata not yet supported",
+// 			);
+// 		}
+// 		progress.close();
+// 		return qidMap;
+// 	}
 
 	/**
 	 * Creates a Wikidata entity for an item wrapper provided
@@ -577,7 +583,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 	 * @returns {(String|undefined|null)} qid - QID of entity created, null if cancelled, or
 	 *     undefined if QID is unknown (created with QuickStatements)
 	 */
-	static async create(item, options = { checkDuplicates: true }) {
+	static async create(item: ItemWrapper, options = { checkDuplicates: true }) {
 		if (options.checkDuplicates) {
 			throw Error(
 				"Checking for duplicates within create function non-supported.",
@@ -710,7 +716,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 								),
 							);
 						} catch (error) {
-							login.onError(error);
+							login.onError(error as Error);
 							if (!login.error) {
 								qid = null;
 								progress.updateLine(
@@ -786,7 +792,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 	 * @param {Array} properties - Array of one or more Wikidata properties to get (eg. 'P356' for doi)
 	 * @returns {Promise} { entityQID: {property1: value1, property2: value2} }
 	 */
-	static async getProperties(sourceQIDs, properties) {
+	static async getProperties(sourceQIDs: string | string[], properties: string | string[]) {
 		if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
 		if (!Array.isArray(properties)) properties = [properties];
 		// Fixme: alternatively, use the SPARQL endpoint to get more than 50
@@ -796,7 +802,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 			props: "claims",
 			format: "json",
 		});
-		const data = {};
+		const data: {[id: string] : {[id: string]: any}} = {};
 		while (urls.length) {
 			const url = urls.shift();
 			try {
@@ -817,7 +823,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 					}
 				}
 			} catch (err) {
-				debug("Getting properties failed", err);
+				debug("Getting properties failed", err as Error);
 			}
 		}
 		return data;
@@ -829,21 +835,21 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 	 * @param {Array} entityData - Dictionary from getProperties function, of form: {entityQID: {P50: [authors], P2903: [author name strings]}}
 	 * @returns {Promise} author string map { entityQID: [author list] }
 	 */
-	static async getAuthors(entityData) {
-		let authorStringMap = {};
+	static async getAuthors(entityData: {[id: string]: {[id: string]: string[]}}) {
+		let authorStringMap: {[id: string]: string[]} = {};
 		let idsToQuery = [];
-		let entityIdsOfAuthors = {};
-		for (let key of Object.keys(entityData)) {
+		let entityIdsOfAuthors: {[id: string]: string} = {};
+		for (let [key, value] of Object.entries(entityData)) {
 			authorStringMap[key] = [];
-			if (entityData[key][properties.author].length > 0) {
-				for (let authorID of entityData[key][properties.author]) {
+			if (value[properties.author].length > 0) {
+				for (let authorID of value[properties.author]) {
 					idsToQuery.push(authorID);
 					entityIdsOfAuthors[authorID] = key;
 				}
 			}
-			if (entityData[key][properties.authorNameString].length > 0) {
+			if (value[properties.authorNameString].length > 0) {
 				authorStringMap[key] = authorStringMap[key].concat(
-					entityData[key][properties.authorNameString],
+					value[properties.authorNameString],
 				);
 			}
 		}
@@ -870,7 +876,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 					);
 				}
 			} catch (err) {
-				debug("Getting properties failed", err);
+				debug("Getting properties failed", err as Error);
 			}
 		}
 		return authorStringMap;
@@ -881,7 +887,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 	 * @param {Array} sourceQIDs - Array of one or more entity QIDs
 	 * @returns {Promise} Citations map { entityQID: [cites work QIDs]... }
 	 */
-	static async getCitesWorkClaims(sourceQIDs) {
+	static async getCitesWorkClaims(sourceQIDs: string | string[]) {
 		if (!Array.isArray(sourceQIDs)) sourceQIDs = [sourceQIDs];
 		// Fixme: alternatively, use the SPARQL endpoint to get more than 50
 		// entities per request, and to get only the claims I'm interested in
@@ -891,7 +897,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 			props: ["claims"],
 			format: "json",
 		});
-		const citesWorkClaims = {};
+		const citesWorkClaims: {[id: string]: any} = {};
 		while (urls.length) {
 			const url = urls.shift();
 			try {
@@ -919,7 +925,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 					}
 				}
 			} catch (err) {
-				debug('Getting "cites work" claims failed', err);
+				debug('Getting "cites work" claims failed', err as Error);
 			}
 		}
 		return citesWorkClaims;
@@ -930,8 +936,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 	 * @param {Array} qids - Array of one or more QIDs to fetch metadata for
 	 * @returns {Promise} - Map of QIDs and their corresponding Zotero item
 	 */
-	static async getItems(qids) {
-		const itemMap = new Map(qids.map((qid) => [qid, undefined]));
+	static async getItems(qids: string[]) {
+		const itemMap: Map<string, Zotero.Item | undefined> = new Map(qids.map((qid) => [qid, undefined]));
 		// this seems to fix that Zotero.Translate.Search() would fail if called
 		// too early
 		await Zotero.Schema.schemaUpdatePromise;
@@ -968,9 +974,9 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 		return itemMap;
 	}
 
-	static async updateCitesWorkClaims(citesWorkClaims) {
+	static async updateCitesWorkClaims(citesWorkClaims: {[id: string]: any}) {
 		const login = new Login();
-		const results = {};
+		const results: {[id: string]: string} = {};
 		for (const id of Object.keys(citesWorkClaims)) {
 			const actionType = getActionType(citesWorkClaims[id]);
 
@@ -1015,10 +1021,10 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 						results[id] = "unsuccessful";
 					}
 				} catch (error) {
-					login.onError(error);
+					login.onError(error as Error);
 					if (!login.error) {
 						// if not login error, save error name and proceed with next id
-						results[id] = error.name;
+						results[id] = (error  as Error).name;
 					}
 				}
 			} while (login.error);
@@ -1043,7 +1049,7 @@ class Login {
 	error: boolean;
 	username: any;
 	password: any;
-	save: boolean;
+	save?: boolean;
 	constructor() {
 		this.error = false;
 	}
@@ -1051,9 +1057,7 @@ class Login {
 	get credentials() {
 		let credentials;
 		if (!this.anonymous) {
-			credentials = {};
-			credentials.username = this.username;
-			credentials.password = this.password;
+			credentials = {username: this.username, password: this.password};
 		}
 		return credentials;
 	}
@@ -1147,7 +1151,7 @@ class Login {
  * For a set of claims, return the type of action
  * (add, edit, remove or update) that will be requested.
  */
-function getActionType(claims) {
+function getActionType(claims: any[]) {
 	let actionType;
 	if (claims.some((claim) => claim.id)) {
 		if (claims.every((claim) => claim.id)) {
