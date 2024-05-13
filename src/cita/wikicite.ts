@@ -62,18 +62,19 @@ export default {
 
 	_bundle: (() => {
 		const zoteroLocale = Zotero.locale;
-		const requestedLocale = Services.locale.getRequestedLocale();
-		let propertiesFile;
-		if (zoteroLocale.split("-")[0] === requestedLocale.split("-")[0]) {
-			propertiesFile = "chrome://cita/locale/wikicite.properties";
-		} else {
-			// support locales not supported by Zotero
-			propertiesFile = [
-				"chrome://cita/content/locale",
-				requestedLocale,
-				"wikicite.properties",
-			].join("/");
-		}
+		// this function doesn't exist
+		// const requestedLocale = Services.locale.getRequestedLocale();
+		let propertiesFile = "chrome://cita/locale/wikicite.properties";;
+		// if (zoteroLocale.split("-")[0] === requestedLocale.split("-")[0]) {
+		// 	propertiesFile = "chrome://cita/locale/wikicite.properties";
+		// } else {
+		// 	// support locales not supported by Zotero
+		// 	propertiesFile = [
+		// 		"chrome://cita/content/locale",
+		// 		requestedLocale,
+		// 		"wikicite.properties",
+		// 	].join("/");
+		// }
 		return Services.strings.createBundle(propertiesFile);
 	})(),
 	_fallbackBundle: Services.strings.createBundle(

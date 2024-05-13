@@ -1,4 +1,4 @@
-import Wikicite from "./wikicite";
+// import Wikicite from "./wikicite";
 
 declare const Services: any;
 declare global {
