@@ -7,7 +7,9 @@ locale    cita    es        chrome/locale/es/
 locale    cita    fa        chrome/locale/fa/
 locale    cita    fi        chrome/locale/fi/
 locale    cita    fr        chrome/locale/fr/
+locale    cita    gl        chrome/locale/gl/
 locale    cita    he        chrome/locale/he/
+locale    cita    id        chrome/locale/id/
 locale    cita    it        chrome/locale/it/
 locale    cita    ko        chrome/locale/ko/
 locale    cita    mk        chrome/locale/mk/
