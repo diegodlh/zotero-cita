@@ -1,9 +1,9 @@
-// import ZoteroReadingList from "./modules/overlay";
 import { config } from "../package.json";
 import { initLocale } from "./utils/locale";
 import { createZToolkit } from "./utils/ztoolkit";
+import ZoteroOverlay from "./cita/zoteroOverlay";
 
-// let zoteroReadingList: ZoteroReadingList;
+let zoteroOverlay: ZoteroOverlay;
 
 async function onStartup() {
 	await Promise.all([
@@ -28,12 +28,12 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
 	// Create ztoolkit for every window
 	addon.data.ztoolkit = createZToolkit();
-	// zoteroReadingList = new ZoteroReadingList();
+	zoteroOverlay = new ZoteroOverlay();
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
 async function onMainWindowUnload(win: Window): Promise<void> {
-	// zoteroReadingList.unload();
+	zoteroOverlay.unload();
 	ztoolkit.unregisterAll();
 	addon.data.dialog?.window?.close();
 }
