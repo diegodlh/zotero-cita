@@ -10,14 +10,10 @@ import Progress from "./progress";
 import Wikidata from "./wikidata";
 // import { getExtraField } from './wikicite';
 
-declare const Components: any;
-declare const DOMParser: any;
-declare const Services: any;
-declare const Zotero: any;
 declare const Zotero_File_Exporter: any;
 
 // replacer function for JSON.stringify
-function replacer(key, value) {
+function replacer(key: string, value: any) {
 	if (!value) {
 		// do not include property if value is null or undefined
 		return undefined;
@@ -27,15 +23,15 @@ function replacer(key, value) {
 
 class SourceItemWrapper extends ItemWrapper {
 	newRelations: any;
-	_citations: any[];
+	_citations: Citation[];
 	_batch: boolean;
-	_storage: string;
+	_storage: "extra" | "note";
 	// When I thought of this originally, I wasn't giving the source item to the citation creator
 	// but then I understood it made sense I passed some reference to the source object
 	// given that the citation is a link between two objects (according to the OC model)
 	// so check if any methods here make sense to be moved to the Citation class instead
 
-	constructor(item, storage) {
+	constructor(item: Zotero.Item, storage: "extra" | "note") {
 		super(item, item.saveTx.bind(item));
 		this._citations = [];
 		this._batch = false;
@@ -44,7 +40,7 @@ class SourceItemWrapper extends ItemWrapper {
 		this.loadCitations(false);
 	}
 
-	get citations() {
+	get citations(): Citation[] {
 		return this._citations;
 	}
 
@@ -52,8 +48,9 @@ class SourceItemWrapper extends ItemWrapper {
 		return this._batch;
 	}
 
-	set citations(citations) {
-		const t0 = performance.now();
+	set citations(citations: any[]) {
+		// fix performance was undefined, only accessible when building for node
+		// const t0 = performance.now();
 		if (this._storage === "extra") {
 			const jsonCitations = citations.map((citation) => {
 				let json = JSON.stringify(
@@ -92,10 +89,10 @@ class SourceItemWrapper extends ItemWrapper {
 			note.saveTx();
 		}
 		this._citations = citations;
-		debug(`Saving citations to source item took ${performance.now() - t0}`);
+		// debug(`Saving citations to source item took ${performance.now() - t0}`);
 	}
 
-	async setCitations(citations) {
+	async setCitations(citations: any[]) {
 		if (this._storage === "extra") {
 			const jsonCitations = citations.map((citation) => {
 				let json = JSON.stringify(
@@ -134,24 +131,24 @@ class SourceItemWrapper extends ItemWrapper {
 	}
 
 	get corruptCitations() {
-		const t0 = performance.now();
+		// const t0 = performance.now();
 		const corruptCitations = Wikicite.getExtraField(
 			this.item,
 			"corrupt-citation",
 		).values;
-		debug(
-			`Getting corrupt citations from source item took ${performance.now() - t0}`,
-		);
+		// debug(
+		// `Getting corrupt citations from source item took ${performance.now() - t0}`,
+		// );
 		return corruptCitations;
 	}
 
 	set corruptCitations(corruptCitations) {
-		const t0 = performance.now();
+		// const t0 = performance.now();
 		Wikicite.setExtraField(this.item, "corrupt-citation", corruptCitations);
 		this.saveHandler();
-		debug(
-			`Saving corrupt citations to source item took ${performance.now() - t0}`,
-		);
+		// debug(
+		// 	`Saving corrupt citations to source item took ${performance.now() - t0}`,
+		// );
 	}
 
 	/**
@@ -159,7 +156,7 @@ class SourceItemWrapper extends ItemWrapper {
 	 * @param {Object} [matcher] Initialized Matcher object for batch operations
 	 * @param {Boolean} [noReload] Do not reload citations before automatic linking
 	 */
-	async autoLinkCitations(matcher, noReload = false) {
+	async autoLinkCitations(matcher: Matcher, noReload = false) {
 		let progress;
 		if (!matcher) {
 			matcher = new Matcher(this.item.libraryID);
@@ -202,9 +199,9 @@ class SourceItemWrapper extends ItemWrapper {
 	 */
 	loadCitations(compare = true) {
 		if (this.batch) return;
-		const t0 = performance.now();
+		// const t0 = performance.now();
 		const citations = [];
-		const corruptCitations = [];
+		const corruptCitations: any[] = [];
 		if (this._storage === "extra") {
 			const rawCitations = Wikicite.getExtraField(
 				this.item,
@@ -244,7 +241,7 @@ class SourceItemWrapper extends ItemWrapper {
 				// Fixme: Creating Citation objects takes most of the time
 				citations.push(
 					...rawCitations.map(
-						(rawCitation) => new Citation(rawCitation, this),
+						(rawCitation: any) => new Citation(rawCitation, this),
 					),
 				);
 				// const items = await Promise.all(rawCitations.map((rawCitation) => {
@@ -274,9 +271,9 @@ class SourceItemWrapper extends ItemWrapper {
 			this.corruptCitations =
 				this.corruptCitations.concat(corruptCitations);
 		}
-		debug(
-			`Getting citations from source item took ${performance.now() - t0}`,
-		);
+		// debug(
+		// 	`Getting citations from source item took ${performance.now() - t0}`,
+		// );
 	}
 
 	/**
@@ -284,7 +281,7 @@ class SourceItemWrapper extends ItemWrapper {
 	 * Note: This needs to be executed inside a Zotero DB transaction (Zotero.DB.executeTransaction).
 	 * @param {string} [to] The new storage location
 	 */
-	async migrateCitations(to) {
+	async migrateCitations(to: "note" | "extra") {
 		const oldStorage = this._storage;
 		this._storage = to;
 		if (this._citations.length > 0) {
@@ -350,11 +347,14 @@ class SourceItemWrapper extends ItemWrapper {
 	 * @param {String} idType - One of: index, doi, isbn, occ, qid
 	 * @return {Array} citations - Array of matching citations.
 	 */
-	getCitations(id, idType) {
+	getCitations(
+		id: number | string,
+		idType: "index" | "doi" | "isbn" | "qid",
+	) {
 		const citations = [];
-		const indices = [];
+		const indices: number[] = [];
 		if (idType === "index") {
-			citations.push(this.citations[id]);
+			citations.push(this.citations[id as number]);
 		} else {
 			this.citations.forEach((citation, index) => {
 				if (citation.target[idType] === id) {
@@ -372,7 +372,7 @@ class SourceItemWrapper extends ItemWrapper {
 	/*
 	 * @param {Boolean} batch - Do not update or save citations at the beginning and at the end.
 	 */
-	addCitations(citations) {
+	addCitations(citations: any) {
 		// Fixme: apart from one day implementing possible duplicates
 		// here I have to check other UUIDs too (not only QID)
 		// and if they overlap, add the new OCIs provided only
@@ -398,7 +398,7 @@ class SourceItemWrapper extends ItemWrapper {
 	//     this.updateCitationLabels();
 	// }
 
-	async deleteCitation(index, sync) {
+	async deleteCitation(index: number, sync: boolean) {
 		this.loadCitations();
 		if (sync) {
 			const citation = this.citations[index];
@@ -439,22 +439,28 @@ class SourceItemWrapper extends ItemWrapper {
 		// this.updateCitationLabels();  //deprecated
 	}
 
-	getCitedPIDs(type, options = { clean: true, skipCitation: undefined }) {
-		const citedPIDs = this.citations.reduce((citedPIDs, citation) => {
-			if (citation !== options.skipCitation) {
-				const pid = citation.target.getPID(type, options.clean);
-				if (pid && !citedPIDs.includes(pid)) {
-					citedPIDs.push(pid);
+	getCitedPIDs(
+		type: PIDType,
+		options = { clean: true, skipCitation: undefined },
+	) {
+		const citedPIDs = this.citations.reduce(
+			(citedPIDs: string[], citation: Citation) => {
+				if (citation !== options.skipCitation) {
+					const pid = citation.target.getPID(type, options.clean);
+					if (pid && !citedPIDs.includes(pid)) {
+						citedPIDs.push(pid);
+					}
 				}
-			}
-			return citedPIDs;
-		}, []);
+				return citedPIDs;
+			},
+			[],
+		);
 		return citedPIDs;
 	}
 
 	checkPID(
-		type,
-		value,
+		type: PIDType,
+		value: string,
 		options = {
 			alert: false,
 			parentWindow: null,
@@ -539,7 +545,7 @@ class SourceItemWrapper extends ItemWrapper {
 		//
 	}
 
-	syncWithWikidata(citationIndex) {
+	syncWithWikidata(citationIndex: number) {
 		if (citationIndex !== undefined) {
 			// Alternatively, do this for the citationIndex provided
 			Services.prompt.alert(
@@ -566,7 +572,7 @@ class SourceItemWrapper extends ItemWrapper {
 	// only perfect matches will be selected if used for multiple items.
 	// For a single item, a choice between approximate matches or
 	// the option to create a new Wikidata item will be offered
-	async fetchCitationQIDs(citationIndex) {
+	async fetchCitationQIDs(citationIndex: number) {
 		this.loadCitations();
 		let citationsToFetchQIDs;
 		if (citationIndex === undefined) {
@@ -581,13 +587,13 @@ class SourceItemWrapper extends ItemWrapper {
 		const qidMap = await Wikidata.reconcile(citedItems);
 		this.startBatch(true); // noReload=true
 		for (const item of citedItems) {
-			const qid = qidMap.get(item);
+			const qid = qidMap?.get(item);
 			if (qid) item.setPID("QID", qid);
 		}
 		this.endBatch();
 	}
 
-	getFromPDF(method, fetchDOIs, fetchQIDs) {
+	getFromPDF(method: any, fetchDOIs: any, fetchQIDs: any) {
 		Extraction.extract();
 		// fail if no PDF attachments found
 		// either check preferences here or get them from method parameter
@@ -640,7 +646,7 @@ class SourceItemWrapper extends ItemWrapper {
 					translation.setString(retVals.text);
 				} else {
 					translation.setLocation(
-						Zotero.File.pathToFile(retVals.path),
+						Zotero.File.pathToFile(retVals.path!), // we know this isn't undefined
 					);
 				}
 				const translators = await translation.getTranslators();
@@ -693,7 +699,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	exportToFile(citationIndex) {
+	exportToFile(citationIndex: number) {
 		this.loadCitations();
 		if (this.citations.length) {
 			const exporter = new Zotero_File_Exporter();
@@ -835,7 +841,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	exportToCroci(citationIndex) {
+	exportToCroci(citationIndex: number) {
 		OpenCitations.exportCitations();
 	}
 }

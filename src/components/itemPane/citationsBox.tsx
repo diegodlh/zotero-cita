@@ -1,22 +1,26 @@
 /* License */
-import React, { useEffect, useState } from "react";
+import * as React from "react";
+import { useEffect, useState } from "react";
+import * as PropTypes from "prop-types";
 import Wikicite, { debug } from "../../cita/wikicite";
-import { Button } from "../button";
+// import { Button } from "../button";
 import Citation from "../../cita/citation";
-import { IntlProvider } from "react-intl";
-import PIDRow from "../pidRow";
-import PropTypes from "prop-types";
+// import { IntlProvider } from "react-intl";
+// import PIDRow from "../pidRow";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import WikidataButton from "./wikidataButton";
-import ZoteroButton from "./zoteroButton";
+// import ZoteroButton from "./zoteroButton";
 
-declare const Services: any;
-declare const Zotero: any;
-
-function CitationsBox(props: any) {
-	const [citations, setCitations] = useState([]);
-	const [pidTypes, setPidTypes] = useState([]);
-	const [sortedIndices, setSortedIndices] = useState([]);
+function CitationsBox(props: {
+	editable: boolean;
+	sortBy: string;
+	sourceItem: SourceItemWrapper;
+	onItemPopup: (event: Event) => void;
+	onCitationPopup: (event: Event, index: number) => void;
+}) {
+	const [citations, setCitations] = useState([] as Citation[]);
+	const [pidTypes, setPidTypes] = useState([] as string[]);
+	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
 
 	const removeStr = Zotero.getString("general.remove");
@@ -32,13 +36,17 @@ function CitationsBox(props: any) {
 	useEffect(() => {
 		// update citations box height when pid types are updated
 		// and pid rows are rendered below
-		window.WikiciteChrome.zoteroOverlay.updateCitationsBoxSize(
-			window.document,
-		);
+		// todo: do we still need to do this?
+		// window.WikiciteChrome.zoteroOverlay.updateCitationsBoxSize(
+		// 	window.document,
+		// );
 	}, [pidTypes]);
 
 	useEffect(() => {
-		const items = props.sourceItem.citations.map(
+		const items: {
+			index: number;
+			value: string | number | Date | undefined;
+		}[] = props.sourceItem.citations.map(
 			(citation: Citation, index: number) => {
 				let value;
 				switch (props.sortBy) {
@@ -49,11 +57,13 @@ function CitationsBox(props: any) {
 						value = citation.target.item.getField("firstCreator");
 						break;
 					case "date":
-						value = new Date(
-							Zotero.Date.strToISO(
-								citation.target.item.getField("date"),
-							),
+						const date = Zotero.Date.strToISO(
+							citation.target.item.getField("date"),
 						);
+						if (date) {
+							// strToISO could return a string or false
+							value = new Date(date);
+						}
 						break;
 					case "title":
 						value = citation.target.title;
@@ -63,8 +73,8 @@ function CitationsBox(props: any) {
 				return { index: index, value: value };
 			},
 		);
-		items.sort((a: any, b: any) => (a.value > b.value ? 1 : -1));
-		setSortedIndices(items.map((item: any) => item.index));
+		items.sort((a, b) => (a.value! > b.value! ? 1 : -1));
+		setSortedIndices(items.map((item) => item.index));
 	}, [props.sortBy, props.sourceItem]);
 
 	/**
@@ -73,18 +83,19 @@ function CitationsBox(props: any) {
 	 * @returns {Zotero.Item} - Edited cited item.
 	 */
 	function openEditor(citation: Citation) {
-		const args = {
-			citation: citation,
-			Wikicite: Wikicite,
-		};
+		// const args = {
+		// 	citation: citation,
+		// 	Wikicite: Wikicite,
+		// };
 		const retVals: { [key: string]: any } = {};
-		window.openDialog(
-			"chrome://cita/content/citationEditor.xul",
-			"",
-			"chrome,dialog=no,modal,centerscreen,resizable=yes",
-			args,
-			retVals,
-		);
+		// fix
+		// window.openDialog(
+		// 	"chrome://cita/content/citationEditor.xul",
+		// 	"",
+		// 	"chrome,dialog=no,modal,centerscreen,resizable=yes",
+		// 	args,
+		// 	retVals,
+		// );
 		return retVals.item;
 	}
 
@@ -104,8 +115,8 @@ function CitationsBox(props: any) {
 			return;
 		}
 		if (
-			props.sourceItem.getPID("qid") &&
-			Wikicite.getExtraField(item, "qid").values[0]
+			props.sourceItem.getPID("QID") &&
+			Wikicite.getExtraField(item, "QID").values[0]
 		) {
 			debug(
 				"Source and target items have QIDs! Offer syncing to Wikidata.",
@@ -133,7 +144,7 @@ function CitationsBox(props: any) {
 		// However, as props.item will not have changed, component will not update.
 	}
 
-	function handleCitationEdit(index) {
+	function handleCitationEdit(index: number) {
 		const citation = citations[index];
 		const item = openEditor(citation);
 		// Fixme: I don't like that I'm repeating code from addCitation
@@ -143,8 +154,8 @@ function CitationsBox(props: any) {
 			return;
 		}
 		if (
-			props.sourceItem.getPID("qid") &&
-			Wikicite.getExtraField(item, "qid").values[0]
+			props.sourceItem.getPID("QID") &&
+			Wikicite.getExtraField(item, "QID").values[0]
 		) {
 			debug(
 				"Source and target items have QIDs! Offer syncing to Wikidata.",
@@ -158,49 +169,50 @@ function CitationsBox(props: any) {
 	}
 
 	async function handleCitationDelete(index: number) {
-		let sync = false;
-		const citation = citations[index];
-		if (citation.getOCI("wikidata")) {
-			// Fixme: offer to remember user choice
-			// get this from preferences: remembered "delete remote too" choice
-			// const remember = {value: false};
-			const bttnFlags =
-				Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_NO +
-				Services.prompt.BUTTON_POS_1 *
-					Services.prompt.BUTTON_TITLE_CANCEL +
-				Services.prompt.BUTTON_POS_2 *
-					Services.prompt.BUTTON_TITLE_YES +
-				Services.prompt.BUTTON_POS_2_DEFAULT;
-			const response = Services.prompt.confirmEx(
-				window,
-				Wikicite.getString(
-					"wikicite.citations-pane.delete.remote.title",
-				),
-				Wikicite.getString(
-					"wikicite.citations-pane.delete.remote.message",
-				),
-				bttnFlags,
-				"",
-				"",
-				"",
-				undefined, // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
-				{}, // remember
-			);
-			switch (response) {
-				case 0:
-					// no
-					sync = false;
-					break;
-				case 1:
-					// cancel
-					return;
-				case 2:
-					// yes
-					sync = true;
-					break;
-			}
-		}
-		await props.sourceItem.deleteCitation(index, sync);
+		// fix: getOCI function - not sure how it should work?
+		// let sync = false;
+		// const citation = citations[index];
+		// if (citation.getOCI("wikidata")) {
+		// 	// Fixme: offer to remember user choice
+		// 	// get this from preferences: remembered "delete remote too" choice
+		// 	// const remember = {value: false};
+		// 	const bttnFlags =
+		// 		Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_NO +
+		// 		Services.prompt.BUTTON_POS_1 *
+		// 			Services.prompt.BUTTON_TITLE_CANCEL +
+		// 		Services.prompt.BUTTON_POS_2 *
+		// 			Services.prompt.BUTTON_TITLE_YES +
+		// 		Services.prompt.BUTTON_POS_2_DEFAULT;
+		// 	const response = Services.prompt.confirmEx(
+		// 		window,
+		// 		Wikicite.getString(
+		// 			"wikicite.citations-pane.delete.remote.title",
+		// 		),
+		// 		Wikicite.getString(
+		// 			"wikicite.citations-pane.delete.remote.message",
+		// 		),
+		// 		bttnFlags,
+		// 		"",
+		// 		"",
+		// 		"",
+		// 		undefined, // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
+		// 		{}, // remember
+		// 	);
+		// 	switch (response) {
+		// 		case 0:
+		// 			// no
+		// 			sync = false;
+		// 			break;
+		// 		case 1:
+		// 			// cancel
+		// 			return;
+		// 		case 2:
+		// 			// yes
+		// 			sync = true;
+		// 			break;
+		// 	}
+		// }
+		// await props.sourceItem.deleteCitation(index, sync);
 	}
 
 	function handleCitationMove(index: number, shift: number) {
@@ -212,53 +224,51 @@ function CitationsBox(props: any) {
 	}
 
 	function handleCitationSync(index: number) {
+		// fix: getOCI function - not sure how it should work?
 		// Fixme: consider making this a Citation method
-		const citation = citations[index];
-		const syncable = citation.source.qid && citation.target.qid;
-		const oci = citation.getOCI("wikidata");
-		if (oci) {
-			if (oci.valid) {
-				citation.resolveOCI("wikidata");
-			} else {
-				// oci is invalid, i.e., citing or cited id do not match with
-				// local source or target id
-				Services.prompt.alert(
-					window,
-					Wikicite.getString("wikicite.oci.mismatch.title"),
-					Wikicite.formatString("wikicite.oci.mismatch.message", [
-						oci.supplier.charAt(0).toUpperCase() +
-							oci.supplier.slice(1),
-						oci.idType.toUpperCase(),
-						oci.citingId,
-						oci.citedId,
-					]),
-				);
-			}
-		} else if (syncable) {
-			props.sourceItem.syncWithWikidata(index);
-		} else {
-			Services.prompt.alert(
-				window,
-				Wikicite.getString("wikicite.citation.sync.error"),
-				Wikicite.getString("wikicite.citation.sync.error.qid"),
-			);
-		}
+		// const citation = citations[index];
+		// const syncable = citation.source.qid && citation.target.qid;
+		// const oci = citation.getOCI("wikidata");
+		// if (oci) {
+		// 	if (oci.valid) {
+		// 		citation.resolveOCI("wikidata");
+		// 	} else {
+		// 		// oci is invalid, i.e., citing or cited id do not match with
+		// 		// local source or target id
+		// 		Services.prompt.alert(
+		// 			window,
+		// 			Wikicite.getString("wikicite.oci.mismatch.title"),
+		// 			Wikicite.formatString("wikicite.oci.mismatch.message", [
+		// 				oci.supplier.charAt(0).toUpperCase() +
+		// 					oci.supplier.slice(1),
+		// 				oci.idType.toUpperCase(),
+		// 				oci.citingId,
+		// 				oci.citedId,
+		// 			]),
+		// 		);
+		// 	}
+		// } else if (syncable) {
+		// 	props.sourceItem.syncWithWikidata(index);
+		// } else {
+		// 	Services.prompt.alert(
+		// 		window,
+		// 		Wikicite.getString("wikicite.citation.sync.error"),
+		// 		Wikicite.getString("wikicite.citation.sync.error.qid"),
+		// 	);
+		// }
 	}
 
 	function renderCitationRow(citation: Citation, index: number) {
 		const item = citation.target.item;
-		const itemType = Zotero.ItemTypes.getName(item.itemTypeID);
-
 		const isFirstCitation = index === 0;
 		const isLastCitation = index === citations.length - 1;
-
 		const label = citation.target.getLabel();
 		return (
 			<li className="citation" key={index}>
 				<img
 					className="cita-icon"
-					src={Zotero.ItemTypes.getImageSrc(itemType)}
-					title={Zotero.ItemTypes.getLocalizedString(itemType)}
+					src={Zotero.ItemTypes.getImageSrc(item.itemType)}
+					title={Zotero.ItemTypes.getLocalizedString(item.itemType)}
 				/>
 				<div className="editable-container" title={label}>
 					<div
@@ -273,12 +283,12 @@ function CitationsBox(props: any) {
 				{props.editable && (
 					// https://github.com/babel/babel-sublime/issues/368
 					<>
-						<ZoteroButton citation={citation} />
+						{/* <ZoteroButton citation={citation} /> */}
 						<WikidataButton
 							citation={citation}
 							onClick={() => handleCitationSync(index)}
 						/>
-						<button
+						{/* <button
 							disabled={
 								isFirstCitation || props.sortBy !== "ordinal"
 							}
@@ -289,8 +299,8 @@ function CitationsBox(props: any) {
 								title="Move up"
 								src={`chrome://zotero/skin/citation-up.png`}
 							/>
-						</button>
-						<button
+						</button> */}
+						{/* <button
 							disabled={
 								isLastCitation || props.sortBy !== "ordinal"
 							}
@@ -301,8 +311,8 @@ function CitationsBox(props: any) {
 								title="Move down"
 								src={`chrome://zotero/skin/citation-down.png`}
 							/>
-						</button>
-						<button
+						</button> */}
+						{/* <button
 							title={removeStr}
 							onClick={() => handleCitationDelete(index)}
 							tabIndex={-1}
@@ -314,15 +324,15 @@ function CitationsBox(props: any) {
 								// Fixme: does it change when active?
 								src={`chrome://zotero/skin/minus${Zotero.hiDPISuffix}.png`}
 							/>
-						</button>
-						<button
+						</button> */}
+						{/* <button
 							className="btn-icon"
 							onClick={(event) =>
 								props.onCitationPopup(event, index)
 							}
 						>
 							<span className="menu-marker"></span>
-						</button>
+						</button> */}
 					</>
 				)}
 			</li>
@@ -333,45 +343,41 @@ function CitationsBox(props: any) {
 		<div className="citations-box">
 			<div className="citations-box-header">
 				<div className="citations-box-count">
-					{Wikicite.formatString(
+					{/* todo: proper formatting */}
+					{`${citations.length} citation(s):`}
+					{/* {
+						Wikicite.formatString(
 						"wikicite.citations-pane.citations.count",
 						citations.length,
-					)}
+					)} */}
 				</div>
 				{props.editable && (
 					<div>
 						<button onClick={() => handleCitationAdd()}>
-							{Wikicite.getString("wikicite.citations-pane.add")}
+							{/* todo: proper formatting */}
+							Add
+							{/* {Wikicite.getString("wikicite.citations-pane.add")} */}
 						</button>
 					</div>
 				)}
-				<IntlProvider
-					locale={Zotero.locale}
-					// Fixme: improve messages object
-					messages={{
-						"wikicite.citations-pane.more": Wikicite.getString(
-							"wikicite.citations-pane.more",
-						),
-					}}
-				>
-					{/* Used to be a Button, but got some TS error so changed to div */}
-					<Button
-						/*icon={
-                            <span>
-                                <img
-                                    height="16px"
-                                    src="chrome://cita/skin/wikicite.png"
-                                />
-                            </span>
-                        }*/
-						className="citations-box-actions"
-						isMenu={true}
-						onClick={props.onItemPopup}
-						text="wikicite.citations-pane.more"
-						title=""
-						size="sm"
-					/>
-				</IntlProvider>
+				{<button onClick={() => props.onItemPopup}>More</button>}
+				{/* fix: button is broken */}
+				{/* <Button
+					icon={
+						<span>
+							<img
+								height="16px"
+								src="chrome://cita/skin/wikicite.png"
+							/>
+						</span>
+					}
+					className="citations-box-actions"
+					isMenu={true}
+					onClick={props.onItemPopup}
+					text="wikicite.citations-pane.more"
+					title=""
+					size="sm"
+				/> */}
 			</div>
 			<div className="citations-box-list-container">
 				<ul className="citations-box-list">
@@ -399,21 +405,21 @@ function CitationsBox(props: any) {
 						// consider having a pidBox component and
 						// redefining Wikicite.getExtraField to allow multiple fieldnames as input
 						// and return a fieldName: [values]} object instead
-						pidTypes.map((pidType) => (
-							<PIDRow
-								autosave={true}
-								editable={props.editable}
-								item={props.sourceItem}
-								key={pidType}
-								type={pidType}
-								validate={(type, value) =>
-									props.sourceItem.checkPID(type, value, {
-										alert: true,
-										parentWindow: window,
-									})
-								}
-							/>
-						))
+						// pidTypes.map((pidType) => (
+						// 	<PIDRow
+						// 		autosave={true}
+						// 		editable={props.editable}
+						// 		item={props.sourceItem}
+						// 		key={pidType}
+						// 		type={pidType}
+						// 		validate={(type, value) =>
+						// 			props.sourceItem.checkPID(type, value, {
+						// 				alert: true,
+						// 				parentWindow: window,
+						// 			})
+						// 		}
+						// 	/>
+						// ))
 					}
 				</ul>
 			</div>
