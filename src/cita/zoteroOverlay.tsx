@@ -27,7 +27,7 @@ const TRANSLATOR_LABELS = [
 	"Wikidata QuickStatements",
 ];
 
-const COLUMN_IDS = {
+const ITEM_PANE_COLUMN_IDS = {
 	QID: "qid",
 	CITATIONS: "citations",
 };
@@ -74,8 +74,9 @@ const COLUMN_IDS = {
 //     zoteroOverlay.handleCitationPopupShowing(document);
 // }
 
-// Fixme: change to Class?
 class ZoteroOverlay {
+	qidColumnID?: string | false;
+	numCitationsColumnID?: string | false;
 	/******************************************/
 	// Window load handling
 	/******************************************/
@@ -86,6 +87,8 @@ class ZoteroOverlay {
 		// });
 
 		this.fullOverlay();
+
+		this.addItemPaneColumns();
 
 		// // refresh item and collection submenus each time they show
 		// document.getElementById('zotero-itemmenu').addEventListener(
@@ -129,99 +132,12 @@ class ZoteroOverlay {
 
 		// this.installTranslators();
 
-		// // Code from better Bibtex used as example:
-		// // https://github.com/retorquere/zotero-better-bibtex/blob/d6b21b855237f05e7ab48b5a52d0188227dd044e/content/better-bibtex.ts#L267
-		// // This first half of the if statement is for compatibility with newer versions of Zotero after this commit:
-		// // https://github.com/zotero/zotero/commit/cbbff600a60c9e7a7407d6f2e4053309bf28b872#diff-f9d76d8fc0067fd30009f09edd0404cd7e58fd2b3366cd15bc1982e168da1db9
-		// if (typeof Zotero.ItemTreeView === 'undefined') {
-		//     const itemTree = require('zotero@zotero/itemTree');
-
-		//     const getColumns_original = itemTree.prototype.getColumns;
-		//     itemTree.prototype.getColumns = function () {
-		//         const columns = getColumns_original.apply(this, arguments);
-		//         columns.push({
-		//             dataKey: COLUMN_IDS.QID,
-		//             label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
-		//             flex: '1',
-		//             zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
-		//         });
-		//         columns.push({
-		//             dataKey: COLUMN_IDS.CITATIONS,
-		//             label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
-		//             flex: '1',
-		//             zoteroPersist: new Set(['width', 'ordinal', 'hidden', 'sortActive', 'sortDirection']),
-		//         });
-
-		//         return columns
-		//     };
-
-		//     const renderCell_original = itemTree.prototype._renderCell;
-		//     itemTree.prototype._renderCell = function (index: any, data: string, col: any) {
-		//         if (!CITA_COLUMNS.includes(col.id)) {
-		//             return renderCell_original.apply(this, arguments);
-		//         }
-
-		//         const text = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
-		//         text.className = 'cell-text';
-		//         text.innerText = data;
-
-		//         const cell = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
-		//         cell.className = `cell ${col.className}`;
-		//         cell.append(text);
-
-		//         return cell;
-		//     };
-		// }
-		// else {
-		//     const getCellText_original = Zotero.ItemTreeView.prototype.getCellText;
-		//     Zotero.ItemTreeView.prototype.getCellText = function (row: any, col: any) {
-		//         const item = this.getRow(row).ref;
-		//         if (col.id == COLUMN_IDS.QID) {
-		//             return `${new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).getPID('QID') || ''}`;
-		//         }
-		//         else if (col.id == COLUMN_IDS.CITATIONS) {
-		//             return `${new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).citations.length || '0'}`;
-		//         }
-		//         else return getCellText_original.apply(this, arguments);
-		//     };
-		// }
-
-		// const isFieldOfBase_original = Zotero.ItemFields.isFieldOfBase;
-		// Zotero.ItemFields.isFieldOfBase = function (field: string, _baseField: any) {
-		//     if (CITA_COLUMNS.includes(field)) return false
-		//     return isFieldOfBase_original.apply(this, arguments)
-		// }
-
-		// // To be able to sort by the QID or citations columns
-		// const getField_original = Zotero.Item.prototype.getField;
-		// Zotero.Item.prototype.getField = function (field: string, unformatted: any, includeBaseMapped: any) {
-		//     if (!CITA_COLUMNS.includes(field)) {
-		//         return getField_original.apply(this, arguments);
-		//     }
-
-		//     if (this.isRegularItem()) {
-		//         try {
-		//             if (field == COLUMN_IDS.QID) {
-		//                 return `${new SourceItemWrapper(this, window.Wikicite.Prefs.get('storage')).getPID('QID') || ''}`;
-		//             }
-		//             else if (field == COLUMN_IDS.CITATIONS) {
-		//                 return `${new SourceItemWrapper(this, window.Wikicite.Prefs.get('storage')).citations.length || 0}`;
-		//             }
-		//         }
-		//         catch (err) {
-		//             Zotero.logError(err)
-		//             return 'error';
-		//         }
-		//     }
-		//     else {
-		//         return '';
-		//     }
-		// }
-
 		// this.addNewTabListener()
 	}
 
 	unload() {
+		this.removeItemPaneColumns();
+
 		// // This event listener is never added
 		// // var toolsPopup = document.getElementById('menu_ToolsPopup')
 		// // toolsPopup.removeEventListener('popupshowing',
@@ -252,6 +168,54 @@ class ZoteroOverlay {
 		// this.switcherObserver.disconnect();
 		// this.uninstallTranslators();
 		// this.removeNewTabListener()
+	}
+
+	/******************************************/
+	// Modifying Item Pane
+	/******************************************/
+	async addItemPaneColumns() {
+		this.qidColumnID = await Zotero.ItemTreeManager.registerColumns({
+			dataKey: ITEM_PANE_COLUMN_IDS.QID,
+			// fix localisation
+			label: "QID",
+			// label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
+			pluginID: config.addonID,
+			dataProvider: (item: Zotero.Item, dataKey: string) => {
+				// fix: get pref
+				return new SourceItemWrapper(item, "note").getPID("QID") || "";
+				// return new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).getPID('QID') || '';
+			},
+		});
+
+		this.numCitationsColumnID =
+			await Zotero.ItemTreeManager.registerColumns({
+				dataKey: ITEM_PANE_COLUMN_IDS.CITATIONS,
+				// fix localisation
+				label: "Citations",
+				// label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
+				pluginID: config.addonID,
+				dataProvider: (item: Zotero.Item, dataKey: string) => {
+					// fix: get pref
+					return (
+						new SourceItemWrapper(
+							item,
+							"note",
+						).citations.length.toString() || "0"
+					);
+					// return new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).citations.length || '';
+				},
+			});
+	}
+
+	removeItemPaneColumns() {
+		if (this.qidColumnID) {
+			void Zotero.ItemTreeManager.unregisterColumns(this.qidColumnID);
+		}
+		if (this.numCitationsColumnID) {
+			void Zotero.ItemTreeManager.unregisterColumns(
+				this.numCitationsColumnID,
+			);
+		}
 	}
 
 	/******************************************/
@@ -518,12 +482,12 @@ class ZoteroOverlay {
 			splitter.setAttribute("class", "tree-splitter");
 			return splitter;
 		};
-		const treecolQID_ID = COLUMN_IDS.QID;
+		const treecolQID_ID = ITEM_PANE_COLUMN_IDS.QID;
 		const treecolQID = getTreecol(
 			treecolQID_ID,
 			Wikicite.getString("wikicite.item-tree.column-label.qid"),
 		);
-		const treecolCitations_ID = COLUMN_IDS.CITATIONS;
+		const treecolCitations_ID = ITEM_PANE_COLUMN_IDS.CITATIONS;
 		const treecolCitations = getTreecol(
 			treecolCitations_ID,
 			Wikicite.getString("wikicite.item-tree.column-label.citations"),
