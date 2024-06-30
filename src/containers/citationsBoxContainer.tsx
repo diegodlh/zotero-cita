@@ -29,7 +29,7 @@ function CitationsBoxContainer(props: {
 			new SourceItemWrapper(
 				props.item,
 				// fix: get pref
-				"extra",
+				"note",
 				// window.Wikicite.Prefs.get("storage"),
 			),
 	);
@@ -100,7 +100,7 @@ function CitationsBoxContainer(props: {
 							new SourceItemWrapper(
 								props.item,
 								// fix: get pref
-								"extra",
+								"note",
 								// window.Wikicite.Prefs.get("storage"),
 							),
 						);
