@@ -65,7 +65,7 @@ class WikiciteChrome {
 			doc.WikiciteXULRootElements = [];
 		}
 
-		var xulRootElements: string[];
+		let xulRootElements: string[];
 		if (doc == document) {
 			xulRootElements = WikiciteChrome.XULRootElements;
 		} else {
@@ -90,7 +90,7 @@ class WikiciteChrome {
 		while (XULRootElementIDs.length > 0) {
 			const elemId = XULRootElementIDs.pop();
 			if (elemId) {
-				var elem = doc.getElementById(elemId);
+				const elem = doc.getElementById(elemId);
 
 				elem?.parentNode?.removeChild(elem);
 			}
