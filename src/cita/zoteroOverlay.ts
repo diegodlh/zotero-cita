@@ -77,7 +77,7 @@ class ZoteroOverlay {
 	/******************************************/
 	// Window load handling
 	/******************************************/
-	init () {
+	init() {
 		// retrieve and set addon version
 		// AddonManager.getAddonByID(Wikicite.id, (addon: any) => {
 		//     Wikicite.version = addon.version
@@ -219,7 +219,7 @@ class ZoteroOverlay {
 		// this.addNewTabListener()
 	}
 
-	unload () {
+	unload() {
 		// // This event listener is never added
 		// // var toolsPopup = document.getElementById('menu_ToolsPopup')
 		// // toolsPopup.removeEventListener('popupshowing',
@@ -250,7 +250,7 @@ class ZoteroOverlay {
 		// this.switcherObserver.disconnect();
 		// this.uninstallTranslators();
 		// this.removeNewTabListener()
-	},
+	}
 
 	/******************************************/
 	// Notifiers
@@ -267,7 +267,7 @@ class ZoteroOverlay {
 
 	// Approach from Zotero PDF Translate
 	// https://github.com/windingwind/zotero-pdf-translate/blob/307b6e4169a925d4152a0dc0bb88fdeba238222e/src/events.ts#L21
-	tabEventCallback () {
+	tabEventCallback() {
 		// async notify (event: string, type: string, ids: string[], extraData: { [key: string]: any }) {
 		//     // adding the Citations menu when selecting a tab for the first time seems
 		//     // more robust than doing it when the tab is created
@@ -299,7 +299,7 @@ class ZoteroOverlay {
 	/******************************************/
 	// based on Better BibTex translators
 
-	async installTranslators () {
+	async installTranslators() {
 		// Wait until Zotero.Translators is ready
 		await Zotero.Schema.schemaUpdatePromise;
 		for (const label of TRANSLATOR_LABELS) {
@@ -308,14 +308,14 @@ class ZoteroOverlay {
 		Zotero.Translators.reinit();
 	}
 
-	uninstallTranslators () {
+	uninstallTranslators() {
 		for (const label of TRANSLATOR_LABELS) {
 			this.uninstallTranslator(label);
 		}
 		Zotero.Translators.reinit();
 	}
 
-	async installTranslator (label: string) {
+	async installTranslator(label: string) {
 		const source = Zotero.File.getContentsFromURL(
 			`${TRANSLATORS_PATH}${label}.js`,
 		);
@@ -346,7 +346,7 @@ class ZoteroOverlay {
 		}
 	}
 
-	uninstallTranslator (label: string) {
+	uninstallTranslator(label: string) {
 		try {
 			const fileName = Zotero.Translators.getFileNameFromLabel(label);
 			const destFile = Zotero.getTranslatorsDirectory();
@@ -416,7 +416,7 @@ class ZoteroOverlay {
 	//     }
 	// },
 
-	getFromCrossref (menuName: string) {
+	getFromCrossref(menuName: string) {
 		// get items selected
 		// filter items with doi
 		// generate batch call to crossref
@@ -424,11 +424,11 @@ class ZoteroOverlay {
 		Crossref.getCitations();
 	}
 
-	getFromOCC (menuName: string) {
+	getFromOCC(menuName: string) {
 		OpenCitations.getCitations();
 	}
 
-	getFromAttachments (menuName: string) {
+	getFromAttachments(menuName: string) {
 		// I don't think there's a need to batch call the extractor here
 		// get selected items
 		// filter by items with attachments
@@ -438,7 +438,7 @@ class ZoteroOverlay {
 		Extraction.extract();
 	}
 
-	addAsCitations (menuName: string) {
+	addAsCitations(menuName: string) {
 		// Add items selected as citation target items of one or more source items
 		// 1. open selectItemsDialog.xul; allow one or more item selection
 		// 2. create citation objects for each of the target items selected
@@ -465,12 +465,12 @@ class ZoteroOverlay {
 	/******************************************/
 	// XUL overlay functions
 	/******************************************/
-	fullOverlay () {
+	fullOverlay() {
 		// Add all Wikicite overlay elements to the window
 		this.overlayZoteroPane(document);
 	}
 
-	overlayZoteroPane (doc: Document) {
+	overlayZoteroPane(doc: Document) {
 		// // add wikicite preferences command to tools popup menu
 		// var menuPopup
 		// menuPopup = doc.getElementById('menu_ToolsPopup')
@@ -499,7 +499,7 @@ class ZoteroOverlay {
 	// Item tree functions
 	/******************************************/
 	// Create QID column header in item tree
-	itemTreeColumnHeaders (doc: Document, tree: any) {
+	itemTreeColumnHeaders(doc: Document, tree: any) {
 		const getTreecol = (treecolID: string, label: string) => {
 			const treecol = doc.createElement("treecol");
 			treecol.setAttribute("id", treecolID);
@@ -534,7 +534,7 @@ class ZoteroOverlay {
 		WikiciteChrome.registerXUL(treecolCitations_ID, doc);
 	}
 
-	prefsMenuItem (doc: Document, menuPopup: HTMLMenuElement) {
+	prefsMenuItem(doc: Document, menuPopup: HTMLMenuElement) {
 		// Add Wikicite preferences item to Tools menu
 		if (menuPopup === null) {
 			// Don't do anything if elements not loaded yet
@@ -565,7 +565,7 @@ class ZoteroOverlay {
 	// Item pane functions
 	/******************************************/
 	// Create XUL for Zotero item pane
-	citationsPane () {
+	citationsPane() {
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
