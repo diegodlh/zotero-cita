@@ -4,15 +4,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import Wikicite, { debug } from "./wikicite";
 // import Citations from './citations';
-// import CitationsBoxContainer from '../containers/citationsBoxContainer';
+import CitationsBoxContainer from "../containers/citationsBoxContainer";
+import ReactTest from "../components/itemPane/reactTest";
 import Crossref from "./crossref";
 import Extraction from "./extract";
 // import LCN from './localCitationNetwork';
 // import OCI from '../oci';
 import OpenCitations from "./opencitations";
-// import React from 'react';
-// import ReactDOM from 'react-dom';
-// import SourceItemWrapper from './sourceItemWrapper';
+import * as React from "react";
+// https://react.dev/blog/2022/03/08/react-18-upgrade-guide#updates-to-client-rendering-apis
+import { Root, createRoot } from "react-dom/client";
+import SourceItemWrapper from "./sourceItemWrapper";
 import WikiciteChrome from "./wikiciteChrome";
 // import Wikidata from './wikidata';
 import { config } from "../../package.json";
@@ -567,6 +569,7 @@ class ZoteroOverlay {
 	// Create XUL for Zotero item pane
 	citationsPane() {
 		// todo: remove when unloading
+		let citationBoxRoot: Root;
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
@@ -578,18 +581,49 @@ class ZoteroOverlay {
 				l10nID: "wikicite.citations-pane.label",
 				icon: rootURI + "chrome/content/icons/cita-small.svg",
 			},
-			// bodyXHTML: '<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"> Test </div>',
+			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"> Test </html:div>`,
+			// bodyXHTML: `QID: <html:input type="text" readonly="true" id="citations-box-container" style="flex: 1" xmlns:html="http://www.w3.org/1999/xhtml" />`,
+			// bodyXHTML: `<iframe src="chrome://${config.addonRef}/content/components/itemPane/citationsBox.xhtml" id="citations-box" ></iframe>`,
 			// onRender: ({ body, item, editable, tabType }) => {
-			//     // body.textContent = new ItemWrapper(item).qid;
-			//     // const citationsBox = body.ownerDocument.getElementById('citations-box-container');
-			//     // if (citationsBox) {
-			//     //     citationsBox.textContent = new ItemWrapper(item).qid || "None"
-			//     // }
+			// 	const citationsBox = body.ownerDocument.getElementById(
+			// 		"citations-box-container",
+			// 	) as HTMLInputElement;
+			// 	if (citationsBox) {
+			// 		citationsBox.value = new ItemWrapper(item).qid || "None";
+			// 	}
 			// },
+			onInit: ({ body, refresh }) => {
+				citationBoxRoot = createRoot(
+					body.ownerDocument.getElementById(
+						"citations-box-container",
+					)!,
+				);
+			},
 			onRender: ({ body, item, editable, tabType }) => {
-				body.textContent = JSON.stringify({
-					qid: new ItemWrapper(item).qid || "None",
-				});
+				citationBoxRoot.render(
+					// <ReactTest></ReactTest>
+					<CitationsBoxContainer
+						// 	//Having the key change, makes the CitationsBoxContainer
+						// 	//component unmount when the item selected changes
+						key={"citationsBox-" + item.id}
+						item={item}
+						editable={
+							ZoteroPane.collectionsView
+								? ZoteroPane.collectionsView.editable
+								: true
+						}
+						// onSourceItem={this.handleSourceItem}
+						// citationIndexRef={this._citationIndex}
+						// In principle I don't need a ref; I may have to use it if I need to force blur
+						// ref={_citationsBox}
+						// onResetSelection={focusItemsList}
+					/>,
+					// // body.ownerDocument.getElementById("citations-box-container"),
+					// // () => this.updateCitationsBoxSize(document)
+				);
+				// body.textContent = JSON.stringify({
+				// 	qid: new ItemWrapper(item).qid || "None",
+				// });
 			},
 		});
 	}
