@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Wikidata from "./wikidata";
 
 // declare const Components: any;
@@ -7,7 +12,7 @@ import Wikidata from "./wikidata";
 //     interface Window { openDialog: (url: string, name: string, features: string, args:Object, retVals?: Object) => any; }
 // }
 
-Components.utils.import("resource://gre/modules/Services.jsm");
+// Components.utils.import("resource://gre/modules/Services.jsm");
 
 // Provides an alternative CSL Engine to obtain labels for the citation items
 // However, it is very slow so an alternative approach will be used instead
@@ -64,7 +69,7 @@ export default {
 		const zoteroLocale = Zotero.locale;
 		// this function doesn't exist
 		// const requestedLocale = Services.locale.getRequestedLocale();
-		let propertiesFile = "chrome://cita/locale/wikicite.properties";;
+		const propertiesFile = "chrome://cita/locale/wikicite.properties";
 		// if (zoteroLocale.split("-")[0] === requestedLocale.split("-")[0]) {
 		// 	propertiesFile = "chrome://cita/locale/wikicite.properties";
 		// } else {
@@ -119,11 +124,11 @@ export default {
 		const values: string[] = [];
 		const newExtra = lines
 			.filter((line) => {
-				let match = line.match(pattern);
+				const match = line.match(pattern);
 				if (!match) {
 					return true;
 				}
-				let [, value] = match;
+				const [, value] = match;
 				values.push(value.trim());
 				return false;
 			})
@@ -146,7 +151,7 @@ export default {
 			values = [values];
 		}
 		let { newExtra } = this.getExtraField(item, fieldName);
-		for (let value of values) {
+		for (const value of values) {
 			if (value) {
 				// I have to be very careful that there are no new lines in what I'm saving
 				newExtra += `\n${fieldName}: ${value.trim()}`;
@@ -193,7 +198,7 @@ export default {
 		}
 	},
 
-	formatString: function (name: string, params: any | any[]) {
+	formatString: function (name: string, params: any) {
 		if (!Array.isArray(params)) params = [params];
 		// convert camelCase to hyphen-divided for translatewiki.net
 		name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();

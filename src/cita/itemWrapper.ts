@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
-
 
 // maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
@@ -94,7 +97,7 @@ export default class ItemWrapper {
 	}
 
 	get url() {
-		let url = this.item.getField("url");
+		const url = this.item.getField("url");
 		return (
 			url ||
 			this.getPidUrl("QID") ||
@@ -153,7 +156,7 @@ export default class ItemWrapper {
 				pid = this.item.getField(type);
 				break;
 			default:
-				pid = Wikicite.getExtraField(this.item, type).values[0] as string;
+				pid = Wikicite.getExtraField(this.item, type).values[0];
 		}
 		if (clean) {
 			pid = Wikicite.cleanPID(type, pid) as string;
