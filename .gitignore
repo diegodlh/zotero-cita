@@ -3,3 +3,4 @@ dist
 .vscode/
 build
 zotero-cmd.json
+logs
