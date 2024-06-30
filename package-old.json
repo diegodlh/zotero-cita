@@ -1,52 +1,50 @@
 {
-  "name": "zotero-cita",
-  "version": "0.5.3-beta",
-  "description": "Cita: a Wikidata addon for Zotero",
-  "scripts": {
-    "lint": "eslint . --ext .ts --cache --cache-location .eslintcache/",
-    "postinstall": "patch-package",
-    "watch": "webpack --watch",
-    "build": "webpack"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/diegodlh/zotero-cita.git"
-  },
-  "author": "Diego de la Hera (https://diegodlh.conversodromo.com.ar/)",
-  "contributors": [
-    "Dominic Dall'Osto"
-  ],
-  "license": "GPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/diegodlh/zotero-cita/issues"
-  },
-  "homepage": "https://github.com/diegodlh/zotero-cita#readme",
-  "devDependencies": {
-    "@babel/cli": "^7.12.1",
-    "@babel/core": "^7.12.3",
-    "@babel/preset-env": "^7.12.1",
-    "@babel/preset-react": "^7.12.5",
-    "@types/react-dom": "^18.0.10",
-    "@typescript-eslint/eslint-plugin": "^5.48.1",
-    "babel-eslint": "^10.1.0",
-    "babel-loader": "^8.2.2",
-    "copy-webpack-plugin": "^7.0.0",
-    "eslint": "^8.32.0",
-    "eslint-plugin-react": "^7.21.5",
-    "patch-package": "^6.2.2",
-    "ts-loader": "^9.4.2",
-    "typescript": "^4.9.4",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^4.2.0"
-  },
-  "dependencies": {
-    "prop-types": "^15.7.2",
-    "querystring-es3": "^0.2.1",
-    "quickstatements-to-wikibase-edit": "^1.0.3",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-intl": "^5.10.13",
-    "wikibase-edit": "^4.11.8",
-    "wikibase-sdk": "^7.8.0"
-  }
+	"name": "zotero-cita",
+	"version": "0.5.3-beta",
+	"description": "Cita: a Wikidata addon for Zotero",
+	"scripts": {
+		"lint": "eslint . --ext .ts --cache --cache-location .eslintcache/",
+		"postinstall": "patch-package",
+		"watch": "webpack --watch",
+		"build": "webpack"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/diegodlh/zotero-cita.git"
+	},
+	"author": "Diego de la Hera (https://diegodlh.conversodromo.com.ar/)",
+	"contributors": ["Dominic Dall'Osto"],
+	"license": "GPL-3.0-or-later",
+	"bugs": {
+		"url": "https://github.com/diegodlh/zotero-cita/issues"
+	},
+	"homepage": "https://github.com/diegodlh/zotero-cita#readme",
+	"devDependencies": {
+		"@babel/cli": "^7.12.1",
+		"@babel/core": "^7.12.3",
+		"@babel/preset-env": "^7.12.1",
+		"@babel/preset-react": "^7.12.5",
+		"@types/react-dom": "^18.0.10",
+		"@typescript-eslint/eslint-plugin": "^5.48.1",
+		"babel-eslint": "^10.1.0",
+		"babel-loader": "^8.2.2",
+		"copy-webpack-plugin": "^7.0.0",
+		"eslint": "^8.32.0",
+		"eslint-plugin-react": "^7.21.5",
+		"patch-package": "^6.2.2",
+		"ts-loader": "^9.4.2",
+		"typescript": "^4.9.4",
+		"webpack": "^5.75.0",
+		"webpack-cli": "^4.2.0"
+	},
+	"dependencies": {
+		"prop-types": "^15.7.2",
+		"querystring-es3": "^0.2.1",
+		"quickstatements-to-wikibase-edit": "^1.0.3",
+		"react": "^17.0.1",
+		"react-dom": "^17.0.1",
+		"react-intl": "^5.10.13",
+		"wikibase-edit": "^4.11.8",
+		"wikibase-sdk": "^7.8.0"
+	}
 }
