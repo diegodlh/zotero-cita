@@ -1,0 +1,11 @@
+.github
+.vscode
+build
+logs
+misc
+node_modules
+patches
+scripts
+translators
+Local-Citation-Network
+LICENSE.md

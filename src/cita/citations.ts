@@ -1,10 +1,10 @@
-import Wikidata, { CitesWorkClaim } from './wikidata';
-import Wikicite, { debug } from './wikicite';
-import Citation from './citation';
-import Matcher from './matcher';
-import OCI from '../oci';
-import Progress from './progress';
-import SourceItemWrapper from './sourceItemWrapper';
+import Wikidata, { CitesWorkClaim } from "./wikidata";
+import Wikicite, { debug } from "./wikicite";
+import Citation from "./citation";
+import Matcher from "./matcher";
+import OCI from "../oci";
+import Progress from "./progress";
+import SourceItemWrapper from "./sourceItemWrapper";
 
 declare const Services: any;
 
@@ -15,790 +15,847 @@ declare const Services: any;
 // items with QID, it would be more efficient to call Wikidata once, than to
 // call it for each item.
 export default class {
-    static itemIds: {[key: string] : {source_ids: any[], target_ids: any}};
+	static itemIds: { [key: string]: { source_ids: any[]; target_ids: any } };
 
-    static getFromCrossref(itemIDs) {
-        // check which of the items provided have DOI
-        // the zotero-citationcounts already calls crossref for citations. Check it
-    }
+	static getFromCrossref(itemIDs) {
+		// check which of the items provided have DOI
+		// the zotero-citationcounts already calls crossref for citations. Check it
+	}
 
-    static getFromWikidata(itemIDs, getQIDs) {
-        // check which of the items provided have QID
-        // try to get QID if not available? maybe with an additional parameter?
-    }
+	static getFromWikidata(itemIDs, getQIDs) {
+		// check which of the items provided have QID
+		// try to get QID if not available? maybe with an additional parameter?
+	}
 
-    static getItemQids(items, includingCitations=false, overwrite=false) {
-        const sourceItems = items.map(
-            (item) => new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage'))
-        );
-        const unique_ids = [];
-        const id_mappings = {
-            zotero_key: {
-                source_ids: [{doi: '123'}, ],
-                target_ids: {
-                    0: []
-                }
-            }
-        }
-        for (const sourceItem of sourceItems) {
-            // if overwrite = false, ignore items or citations
-            // for which we already know the qid
+	static getItemQids(items, includingCitations = false, overwrite = false) {
+		const sourceItems = items.map(
+			(item) =>
+				new SourceItemWrapper(
+					item,
+					window.Wikicite.Prefs.get("storage"),
+				),
+		);
+		const unique_ids = [];
+		const id_mappings = {
+			zotero_key: {
+				source_ids: [{ doi: "123" }],
+				target_ids: {
+					0: [],
+				},
+			},
+		};
+		for (const sourceItem of sourceItems) {
+			// if overwrite = false, ignore items or citations
+			// for which we already know the qid
 
-            // if includingCitations=true, check citations as well
-            const key = sourceItem.item.key;
-            const sourceIds = []
-            this.itemIds[key] = {
-                source_ids: [],
-                target_ids: {}
-            }
-            // as an id appears, also append it to the unique_ids sets
-        }
+			// if includingCitations=true, check citations as well
+			const key = sourceItem.item.key;
+			const sourceIds = [];
+			this.itemIds[key] = {
+				source_ids: [],
+				target_ids: {},
+			};
+			// as an id appears, also append it to the unique_ids sets
+		}
 
-        // return uid: qid
-        // Wikidata checks all possible results (maybe more than one
-        // QID has the same id, an error). Returns all
-        // I'll choose lowest later
-        // const gotQids = Wikicite.fetchQids(unique_ids)
+		// return uid: qid
+		// Wikidata checks all possible results (maybe more than one
+		// QID has the same id, an error). Returns all
+		// I'll choose lowest later
+		// const gotQids = Wikicite.fetchQids(unique_ids)
 
-        // now traverse sourceItems again and check if we got a result
-        // from Wikidata.
-        // Check all possible results and keep the lowest one
-        // saves items
-    }
+		// now traverse sourceItems again and check if we got a result
+		// from Wikidata.
+		// Check all possible results and keep the lowest one
+		// saves items
+	}
 
-    /**
-     * Sync source item citations with Wikidata.
-     * @param {Array} sourceItems - One or more source items to sync citations for.
-     */
-    static async syncItemCitationsWithWikidata(sourceItems) {
-        // check which of the items provided have QID
-        // in principle only citations with target QID should be uploaded
-        // alternatively, Wikidata.getQID may be called for each target item
-        // to try and get QID, but I think this may be too much for batch?
-        // maybe it could be a tick in a confirmation dialog
-        // "try to get QID for citation targets before syncing to wikidata"
-        // do this only for items with qid
+	/**
+	 * Sync source item citations with Wikidata.
+	 * @param {Array} sourceItems - One or more source items to sync citations for.
+	 */
+	static async syncItemCitationsWithWikidata(sourceItems) {
+		// check which of the items provided have QID
+		// in principle only citations with target QID should be uploaded
+		// alternatively, Wikidata.getQID may be called for each target item
+		// to try and get QID, but I think this may be too much for batch?
+		// maybe it could be a tick in a confirmation dialog
+		// "try to get QID for citation targets before syncing to wikidata"
+		// do this only for items with qid
 
-        const noQidItems = sourceItems.filter(
-            (sourceItem) => !sourceItem.qid
-        );
+		const noQidItems = sourceItems.filter((sourceItem) => !sourceItem.qid);
 
-        if (noQidItems.length) {
-            Services.prompt.alert(
-                window,
-                Wikicite.getString('wikicite.wikidata.ignored.title'),
-                Wikicite.formatString(
-                    'wikicite.wikidata.ignored.message',
-                    noQidItems.length
-                )
-            );
-        }
+		if (noQidItems.length) {
+			Services.prompt.alert(
+				window,
+				Wikicite.getString("wikicite.wikidata.ignored.title"),
+				Wikicite.formatString(
+					"wikicite.wikidata.ignored.message",
+					noQidItems.length,
+				),
+			);
+		}
 
-        sourceItems = sourceItems.filter((sourceItem) => sourceItem.qid);
+		sourceItems = sourceItems.filter((sourceItem) => sourceItem.qid);
 
-        if (!sourceItems.length) {
-            return;
-        }
+		if (!sourceItems.length) {
+			return;
+		}
 
-        let qids = sourceItems.reduce(
-            (qids, sourceItem) => {
-                const qid = sourceItem.qid;
-                if (qid) qids.push(sourceItem.qid);
-                return qids;
-            }, []
-        );
-        qids = [...new Set(qids)];
+		let qids = sourceItems.reduce((qids, sourceItem) => {
+			const qid = sourceItem.qid;
+			if (qid) qids.push(sourceItem.qid);
+			return qids;
+		}, []);
+		qids = [...new Set(qids)];
 
-        const progress = new Progress(
-            'loading',
-            Wikicite.getString(
-                'wikicite.wikidata.progress.citations.fetch.loading'
-            )
-        );
+		const progress = new Progress(
+			"loading",
+			Wikicite.getString(
+				"wikicite.wikidata.progress.citations.fetch.loading",
+			),
+		);
 
-        let pulledCitesWorkClaims;
-        try {
-            pulledCitesWorkClaims = await Wikidata.getCitesWorkClaims(qids);
-            progress.updateLine(
-                'done',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.citations.fetch.done'
-                )
-            );
-        } catch {
-            progress.updateLine(
-                'error',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.citations.fetch.error'
-                )
-            );
-            progress.close();
-            return;
-        }
+		let pulledCitesWorkClaims;
+		try {
+			pulledCitesWorkClaims = await Wikidata.getCitesWorkClaims(qids);
+			progress.updateLine(
+				"done",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.citations.fetch.done",
+				),
+			);
+		} catch {
+			progress.updateLine(
+				"error",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.citations.fetch.error",
+				),
+			);
+			progress.close();
+			return;
+		}
 
-        // local citation actions arrays
-        const localAddCitations = {};  // these citations will be added locally
-        const localFlagCitations = {};  // Wikidata OCI will be added to these
-        const localUnflagCitations = {};  // Wikidata OCI will be removed from these
-        const localDeleteCitations = {};  // these citations will be removed locally
+		// local citation actions arrays
+		const localAddCitations = {}; // these citations will be added locally
+		const localFlagCitations = {}; // Wikidata OCI will be added to these
+		const localUnflagCitations = {}; // Wikidata OCI will be removed from these
+		const localDeleteCitations = {}; // these citations will be removed locally
 
-        // remote citation actions arrays
-        const remoteAddCitations = {};  // these citations will be added remotely
+		// remote citation actions arrays
+		const remoteAddCitations = {}; // these citations will be added remotely
 
-        //// special citation arrays
-        // orphaned citations have a Wikidata OCI but are no longer available
-        // in Wikidata
-        const orphanedCitations = {};
+		//// special citation arrays
+		// orphaned citations have a Wikidata OCI but are no longer available
+		// in Wikidata
+		const orphanedCitations = {};
 
-        const counters = {
-            // local citation actions counters
-            localAddCitations: 0,
-            localFlagCitations: 0,
-            localUnflagCitations: 0,
-            localDeleteCitations: 0,
-    
-            // remote citation actions counters
-            remoteAddCitations: 0,
-    
-            // special counters
-            orphanedCitations: 0,
-    
-            // citations which already have a Wikidata OCI
-            syncedCitations: 0,
-            // citations for which their target item qids are unknown
-            noQidCitations: 0,
-            // citations with an invalid Wikidata OCI
-            invalidOci: 0,
-        };
+		const counters = {
+			// local citation actions counters
+			localAddCitations: 0,
+			localFlagCitations: 0,
+			localUnflagCitations: 0,
+			localDeleteCitations: 0,
 
-        const localItemsToUpdate = new Set();
-        const remoteEntitiesToUpdate = new Set();
+			// remote citation actions counters
+			remoteAddCitations: 0,
 
-        for (const sourceItem of sourceItems) {
-            const itemId = sourceItem.item.id;
+			// special counters
+			orphanedCitations: 0,
 
-            // Initialize action arrays
-            localAddCitations[itemId] = [];
-            localFlagCitations[itemId] = [];
-            localUnflagCitations[itemId] = [];
-            localDeleteCitations[itemId] = [];
-            remoteAddCitations[itemId] = [];
-            orphanedCitations[itemId] = [];
+			// citations which already have a Wikidata OCI
+			syncedCitations: 0,
+			// citations for which their target item qids are unknown
+			noQidCitations: 0,
+			// citations with an invalid Wikidata OCI
+			invalidOci: 0,
+		};
 
-            const remoteCitedQids = pulledCitesWorkClaims[sourceItem.qid].map(
-                (claim) => claim.value
-            );
+		const localItemsToUpdate = new Set();
+		const remoteEntitiesToUpdate = new Set();
 
-            let localCitedQids = new Set();
-            // first iterate over local citations
-            for (const citation of sourceItem.citations) {
-                const localCitedQid = citation.target.qid;
-                const wikidataOci = citation.getOCI('wikidata');
-                // First check if the citation has an invalid wikidata oci.
-                // These citations will be ignored (i.e., they won't be
-                // unflagged nor will they be marked as orphaned).
-                // No new citation will be created either for the target item
-                // referred to by the oci.
-                // User must fix the inconsistency first: revert the source or
-                // target item qid change, or remove the citation.
-                if (wikidataOci && !wikidataOci.valid) {
-                    // local citation has a wikidata oci, but it is invalid
-                    // i.e., it corresponds to another source or target qid
-                    counters.invalidOci += 1;
+		for (const sourceItem of sourceItems) {
+			const itemId = sourceItem.item.id;
 
-                    // add the invalid oci's target qid to the array of local cited qids
-                    // because we don't want to create a new local citation for this
-                    // target item
-                    localCitedQids.add(wikidataOci.citedId);
-                    continue;
-                }
-                if (localCitedQid) {
-                    localCitedQids.add(localCitedQid);
-                    if (remoteCitedQids.includes(localCitedQid)) {
-                        // the citation exists in Wikidata as well
-                        if (wikidataOci) {
-                            // the citation already has a valid up-to-date wikidata oci
-                            counters.syncedCitations += 1;
-                        } else {
-                            // the citation doesn't have a wikidata oci yet
-                            localFlagCitations[itemId].push(localCitedQid);
-                            counters.localFlagCitations += 1;
-                            localItemsToUpdate.add(itemId);
-                        }
-                    } else {
-                        // the citation does not exist in Wikidata
-                        if (wikidataOci) {
-                            // the citation has a valid Wikidata oci
-                            // hence, it existed in Wikidata before
-                            orphanedCitations[itemId].push(localCitedQid);
-                            counters.orphanedCitations += 1;
-                        } else {
-                            // the citation doesn't have a Wikidata OCI yet
-                            if (remoteAddCitations[itemId].includes(localCitedQid)) {
-                                // in case of duplicate local citations
-                                // do not add "cites work" statement remotely twice
-                                debug(
-                                    'Will not create duplicate "cites work" statement for ' +
-                                    localCitedQid
-                                );
-                            } else {
-                                remoteAddCitations[itemId].push(localCitedQid);
-                                counters.remoteAddCitations += 1;
-                                remoteEntitiesToUpdate.add(sourceItem.qid);
-                            }
-                        }
-                    }
-                } else {
-                    // the citation target item's qid is unknown
-                    counters.noQidCitations += 1;
-                }
-            }
-            // then iterate over remote Wikidata citations
-            for (const remoteCitedQid of remoteCitedQids) {
-                if (!localCitedQids.has(remoteCitedQid)) {
-                    localAddCitations[itemId].push(remoteCitedQid);
-                    counters.localAddCitations += 1;
-                    localItemsToUpdate.add(itemId);
-                }
-            }
-        }
+			// Initialize action arrays
+			localAddCitations[itemId] = [];
+			localFlagCitations[itemId] = [];
+			localUnflagCitations[itemId] = [];
+			localDeleteCitations[itemId] = [];
+			remoteAddCitations[itemId] = [];
+			orphanedCitations[itemId] = [];
 
-        // Ask the user what to do with orphaned citations
-        const orphanedActions = ['keep', 'remove', 'upload'];
-        const orphanedActionSelection: {value?: number} = {}
-        if (counters.orphanedCitations) {
-            const result = Services.prompt.select(
-                window,
-                Wikicite.getString('wikicite.wikidata.orphaned.title'),
-                Wikicite.formatString(
-                    'wikicite.wikidata.orphaned.message', counters.orphanedCitations
-                ),
-                orphanedActions.length,
-                orphanedActions.map((orphanedAction) => Wikicite.getString(
-                    'wikicite.wikidata.orphaned.action.' + orphanedAction
-                )),
-                orphanedActionSelection
-            );
-            if (!result) {
-                // user cancelled
-                progress.newLine(
-                    'error',
-                    Wikicite.getString('wikicite.wikidata.progress.citations.cancelled')
-                );
-                progress.close();
-                return;
-            }
-            switch (orphanedActions[orphanedActionSelection.value]) {
-                case 'keep':
-                    // keep local citation, but remove outdated Wikidata OCI
-                    for (const itemId of Object.keys(orphanedCitations)) {
-                        localUnflagCitations[itemId].push(...orphanedCitations[itemId]);
-                        localItemsToUpdate.add(Number(itemId));
-                    }
-                    counters.localUnflagCitations += counters.orphanedCitations;
-                    break;
-                case 'remove':
-                    // remove local citation because it no longer exists in Wikidata
-                    for (const itemId of Object.keys(orphanedCitations)) {
-                        localDeleteCitations[itemId].push(...orphanedCitations[itemId]);
-                        localItemsToUpdate.add(Number(itemId));
-                    }
-                    counters.localDeleteCitations += counters.orphanedCitations;
-                    break;
-                case 'upload':
-                    // keep local citation and upload to Wikidata again
-                    for (const itemId of Object.keys(orphanedCitations)) {
-                        remoteAddCitations[itemId].push(...orphanedCitations[itemId]);
-                        const sourceQid = sourceItems.filter(
-                            (sourceItem) => sourceItem.item.id === Number(itemId)
-                        )[0].qid;
-                        remoteEntitiesToUpdate.add(sourceQid);
-                    }
-                    counters.remoteAddCitations += counters.orphanedCitations;
-                    break;
-            }
-        }
+			const remoteCitedQids = pulledCitesWorkClaims[sourceItem.qid].map(
+				(claim) => claim.value,
+			);
 
-        if (!localItemsToUpdate.size && !remoteEntitiesToUpdate.size) {
-            // no local items or remote entities to update: abort
-            progress.newLine(
-                'done',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.citations.uptodate'
-                )
-            );
-            progress.close();
-            return
-        }
+			const localCitedQids = new Set();
+			// first iterate over local citations
+			for (const citation of sourceItem.citations) {
+				const localCitedQid = citation.target.qid;
+				const wikidataOci = citation.getOCI("wikidata");
+				// First check if the citation has an invalid wikidata oci.
+				// These citations will be ignored (i.e., they won't be
+				// unflagged nor will they be marked as orphaned).
+				// No new citation will be created either for the target item
+				// referred to by the oci.
+				// User must fix the inconsistency first: revert the source or
+				// target item qid change, or remove the citation.
+				if (wikidataOci && !wikidataOci.valid) {
+					// local citation has a wikidata oci, but it is invalid
+					// i.e., it corresponds to another source or target qid
+					counters.invalidOci += 1;
 
-        // Show verbose confirmation message with actions to be taken
-        // before proceeding.
-        const confirmed = Services.prompt.confirm(
-            window,
-            Wikicite.getString('wikicite.wikidata.confirm.title'),
-            composeConfirmation(
-                localItemsToUpdate,
-                remoteEntitiesToUpdate,
-                counters
-            )
-        )
+					// add the invalid oci's target qid to the array of local cited qids
+					// because we don't want to create a new local citation for this
+					// target item
+					localCitedQids.add(wikidataOci.citedId);
+					continue;
+				}
+				if (localCitedQid) {
+					localCitedQids.add(localCitedQid);
+					if (remoteCitedQids.includes(localCitedQid)) {
+						// the citation exists in Wikidata as well
+						if (wikidataOci) {
+							// the citation already has a valid up-to-date wikidata oci
+							counters.syncedCitations += 1;
+						} else {
+							// the citation doesn't have a wikidata oci yet
+							localFlagCitations[itemId].push(localCitedQid);
+							counters.localFlagCitations += 1;
+							localItemsToUpdate.add(itemId);
+						}
+					} else {
+						// the citation does not exist in Wikidata
+						if (wikidataOci) {
+							// the citation has a valid Wikidata oci
+							// hence, it existed in Wikidata before
+							orphanedCitations[itemId].push(localCitedQid);
+							counters.orphanedCitations += 1;
+						} else {
+							// the citation doesn't have a Wikidata OCI yet
+							if (
+								remoteAddCitations[itemId].includes(
+									localCitedQid,
+								)
+							) {
+								// in case of duplicate local citations
+								// do not add "cites work" statement remotely twice
+								debug(
+									'Will not create duplicate "cites work" statement for ' +
+										localCitedQid,
+								);
+							} else {
+								remoteAddCitations[itemId].push(localCitedQid);
+								counters.remoteAddCitations += 1;
+								remoteEntitiesToUpdate.add(sourceItem.qid);
+							}
+						}
+					}
+				} else {
+					// the citation target item's qid is unknown
+					counters.noQidCitations += 1;
+				}
+			}
+			// then iterate over remote Wikidata citations
+			for (const remoteCitedQid of remoteCitedQids) {
+				if (!localCitedQids.has(remoteCitedQid)) {
+					localAddCitations[itemId].push(remoteCitedQid);
+					counters.localAddCitations += 1;
+					localItemsToUpdate.add(itemId);
+				}
+			}
+		}
 
-        if (!confirmed) {
-            // user cancelled
-            progress.newLine(
-                'error',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.citations.cancelled'
-                )
-            );
-            progress.close();
-            return;
-        }
+		// Ask the user what to do with orphaned citations
+		const orphanedActions = ["keep", "remove", "upload"];
+		const orphanedActionSelection: { value?: number } = {};
+		if (counters.orphanedCitations) {
+			const result = Services.prompt.select(
+				window,
+				Wikicite.getString("wikicite.wikidata.orphaned.title"),
+				Wikicite.formatString(
+					"wikicite.wikidata.orphaned.message",
+					counters.orphanedCitations,
+				),
+				orphanedActions.length,
+				orphanedActions.map((orphanedAction) =>
+					Wikicite.getString(
+						"wikicite.wikidata.orphaned.action." + orphanedAction,
+					),
+				),
+				orphanedActionSelection,
+			);
+			if (!result) {
+				// user cancelled
+				progress.newLine(
+					"error",
+					Wikicite.getString(
+						"wikicite.wikidata.progress.citations.cancelled",
+					),
+				);
+				progress.close();
+				return;
+			}
+			switch (orphanedActions[orphanedActionSelection.value]) {
+				case "keep":
+					// keep local citation, but remove outdated Wikidata OCI
+					for (const itemId of Object.keys(orphanedCitations)) {
+						localUnflagCitations[itemId].push(
+							...orphanedCitations[itemId],
+						);
+						localItemsToUpdate.add(Number(itemId));
+					}
+					counters.localUnflagCitations += counters.orphanedCitations;
+					break;
+				case "remove":
+					// remove local citation because it no longer exists in Wikidata
+					for (const itemId of Object.keys(orphanedCitations)) {
+						localDeleteCitations[itemId].push(
+							...orphanedCitations[itemId],
+						);
+						localItemsToUpdate.add(Number(itemId));
+					}
+					counters.localDeleteCitations += counters.orphanedCitations;
+					break;
+				case "upload":
+					// keep local citation and upload to Wikidata again
+					for (const itemId of Object.keys(orphanedCitations)) {
+						remoteAddCitations[itemId].push(
+							...orphanedCitations[itemId],
+						);
+						const sourceQid = sourceItems.filter(
+							(sourceItem) =>
+								sourceItem.item.id === Number(itemId),
+						)[0].qid;
+						remoteEntitiesToUpdate.add(sourceQid);
+					}
+					counters.remoteAddCitations += counters.orphanedCitations;
+					break;
+			}
+		}
 
-        // keep track of citations that could not be added locally
-        // because the Wikidata entity is not an instance of a class
-        // mapped to a supported Zotero item type
-        let unsupportedCitations = 0;
+		if (!localItemsToUpdate.size && !remoteEntitiesToUpdate.size) {
+			// no local items or remote entities to update: abort
+			progress.newLine(
+				"done",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.citations.uptodate",
+				),
+			);
+			progress.close();
+			return;
+		}
 
-        // First, run actions that require communication with Wikidata
+		// Show verbose confirmation message with actions to be taken
+		// before proceeding.
+		const confirmed = Services.prompt.confirm(
+			window,
+			Wikicite.getString("wikicite.wikidata.confirm.title"),
+			composeConfirmation(
+				localItemsToUpdate,
+				remoteEntitiesToUpdate,
+				counters,
+			),
+		);
 
-        // download metadata of target items of citations to be created
-        let targetItems;
-        if (counters.localAddCitations) {
-            // create an array of QIDs whose metadata must be downloaded
-            const downloadQids = Object.values(localAddCitations).reduce(
-                (qids: any, citedQids: any) => qids.concat(citedQids)
-            );
+		if (!confirmed) {
+			// user cancelled
+			progress.newLine(
+				"error",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.citations.cancelled",
+				),
+			);
+			progress.close();
+			return;
+		}
 
-            // download target items metadata
-            progress.newLine(
-                'loading',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.metadata.fetch.loading'
-                )
-            );
-            try {
-                targetItems = await Wikidata.getItems(downloadQids);
-            } catch {
-                progress.updateLine(
-                    'error',
-                    Wikicite.getString(
-                        'wikicite.wikidata.progress.metadata.fetch.error'
-                    )
-                );
-                progress.close();
-                return;
-            }
-            progress.updateLine(
-                'done',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.metadata.fetch.done'
-                )
-            );
-        }
+		// keep track of citations that could not be added locally
+		// because the Wikidata entity is not an instance of a class
+		// mapped to a supported Zotero item type
+		let unsupportedCitations = 0;
 
-        // cites work claims to be pushed to Wikidata
-        const pushCitesWorkClaims = {};
-        if (counters.remoteAddCitations) {
-            progress.updateLine(
-                'loading',
-                Wikicite.getString('wikicite.wikidata.progress.upload.loading')
-            );
+		// First, run actions that require communication with Wikidata
 
-            for (const sourceItem of sourceItems) {
-                if (!remoteEntitiesToUpdate.has(sourceItem.qid)) {
-                    // item not in the list of items to update; skip
-                    continue;
-                }
-                const newCitesWorkClaims = remoteAddCitations[sourceItem.item.id].map(
-                    (targetQid) => new CitesWorkClaim({ value: targetQid })
-                )
-                pushCitesWorkClaims[sourceItem.qid] = newCitesWorkClaims;
-            }
-            // Fixme: in the future, support editing cites work claims as well;
-            // for example, to add references or qualifiers
-            const results = await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
+		// download metadata of target items of citations to be created
+		let targetItems;
+		if (counters.localAddCitations) {
+			// create an array of QIDs whose metadata must be downloaded
+			const downloadQids = Object.values(localAddCitations).reduce(
+				(qids: any, citedQids: any) => qids.concat(citedQids),
+			);
 
-            // After Wikidata edits have been submitted,
-            // iterate through source items again,
-            // to see if any of them have to be updated
-            for (const sourceItem of sourceItems) {
-                const itemId = sourceItem.item.id;
-                if (remoteAddCitations[itemId] && results[sourceItem.qid] === 'ok') {
-                    // if item had citations to upload to Wikidata
-                    // and uploads where succesful
-                    // flag citations immediately as available in Wikidata
-                    sourceItem.startBatch();
-                    for (const targetQid of remoteAddCitations[itemId]) {
-                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
-                        for (const citation of citations) {
-                            citation.addOCI(
-                                OCI.getOci('wikidata', sourceItem.qid, targetQid)
-                            );
-                        }
-                    }
-                    sourceItem.endBatch();
-                }
-            }
+			// download target items metadata
+			progress.newLine(
+				"loading",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.metadata.fetch.loading",
+				),
+			);
+			try {
+				targetItems = await Wikidata.getItems(downloadQids);
+			} catch {
+				progress.updateLine(
+					"error",
+					Wikicite.getString(
+						"wikicite.wikidata.progress.metadata.fetch.error",
+					),
+				);
+				progress.close();
+				return;
+			}
+			progress.updateLine(
+				"done",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.metadata.fetch.done",
+				),
+			);
+		}
 
-            if (Object.values(results).every((result) => result === 'ok')) {
-                progress.updateLine(
-                    'done',
-                    Wikicite.getString(
-                        'wikicite.wikidata.progress.upload.done'
-                    )
-                );
-            } else if (Object.values(results).some((result) => result === 'cancelled')) {
-                // user cancelled login for at least one of the entities to be edited
-                progress.updateLine(
-                    'error',
-                    Wikicite.getString(
-                        'wikicite.wikidata.progress.citations.cancelled'
-                    )
-                );
-                // if user cancelled, abort citation synchronization altogether
-                progress.close();
-                return;
-            } else {
-                // not all entity editions succeeded, but none was cancelled
-                progress.updateLine(
-                    'error',
-                    Wikicite.getString(
-                        'wikicite.wikidata.progress.upload.error'
-                    )
-                );
-                if (localItemsToUpdate.size) {
-                    // if local changes pending, ask user whether to proceed
-                    const proceed = Services.prompt.confirm(
-                        window,
-                        Wikicite.getString('wikicite.wikidata.upload.error.title'),
-                        (
-                            composeUploadErrorMsg(results) + '\n\n' +
-                            Wikicite.getString('wikicite.wikidata.upload.error.proceed')
-                        )
-                    )
-                    if (!proceed) {
-                        localItemsToUpdate.clear();
-                    }
-                } else {
-                    // no local changes pending, just show information dialog
-                    Services.prompt.alert(
-                        window,
-                        Wikicite.getString('wikicite.wikidata.upload.error.title'),
-                        composeUploadErrorMsg(results)
-                    )
-                }
-            }
-        }
+		// cites work claims to be pushed to Wikidata
+		const pushCitesWorkClaims = {};
+		if (counters.remoteAddCitations) {
+			progress.updateLine(
+				"loading",
+				Wikicite.getString("wikicite.wikidata.progress.upload.loading"),
+			);
 
-        // Only then, run local actions
-        if (localItemsToUpdate.size) {
-            progress.newLine(
-                'loading',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.local.update.loading'
-                )
-            );
-            const matchers = {};
-            for (const sourceItem of sourceItems) {
-                if (!localItemsToUpdate.has(sourceItem.item.id)) {
-                    // item not in the list of items to update; skip
-                    continue;
-                }
+			for (const sourceItem of sourceItems) {
+				if (!remoteEntitiesToUpdate.has(sourceItem.qid)) {
+					// item not in the list of items to update; skip
+					continue;
+				}
+				const newCitesWorkClaims = remoteAddCitations[
+					sourceItem.item.id
+				].map((targetQid) => new CitesWorkClaim({ value: targetQid }));
+				pushCitesWorkClaims[sourceItem.qid] = newCitesWorkClaims;
+			}
+			// Fixme: in the future, support editing cites work claims as well;
+			// for example, to add references or qualifiers
+			const results =
+				await Wikidata.updateCitesWorkClaims(pushCitesWorkClaims);
 
-                // begin batch session so citations are not updated nor saved
-                // until operations are over
-                sourceItem.startBatch();
+			// After Wikidata edits have been submitted,
+			// iterate through source items again,
+			// to see if any of them have to be updated
+			for (const sourceItem of sourceItems) {
+				const itemId = sourceItem.item.id;
+				if (
+					remoteAddCitations[itemId] &&
+					results[sourceItem.qid] === "ok"
+				) {
+					// if item had citations to upload to Wikidata
+					// and uploads where succesful
+					// flag citations immediately as available in Wikidata
+					sourceItem.startBatch();
+					for (const targetQid of remoteAddCitations[itemId]) {
+						const { citations } = sourceItem.getCitations(
+							targetQid,
+							"qid",
+						);
+						for (const citation of citations) {
+							citation.addOCI(
+								OCI.getOci(
+									"wikidata",
+									sourceItem.qid,
+									targetQid,
+								),
+							);
+						}
+					}
+					sourceItem.endBatch();
+				}
+			}
 
-                // citations to add
-                const addCitations = localAddCitations[sourceItem.item.id];
-                if (addCitations.length) {
-                    const libraryID = sourceItem.item.libraryID;
-                    if (!matchers[libraryID]) {
-                        // If there isn't a Matcher initialized for this library already
-                        // create and initialize a new one
-                        matchers[libraryID] = new Matcher(libraryID);
-                        await matchers[libraryID].init();
-                    }
-                    const newCitations = [];
-                    for (const targetQid of addCitations) {
-                        const targetItem = targetItems.get(targetQid);
-                        if (targetItem) {
-                            const oci = OCI.getOci('wikidata', sourceItem.qid, targetQid);
-                            const citation = new Citation(
-                                {
-                                    item: targetItem,
-                                    ocis: [oci]
-                                },
-                                sourceItem
-                            );
-                            citation.autoLink(matchers[libraryID]);
-                            newCitations.push(citation)
-                        } else {
-                            // targetQid won't be found in targetItems map
-                            // if corresponding Wikidata entity does not belong
-                            // to a class supported by the Wikidata JSON translator
-                            // e.g. "retracted paper (Q45182324)"
-                            unsupportedCitations += 1;
-                        }
-                    }
-                    // Fixme: the number of localAddCitations and localFlagCitations
-                    // shown in the confirmation message above may be wrong, as the
-                    // addCitations method below may find duplicate citations and
-                    // decide to flag them instead of creating new ones.
-                    // Use this info to show a message to the user (see #26)
-                    sourceItem.addCitations(newCitations);
-                }
+			if (Object.values(results).every((result) => result === "ok")) {
+				progress.updateLine(
+					"done",
+					Wikicite.getString(
+						"wikicite.wikidata.progress.upload.done",
+					),
+				);
+			} else if (
+				Object.values(results).some((result) => result === "cancelled")
+			) {
+				// user cancelled login for at least one of the entities to be edited
+				progress.updateLine(
+					"error",
+					Wikicite.getString(
+						"wikicite.wikidata.progress.citations.cancelled",
+					),
+				);
+				// if user cancelled, abort citation synchronization altogether
+				progress.close();
+				return;
+			} else {
+				// not all entity editions succeeded, but none was cancelled
+				progress.updateLine(
+					"error",
+					Wikicite.getString(
+						"wikicite.wikidata.progress.upload.error",
+					),
+				);
+				if (localItemsToUpdate.size) {
+					// if local changes pending, ask user whether to proceed
+					const proceed = Services.prompt.confirm(
+						window,
+						Wikicite.getString(
+							"wikicite.wikidata.upload.error.title",
+						),
+						composeUploadErrorMsg(results) +
+							"\n\n" +
+							Wikicite.getString(
+								"wikicite.wikidata.upload.error.proceed",
+							),
+					);
+					if (!proceed) {
+						localItemsToUpdate.clear();
+					}
+				} else {
+					// no local changes pending, just show information dialog
+					Services.prompt.alert(
+						window,
+						Wikicite.getString(
+							"wikicite.wikidata.upload.error.title",
+						),
+						composeUploadErrorMsg(results),
+					);
+				}
+			}
+		}
 
-                // citations to flag
-                const flagCitations = localFlagCitations[sourceItem.item.id];
-                if (flagCitations.length) {
-                    for (const targetQid of flagCitations) {
-                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
-                        if (citations.length) {
-                            for (const citation of citations) {
-                                citation.addOCI(
-                                    OCI.getOci('wikidata', sourceItem.qid, targetQid)
-                                );
-                            }
-                        } else {
-                            debug('No matching citations for QID ' + targetQid);
-                        }
-                    }
-                }
+		// Only then, run local actions
+		if (localItemsToUpdate.size) {
+			progress.newLine(
+				"loading",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.local.update.loading",
+				),
+			);
+			const matchers = {};
+			for (const sourceItem of sourceItems) {
+				if (!localItemsToUpdate.has(sourceItem.item.id)) {
+					// item not in the list of items to update; skip
+					continue;
+				}
 
-                // citations to unflag
-                const unflagCitations = localUnflagCitations[sourceItem.item.id];
-                if (unflagCitations.length) {
-                    for (const targetQid of unflagCitations) {
-                        const { citations } = sourceItem.getCitations(targetQid, 'qid');
-                        if (citations.length) {
-                            for (const citation of citations) {
-                                citation.removeOCI('wikidata');
-                            }
-                        } else {
-                            throw new Error('No matching citations for QID ' + targetQid);
-                        }
-                    }
-                }
+				// begin batch session so citations are not updated nor saved
+				// until operations are over
+				sourceItem.startBatch();
 
-                // citations to delete
-                const deleteCitations = localDeleteCitations[sourceItem.item.id];
-                if (deleteCitations.length) {
-                    for (const targetQid of deleteCitations) {
-                        const { indices } = sourceItem.getCitations(targetQid, 'qid');
-                        if (indices.length) {
-                            for (const index of indices) {
-                                sourceItem.deleteCitation(index);
-                            }
-                        } else {
-                                throw new Error('No matching citations for QID ' + targetQid);
-                        }
-                    }
-                }
+				// citations to add
+				const addCitations = localAddCitations[sourceItem.item.id];
+				if (addCitations.length) {
+					const libraryID = sourceItem.item.libraryID;
+					if (!matchers[libraryID]) {
+						// If there isn't a Matcher initialized for this library already
+						// create and initialize a new one
+						matchers[libraryID] = new Matcher(libraryID);
+						await matchers[libraryID].init();
+					}
+					const newCitations = [];
+					for (const targetQid of addCitations) {
+						const targetItem = targetItems.get(targetQid);
+						if (targetItem) {
+							const oci = OCI.getOci(
+								"wikidata",
+								sourceItem.qid,
+								targetQid,
+							);
+							const citation = new Citation(
+								{
+									item: targetItem,
+									ocis: [oci],
+								},
+								sourceItem,
+							);
+							citation.autoLink(matchers[libraryID]);
+							newCitations.push(citation);
+						} else {
+							// targetQid won't be found in targetItems map
+							// if corresponding Wikidata entity does not belong
+							// to a class supported by the Wikidata JSON translator
+							// e.g. "retracted paper (Q45182324)"
+							unsupportedCitations += 1;
+						}
+					}
+					// Fixme: the number of localAddCitations and localFlagCitations
+					// shown in the confirmation message above may be wrong, as the
+					// addCitations method below may find duplicate citations and
+					// decide to flag them instead of creating new ones.
+					// Use this info to show a message to the user (see #26)
+					sourceItem.addCitations(newCitations);
+				}
 
-                // end batch session so citations are saved
-                sourceItem.endBatch();
-            }
-            progress.updateLine(
-                'done',
-                Wikicite.getString(
-                    'wikicite.wikidata.progress.local.update.done'
-                )
-            );
-        }
-        progress.close();
+				// citations to flag
+				const flagCitations = localFlagCitations[sourceItem.item.id];
+				if (flagCitations.length) {
+					for (const targetQid of flagCitations) {
+						const { citations } = sourceItem.getCitations(
+							targetQid,
+							"qid",
+						);
+						if (citations.length) {
+							for (const citation of citations) {
+								citation.addOCI(
+									OCI.getOci(
+										"wikidata",
+										sourceItem.qid,
+										targetQid,
+									),
+								);
+							}
+						} else {
+							debug("No matching citations for QID " + targetQid);
+						}
+					}
+				}
 
-        // display information dialog with deviations from confirmation message above
-        if (unsupportedCitations) {
-            Services.prompt.alert(
-                null,
-                "",
-                Wikicite.formatString(
-                    'wikicite.wikidata.deviations.unsupported-citations',
-                    unsupportedCitations
-                )
-            )
-        }
-    }
+				// citations to unflag
+				const unflagCitations =
+					localUnflagCitations[sourceItem.item.id];
+				if (unflagCitations.length) {
+					for (const targetQid of unflagCitations) {
+						const { citations } = sourceItem.getCitations(
+							targetQid,
+							"qid",
+						);
+						if (citations.length) {
+							for (const citation of citations) {
+								citation.removeOCI("wikidata");
+							}
+						} else {
+							throw new Error(
+								"No matching citations for QID " + targetQid,
+							);
+						}
+					}
+				}
 
-    // maybe i don't need a batch method for getting from PDF
-    // because I don't think I want (or even can) call with multiple pdfs
-    // But I may want to use Zotero.ProgressQueue to keep track of what is going on
+				// citations to delete
+				const deleteCitations =
+					localDeleteCitations[sourceItem.item.id];
+				if (deleteCitations.length) {
+					for (const targetQid of deleteCitations) {
+						const { indices } = sourceItem.getCitations(
+							targetQid,
+							"qid",
+						);
+						if (indices.length) {
+							for (const index of indices) {
+								sourceItem.deleteCitation(index);
+							}
+						} else {
+							throw new Error(
+								"No matching citations for QID " + targetQid,
+							);
+						}
+					}
+				}
+
+				// end batch session so citations are saved
+				sourceItem.endBatch();
+			}
+			progress.updateLine(
+				"done",
+				Wikicite.getString(
+					"wikicite.wikidata.progress.local.update.done",
+				),
+			);
+		}
+		progress.close();
+
+		// display information dialog with deviations from confirmation message above
+		if (unsupportedCitations) {
+			Services.prompt.alert(
+				null,
+				"",
+				Wikicite.formatString(
+					"wikicite.wikidata.deviations.unsupported-citations",
+					unsupportedCitations,
+				),
+			);
+		}
+	}
+
+	// maybe i don't need a batch method for getting from PDF
+	// because I don't think I want (or even can) call with multiple pdfs
+	// But I may want to use Zotero.ProgressQueue to keep track of what is going on
 }
 
 // Compose confirmation message for the user to confirm actions to be taken
 // before proceeding
 function composeConfirmation(
-    localItemsToUpdate,
-    remoteEntitiesToUpdate,
-    counters
+	localItemsToUpdate,
+	remoteEntitiesToUpdate,
+	counters,
 ) {
-    // Message header
-    let confirmMsg = Wikicite.getString(
-        'wikicite.wikidata.confirm.message.header'
-    );
+	// Message header
+	let confirmMsg = Wikicite.getString(
+		"wikicite.wikidata.confirm.message.header",
+	);
 
-    // local items to update section
-    if (localItemsToUpdate.size) {
-        confirmMsg += (
-            '\n\n' +
-            Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.local-items',
-                localItemsToUpdate.size
-            ) +
-            ':'
-        );
-        if (counters.localAddCitations) {
-            confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.local-add',
-                counters.localAddCitations
-            );
-        }
-        if (counters.localFlagCitations) {
-            confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.local-flag',
-                counters.localFlagCitations
-            );
-        }
-        if (counters.localUnflagCitations) {
-            confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.local-unflag',
-                counters.localUnflagCitations
-            );
-        }
-        if (counters.localDeleteCitations) {
-            confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.local-delete',
-                counters.localDeleteCitations
-            );
-        }
-    }
+	// local items to update section
+	if (localItemsToUpdate.size) {
+		confirmMsg +=
+			"\n\n" +
+			Wikicite.formatString(
+				"wikicite.wikidata.confirm.message.local-items",
+				localItemsToUpdate.size,
+			) +
+			":";
+		if (counters.localAddCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.local-add",
+					counters.localAddCitations,
+				);
+		}
+		if (counters.localFlagCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.local-flag",
+					counters.localFlagCitations,
+				);
+		}
+		if (counters.localUnflagCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.local-unflag",
+					counters.localUnflagCitations,
+				);
+		}
+		if (counters.localDeleteCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.local-delete",
+					counters.localDeleteCitations,
+				);
+		}
+	}
 
-    // remote entities to update section
-    if (remoteEntitiesToUpdate.size) {
-        confirmMsg += (
-            '\n\n' +
-            Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.remote-entities',
-                remoteEntitiesToUpdate.size
-            ) +
-            ':'
-        );
-        if (counters.remoteAddCitations) {
-            confirmMsg += '\n\t' + Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.remote-add',
-                counters.remoteAddCitations
-            );
-        }
-    }
+	// remote entities to update section
+	if (remoteEntitiesToUpdate.size) {
+		confirmMsg +=
+			"\n\n" +
+			Wikicite.formatString(
+				"wikicite.wikidata.confirm.message.remote-entities",
+				remoteEntitiesToUpdate.size,
+			) +
+			":";
+		if (counters.remoteAddCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.remote-add",
+					counters.remoteAddCitations,
+				);
+		}
+	}
 
-    // local citations that will not be changed section
-    const unchangedCitationsCount = (
-        counters.syncedCitations +
-        counters.noQidCitations +
-        counters.invalidOci
-    );
-    if (counters.unchangedCitations) {
-        confirmMsg += (
-            '\n\n' +
-            Wikicite.formatString(
-                'wikicite.wikidata.confirm.message.unchanged',
-                unchangedCitationsCount
-            ) +
-            ':'
-        );
-        if (counters.syncedCitations) {
-            confirmMsg += (
-                '\n\t' +
-                Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.synced',
-                    counters.syncedCitations
-                )
-            );
-        }
-        if (counters.noQidCitations) {
-            confirmMsg += (
-                '\n\t' +
-                Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.no-qid',
-                    counters.noQidCitations
-                )
-            );
-        }
-        if (counters.invalidOci) {
-            confirmMsg += (
-                '\n\t' +
-                Wikicite.formatString(
-                    'wikicite.wikidata.confirm.message.invalid-oci',
-                    counters.invalidOci
-                )
-            );
-        }
-    }
+	// local citations that will not be changed section
+	const unchangedCitationsCount =
+		counters.syncedCitations +
+		counters.noQidCitations +
+		counters.invalidOci;
+	if (counters.unchangedCitations) {
+		confirmMsg +=
+			"\n\n" +
+			Wikicite.formatString(
+				"wikicite.wikidata.confirm.message.unchanged",
+				unchangedCitationsCount,
+			) +
+			":";
+		if (counters.syncedCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.synced",
+					counters.syncedCitations,
+				);
+		}
+		if (counters.noQidCitations) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.no-qid",
+					counters.noQidCitations,
+				);
+		}
+		if (counters.invalidOci) {
+			confirmMsg +=
+				"\n\t" +
+				Wikicite.formatString(
+					"wikicite.wikidata.confirm.message.invalid-oci",
+					counters.invalidOci,
+				);
+		}
+	}
 
-    // message footer
-    confirmMsg += '\n\n' + Wikicite.getString(
-        'wikicite.wikidata.confirm.message.footer'
-    );
+	// message footer
+	confirmMsg +=
+		"\n\n" + Wikicite.getString("wikicite.wikidata.confirm.message.footer");
 
-    return confirmMsg;
+	return confirmMsg;
 }
 
 // Compose information message about what failed when uploading
 // changes to Wikidata
-function composeUploadErrorMsg(results: {[key: string]: any}) {
-    // compose an information message saying that something went wrong
-    let uploadErrorMsg = Wikicite.getString(
-        'wikicite.wikidata.upload.error.header'
-    ) + ':';
-    // indicating which entities could not be edited due to insufficient
-    // permissions (if any)
-    const permissionDeniedQids = Object.keys(results).filter(
-        (qid) => results[qid] === 'permissiondenied'
-    );
-    if (permissionDeniedQids.length) {
-        uploadErrorMsg += (
-            '\n\n' + Wikicite.getString(
-                'wikicite.wikidata.upload.error.denied'
-            ) + ': ' +
-            permissionDeniedQids.join(', ') + '.'
-        );
-    }
-    // which entity editions failed for unexpected reasons
-    const unknownErrorQids = {};
-    for (const [qid, result] of Object.entries(results)) {
-        // results other than 'ok' and 'permissiondenied'
-        // there should be no cancelled editions (see above)
-        if (!['ok', 'cancelled', 'permissiondenied'].includes(result)) {
-            if (!unknownErrorQids[result]) {
-                unknownErrorQids[result] = [];
-            }
-            unknownErrorQids[result].push(qid);
-        }
-    }
-    for (const err of Object.keys(unknownErrorQids)) {
-        uploadErrorMsg += (
-            // Entities failed with error
-            '\n\n' + Wikicite.getString(
-                'wikicite.wikidata.upload.error.unknown'
-            ) +
-            ' "' + err + '": ' +
-            unknownErrorQids[err].join(', ') + '.'
-        );
-    }
-    // say which entity editions succeeded as well
-    const okQids = Object.keys(results).filter(
-        (qid) => results[qid] === 'ok'
-    );
-    if (okQids.length) {
-        uploadErrorMsg += (
-            '\n\n' + Wikicite.getString(
-                'wikicite.wikidata.upload.error.ok'
-            ) + ': ' +
-            okQids.join(', ') + '.'
-        )
-    }
+function composeUploadErrorMsg(results: { [key: string]: any }) {
+	// compose an information message saying that something went wrong
+	let uploadErrorMsg =
+		Wikicite.getString("wikicite.wikidata.upload.error.header") + ":";
+	// indicating which entities could not be edited due to insufficient
+	// permissions (if any)
+	const permissionDeniedQids = Object.keys(results).filter(
+		(qid) => results[qid] === "permissiondenied",
+	);
+	if (permissionDeniedQids.length) {
+		uploadErrorMsg +=
+			"\n\n" +
+			Wikicite.getString("wikicite.wikidata.upload.error.denied") +
+			": " +
+			permissionDeniedQids.join(", ") +
+			".";
+	}
+	// which entity editions failed for unexpected reasons
+	const unknownErrorQids = {};
+	for (const [qid, result] of Object.entries(results)) {
+		// results other than 'ok' and 'permissiondenied'
+		// there should be no cancelled editions (see above)
+		if (!["ok", "cancelled", "permissiondenied"].includes(result)) {
+			if (!unknownErrorQids[result]) {
+				unknownErrorQids[result] = [];
+			}
+			unknownErrorQids[result].push(qid);
+		}
+	}
+	for (const err of Object.keys(unknownErrorQids)) {
+		uploadErrorMsg +=
+			// Entities failed with error
+			"\n\n" +
+			Wikicite.getString("wikicite.wikidata.upload.error.unknown") +
+			' "' +
+			err +
+			'": ' +
+			unknownErrorQids[err].join(", ") +
+			".";
+	}
+	// say which entity editions succeeded as well
+	const okQids = Object.keys(results).filter((qid) => results[qid] === "ok");
+	if (okQids.length) {
+		uploadErrorMsg +=
+			"\n\n" +
+			Wikicite.getString("wikicite.wikidata.upload.error.ok") +
+			": " +
+			okQids.join(", ") +
+			".";
+	}
 
-    return uploadErrorMsg;
+	return uploadErrorMsg;
 }

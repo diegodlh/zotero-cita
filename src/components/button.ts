@@ -1,3 +1,4 @@
-import { Button as ZoteroButton } from 'zotero@components/button';
+import { Button as ZoteroButton } from "zotero@components/button";
+import { injectIntl } from "react-intl";
 
-export let Button = ZoteroButton;
+export const Button = injectIntl(ZoteroButton.WrappedComponent);
