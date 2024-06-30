@@ -66,9 +66,9 @@ export default {
 	// zoteroTabURL: 'chrome://zotero/content/tab.xul',
 
 	_bundle: (() => {
-		const zoteroLocale = Zotero.locale;
-		// this function doesn't exist
-		// const requestedLocale = Services.locale.getRequestedLocale();
+		// fix: plugin wouldn't start when running this
+		// const zoteroLocale = Zotero.locale;
+		// const requestedLocale = Services.locale.requestedLocale;
 		const propertiesFile = "chrome://cita/locale/wikicite.properties";
 		// if (zoteroLocale.split("-")[0] === requestedLocale.split("-")[0]) {
 		// 	propertiesFile = "chrome://cita/locale/wikicite.properties";

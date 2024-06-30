@@ -1,27 +1,25 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
+import { useEffect, useState } from "react";
+import * as PropTypes from "prop-types";
 import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
-import PropTypes from "prop-types";
-import { debug } from "../cita/wikicite.js";
 
-declare const Services: any;
-declare const Zotero: any;
-declare global {
-	interface Window {
-		Wikicite: any;
-		WikiciteChrome: any;
-	}
-}
-
-function CitationsBoxContainer(props: any) {
-	debug("CitationsBoxContainer will render...");
+function CitationsBoxContainer(props: {
+	item: Zotero.Item;
+	editable: boolean;
+}) {
+	// debug("CitationsBoxContainer will render...");
 
 	// this CitationsBox container knows about the current
 	// sortBy preference value
-	const [sortBy, setSortBy] = useState(() =>
-		window.Wikicite.Prefs.get("sortBy"),
+	const [sortBy, setSortBy] = useState(
+		() =>
+			// fix: get pref
+			"ordinal",
+		//Wikicite.Prefs.get("sortBy")
 	);
 
+	// fix: this one was being used
 	// Option 1, include sourceItem in component's internal state.
 	// Con: The component will re-render every time the sourceItem is reinstantiated.
 	const [sourceItem, setSourceItem] = useState(
@@ -30,7 +28,9 @@ function CitationsBoxContainer(props: any) {
 		() =>
 			new SourceItemWrapper(
 				props.item,
-				window.Wikicite.Prefs.get("storage"),
+				// fix: get pref
+				"extra",
+				// window.Wikicite.Prefs.get("storage"),
 			),
 	);
 
@@ -72,45 +72,57 @@ function CitationsBoxContainer(props: any) {
 	// OCCID (OpenCitations Corpus ID) makes sense too, because OCI may relate two interanal OC corpus ids
 
 	useEffect(() => {
-		debug("First run, or props.item has changed");
+		// debug("First run, or props.item has changed");
 		const observer = {
 			notify: async function (
 				action: any,
 				type: string,
-				ids: string[],
+				ids: string[] | number[],
 				extraData: any,
 			) {
 				// This observer will be triggered as long as the component remains mounted
 				// That is, until the item selected changes.
 				if (type === "item") {
-					const notes = Zotero.Items.get(ids).filter((item: any) =>
+					const notes = Zotero.Items.get(ids).filter((item) =>
 						item.isNote(),
 					);
 					if (
-						ids.includes(props.item.id) ||
+						// todo: this as number[] fixes is TS error
+						(ids as number[]).includes(props.item.id) ||
 						notes
-							.map((note: any) => note.parentID)
+							.map((note) => note.parentID)
 							.includes(props.item.id)
 					) {
-						debug("Item observer has been triggered...");
+						// debug("Item observer has been triggered...");
 						// This may cause two re-renders: one when sourceItem is reset,
 						// and another after sourceItem-dependent useEffect run above is run.
 						setSourceItem(
 							new SourceItemWrapper(
 								props.item,
-								window.Wikicite.Prefs.get("storage"),
+								// fix: get pref
+								"extra",
+								// window.Wikicite.Prefs.get("storage"),
 							),
 						);
-
 						// If sourceItem is a ref, state must be updated from here,
 						// because including sourceItem.current in a useEffect dependency array won't work
 						// https://github.com/facebook/react/issues/14387#issuecomment-503616820
 						// However, this would cause multiple component re-renders
 						// https://stackoverflow.com/questions/59163378/react-hooks-skip-re-render-on-multiple-consecutive-setstate-calls
 						// setCitations(sourceItem.current.citations);
-						// setDoi(props.item.getField('DOI'));
-						// setOcc(Wikicite.getExtraField(props.item.getField('extra'), 'occ'));
-						// setQid(Wikicite.getExtraField(props.item.getField('extra'), 'qid'));
+						// setDoi(props.item.getField("DOI"));
+						// setOcc(
+						// 	Wikicite.getExtraField(
+						// 		props.item.getField("extra"),
+						// 		"occ",
+						// 	),
+						// );
+						// setQid(
+						// 	Wikicite.getExtraField(
+						// 		props.item.getField("extra"),
+						// 		"qid",
+						// 	),
+						// );
 						// fix: not sure why this was if (false)?
 					}
 					// } else if (false) {
@@ -143,7 +155,9 @@ function CitationsBoxContainer(props: any) {
 			observe: function (subject: any, topic: string, data: any) {
 				switch (topic) {
 					case "wikicite-sortby-update":
-						setSortBy(window.Wikicite.Prefs.get("sortBy"));
+						// fix: get pref
+						setSortBy("ordinal");
+						// setSortBy(window.Wikicite.Prefs.get("sortBy"));
 						break;
 					default:
 				}
@@ -162,7 +176,8 @@ function CitationsBoxContainer(props: any) {
 	}, []);
 
 	useEffect(() => {
-		window.WikiciteChrome.zoteroOverlay.setSourceItem(sourceItem);
+		// fix: how to get this?
+		// window.WikiciteChrome.zoteroOverlay.setSourceItem(sourceItem);
 	}, [sourceItem]);
 
 	/**
@@ -177,11 +192,12 @@ function CitationsBoxContainer(props: any) {
 	}
 
 	function handleCitationPopup(event: Event, citationIndex: number) {
-		window.WikiciteChrome.zoteroOverlay.setCitationIndex(citationIndex);
-		const citationPopupMenu = document.getElementById(
-			"citations-box-citation-menu",
-		) as any;
-		citationPopupMenu.openPopup(event.target, "end_before", 0, 0, true);
+		// fix: how to access this?
+		// window.WikiciteChrome.zoteroOverlay.setCitationIndex(citationIndex);
+		// const citationPopupMenu = document.getElementById(
+		// 	"citations-box-citation-menu",
+		// ) as any;
+		// citationPopupMenu.openPopup(event.target, "end_before", 0, 0, true);
 	}
 
 	return (
