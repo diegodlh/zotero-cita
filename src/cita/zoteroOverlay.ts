@@ -77,7 +77,7 @@ class ZoteroOverlay {
 	/******************************************/
 	// Window load handling
 	/******************************************/
-	init() {
+	constructor() {
 		// retrieve and set addon version
 		// AddonManager.getAddonByID(Wikicite.id, (addon: any) => {
 		//     Wikicite.version = addon.version
@@ -566,6 +566,7 @@ class ZoteroOverlay {
 	/******************************************/
 	// Create XUL for Zotero item pane
 	citationsPane() {
+		// todo: remove when unloading
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
