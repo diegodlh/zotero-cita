@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import * as PropTypes from "prop-types";
 import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
+import { getPref } from "../utils/prefs.js";
 
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
@@ -14,9 +15,9 @@ function CitationsBoxContainer(props: {
 	// this CitationsBox container knows about the current
 	// sortBy preference value
 	const [sortBy, setSortBy] = useState(
-		() =>
-			// fix: get pref
-			"ordinal",
+		() => getPref("sortBy") as "ordinal" | "authors" | "title" | "date",
+		// fix: get pref
+		// "ordinal"
 		//Wikicite.Prefs.get("sortBy")
 	);
 
@@ -30,7 +31,8 @@ function CitationsBoxContainer(props: {
 			new SourceItemWrapper(
 				props.item,
 				// fix: get pref
-				"note",
+				getPref("storage") as "note" | "extra",
+				// "note",
 				// window.Wikicite.Prefs.get("storage"),
 			),
 	);
@@ -157,7 +159,14 @@ function CitationsBoxContainer(props: {
 				switch (topic) {
 					case "wikicite-sortby-update":
 						// fix: get pref
-						setSortBy("ordinal");
+						// setSortBy("ordinal");
+						setSortBy(
+							getPref("sortBy") as
+								| "ordinal"
+								| "authors"
+								| "title"
+								| "date",
+						);
 						// setSortBy(window.Wikicite.Prefs.get("sortBy"));
 						break;
 					default:
