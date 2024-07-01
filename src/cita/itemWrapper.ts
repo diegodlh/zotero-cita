@@ -63,7 +63,7 @@ export default class ItemWrapper {
 	// this.place; // for books?
 
 	// UUIDs
-	get doi() {
+	get doi(): string | undefined {
 		return this.getPID("DOI");
 	}
 
@@ -71,7 +71,7 @@ export default class ItemWrapper {
 		this.setPID("DOI", doi);
 	}
 
-	get isbn() {
+	get isbn(): string | undefined {
 		return this.getPID("ISBN");
 	}
 
@@ -79,7 +79,7 @@ export default class ItemWrapper {
 		this.setPID("ISBN", isbn);
 	}
 
-	get qid() {
+	get qid(): string | undefined {
 		return this.getPID("QID");
 	}
 
@@ -88,11 +88,11 @@ export default class ItemWrapper {
 	}
 
 	// OpenCitations Corpus Internal Identifier
-	get occ() {
+	get occ(): string | undefined {
 		return this.getPID("OCC");
 	}
 
-	set occ(occ) {
+	set occ(occ: string) {
 		this.setPID("OCC", occ);
 	}
 
@@ -149,6 +149,9 @@ export default class ItemWrapper {
 		}
 	}
 
+	/*
+	 * Get PID (QID, DOI, ISBN, OCC) from item. If it doesn't have this PID, return undefined
+	 */
 	getPID(type: PIDType, clean = false) {
 		let pid: string | undefined;
 		switch (type) {
