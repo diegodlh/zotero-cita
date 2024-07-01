@@ -184,7 +184,7 @@ export const esbuildOptions = {
 		__env__: `"${env.NODE_ENV}"`,
 	},
 	bundle: true,
-	target: "firefox102",
+	target: "firefox115",
 	outfile: path.join(
 		buildDir,
 		`addon/chrome/content/scripts/${config.addonRef}.js`,

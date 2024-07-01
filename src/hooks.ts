@@ -28,7 +28,7 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
 	// Create ztoolkit for every window
 	addon.data.ztoolkit = createZToolkit();
-	zoteroOverlay = new ZoteroOverlay();
+	zoteroOverlay = new ZoteroOverlay(win);
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
