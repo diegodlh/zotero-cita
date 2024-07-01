@@ -19,6 +19,7 @@ import WikiciteChrome from "./wikiciteChrome";
 // import Wikidata from './wikidata';
 import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
+import { getPref, setPref, initialiseDefaultPref } from "../utils/prefs";
 
 const TRANSLATORS_PATH = "chrome://cita/content/translators/";
 const TRANSLATOR_LABELS = [
@@ -77,7 +78,6 @@ const ITEM_PANE_COLUMN_IDS = {
 class ZoteroOverlay {
 	qidColumnID?: string | false;
 	numCitationsColumnID?: string | false;
-	win: Window;
 	/******************************************/
 	// Window load handling
 	/******************************************/
@@ -87,14 +87,7 @@ class ZoteroOverlay {
 		//     Wikicite.version = addon.version
 		// });
 
-		this.win = win;
-		try {
-			const _require = (win as any).require as Function; // need to use Zotero's require
-			const Button = _require("components/button");
-			ztoolkit.log("got button");
-		} catch (err) {
-			throw err;
-		}
+		this.setDefaultPreferences();
 
 		this.fullOverlay();
 
@@ -181,6 +174,14 @@ class ZoteroOverlay {
 	}
 
 	/******************************************/
+	// Preferences
+	/******************************************/
+	setDefaultPreferences() {
+		initialiseDefaultPref("sortBy", "ordinal"); // 'ordinal', 'authors', 'title', 'date'
+		initialiseDefaultPref("storage", "note"); // 'extra' || 'note'
+	}
+
+	/******************************************/
 	// Modifying Item Pane
 	/******************************************/
 	async addItemPaneColumns() {
@@ -192,8 +193,13 @@ class ZoteroOverlay {
 			pluginID: config.addonID,
 			dataProvider: (item: Zotero.Item, dataKey: string) => {
 				// fix: get pref
-				return new SourceItemWrapper(item, "note").getPID("QID") || "";
-				// return new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).getPID('QID') || '';
+				// return new SourceItemWrapper(item, "note").getPID("QID") || "";
+				return (
+					new SourceItemWrapper(
+						item,
+						getPref("storage") as "note" | "extra",
+					).getPID("QID") || ""
+				);
 			},
 		});
 
@@ -206,13 +212,18 @@ class ZoteroOverlay {
 				pluginID: config.addonID,
 				dataProvider: (item: Zotero.Item, dataKey: string) => {
 					// fix: get pref
+					// return (
+					// 	new SourceItemWrapper(
+					// 		item,
+					// 		"note",
+					// 	).citations.length.toString() || "0"
+					// );
 					return (
 						new SourceItemWrapper(
 							item,
-							"note",
-						).citations.length.toString() || "0"
+							getPref("storage") as "note" | "extra",
+						).citations.length.toString() || ""
 					);
-					// return new SourceItemWrapper(item, window.Wikicite.Prefs.get('storage')).citations.length || '';
 				},
 			});
 	}
