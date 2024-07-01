@@ -77,14 +77,24 @@ const ITEM_PANE_COLUMN_IDS = {
 class ZoteroOverlay {
 	qidColumnID?: string | false;
 	numCitationsColumnID?: string | false;
+	win: Window;
 	/******************************************/
 	// Window load handling
 	/******************************************/
-	constructor() {
+	constructor(win: Window) {
 		// retrieve and set addon version
 		// AddonManager.getAddonByID(Wikicite.id, (addon: any) => {
 		//     Wikicite.version = addon.version
 		// });
+
+		this.win = win;
+		try {
+			const _require = (win as any).require as Function; // need to use Zotero's require
+			const Button = _require("components/button");
+			ztoolkit.log("got button");
+		} catch (err) {
+			throw err;
+		}
 
 		this.fullOverlay();
 

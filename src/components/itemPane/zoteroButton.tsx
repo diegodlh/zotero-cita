@@ -1,18 +1,17 @@
+import * as React from "react";
+import * as PropTypes from "prop-types";
 import Citation from "../../cita/citation";
-import PropTypes from "prop-types";
-import React from "react";
 import Wikicite from "../../cita/wikicite";
-
-declare const Services: any;
-declare const Zotero: any;
-declare const ZoteroPane: any;
 
 function ZoteroButton(props: any) {
 	const key = props.citation.target.key;
 	function handleClick() {
 		if (key) {
 			const libraryID = props.citation.source.item.libraryID;
-			const item = Zotero.Items.getByLibraryAndKey(libraryID, key);
+			const item = Zotero.Items.getByLibraryAndKey(
+				libraryID,
+				key,
+			) as Zotero.Item;
 
 			const bttnFlags =
 				Services.prompt.BUTTON_POS_0 *

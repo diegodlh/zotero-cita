@@ -7,6 +7,7 @@ import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
+	// Button: any; //needed to pass to CitationsBox so it can use require to access Zotero components
 }) {
 	// debug("CitationsBoxContainer will render...");
 
@@ -191,7 +192,10 @@ function CitationsBoxContainer(props: {
 		itemPopupMenu.openPopup(event.target, "end_before", 0, 0, true);
 	}
 
-	function handleCitationPopup(event: Event, citationIndex: number) {
+	function handleCitationPopup(
+		event: React.MouseEvent,
+		citationIndex: number,
+	) {
 		// fix: how to access this?
 		// window.WikiciteChrome.zoteroOverlay.setCitationIndex(citationIndex);
 		// const citationPopupMenu = document.getElementById(
@@ -207,6 +211,7 @@ function CitationsBoxContainer(props: {
 			sourceItem={sourceItem}
 			onItemPopup={handleItemPopup}
 			onCitationPopup={handleCitationPopup}
+			// Button={props.Button}
 		/>
 	);
 }
@@ -214,6 +219,7 @@ function CitationsBoxContainer(props: {
 CitationsBoxContainer.propTypes = {
 	item: PropTypes.instanceOf(Zotero.Item),
 	editable: PropTypes.bool,
+	// Button: PropTypes.any,
 };
 
 export default CitationsBoxContainer;
