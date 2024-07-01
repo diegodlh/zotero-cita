@@ -5,7 +5,6 @@
 import Wikicite, { debug } from "./wikicite";
 // import Citations from './citations';
 import CitationsBoxContainer from "../containers/citationsBoxContainer";
-import ReactTest from "../components/itemPane/reactTest";
 import Crossref from "./crossref";
 import Extraction from "./extract";
 // import LCN from './localCitationNetwork';
