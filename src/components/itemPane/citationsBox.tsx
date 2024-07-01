@@ -3,20 +3,31 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import * as PropTypes from "prop-types";
 import Wikicite, { debug } from "../../cita/wikicite";
+
+// fix: CSS doesn't work
+import "./citationsBox.css";
+
+// fix: Not sure how to import react components from Zotero
 // import { Button } from "../button";
-import Citation from "../../cita/citation";
-// import { IntlProvider } from "react-intl";
+// try {
+// 	const Button = require("components/button");
+// } catch (err) {
+// 	throw err;
+// }
+
 // import PIDRow from "../pidRow";
+import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import WikidataButton from "./wikidataButton";
-// import ZoteroButton from "./zoteroButton";
+import ZoteroButton from "./zoteroButton";
 
 function CitationsBox(props: {
 	editable: boolean;
 	sortBy: string;
 	sourceItem: SourceItemWrapper;
 	onItemPopup: (event: Event) => void;
-	onCitationPopup: (event: Event, index: number) => void;
+	onCitationPopup: (event: React.MouseEvent, index: number) => void;
+	// Button: any;
 }) {
 	const [citations, setCitations] = useState([] as Citation[]);
 	const [pidTypes, setPidTypes] = useState([] as string[]);
@@ -24,6 +35,8 @@ function CitationsBox(props: {
 	const [hasAttachments, setHasAttachments] = useState(false);
 
 	const removeStr = Zotero.getString("general.remove");
+
+	// const Button = props.Button;
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
@@ -283,12 +296,12 @@ function CitationsBox(props: {
 				{props.editable && (
 					// https://github.com/babel/babel-sublime/issues/368
 					<>
-						{/* <ZoteroButton citation={citation} /> */}
+						<ZoteroButton citation={citation} />
 						<WikidataButton
 							citation={citation}
 							onClick={() => handleCitationSync(index)}
 						/>
-						{/* <button
+						<button
 							disabled={
 								isFirstCitation || props.sortBy !== "ordinal"
 							}
@@ -299,8 +312,8 @@ function CitationsBox(props: {
 								title="Move up"
 								src={`chrome://zotero/skin/citation-up.png`}
 							/>
-						</button> */}
-						{/* <button
+						</button>
+						<button
 							disabled={
 								isLastCitation || props.sortBy !== "ordinal"
 							}
@@ -311,8 +324,8 @@ function CitationsBox(props: {
 								title="Move down"
 								src={`chrome://zotero/skin/citation-down.png`}
 							/>
-						</button> */}
-						{/* <button
+						</button>
+						<button
 							title={removeStr}
 							onClick={() => handleCitationDelete(index)}
 							tabIndex={-1}
@@ -324,15 +337,15 @@ function CitationsBox(props: {
 								// Fixme: does it change when active?
 								src={`chrome://zotero/skin/minus${Zotero.hiDPISuffix}.png`}
 							/>
-						</button> */}
-						{/* <button
+						</button>
+						<button
 							className="btn-icon"
 							onClick={(event) =>
 								props.onCitationPopup(event, index)
 							}
 						>
 							<span className="menu-marker"></span>
-						</button> */}
+						</button>
 					</>
 				)}
 			</li>
@@ -374,7 +387,9 @@ function CitationsBox(props: {
 					className="citations-box-actions"
 					isMenu={true}
 					onClick={props.onItemPopup}
-					text="wikicite.citations-pane.more"
+					// todo: localise
+					text="More"
+					// text="wikicite.citations-pane.more"
 					title=""
 					size="sm"
 				/> */}
@@ -433,6 +448,7 @@ CitationsBox.propTypes = {
 	sourceItem: PropTypes.instanceOf(SourceItemWrapper),
 	onItemPopup: PropTypes.func,
 	onCitationPopup: PropTypes.func,
+	// Button: PropTypes.any, // need to require this from outside react
 };
 
 export default CitationsBox;

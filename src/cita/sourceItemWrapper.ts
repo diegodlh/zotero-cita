@@ -463,7 +463,7 @@ class SourceItemWrapper extends ItemWrapper {
 		value: string,
 		options = {
 			alert: false,
-			parentWindow: null,
+			parentWindow: Window,
 			skipCitation: undefined,
 		},
 	) {

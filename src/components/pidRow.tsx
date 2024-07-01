@@ -1,9 +1,8 @@
 /* License */
-import React, { useEffect, useRef, useState } from "react";
-import Editable from "zotero@components/editable";
-import PropTypes from "prop-types";
-
-declare const Zotero: any;
+import * as React from "react";
+import { useEffect, useRef, useState } from "react";
+import * as PropTypes from "prop-types";
+// import Editable from "zotero@components/editable";
 
 function PIDRow(props: any) {
 	const textboxRef = useRef(null);
@@ -66,7 +65,10 @@ function PIDRow(props: any) {
 				{/* Causes a warning, because Input uses componentWillReceiveProps
                 which has been renamed and is not recommended. But won't show
                 in non-strict mode because Zotero devs renamed it to UNSAFE_*/}
-				<Editable
+				{/* <Editable */}
+				{/* fix: replaced Editable with input type="text" until we work out how to import zotero components */}
+				<input
+					type="text"
 					// There is a bug in Zotero's React Input component
 					// Its handleChange event is waiting for an options
 					// parameter from the child input element's onChange
@@ -74,25 +76,28 @@ function PIDRow(props: any) {
 					// Autosuggest, but not by the regular HTML input.
 					// This doesn't happen with TextArea, because its
 					// handleChange doesn't expect an options parameter.
-					autoComplete={true}
+					// todo: autoComplete, getSuggestions, isActive, onCancel, onCommit, selectOnFocus work for editable but not input
+					// autoComplete={true}
 					// For the autoComplete workaround to work above,
 					// a getSuggestions function must be provided.
 					// Have it return an empty suggestions array.
-					getSuggestions={(): any => []}
+					// getSuggestions={(): any => []}
 					// ...and a ref too
 					ref={textboxRef}
 					autoFocus
 					className={
 						props.editable && !selected ? "zotero-clicky" : ""
 					}
-					isActive={selected}
-					isReadOnly={!props.editable}
-					onCancel={handleCancel}
+					// isActive={selected}
+					// isReadOnly={!props.editable}
+					readOnly={!props.editable}
+					onAbort={handleCancel}
+					// onCancel={handleCancel}
 					onClick={handleEdit}
-					onCommit={handleCommit}
+					// onCommit={handleCommit}
 					onFocus={handleEdit}
 					// onPaste={handlePaste}  // what happens if I paste multiline?
-					selectOnFocus={true}
+					// selectOnFocus={true}
 					value={value || ""}
 				/>
 			</div>
