@@ -107,10 +107,11 @@ export default class ItemWrapper {
 	}
 
 	getPIDTypes() {
-		const allTypes = ["DOI", "ISBN", "QID", "OCC"];
-		const pidTypes = [];
-		for (let type of allTypes) {
-			type = type.toUpperCase();
+		const allTypes: PIDType[] = ["DOI", "ISBN", "QID", "OCC"];
+		const pidTypes: PIDType[] = [];
+		for (const type of allTypes) {
+			// don't need this because we enforce that it's uppercase already
+			// type = type.toUpperCase();
 			switch (type) {
 				case "DOI":
 				case "ISBN":
@@ -149,17 +150,17 @@ export default class ItemWrapper {
 	}
 
 	getPID(type: PIDType, clean = false) {
-		let pid;
+		let pid: string | undefined;
 		switch (type) {
 			case "DOI":
 			case "ISBN":
 				pid = this.item.getField(type);
 				break;
 			default:
-				pid = Wikicite.getExtraField(this.item, type).values[0];
+				pid = Wikicite.getExtraField(this.item, type).values[0]; // this could be undefined
 		}
-		if (clean) {
-			pid = Wikicite.cleanPID(type, pid) as string;
+		if (clean && pid !== undefined) {
+			pid = Wikicite.cleanPID(type, pid) || undefined;
 		}
 		return pid;
 	}
