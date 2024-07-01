@@ -15,7 +15,7 @@ import "./citationsBox.css";
 // 	throw err;
 // }
 
-// import PIDRow from "../pidRow";
+import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import WikidataButton from "./wikidataButton";
@@ -30,7 +30,7 @@ function CitationsBox(props: {
 	// Button: any;
 }) {
 	const [citations, setCitations] = useState([] as Citation[]);
-	const [pidTypes, setPidTypes] = useState([] as string[]);
+	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
 
@@ -420,21 +420,22 @@ function CitationsBox(props: {
 						// consider having a pidBox component and
 						// redefining Wikicite.getExtraField to allow multiple fieldnames as input
 						// and return a fieldName: [values]} object instead
-						// pidTypes.map((pidType) => (
-						// 	<PIDRow
-						// 		autosave={true}
-						// 		editable={props.editable}
-						// 		item={props.sourceItem}
-						// 		key={pidType}
-						// 		type={pidType}
-						// 		validate={(type, value) =>
-						// 			props.sourceItem.checkPID(type, value, {
-						// 				alert: true,
-						// 				parentWindow: window,
-						// 			})
-						// 		}
-						// 	/>
-						// ))
+						pidTypes.map((pidType: PIDType) => (
+							<PIDRow
+								autosave={true}
+								editable={props.editable}
+								item={props.sourceItem}
+								key={pidType}
+								type={pidType}
+								validate={(type: PIDType, value: string) =>
+									props.sourceItem.checkPID(type, value, {
+										alert: true,
+										// todo: fix this once we know how
+										// parentWindow: window,
+									})
+								}
+							/>
+						))
 					}
 				</ul>
 			</div>

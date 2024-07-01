@@ -3,8 +3,15 @@ import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as PropTypes from "prop-types";
 // import Editable from "zotero@components/editable";
+import ItemWrapper from "../cita/itemWrapper";
 
-function PIDRow(props: any) {
+function PIDRow(props: {
+	autosave: boolean;
+	editable: boolean;
+	item: ItemWrapper;
+	type: PIDType;
+	validate: (type: PIDType, value: string) => boolean;
+}) {
 	const textboxRef = useRef(null);
 	const [selected, setSelected] = useState(false);
 	const [value, setValue] = useState(props.item.getPID(props.type));
@@ -66,9 +73,9 @@ function PIDRow(props: any) {
                 which has been renamed and is not recommended. But won't show
                 in non-strict mode because Zotero devs renamed it to UNSAFE_*/}
 				{/* <Editable */}
-				{/* fix: replaced Editable with input type="text" until we work out how to import zotero components */}
-				<input
-					type="text"
+				{/* fix: replaced Editable with div until we work out how to import zotero components */}
+				<div
+					// type="text"
 					// There is a bug in Zotero's React Input component
 					// Its handleChange event is waiting for an options
 					// parameter from the child input element's onChange
@@ -76,30 +83,31 @@ function PIDRow(props: any) {
 					// Autosuggest, but not by the regular HTML input.
 					// This doesn't happen with TextArea, because its
 					// handleChange doesn't expect an options parameter.
-					// todo: autoComplete, getSuggestions, isActive, onCancel, onCommit, selectOnFocus work for editable but not input
 					// autoComplete={true}
 					// For the autoComplete workaround to work above,
 					// a getSuggestions function must be provided.
 					// Have it return an empty suggestions array.
 					// getSuggestions={(): any => []}
 					// ...and a ref too
-					ref={textboxRef}
-					autoFocus
-					className={
-						props.editable && !selected ? "zotero-clicky" : ""
-					}
+					// ref={textboxRef}
+					// autoFocus
+					// className={
+					// 	props.editable && !selected ? "zotero-clicky" : ""
+					// }
 					// isActive={selected}
 					// isReadOnly={!props.editable}
-					readOnly={!props.editable}
-					onAbort={handleCancel}
+					// readOnly={!props.editable}
+					// onAbort={handleCancel}
 					// onCancel={handleCancel}
 					onClick={handleEdit}
 					// onCommit={handleCommit}
 					onFocus={handleEdit}
 					// onPaste={handlePaste}  // what happens if I paste multiline?
 					// selectOnFocus={true}
-					value={value || ""}
-				/>
+					// value={value || ""}
+				>
+					{value || ""}
+				</div>
 			</div>
 			<button onClick={() => onFetch()}>
 				<img
@@ -115,7 +123,7 @@ function PIDRow(props: any) {
 PIDRow.propTypes = {
 	autosave: PropTypes.bool,
 	editable: PropTypes.bool,
-	item: PropTypes.object, //instanceOf(ItemWrapper),
+	item: PropTypes.instanceOf(ItemWrapper),
 	type: PropTypes.string,
 	validate: PropTypes.func,
 };
