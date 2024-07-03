@@ -6,15 +6,20 @@ import SourceItemWrapper from "./sourceItemWrapper";
 import Matcher from "./matcher";
 import OCI from "../oci";
 import Progress from "./progress";
-
-declare const Services: any;
-declare const Zotero: any;
+import { EntityId } from "wikibase-sdk";
 
 /** Class representing a citation */
 class Citation {
 	source: SourceItemWrapper;
 	target: ItemWrapper;
-	ocis: OCI[];
+	ocis: {
+		citingId: string;
+		citedId: string;
+		idType: "qid" | "doi" | "occ";
+		oci: string;
+		supplierName: string;
+		valid: boolean;
+	}[];
 
 	/**
 	 * Create a citation.
@@ -32,7 +37,14 @@ class Citation {
 			ocis,
 			zotero,
 		}: {
-			item: any;
+			item:
+				| Zotero.Item
+				| {
+						itemType?: // there are all possible itemTypes for Zotero.Item(itemType)
+						| keyof Zotero.Item.ItemTypeMapping
+							| Zotero.Item.ItemTypeMapping[keyof Zotero.Item.ItemTypeMapping];
+						// eslint-disable-next-line no-mixed-spaces-and-tabs
+				  };
 			ocis: string[];
 			zotero?: string;
 		},
@@ -82,7 +94,7 @@ class Citation {
 		// // but I say to leave this out for now
 	}
 
-	addCreator(creatorType, creatorName) {
+	addCreator(creatorType: any, creatorName: string) {
 		// I may limit author types to author and editor
 	}
 
@@ -101,32 +113,27 @@ class Citation {
 		let newOci = "";
 		try {
 			newOci = OCI.getOci(
-				supplier.name,
-				this.source[idType],
-				this.target[idType],
+				supplier,
+				this.source[idType]!,
+				this.target[idType]!,
 			);
 		} catch {
 			//
 		}
-		let valid;
-		if (oci === newOci) {
-			valid = true;
-		} else {
-			valid = false;
-		}
+		const valid = oci == newOci;
 
 		// overwrite pre-existing oci of the same supplier
 		if (this.getOCI(supplier)) {
-			debug("Overwritting OCI of supplier " + supplier);
+			debug("Overwriting OCI of supplier " + supplier);
 			this.removeOCI(supplier);
 		}
 
 		this.ocis.push({
-			citingId: citingId,
-			citedId: citedId,
+			citingId: citingId!,
+			citedId: citedId!,
 			idType: idType,
 			oci: oci,
-			supplier: supplier,
+			supplierName: supplier,
 			valid: valid,
 		});
 	}
@@ -136,34 +143,40 @@ class Citation {
 	 */
 	async deleteRemotely() {
 		let success;
-		// fix: what is this doing?
-		// const wikidataOci = this.getOCI('wikidata')
-		const wikidataOci = this.getOCI({
-			prefix: "wikidata",
-			name: "wikidata",
-			id: "wikidata",
-		});
+		const wikidataOci = this.getOCI("wikidata");
 		if (wikidataOci && wikidataOci.valid) {
 			try {
+				const qid = this.source.qid;
+				if (qid === undefined) {
+					throw new Error(
+						"Can't delete citation from Wikidata for item without QID.",
+					);
+				}
 				// fetch cites work statements
 				const claims = await Wikidata.getCitesWorkClaims(
-					this.source.qid,
+					qid as EntityId, // EntityID is a wikidata id, starting with Q, L, P, or M
 				);
-				const pushClaims = {};
-				pushClaims[this.source.qid] = claims[this.source.qid].reduce(
-					(pushClaims, claim) => {
-						// keep those which want to be deleted
-						if (claim.value === this.target.qid) {
-							// create CitesWorkClaim objects from them
-							const pushClaim = new CitesWorkClaim(claim);
-							// and update them to pending remove status
-							pushClaim.remove = true;
-							pushClaims.push(pushClaim);
-						}
-						return pushClaims;
-					},
-					[],
-				);
+				const pushClaims = {
+					qid: claims[qid].reduce(
+						(claimsToRemove: CitesWorkClaim[], claim) => {
+							// claim could be a string, number of actual claim object
+							// keep those which want to be deleted
+							if (
+								typeof claim != "string" &&
+								typeof claim != "number" &&
+								claim.value === this.target.qid
+							) {
+								// create CitesWorkClaim objects from them
+								const pushClaim = new CitesWorkClaim(claim);
+								// and update them to pending remove status
+								pushClaim.remove = true;
+								claimsToRemove.push(pushClaim);
+							}
+							return claimsToRemove;
+						},
+						[],
+					),
+				};
 				// pass them to updateCitesWorkClaims to upload changes
 				const results =
 					await Wikidata.updateCitesWorkClaims(pushClaims);
@@ -185,18 +198,22 @@ class Citation {
 		return success;
 	}
 
-	getOCI(supplier: { prefix: string; name: string; id: string }) {
-		const ocis = this.ocis.filter((oci) => oci.supplier === supplier);
+	getOCI(supplierName: string) {
+		const ocis = this.ocis.filter(
+			(oci) => oci.supplierName === supplierName,
+		);
 		if (ocis.length > 1) {
 			throw new Error(
-				"Unexpected multiple OCIs for supplier " + supplier,
+				"Unexpected multiple OCIs for supplier " + supplierName,
 			);
 		}
 		return ocis[0];
 	}
 
-	removeOCI(supplier: { prefix: string; name: string; id: string }) {
-		this.ocis = this.ocis.filter((oci) => oci.supplier !== supplier);
+	removeOCI(supplierName: string) {
+		this.ocis = this.ocis.filter(
+			(oci) => oci.supplierName !== supplierName,
+		);
 	}
 
 	/**
@@ -232,7 +249,7 @@ class Citation {
 	 * Automatically link citation with matching Zotero item
 	 * @param {Object} [matcher] Initialized Matcher object for batch operations
 	 */
-	async autoLink(matcher) {
+	async autoLink(matcher?: Matcher) {
 		let manual = false;
 		let progress;
 		if (!matcher) {
@@ -249,7 +266,7 @@ class Citation {
 			manual = true;
 		}
 		const matches = matcher.findMatches(this.target.item);
-		let item;
+		let item: Zotero.Item | undefined;
 		if (matches.length) {
 			// Automatic linking succeeded
 			if (progress)
@@ -277,13 +294,13 @@ class Citation {
 					"wikicite.citation.auto-link.failure.message",
 				),
 			);
-			if (result) item = Wikicite.selectItem();
+			if (result) item = Wikicite.selectItem()!;
 
 			// ignore selection if another citation already links to the same item
 			if (
 				item &&
 				this.source.citations.some(
-					(citation) => citation.target.key === item.key,
+					(citation) => citation.target.key === item?.key,
 				)
 			) {
 				Services.prompt.alert(
@@ -303,7 +320,7 @@ class Citation {
 	}
 
 	// link the citation target item to an item in the zotero library
-	linkToZoteroItem(item) {
+	linkToZoteroItem(item: Zotero.Item) {
 		if (item === this.source.item) {
 			Services.prompt.alert(
 				null,
@@ -335,7 +352,7 @@ class Citation {
 		this.source.saveCitations();
 	}
 
-	unlinkFromZoteroItem(autosave = true) {
+	async unlinkFromZoteroItem(autosave = true) {
 		// other citations link to the same item
 		const otherLinks = this.source.citations.some(
 			(citation) =>
@@ -343,13 +360,13 @@ class Citation {
 		);
 		const linkedItem = Zotero.Items.getByLibraryAndKey(
 			this.source.item.libraryID,
-			this.target.key,
-		);
-		if (linkedItem && !otherLinks) {
+			this.target.key!,
+		) as Zotero.Item;
+		if (!otherLinks) {
 			this.source.newRelations =
-				this.source.item.removeRelatedItem(linkedItem) ||
+				(await this.source.item.removeRelatedItem(linkedItem)) ||
 				this.source.newRelations;
-			if (linkedItem.removeRelatedItem(this.source.item)) {
+			if (await linkedItem.removeRelatedItem(this.source.item)) {
 				linkedItem.saveTx({
 					skipDateModifiedUpdate: true,
 				});
@@ -359,11 +376,9 @@ class Citation {
 		if (autosave) this.source.saveCitations();
 	}
 
-	resolveOCI(supplier) {
-		const oci = this.getOCI(supplier);
-		if (oci) {
-			OCI.resolve(oci.oci);
-		}
+	resolveOCI(supplierName: string) {
+		const oci = this.getOCI(supplierName);
+		OCI.resolve(oci.oci);
 	}
 }
 

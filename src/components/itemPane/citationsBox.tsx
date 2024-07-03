@@ -3,18 +3,6 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import * as PropTypes from "prop-types";
 import Wikicite, { debug } from "../../cita/wikicite";
-
-// fix: CSS doesn't work
-import "./citationsBox.css";
-
-// fix: Not sure how to import react components from Zotero
-// import { Button } from "../button";
-// try {
-// 	const Button = require("components/button");
-// } catch (err) {
-// 	throw err;
-// }
-
 import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
@@ -37,6 +25,10 @@ function CitationsBox(props: {
 	const removeStr = Zotero.getString("general.remove");
 
 	// const Button = props.Button;
+
+	// useEffect(() => {
+	// 	const css = require("./citationsBox.css");
+	// });
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
@@ -100,7 +92,7 @@ function CitationsBox(props: {
 		// 	citation: citation,
 		// 	Wikicite: Wikicite,
 		// };
-		const retVals: { [key: string]: any } = {};
+		// const retVals: { [key: string]: any } = {};
 		// fix
 		// window.openDialog(
 		// 	"chrome://cita/content/citationEditor.xul",
@@ -109,7 +101,9 @@ function CitationsBox(props: {
 		// 	args,
 		// 	retVals,
 		// );
-		return retVals.item;
+		window.alert("citation editor not implemented yet");
+		// return retVals.item;
+		return undefined;
 	}
 
 	function handleCitationAdd() {
