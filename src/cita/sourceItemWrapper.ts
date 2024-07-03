@@ -399,7 +399,7 @@ class SourceItemWrapper extends ItemWrapper {
 	//     this.updateCitationLabels();
 	// }
 
-	async deleteCitation(index: number, sync: boolean) {
+	async deleteCitation(index: number, sync: boolean = false) {
 		this.loadCitations();
 		if (sync) {
 			const citation = this.citations[index];

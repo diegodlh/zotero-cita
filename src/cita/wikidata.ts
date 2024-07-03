@@ -1,7 +1,6 @@
 import Wikicite, { debug } from "./wikicite";
 import Progress from "./progress";
 // ignore until we find / make types for these packages
-// @ts-ignore
 import WBK, { Entity, EntityId, SimplifiedPropertyClaims } from "wikibase-sdk";
 // @ts-ignore
 import qs2wbEdit from "quickstatements-to-wikibase-edit";
@@ -88,7 +87,7 @@ export default class {
 		if (!Array.isArray(items)) items = [items];
 		const typeMapping = await getTypeMapping();
 		// create item -> qid map that will be returned at the end
-		const qids: Map<ItemWrapper, string | null> = new Map(
+		const qids: Map<ItemWrapper, QID | undefined> = new Map(
 			items.map((item) => [item, item.qid]),
 		);
 		// iterate over the items to create the qXX query objects
@@ -106,14 +105,14 @@ export default class {
 				continue;
 			}
 			const queryProps: QueryProperties[] = [];
-			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi);
+			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi!);
 			if (cleanDOI) {
 				queryProps.push({
 					pid: properties.doi,
 					v: cleanDOI.toUpperCase(),
 				});
 			}
-			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn);
+			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn!);
 			if (cleanISBN) {
 				queryProps.push({
 					pid: [properties.isbn10, properties.isbn13].join("|"),
@@ -361,7 +360,7 @@ export default class {
 						} else {
 							// user chose 'none', meaning no candidate is relevant
 							// set qid to 'null' meaning no results where found
-							qids.set(item, null);
+							qids.set(item, undefined);
 						}
 					} else {
 						// user cancelled
@@ -373,7 +372,7 @@ export default class {
 					// but response is empty
 					// meaning it wasn't found in Wikidata
 					// make it 'null' in the qids maps
-					qids.set(item, null);
+					qids.set(item, undefined);
 				}
 			}
 		} else {
@@ -910,7 +909,7 @@ export default class {
 			props: ["claims"],
 			format: "json",
 		});
-		const citesWorkClaims: { [id: string]: SimplifiedPropertyClaims } = {};
+		const citesWorkClaims: { [id: QID]: SimplifiedPropertyClaims } = {};
 		while (urls.length) {
 			const url = urls.shift() as string;
 			try {
@@ -927,14 +926,15 @@ export default class {
 						// Note: we can't know what class(es) the "cites work"
 						// objects belong to. Hence, we may be returning
 						// entities of types not supported by Zotero.
-						citesWorkClaims[id] = wdk.simplify.propertyClaims(
-							entity.claims[properties.citesWork],
-							{
-								keepIds: true,
-								keepQualifiers: true,
-								keepReferences: true,
-							},
-						);
+						citesWorkClaims[id as QID] =
+							wdk.simplify.propertyClaims(
+								entity.claims[properties.citesWork],
+								{
+									keepIds: true,
+									keepQualifiers: true,
+									keepReferences: true,
+								},
+							);
 					}
 				}
 			} catch (err) {

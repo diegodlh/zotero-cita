@@ -79,11 +79,11 @@ export default class ItemWrapper {
 		this.setPID("ISBN", isbn);
 	}
 
-	get qid(): string | undefined {
-		return this.getPID("QID");
+	get qid(): QID | undefined {
+		return this.getPID("QID") as QID;
 	}
 
-	set qid(qid: string) {
+	set qid(qid: QID) {
 		this.setPID("QID", qid);
 	}
 
