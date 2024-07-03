@@ -5,8 +5,7 @@ import Matcher from "./matcher";
 import OCI from "../oci";
 import Progress from "./progress";
 import SourceItemWrapper from "./sourceItemWrapper";
-
-declare const Services: any;
+import * as prefs from "../cita/preferences";
 
 // Fixme: Consider moving these as static methods of the CitationList class
 // These are methods used to run batch actions on multiple items, where
@@ -29,11 +28,7 @@ export default class {
 
 	static getItemQids(items, includingCitations = false, overwrite = false) {
 		const sourceItems = items.map(
-			(item) =>
-				new SourceItemWrapper(
-					item,
-					window.Wikicite.Prefs.get("storage"),
-				),
+			(item) => new SourceItemWrapper(item, prefs.getStorage()),
 		);
 		const unique_ids = [];
 		const id_mappings = {

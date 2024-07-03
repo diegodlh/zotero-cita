@@ -422,7 +422,7 @@ function CitationsBox(props: {
 								validate={(type: PIDType, value: string) =>
 									props.sourceItem.checkPID(type, value, {
 										alert: true,
-										// todo: fix this once we know how
+										// fix: this once we know how
 										// parentWindow: window,
 									})
 								}
