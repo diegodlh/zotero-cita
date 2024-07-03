@@ -78,7 +78,8 @@ class SourceItemWrapper extends ItemWrapper {
 				note.parentKey = this.item.key;
 			}
 			// use Option to escape HTML characters here (eg. <), otherwise parsing the HTML will fail #178
-			const jsonCitations = new Option(
+			// Option was undefined, but window.Option worked.
+			const jsonCitations = new window.Option(
 				JSON.stringify(citations, replacer, 2),
 			).innerHTML;
 			note.setNote(
