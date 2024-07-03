@@ -486,9 +486,10 @@ class ZoteroOverlay {
 
 	overlayZoteroPane(doc: Document) {
 		// // add wikicite preferences command to tools popup menu
-		// var menuPopup
-		// menuPopup = doc.getElementById('menu_ToolsPopup')
-		// zoteroOverlay.prefsMenuItem(doc, menuPopup)
+		this.prefsMenuItem(
+			doc,
+			doc.getElementById("menu_ToolsPopup")! as HTMLMenuElement,
+		);
 
 		// // add wikicite submenu to item and collection menus
 		this.zoteroPopup("item", doc);
@@ -526,13 +527,15 @@ class ZoteroOverlay {
 	}
 
 	prefsMenuItem(doc: Document, menuPopup: HTMLMenuElement) {
+		const ns =
+			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 		// Add Wikicite preferences item to Tools menu
 		if (menuPopup === null) {
 			// Don't do anything if elements not loaded yet
 			return;
 		}
 
-		const wikiciteMenuItem = doc.createElement("menuitem");
+		const wikiciteMenuItem = doc.createElementNS(ns, "menuitem");
 		const wikiciteMenuItemID = "wikicite-preferences";
 		wikiciteMenuItem.setAttribute("id", wikiciteMenuItemID);
 		wikiciteMenuItem.setAttribute(
