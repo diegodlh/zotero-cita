@@ -24,3 +24,4 @@ declare const __env__: "production" | "development";
 declare class Localization {}
 
 declare type PIDType = "DOI" | "ISBN" | "QID" | "OCC";
+declare type QID = `Q${number}`;
