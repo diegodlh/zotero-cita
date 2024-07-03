@@ -156,7 +156,7 @@ class SourceItemWrapper extends ItemWrapper {
 	 * @param {Object} [matcher] Initialized Matcher object for batch operations
 	 * @param {Boolean} [noReload] Do not reload citations before automatic linking
 	 */
-	async autoLinkCitations(matcher: Matcher, noReload = false) {
+	async autoLinkCitations(matcher?: Matcher, noReload = false) {
 		let progress;
 		if (!matcher) {
 			matcher = new Matcher(this.item.libraryID);
@@ -542,7 +542,7 @@ class SourceItemWrapper extends ItemWrapper {
 		//
 	}
 
-	syncWithWikidata(citationIndex: number) {
+	syncWithWikidata(citationIndex?: number) {
 		if (citationIndex !== undefined) {
 			// Alternatively, do this for the citationIndex provided
 			Services.prompt.alert(
@@ -569,7 +569,7 @@ class SourceItemWrapper extends ItemWrapper {
 	// only perfect matches will be selected if used for multiple items.
 	// For a single item, a choice between approximate matches or
 	// the option to create a new Wikidata item will be offered
-	async fetchCitationQIDs(citationIndex: number) {
+	async fetchCitationQIDs(citationIndex?: number) {
 		this.loadCitations();
 		let citationsToFetchQIDs;
 		if (citationIndex === undefined) {
@@ -590,7 +590,7 @@ class SourceItemWrapper extends ItemWrapper {
 		this.endBatch();
 	}
 
-	getFromPDF(method: any, fetchDOIs: any, fetchQIDs: any) {
+	getFromPDF(method?: any, fetchDOIs?: any, fetchQIDs?: any) {
 		Extraction.extract();
 		// fail if no PDF attachments found
 		// either check preferences here or get them from method parameter
@@ -696,7 +696,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	exportToFile(citationIndex: number) {
+	exportToFile(citationIndex?: number) {
 		this.loadCitations();
 		if (this.citations.length) {
 			const exporter = new Zotero_File_Exporter();
@@ -838,7 +838,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	exportToCroci(citationIndex: number) {
+	exportToCroci(citationIndex?: number) {
 		OpenCitations.exportCitations();
 	}
 }

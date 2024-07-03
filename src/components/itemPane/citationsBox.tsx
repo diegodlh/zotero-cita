@@ -13,7 +13,7 @@ function CitationsBox(props: {
 	editable: boolean;
 	sortBy: string;
 	sourceItem: SourceItemWrapper;
-	onItemPopup: (event: Event) => void;
+	onItemPopup: (event: React.MouseEvent) => void;
 	onCitationPopup: (event: React.MouseEvent, index: number) => void;
 	// Button: any;
 }) {
@@ -23,12 +23,6 @@ function CitationsBox(props: {
 	const [hasAttachments, setHasAttachments] = useState(false);
 
 	const removeStr = Zotero.getString("general.remove");
-
-	// const Button = props.Button;
-
-	// useEffect(() => {
-	// 	const css = require("./citationsBox.css");
-	// });
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
@@ -176,50 +170,49 @@ function CitationsBox(props: {
 	}
 
 	async function handleCitationDelete(index: number) {
-		// fix: getOCI function - not sure how it should work?
-		// let sync = false;
-		// const citation = citations[index];
-		// if (citation.getOCI("wikidata")) {
-		// 	// Fixme: offer to remember user choice
-		// 	// get this from preferences: remembered "delete remote too" choice
-		// 	// const remember = {value: false};
-		// 	const bttnFlags =
-		// 		Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_NO +
-		// 		Services.prompt.BUTTON_POS_1 *
-		// 			Services.prompt.BUTTON_TITLE_CANCEL +
-		// 		Services.prompt.BUTTON_POS_2 *
-		// 			Services.prompt.BUTTON_TITLE_YES +
-		// 		Services.prompt.BUTTON_POS_2_DEFAULT;
-		// 	const response = Services.prompt.confirmEx(
-		// 		window,
-		// 		Wikicite.getString(
-		// 			"wikicite.citations-pane.delete.remote.title",
-		// 		),
-		// 		Wikicite.getString(
-		// 			"wikicite.citations-pane.delete.remote.message",
-		// 		),
-		// 		bttnFlags,
-		// 		"",
-		// 		"",
-		// 		"",
-		// 		undefined, // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
-		// 		{}, // remember
-		// 	);
-		// 	switch (response) {
-		// 		case 0:
-		// 			// no
-		// 			sync = false;
-		// 			break;
-		// 		case 1:
-		// 			// cancel
-		// 			return;
-		// 		case 2:
-		// 			// yes
-		// 			sync = true;
-		// 			break;
-		// 	}
-		// }
-		// await props.sourceItem.deleteCitation(index, sync);
+		let sync = false;
+		const citation = citations[index];
+		if (citation.getOCI("wikidata")) {
+			// Fixme: offer to remember user choice
+			// get this from preferences: remembered "delete remote too" choice
+			// const remember = {value: false};
+			const bttnFlags =
+				Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_NO +
+				Services.prompt.BUTTON_POS_1 *
+					Services.prompt.BUTTON_TITLE_CANCEL +
+				Services.prompt.BUTTON_POS_2 *
+					Services.prompt.BUTTON_TITLE_YES +
+				Services.prompt.BUTTON_POS_2_DEFAULT;
+			const response = Services.prompt.confirmEx(
+				window,
+				Wikicite.getString(
+					"wikicite.citations-pane.delete.remote.title",
+				),
+				Wikicite.getString(
+					"wikicite.citations-pane.delete.remote.message",
+				),
+				bttnFlags,
+				"",
+				"",
+				"",
+				undefined, // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
+				{}, // remember
+			);
+			switch (response) {
+				case 0:
+					// no
+					sync = false;
+					break;
+				case 1:
+					// cancel
+					return;
+				case 2:
+					// yes
+					sync = true;
+					break;
+			}
+		}
+		await props.sourceItem.deleteCitation(index, sync);
 	}
 
 	function handleCitationMove(index: number, shift: number) {
@@ -231,38 +224,37 @@ function CitationsBox(props: {
 	}
 
 	function handleCitationSync(index: number) {
-		// fix: getOCI function - not sure how it should work?
 		// Fixme: consider making this a Citation method
-		// const citation = citations[index];
-		// const syncable = citation.source.qid && citation.target.qid;
-		// const oci = citation.getOCI("wikidata");
-		// if (oci) {
-		// 	if (oci.valid) {
-		// 		citation.resolveOCI("wikidata");
-		// 	} else {
-		// 		// oci is invalid, i.e., citing or cited id do not match with
-		// 		// local source or target id
-		// 		Services.prompt.alert(
-		// 			window,
-		// 			Wikicite.getString("wikicite.oci.mismatch.title"),
-		// 			Wikicite.formatString("wikicite.oci.mismatch.message", [
-		// 				oci.supplier.charAt(0).toUpperCase() +
-		// 					oci.supplier.slice(1),
-		// 				oci.idType.toUpperCase(),
-		// 				oci.citingId,
-		// 				oci.citedId,
-		// 			]),
-		// 		);
-		// 	}
-		// } else if (syncable) {
-		// 	props.sourceItem.syncWithWikidata(index);
-		// } else {
-		// 	Services.prompt.alert(
-		// 		window,
-		// 		Wikicite.getString("wikicite.citation.sync.error"),
-		// 		Wikicite.getString("wikicite.citation.sync.error.qid"),
-		// 	);
-		// }
+		const citation = citations[index];
+		const syncable = citation.source.qid && citation.target.qid;
+		const oci = citation.getOCI("wikidata");
+		if (oci) {
+			if (oci.valid) {
+				citation.resolveOCI("wikidata");
+			} else {
+				// oci is invalid, i.e., citing or cited id do not match with
+				// local source or target id
+				Services.prompt.alert(
+					window,
+					Wikicite.getString("wikicite.oci.mismatch.title"),
+					Wikicite.formatString("wikicite.oci.mismatch.message", [
+						oci.supplierName.charAt(0).toUpperCase() +
+							oci.supplierName.slice(1),
+						oci.idType.toUpperCase(),
+						oci.citingId,
+						oci.citedId,
+					]),
+				);
+			}
+		} else if (syncable) {
+			props.sourceItem.syncWithWikidata(index);
+		} else {
+			Services.prompt.alert(
+				window,
+				Wikicite.getString("wikicite.citation.sync.error"),
+				Wikicite.getString("wikicite.citation.sync.error.qid"),
+			);
+		}
 	}
 
 	function renderCitationRow(citation: Citation, index: number) {
@@ -329,7 +321,7 @@ function CitationsBox(props: {
 								className="cita-icon"
 								title={removeStr}
 								// Fixme: does it change when active?
-								src={`chrome://zotero/skin/minus${Zotero.hiDPISuffix}.png`}
+								src={`chrome://zotero/skin/16/universal/minus.svg`}
 							/>
 						</button>
 						<button
@@ -338,6 +330,8 @@ function CitationsBox(props: {
 								props.onCitationPopup(event, index)
 							}
 						>
+							{/* todo: the text shouldn't be here, but instead the span should pull it in... */}
+							...
 							<span className="menu-marker"></span>
 						</button>
 					</>
@@ -367,7 +361,11 @@ function CitationsBox(props: {
 						</button>
 					</div>
 				)}
-				{<button onClick={() => props.onItemPopup}>More</button>}
+				{
+					<button onClick={(event) => props.onItemPopup(event)}>
+						More
+					</button>
+				}
 				{/* fix: button is broken */}
 				{/* <Button
 					icon={
@@ -443,7 +441,6 @@ CitationsBox.propTypes = {
 	sourceItem: PropTypes.instanceOf(SourceItemWrapper),
 	onItemPopup: PropTypes.func,
 	onCitationPopup: PropTypes.func,
-	// Button: PropTypes.any, // need to require this from outside react
 };
 
 export default CitationsBox;

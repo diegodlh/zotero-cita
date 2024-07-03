@@ -8,7 +8,7 @@ import CitationsBoxContainer from "../containers/citationsBoxContainer";
 import Crossref from "./crossref";
 import Extraction from "./extract";
 // import LCN from './localCitationNetwork';
-// import OCI from '../oci';
+// import OCI from "../oci";
 import OpenCitations from "./opencitations";
 import * as React from "react";
 // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#updates-to-client-rendering-apis
@@ -79,6 +79,8 @@ const ITEM_PANE_COLUMN_IDS = {
 class ZoteroOverlay {
 	qidColumnID?: string | false;
 	numCitationsColumnID?: string | false;
+	_sourceItem?: SourceItemWrapper;
+	_citationIndex?: number;
 	/******************************************/
 	// Window load handling
 	/******************************************/
@@ -466,10 +468,10 @@ class ZoteroOverlay {
 
 		this.addOverlayStyleSheet();
 
-		// // Add popup menus to main window
-		// const mainWindow = doc.getElementById('main-window');
-		// zoteroOverlay.itemPopupMenu(doc, mainWindow);
-		// zoteroOverlay.citationPopupMenu(doc, mainWindow);
+		// Add popup menus to main window
+		const mainWindow = doc.getElementById("main-window");
+		this.itemPopupMenu(doc, mainWindow!);
+		this.citationPopupMenu(doc, mainWindow!);
 
 		// // we only want to run this for older versions of Zotero
 		// if (typeof Zotero.ItemTreeView !== 'undefined') {
@@ -611,248 +613,324 @@ class ZoteroOverlay {
 		});
 	}
 
-	// // Item-wide popup menu
-	// itemPopupMenu (doc: Document, mainWindow: HTMLElement) {
-	//     const itemMenu = doc.createElement('menupopup');
-	//     const itemMenuID = 'citations-box-item-menu';
-	//     itemMenu.setAttribute('id', itemMenuID);
-	//     itemMenu.addEventListener('popupshowing', handleItemPopupShowing);
+	// Item-wide popup menu
+	itemPopupMenu(doc: Document, mainWindow: HTMLElement) {
+		const ns =
+			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+		const itemMenu = doc.createElementNS(ns, "menupopup");
+		const itemMenuID = "citations-box-item-menu";
+		itemMenu.setAttribute("id", itemMenuID);
+		// itemMenu.addEventListener('popupshowing', handleItemPopupShowing);
 
-	//     // Sync with Wikidata menu item
+		// Sync with Wikidata menu item
 
-	//     const itemWikidataSync = doc.createElement('menuitem');
-	//     itemWikidataSync.setAttribute('id', 'item-menu-wikidata-sync');
-	//     itemWikidataSync.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.sync-wikidata')
-	//     );
-	//     itemWikidataSync.addEventListener(
-	//         'command', () => this._sourceItem.syncWithWikidata()
-	//     );
+		const itemWikidataSync = doc.createElementNS(ns, "menuitem");
+		itemWikidataSync.setAttribute("id", "item-menu-wikidata-sync");
+		itemWikidataSync.setAttribute(
+			"label",
+			// fix: localisation
+			"Sync citations with Wikidata",
+			// Wikicite.getString("wikicite.item-menu.sync-wikidata"),
+		);
+		itemWikidataSync.addEventListener("command", () =>
+			this._sourceItem!.syncWithWikidata(),
+		);
 
-	//     // Fetch QIDs menu item
+		// Fetch QIDs menu item
 
-	//     const itemFetchCitationQIDs = doc.createElement('menuitem');
-	//     itemFetchCitationQIDs.setAttribute('id', 'item-menu-fetch-citation-qids');
-	//     itemFetchCitationQIDs.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.fetch-citation-qids')
-	//     );
-	//     itemFetchCitationQIDs.addEventListener(
-	//         'command', () => this._sourceItem.fetchCitationQIDs()
-	//     );
+		const itemFetchCitationQIDs = doc.createElementNS(ns, "menuitem");
+		itemFetchCitationQIDs.setAttribute(
+			"id",
+			"item-menu-fetch-citation-qids",
+		);
+		itemFetchCitationQIDs.setAttribute(
+			"label",
+			// fix: localisation
+			"Fetch QIDs for cited items",
+			// Wikicite.getString("wikicite.item-menu.fetch-citation-qids"),
+		);
+		itemFetchCitationQIDs.addEventListener("command", () =>
+			this._sourceItem!.fetchCitationQIDs(),
+		);
 
-	//     // Get Crossref citations menu item
+		// Get Crossref citations menu item
 
-	//     const itemCrossrefGet = doc.createElement('menuitem');
-	//     itemCrossrefGet.setAttribute('id', 'item-menu-crossref-get');
-	//     itemCrossrefGet.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.get-crossref')
-	//     );
-	//     itemCrossrefGet.addEventListener(
-	//         'command', () => this._sourceItem.getFromCrossref()
-	//     );
+		const itemCrossrefGet = doc.createElementNS(ns, "menuitem");
+		itemCrossrefGet.setAttribute("id", "item-menu-crossref-get");
+		itemCrossrefGet.setAttribute(
+			"label",
+			// fix: localisation
+			"Get citations from Crossref",
+			// Wikicite.getString("wikicite.item-menu.get-crossref"),
+		);
+		itemCrossrefGet.addEventListener("command", () =>
+			this._sourceItem!.getFromCrossref(),
+		);
 
-	//     // Get OCC citations menu item
+		// Get OCC citations menu item
 
-	//     const itemOccGet = doc.createElement('menuitem');
-	//     itemOccGet.setAttribute('id', 'item-menu-occ-get');
-	//     itemOccGet.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.get-occ')
-	//     );
-	//     itemOccGet.addEventListener(
-	//         'command', () => this._sourceItem.getFromOCC()
-	//     );
+		const itemOccGet = doc.createElementNS(ns, "menuitem");
+		itemOccGet.setAttribute("id", "item-menu-occ-get");
+		itemOccGet.setAttribute(
+			"label",
+			// fix: localisation
+			"Get citations from OpenCitations Corpus",
+			// Wikicite.getString("wikicite.item-menu.get-occ"),
+		);
+		itemOccGet.addEventListener("command", () =>
+			this._sourceItem!.getFromOcc(),
+		);
 
-	//     // Extract citations menu item
+		// Extract citations menu item
 
-	//     const itemPdfExtract = doc.createElement('menuitem');
-	//     itemPdfExtract.setAttribute('id', 'item-menu-pdf-extract');
-	//     itemPdfExtract.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.get-pdf')
-	//     );
-	//     itemPdfExtract.addEventListener(
-	//         'command', () => this._sourceItem.getFromPDF()
-	//     );
+		const itemPdfExtract = doc.createElementNS(ns, "menuitem");
+		itemPdfExtract.setAttribute("id", "item-menu-pdf-extract");
+		itemPdfExtract.setAttribute(
+			"label",
+			// fix: localisation
+			"Extract citations from attachments",
+			// Wikicite.getString("wikicite.item-menu.get-pdf"),
+		);
+		itemPdfExtract.addEventListener("command", () =>
+			this._sourceItem!.getFromPDF(),
+		);
 
-	//     // Add citations by identifier menu item
+		// Add citations by identifier menu item
 
-	//     const itemIdentifierImport = doc.createElement('menuitem');
-	//     itemIdentifierImport.setAttribute('id', 'item-menu-identifier-import');
-	//     itemIdentifierImport.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.import-identifier')
-	//     );
-	//     itemIdentifierImport.addEventListener(
-	//         'command', () => this._sourceItem.addCitationsByIdentifier()
-	//     );
+		const itemIdentifierImport = doc.createElementNS(ns, "menuitem");
+		itemIdentifierImport.setAttribute("id", "item-menu-identifier-import");
+		itemIdentifierImport.setAttribute(
+			"label",
+			// fix: localisation
+			"Add citation(s) by identifier",
+			// Wikicite.getString("wikicite.item-menu.import-identifier"),
+		);
+		itemIdentifierImport.addEventListener("command", () =>
+			this._sourceItem!.addCitationsByIdentifier(),
+		);
 
-	//     // Import citations menu item
+		// Import citations menu item
 
-	//     const itemCitationsImport = doc.createElement('menuitem');
-	//     itemCitationsImport.setAttribute('id', 'item-menu-citations-import');
-	//     itemCitationsImport.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.import-citations')
-	//     );
-	//     itemCitationsImport.addEventListener(
-	//         'command', () => this._sourceItem.importCitations()
-	//     );
+		const itemCitationsImport = doc.createElementNS(ns, "menuitem");
+		itemCitationsImport.setAttribute("id", "item-menu-citations-import");
+		itemCitationsImport.setAttribute(
+			"label",
+			// fix: localisation
+			"Import citations",
+			// Wikicite.getString("wikicite.item-menu.import-citations"),
+		);
+		itemCitationsImport.addEventListener("command", () =>
+			this._sourceItem!.importCitations(),
+		);
 
-	//     // Export to file menu item
+		// Export to file menu item
 
-	//     const itemFileExport = doc.createElement('menuitem');
-	//     itemFileExport.setAttribute('id', 'item-menu-file-export');
-	//     itemFileExport.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.export-file')
-	//     );
-	//     itemFileExport.addEventListener(
-	//         'command', () => this._sourceItem.exportToFile()
-	//     );
+		const itemFileExport = doc.createElementNS(ns, "menuitem");
+		itemFileExport.setAttribute("id", "item-menu-file-export");
+		itemFileExport.setAttribute(
+			"label",
+			// fix: localisation
+			"Export citations to file",
+			// Wikicite.getString("wikicite.item-menu.export-file"),
+		);
+		itemFileExport.addEventListener("command", () =>
+			this._sourceItem!.exportToFile(),
+		);
 
-	//     // Export to CROCI menu item
+		// Export to CROCI menu item
 
-	//     const itemCrociExport = doc.createElement('menuitem');
-	//     itemCrociExport.setAttribute('id', 'item-menu-croci-export');
-	//     itemCrociExport.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.export-croci')
-	//     );
-	//     itemCrociExport.addEventListener(
-	//         'command', () => this._sourceItem.exportToCroci()
-	//     );
+		const itemCrociExport = doc.createElementNS(ns, "menuitem");
+		itemCrociExport.setAttribute("id", "item-menu-croci-export");
+		itemCrociExport.setAttribute(
+			"label",
+			// fix: localisation
+			"Export citations to CROCI",
+			// Wikicite.getString("wikicite.item-menu.export-croci"),
+		);
+		itemCrociExport.addEventListener("command", () =>
+			this._sourceItem!.exportToCroci(),
+		);
 
-	//     // Sort-by submenu
+		// Sort-by submenu
 
-	//     const menuSort = doc.createElement('menu');
-	//     menuSort.setAttribute('id', 'item-menu-sort-submenu');
-	//     menuSort.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.sort')
-	//     );
+		const menuSort = doc.createElementNS(ns, "menu");
+		menuSort.setAttribute("id", "item-menu-sort-submenu");
+		menuSort.setAttribute(
+			"label",
+			// fix: localisation
+			"Sort by",
+			// Wikicite.getString("wikicite.item-menu.sort"),
+		);
 
-	//     const sortPopup = doc.createElement('menupopup');
-	//     sortPopup.setAttribute('id', 'item-menu-sort-submenu-popup');
+		const sortPopup = doc.createElementNS(ns, "menupopup");
+		sortPopup.setAttribute("id", "item-menu-sort-submenu-popup");
 
-	//     menuSort.appendChild(sortPopup);
+		menuSort.appendChild(sortPopup);
 
-	//     const sortValues = ['ordinal', 'authors', 'date', 'title'];
-	//     const sortByValue = window.Wikicite.Prefs.get('sortBy');
-	//     for (const value of sortValues) {
-	//         const itemSort = doc.createElement('menuitem');
-	//         itemSort.setAttribute('id', 'item-menu-sort-' + value);
-	//         itemSort.setAttribute(
-	//             'label', Wikicite.getString('wikicite.item-menu.sort.' + value)
-	//         );
-	//         itemSort.setAttribute('type', 'radio');
-	//         if (value === sortByValue) {
-	//             itemSort.setAttribute('checked', "true");
-	//         }
-	//         itemSort.addEventListener(
-	//             'command', () => window.Wikicite.Prefs.set('sortBy', value)
-	//         );
-	//         sortPopup.appendChild(itemSort);
-	//     }
+		const sortValues = ["ordinal", "authors", "date", "title"];
+		const menuNames = new Map<string, string>();
+		menuNames.set("ordinal", "Index");
+		menuNames.set("authors", "Authors");
+		menuNames.set("date", "Date");
+		menuNames.set("title", "Title");
+		const sortByValue = getPref("sortBy");
+		for (const value of sortValues) {
+			const itemSort = doc.createElementNS(ns, "menuitem");
+			itemSort.setAttribute("id", "item-menu-sort-" + value);
+			itemSort.setAttribute(
+				"label",
+				// fix: localisation
+				// the map is just a dummy until the localisation works
+				menuNames.get(value)!,
+				// Wikicite.getString("wikicite.item-menu.sort." + value),
+			);
+			itemSort.setAttribute("type", "radio");
+			if (value === sortByValue) {
+				itemSort.setAttribute("checked", "true");
+			}
+			itemSort.addEventListener("command", () =>
+				setPref("sortBy", value),
+			);
+			sortPopup.appendChild(itemSort);
+		}
 
-	//     // Auto-link citations menu item
+		// Auto-link citations menu item
 
-	//     const autoLinkCitations = doc.createElement('menuitem');
-	//     autoLinkCitations.setAttribute('id', 'item-menu-autolink-citations');
-	//     autoLinkCitations.setAttribute(
-	//         'label', Wikicite.getString('wikicite.item-menu.autolink-citations')
-	//     );
-	//     autoLinkCitations.addEventListener(
-	//         'command', () => this._sourceItem.autoLinkCitations()
-	//     );
+		const autoLinkCitations = doc.createElementNS(ns, "menuitem");
+		autoLinkCitations.setAttribute("id", "item-menu-autolink-citations");
+		autoLinkCitations.setAttribute(
+			"label",
+			// fix: localisation
+			"Auto link citations with Zotero items",
+			// Wikicite.getString("wikicite.item-menu.autolink-citations"),
+		);
+		autoLinkCitations.addEventListener("command", () =>
+			this._sourceItem!.autoLinkCitations(),
+		);
 
-	//     itemMenu.appendChild(itemWikidataSync);
-	//     itemMenu.appendChild(itemFetchCitationQIDs);
-	//     itemMenu.appendChild(itemCrossrefGet);
-	//     itemMenu.appendChild(itemOccGet);
-	//     itemMenu.appendChild(itemPdfExtract);
-	//     itemMenu.appendChild(itemIdentifierImport);
-	//     itemMenu.appendChild(itemCitationsImport);
-	//     itemMenu.appendChild(itemFileExport);
-	//     itemMenu.appendChild(itemCrociExport);
-	//     itemMenu.appendChild(menuSort);
-	//     itemMenu.appendChild(autoLinkCitations);
+		itemMenu.appendChild(itemWikidataSync);
+		itemMenu.appendChild(itemFetchCitationQIDs);
+		itemMenu.appendChild(itemCrossrefGet);
+		itemMenu.appendChild(itemOccGet);
+		itemMenu.appendChild(itemPdfExtract);
+		itemMenu.appendChild(itemIdentifierImport);
+		itemMenu.appendChild(itemCitationsImport);
+		itemMenu.appendChild(itemFileExport);
+		itemMenu.appendChild(itemCrociExport);
+		itemMenu.appendChild(menuSort);
+		itemMenu.appendChild(autoLinkCitations);
 
-	//     mainWindow.appendChild(itemMenu);
-	//     WikiciteChrome.registerXUL(itemMenuID, doc);
-	// },
+		mainWindow.appendChild(itemMenu);
+		WikiciteChrome.registerXUL(itemMenuID, doc);
+	}
 
-	// // Citation-specific popup menu
-	// citationPopupMenu (doc: Document, mainWindow: HTMLElement) {
-	//     const citationMenu = doc.createElement('menupopup');
-	//     const citationMenuID = 'citations-box-citation-menu';
-	//     citationMenu.setAttribute('id', citationMenuID);
-	//     citationMenu.addEventListener('popupshowing', handleCitationPopupShowing);
+	// Citation-specific popup menu
+	citationPopupMenu(doc: Document, mainWindow: HTMLElement) {
+		const ns =
+			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+		const citationMenu = doc.createElementNS(ns, "menupopup");
+		const citationMenuID = "citations-box-citation-menu";
+		citationMenu.setAttribute("id", citationMenuID);
+		// citationMenu.addEventListener(
+		// 	"popupshowing",
+		// 	handleCitationPopupShowing,
+		// );
 
-	//     const citationWikidataSync = doc.createElement('menuitem');
-	//     citationWikidataSync.setAttribute('id', 'citation-menu-wikidata-sync');
-	//     citationWikidataSync.setAttribute(
-	//         'label', Wikicite.getString('wikicite.citation-menu.sync-wikidata')
-	//     );
-	//     citationWikidataSync.addEventListener(
-	//         'command', () => this._sourceItem.syncWithWikidata(this._citationIndex)
-	//     );
+		const citationWikidataSync = doc.createElementNS(ns, "menuitem");
+		citationWikidataSync.setAttribute("id", "citation-menu-wikidata-sync");
+		citationWikidataSync.setAttribute(
+			"label",
+			// fix: localisation
+			"Sync citation with Wikidata",
+			// Wikicite.getString("wikicite.citation-menu.sync-wikidata"),
+		);
+		citationWikidataSync.addEventListener("command", () =>
+			this._sourceItem!.syncWithWikidata(this._citationIndex),
+		);
 
-	//     const citationFetchQID = doc.createElement('menuitem');
-	//     citationFetchQID.setAttribute('id', 'citation-menu-fetch-qid');
-	//     citationFetchQID.setAttribute(
-	//         'label', Wikicite.getString('wikicite.citation-menu.fetch-qid')
-	//     );
-	//     citationFetchQID.addEventListener(
-	//         'command', () => this._sourceItem.fetchCitationQIDs(this._citationIndex)
-	//     );
+		const citationFetchQID = doc.createElementNS(ns, "menuitem");
+		citationFetchQID.setAttribute("id", "citation-menu-fetch-qid");
+		citationFetchQID.setAttribute(
+			"label",
+			// fix: localisation
+			"Fetch cited item QID",
+			// Wikicite.getString("wikicite.citation-menu.fetch-qid"),
+		);
+		citationFetchQID.addEventListener("command", () =>
+			this._sourceItem!.fetchCitationQIDs(this._citationIndex),
+		);
 
-	//     const itemFileExport = doc.createElement('menuitem');
-	//     itemFileExport.setAttribute('id', 'citation-menu-file-export');
-	//     itemFileExport.setAttribute(
-	//         'label', Wikicite.getString('wikicite.citation-menu.export-file')
-	//     );
-	//     itemFileExport.addEventListener(
-	//         'command', () => this._sourceItem.exportToFile(this._citationIndex)
-	//     );
+		const itemFileExport = doc.createElementNS(ns, "menuitem");
+		itemFileExport.setAttribute("id", "citation-menu-file-export");
+		itemFileExport.setAttribute(
+			"label",
+			// fix: localisation
+			"Export cited item to file",
+			// Wikicite.getString("wikicite.citation-menu.export-file"),
+		);
+		itemFileExport.addEventListener("command", () =>
+			this._sourceItem!.exportToFile(this._citationIndex),
+		);
 
-	//     const itemCrociExport = doc.createElement('menuitem');
-	//     itemCrociExport.setAttribute('id', 'citation-menu-croci-export');
-	//     itemCrociExport.setAttribute(
-	//         'label', Wikicite.getString('wikicite.citation-menu.export-croci')
-	//     );
-	//     itemCrociExport.addEventListener(
-	//         'command', () => this._sourceItem.exportToCroci(this._citationIndex)
-	//     );
+		const itemCrociExport = doc.createElementNS(ns, "menuitem");
+		itemCrociExport.setAttribute("id", "citation-menu-croci-export");
+		itemCrociExport.setAttribute(
+			"label",
+			// fix: localisation
+			"Export citation to CROCI",
+			// Wikicite.getString("wikicite.citation-menu.export-croci"),
+		);
+		itemCrociExport.addEventListener("command", () =>
+			this._sourceItem!.exportToCroci(this._citationIndex),
+		);
 
-	//     // Fixme: but OCI has two more suppliers: Dryad and CROCI
-	//     // Maybe I should have all of them, and show only the available ones
-	//     // for any one citation?
-	//     const ociMenu = doc.createElement('menu');
-	//     ociMenu.setAttribute('id', 'citation-menu-oci-submenu');
-	//     ociMenu.setAttribute(
-	//         'label', Wikicite.getString('wikicite.citation-menu.oci')
-	//     );
+		// Fixme: but OCI has two more suppliers: Dryad and CROCI
+		// Maybe I should have all of them, and show only the available ones
+		// for any one citation?
+		const ociMenu = doc.createElementNS(ns, "menu");
+		ociMenu.setAttribute("id", "citation-menu-oci-submenu");
+		ociMenu.setAttribute(
+			"label",
+			// fix: localisation
+			"See in OpenCitations",
+			// Wikicite.getString("wikicite.citation-menu.oci"),
+		);
 
-	//     const ociPopup = doc.createElement('menupopup');
-	//     ociPopup.setAttribute('id', 'citation-menu-oci-submenu-popup');
-	//     ociMenu.appendChild(ociPopup);
+		const ociPopup = doc.createElementNS(ns, "menupopup");
+		ociPopup.setAttribute("id", "citation-menu-oci-submenu-popup");
+		ociMenu.appendChild(ociPopup);
 
-	//     for (const supplier of ['crossref', 'occ', 'wikidata']) {
-	//         const ociItem = doc.createElement('menuitem');
-	//         ociItem.setAttribute('id', 'citation-menu-oci-' + supplier);
-	//         ociItem.setAttribute(
-	//             'label', Wikicite.getString('wikicite.citation-menu.oci.' + supplier)
-	//         );
-	//         ociItem.addEventListener(
-	//             'command',
-	//             () => this._sourceItem.citations[this._citationIndex].resolveOCI(supplier)
-	//         );
-	//         ociPopup.appendChild(ociItem);
-	//     }
+		// map is just a placeholder for localisation
+		const menuNames = new Map<string, string>();
+		menuNames.set("crossref", "Crossref supplier");
+		menuNames.set("occ", "OCC supplier");
+		menuNames.set("wikidata", "Wikidata supplier");
+		for (const supplier of ["crossref", "occ", "wikidata"]) {
+			const ociItem = doc.createElementNS(ns, "menuitem");
+			ociItem.setAttribute("id", "citation-menu-oci-" + supplier);
+			ociItem.setAttribute(
+				"label",
+				// fix: localisation
+				menuNames.get(supplier)!,
+				// Wikicite.getString("wikicite.citation-menu.oci." + supplier),
+			);
+			ociItem.addEventListener("command", () =>
+				this._sourceItem!.citations[this._citationIndex!].resolveOCI(
+					supplier,
+				),
+			);
+			ociPopup.appendChild(ociItem);
+		}
 
-	//     citationMenu.appendChild(citationWikidataSync);
-	//     citationMenu.appendChild(citationFetchQID);
-	//     citationMenu.appendChild(itemFileExport);
-	//     citationMenu.appendChild(itemCrociExport);
-	//     citationMenu.appendChild(ociMenu);
+		citationMenu.appendChild(citationWikidataSync);
+		citationMenu.appendChild(citationFetchQID);
+		citationMenu.appendChild(itemFileExport);
+		citationMenu.appendChild(itemCrociExport);
+		citationMenu.appendChild(ociMenu);
 
-	//     mainWindow.appendChild(citationMenu);
-	//     WikiciteChrome.registerXUL(citationMenuID, doc);
-	// },
+		mainWindow.appendChild(citationMenu);
+		WikiciteChrome.registerXUL(citationMenuID, doc);
+	}
 
 	// refreshCitationsPane (document: Document, target: any) {
 	//     let item: any, zoteroViewTabbox: HTMLSelectElement, editPaneTabs: HTMLElement;
@@ -901,16 +979,14 @@ class ZoteroOverlay {
 	//     }
 	// },
 
-	// // _sourceItem: SourceItemWrapper = undefined,
-	// // _citationIndex: number = undefined,
-	// // Fixme: make zoteroOverlay a class and this a getter/setter property
-	// setSourceItem (sourceItem: SourceItemWrapper) {
-	//     this._sourceItem = sourceItem;
-	// },
+	// Fixme: make zoteroOverlay a class and this a getter/setter property
+	setSourceItem(sourceItem: SourceItemWrapper) {
+		this._sourceItem = sourceItem;
+	}
 
-	// setCitationIndex (citationIndex: number) {
-	//     this._citationIndex = citationIndex;
-	// },
+	setCitationIndex(citationIndex: number) {
+		this._citationIndex = citationIndex;
+	}
 
 	// handleItemPopupShowing (document: Document) {
 	//     const sourceItem = this._sourceItem;
