@@ -3,8 +3,6 @@ import { initLocale } from "./utils/locale";
 import { createZToolkit } from "./utils/ztoolkit";
 import ZoteroOverlay from "./cita/zoteroOverlay";
 
-let zoteroOverlay: ZoteroOverlay;
-
 async function onStartup() {
 	await Promise.all([
 		Zotero.initializationPromise,
@@ -27,12 +25,12 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
 	// Create ztoolkit for every window
 	addon.data.ztoolkit = createZToolkit();
-	zoteroOverlay = new ZoteroOverlay(win);
+	addon.data.zoteroOverlay = new ZoteroOverlay(win);
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
 async function onMainWindowUnload(win: Window): Promise<void> {
-	zoteroOverlay.unload();
+	addon.data.zoteroOverlay!.unload();
 	ztoolkit.unregisterAll();
 	addon.data.dialog?.window?.close();
 }
