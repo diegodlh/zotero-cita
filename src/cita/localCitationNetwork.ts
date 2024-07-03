@@ -3,6 +3,7 @@ import Matcher from "./matcher";
 import Progress from "./progress";
 import SourceItemWrapper from "./sourceItemWrapper";
 import Wikicite from "./wikicite";
+import * as prefs from "../cita/preferences";
 
 declare const Zotero: any;
 declare const ZoteroPane: any;
@@ -46,10 +47,7 @@ export default class LCN {
 				(item) =>
 					new Promise((resolve) =>
 						resolve(
-							new SourceItemWrapper(
-								item,
-								window.Wikicite.Prefs.get("storage"),
-							),
+							new SourceItemWrapper(item, prefs.getStorage()),
 						),
 					),
 			),

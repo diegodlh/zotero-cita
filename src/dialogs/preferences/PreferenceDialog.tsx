@@ -3,12 +3,13 @@ import Progress from "../../cita/progress";
 import PropTypes from "prop-types";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import { debug } from "../../cita/wikicite";
+import * as prefs from "../../cita/preferences";
 
 declare const Services: any;
 declare const Zotero: any;
 
 const PreferenceDialog = (props: any) => {
-	const [storage, setStorage] = useState(props.Prefs.get("storage"));
+	const [storage, setStorage] = useState(prefs.getStorage());
 
 	async function migrateStorageLocation(from: string, to: string) {
 		const progress = new Progress(
@@ -55,7 +56,7 @@ const PreferenceDialog = (props: any) => {
 							),
 						);
 					}
-					props.Prefs.set("storage", storage);
+					prefs.setStorage(storage);
 				},
 				{ skipDateModifiedUpdate: true, skipSelect: true },
 			);
@@ -80,9 +81,9 @@ const PreferenceDialog = (props: any) => {
 	}
 
 	function save() {
-		if (props.Prefs.get("storage") !== storage) {
+		if (prefs.getStorage() !== storage) {
 			// migrate citation storage location for all items
-			migrateStorageLocation(props.Prefs.get("storage"), storage).then(
+			migrateStorageLocation(prefs.getStorage(), storage).then(
 				(failedItemTitles) => {
 					if (failedItemTitles.length != 0) {
 						let message =

@@ -18,7 +18,7 @@ import WikiciteChrome from "./wikiciteChrome";
 // import Wikidata from './wikidata';
 import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
-import { getPref, setPref, initialiseDefaultPref } from "../utils/prefs";
+import * as prefs from "./preferences";
 
 // import "./overlay.css";
 
@@ -182,8 +182,8 @@ class ZoteroOverlay {
 	// Preferences
 	/******************************************/
 	setDefaultPreferences() {
-		initialiseDefaultPref("sortBy", "ordinal"); // 'ordinal', 'authors', 'title', 'date'
-		initialiseDefaultPref("storage", "note"); // 'extra' || 'note'
+		prefs.initialiseStorage();
+		prefs.initialiseSortBy();
 	}
 
 	/******************************************/
@@ -198,14 +198,14 @@ class ZoteroOverlay {
 			pluginID: config.addonID,
 			dataProvider: (item: Zotero.Item, dataKey: string) => {
 				return (
-					new SourceItemWrapper(
-						item,
-						getPref("storage") as "note" | "extra",
-					).getPID("QID") || ""
+					new SourceItemWrapper(item, prefs.getStorage()).getPID(
+						"QID",
+					) || ""
 				);
 			},
 		});
 
+		// fix: this doesn't update immediately when removing citations
 		this.numCitationsColumnID =
 			await Zotero.ItemTreeManager.registerColumns({
 				dataKey: ITEM_PANE_COLUMN_IDS.CITATIONS,
@@ -217,7 +217,7 @@ class ZoteroOverlay {
 					return (
 						new SourceItemWrapper(
 							item,
-							getPref("storage") as "note" | "extra",
+							prefs.getStorage(),
 						).citations.length.toString() || ""
 					);
 				},
@@ -767,13 +767,18 @@ class ZoteroOverlay {
 
 		menuSort.appendChild(sortPopup);
 
-		const sortValues = ["ordinal", "authors", "date", "title"];
+		const sortValues: prefs.SortByType[] = [
+			"ordinal",
+			"authors",
+			"date",
+			"title",
+		];
 		const menuNames = new Map<string, string>();
 		menuNames.set("ordinal", "Index");
 		menuNames.set("authors", "Authors");
 		menuNames.set("date", "Date");
 		menuNames.set("title", "Title");
-		const sortByValue = getPref("sortBy");
+		const sortByValue = prefs.getSortBy();
 		for (const value of sortValues) {
 			const itemSort = doc.createElementNS(ns, "menuitem");
 			itemSort.setAttribute("id", "item-menu-sort-" + value);
@@ -788,9 +793,7 @@ class ZoteroOverlay {
 			if (value === sortByValue) {
 				itemSort.setAttribute("checked", "true");
 			}
-			itemSort.addEventListener("command", () =>
-				setPref("sortBy", value),
-			);
+			itemSort.addEventListener("command", () => prefs.setSortBy(value));
 			sortPopup.appendChild(itemSort);
 		}
 

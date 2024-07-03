@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import * as PropTypes from "prop-types";
 import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
-import { getPref } from "../utils/prefs.js";
+import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 
 function CitationsBoxContainer(props: {
@@ -14,12 +14,7 @@ function CitationsBoxContainer(props: {
 
 	// this CitationsBox container knows about the current
 	// sortBy preference value
-	const [sortBy, setSortBy] = useState(
-		() => getPref("sortBy") as "ordinal" | "authors" | "title" | "date",
-		// fix: get pref
-		// "ordinal"
-		//Wikicite.Prefs.get("sortBy")
-	);
+	const [sortBy, setSortBy] = useState(() => prefs.getSortBy());
 
 	// fix: this one was being used
 	// Option 1, include sourceItem in component's internal state.
@@ -27,14 +22,7 @@ function CitationsBoxContainer(props: {
 	const [sourceItem, setSourceItem] = useState(
 		// If the initial state is the result of an expensive computation,
 		// one may provide a function instead, which will be executed only on the initial render.
-		() =>
-			new SourceItemWrapper(
-				props.item,
-				// fix: get pref
-				getPref("storage") as "note" | "extra",
-				// "note",
-				// window.Wikicite.Prefs.get("storage"),
-			),
+		() => new SourceItemWrapper(props.item, prefs.getStorage()),
 	);
 
 	// Option 2, set sourceItem as an instance-like variable with useRef.
@@ -102,9 +90,7 @@ function CitationsBoxContainer(props: {
 						setSourceItem(
 							new SourceItemWrapper(
 								props.item,
-								// fix: get pref
-								// "note",
-								getPref("storage") as "note" | "extra",
+								prefs.getStorage(),
 							),
 						);
 						// If sourceItem is a ref, state must be updated from here,
@@ -133,7 +119,7 @@ function CitationsBoxContainer(props: {
 					// 	setSourceItem(
 					// 		new SourceItemWrapper(
 					// 			props.item,
-					// 			window.Wikicite.Prefs.get("storage"),
+					// 			prefs.getStorage(),
 					// 		),
 					// 	);
 					// }
@@ -158,16 +144,7 @@ function CitationsBoxContainer(props: {
 			observe: function (subject: any, topic: string, data: any) {
 				switch (topic) {
 					case "wikicite-sortby-update":
-						// fix: get pref
-						// setSortBy("ordinal");
-						setSortBy(
-							getPref("sortBy") as
-								| "ordinal"
-								| "authors"
-								| "title"
-								| "date",
-						);
-						// setSortBy(window.Wikicite.Prefs.get("sortBy"));
+						setSortBy(prefs.getSortBy());
 						break;
 					default:
 				}
@@ -231,7 +208,6 @@ function CitationsBoxContainer(props: {
 			sourceItem={sourceItem}
 			onItemPopup={handleItemPopup}
 			onCitationPopup={handleCitationPopup}
-			// Button={props.Button}
 		/>
 	);
 }
@@ -239,7 +215,6 @@ function CitationsBoxContainer(props: {
 CitationsBoxContainer.propTypes = {
 	item: PropTypes.instanceOf(Zotero.Item),
 	editable: PropTypes.bool,
-	// Button: PropTypes.any,
 };
 
 export default CitationsBoxContainer;
