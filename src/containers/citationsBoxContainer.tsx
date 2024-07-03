@@ -4,11 +4,11 @@ import * as PropTypes from "prop-types";
 import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import { getPref } from "../utils/prefs.js";
+import { config } from "../../package.json";
 
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
-	// Button: any; //needed to pass to CitationsBox so it can use require to access Zotero components
 }) {
 	// debug("CitationsBoxContainer will render...");
 
@@ -103,8 +103,8 @@ function CitationsBoxContainer(props: {
 							new SourceItemWrapper(
 								props.item,
 								// fix: get pref
-								"note",
-								// window.Wikicite.Prefs.get("storage"),
+								// "note",
+								getPref("storage") as "note" | "extra",
 							),
 						);
 						// If sourceItem is a ref, state must be updated from here,
@@ -186,19 +186,24 @@ function CitationsBoxContainer(props: {
 	}, []);
 
 	useEffect(() => {
-		// fix: how to get this?
-		// window.WikiciteChrome.zoteroOverlay.setSourceItem(sourceItem);
+		Zotero[config.addonInstance].data.zoteroOverlay.setSourceItem(
+			sourceItem,
+		);
 	}, [sourceItem]);
 
 	/**
 	 * Display citing-item actions pop-up menu at the event's coordinates
 	 */
-	function handleItemPopup(event: Event) {
+	function handleItemPopup(event: React.MouseEvent) {
 		const itemPopupMenu = document.getElementById(
 			"citations-box-item-menu",
-		) as any;
+		) as any; // not sure what type this should be?
 		event.preventDefault();
-		itemPopupMenu.openPopup(event.target, "end_before", 0, 0, true);
+		itemPopupMenu.openPopupAtScreen(
+			window.screenX + event.clientX,
+			window.screenY + event.clientY,
+			true,
+		);
 	}
 
 	function handleCitationPopup(
@@ -206,11 +211,17 @@ function CitationsBoxContainer(props: {
 		citationIndex: number,
 	) {
 		// fix: how to access this?
-		// window.WikiciteChrome.zoteroOverlay.setCitationIndex(citationIndex);
-		// const citationPopupMenu = document.getElementById(
-		// 	"citations-box-citation-menu",
-		// ) as any;
-		// citationPopupMenu.openPopup(event.target, "end_before", 0, 0, true);
+		Zotero[config.addonInstance].data.zoteroOverlay.setCitationIndex(
+			citationIndex,
+		);
+		const citationPopupMenu = document.getElementById(
+			"citations-box-citation-menu",
+		) as any;
+		citationPopupMenu.openPopupAtScreen(
+			window.screenX + event.clientX,
+			window.screenY + event.clientY,
+			true,
+		);
 	}
 
 	return (
