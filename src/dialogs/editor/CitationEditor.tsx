@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import PIDRow from "../../components/pidRow";
 import PropTypes from "prop-types";
 
-declare const Zotero: any;
-
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
 // Fixme: as a Citation Editor (not a target item editor)

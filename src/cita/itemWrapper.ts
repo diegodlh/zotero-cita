@@ -9,13 +9,13 @@ import Wikidata from "./wikidata";
 // to be run after each setter. This would be the item's saveTx
 // for source items, and the source item's saveTx for target items
 export default class ItemWrapper {
-	key: string;
+	key?: string;
 	saveHandler: any;
 	item: Zotero.Item;
 	// item(item: any): any {
 	//     throw new Error('Method not implemented.');
 	// }
-	constructor(item?: any, saveHandler?: any) {
+	constructor(item?: Zotero.Item, saveHandler?: () => void) {
 		if (item === undefined) item = new Zotero.Item();
 		if (saveHandler === undefined) saveHandler = item.saveTx;
 

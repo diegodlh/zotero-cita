@@ -1,26 +1,18 @@
 import lookup from "./lookup";
 
-const suppliers = [
-	// https://opencitations.net/oci
-	{ prefix: "010", name: "wikidata", id: "qid" },
-	{ prefix: "020", name: "crossref", id: "doi" },
-	{ prefix: "030", name: "occ", id: "occ" },
-	{ prefix: "040", name: "dryad", id: "doi" },
-	{ prefix: "050", name: "croci", id: "doi" },
-];
+const suppliers: { prefix: string; name: string; id: "qid" | "doi" | "occ" }[] =
+	[
+		// https://opencitations.net/oci
+		{ prefix: "010", name: "wikidata", id: "qid" },
+		{ prefix: "020", name: "crossref", id: "doi" },
+		{ prefix: "030", name: "occ", id: "occ" },
+		{ prefix: "040", name: "dryad", id: "doi" },
+		{ prefix: "050", name: "croci", id: "doi" },
+	];
 
 const codes = new Map(lookup.map(({ c, code }) => [String(c), Number(code)]));
 
-declare const Zotero: any;
-
 export default class {
-	public citingId: string;
-	public citedId: string;
-	public idType: string;
-	public oci: string;
-	public supplier: { prefix: string; name: string; id: string };
-	public valid: boolean;
-
 	static getOci(supplierName: string, citingId: string, citedId: string) {
 		const supplier = suppliers.filter(
 			(supplier) => supplier.name === supplierName,
@@ -36,11 +28,14 @@ export default class {
 			citingId = citingId.substring(3);
 			citedId = citedId.substring(3);
 		} else {
-			let pattern;
-			if (supplier.id === "qid") {
-				pattern = /^Q([0-9]+)$/;
-			} else if (supplier.id === "occ") {
-				pattern = /^([0-9])+$/;
+			let pattern: RegExp;
+			switch (supplier.id) {
+				case "qid":
+					pattern = /^Q([0-9]+)$/;
+					break;
+				case "occ":
+					pattern = /^([0-9])+$/;
+					break;
 			}
 			const citingIdMatch = citingId.match(pattern);
 			const citedIdMatch = citedId.match(pattern);
@@ -93,7 +88,7 @@ export default class {
 			citingId,
 			citedId,
 			idType: supplier.id,
-			supplier: supplier,
+			supplier: supplier.name,
 		};
 	}
 

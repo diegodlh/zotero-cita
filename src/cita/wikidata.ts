@@ -2,7 +2,7 @@ import Wikicite, { debug } from "./wikicite";
 import Progress from "./progress";
 // ignore until we find / make types for these packages
 // @ts-ignore
-import WBK, { Entity, EntityId } from "wikibase-sdk";
+import WBK, { Entity, EntityId, SimplifiedPropertyClaims } from "wikibase-sdk";
 // @ts-ignore
 import qs2wbEdit from "quickstatements-to-wikibase-edit";
 // @ts-ignore
@@ -910,7 +910,7 @@ export default class {
 			props: ["claims"],
 			format: "json",
 		});
-		const citesWorkClaims: { [id: string]: any } = {};
+		const citesWorkClaims: { [id: string]: SimplifiedPropertyClaims } = {};
 		while (urls.length) {
 			const url = urls.shift() as string;
 			try {
