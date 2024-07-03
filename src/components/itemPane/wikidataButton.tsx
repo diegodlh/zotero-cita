@@ -1,13 +1,17 @@
+import * as React from "react";
+import * as PropTypes from "prop-types";
 import Citation from "../../cita/citation";
-import PropTypes from "prop-types";
-import React from "react";
+import { config } from "../../../package.json";
 
-function WikidataButton(props) {
+function WikidataButton(props: {
+	citation: Citation;
+	onClick: React.MouseEventHandler;
+}) {
 	const citation = props.citation;
 	const syncable = citation.source.qid && citation.target.qid;
 	const oci = citation.getOCI("wikidata");
 	let title;
-	let imgSrc = "chrome://cita/skin/wikidata-";
+	let imgSrc = `chrome://${config.addonRef}/content/skin/default/wikidata-`;
 	if (oci) {
 		if (oci.valid) {
 			title = "See in OpenCitations";
