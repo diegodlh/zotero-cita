@@ -20,7 +20,6 @@ async function onStartup() {
 	}
 
 	initLocale();
-
 	await onMainWindowLoad(window);
 }
 

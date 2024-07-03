@@ -20,6 +20,8 @@ import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
 import { getPref, setPref, initialiseDefaultPref } from "../utils/prefs";
 
+// import "./overlay.css";
+
 const TRANSLATORS_PATH = "chrome://cita/content/translators/";
 const TRANSLATOR_LABELS = [
 	"Wikidata API",
@@ -138,6 +140,8 @@ class ZoteroOverlay {
 	}
 
 	unload() {
+		this.removeOverlay();
+
 		this.removeItemPaneColumns();
 
 		// // This event listener is never added
@@ -191,8 +195,6 @@ class ZoteroOverlay {
 			// label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
 			pluginID: config.addonID,
 			dataProvider: (item: Zotero.Item, dataKey: string) => {
-				// fix: get pref
-				// return new SourceItemWrapper(item, "note").getPID("QID") || "";
 				return (
 					new SourceItemWrapper(
 						item,
@@ -210,13 +212,6 @@ class ZoteroOverlay {
 				// label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
 				pluginID: config.addonID,
 				dataProvider: (item: Zotero.Item, dataKey: string) => {
-					// fix: get pref
-					// return (
-					// 	new SourceItemWrapper(
-					// 		item,
-					// 		"note",
-					// 	).citations.length.toString() || "0"
-					// );
 					return (
 						new SourceItemWrapper(
 							item,
@@ -469,6 +464,8 @@ class ZoteroOverlay {
 		// Add Citations tab to item pane
 		this.citationsPane();
 
+		this.addOverlayStyleSheet();
+
 		// // Add popup menus to main window
 		// const mainWindow = doc.getElementById('main-window');
 		// zoteroOverlay.itemPopupMenu(doc, mainWindow);
@@ -479,6 +476,26 @@ class ZoteroOverlay {
 		//     const itemTreeColumnHeader = doc.getElementById('zotero-items-columns-header');
 		//     zoteroOverlay.itemTreeColumnHeaders(doc, itemTreeColumnHeader);
 		// }
+	}
+
+	removeOverlay() {
+		this.removeOverlayStyleSheet();
+	}
+
+	addOverlayStyleSheet() {
+		// todo: it should be possible to just import this and have esbuild work it out
+		// but I couldn't get that to work, so add the CSS manually.
+		const link = window.document.createElement("link");
+		link.id = `${config.addonRef}-overlay-stylesheet`;
+		link.rel = "stylesheet";
+		link.href = `chrome://${config.addonRef}/content/skin/default/overlay.css`;
+		window.document.documentElement.appendChild(link);
+	}
+
+	removeOverlayStyleSheet() {
+		window.document
+			.getElementById(`${config.addonRef}-overlay-stylesheet`)
+			?.remove();
 	}
 
 	/******************************************/
@@ -559,23 +576,13 @@ class ZoteroOverlay {
 			pluginID: config.addonID,
 			header: {
 				l10nID: "wikicite.citations-pane.label",
-				icon: rootURI + "chrome/content/icons/cita-small.svg",
+				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			sidenav: {
 				l10nID: "wikicite.citations-pane.label",
-				icon: rootURI + "chrome/content/icons/cita-small.svg",
+				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"> Test </html:div>`,
-			// bodyXHTML: `QID: <html:input type="text" readonly="true" id="citations-box-container" style="flex: 1" xmlns:html="http://www.w3.org/1999/xhtml" />`,
-			// bodyXHTML: `<iframe src="chrome://${config.addonRef}/content/components/itemPane/citationsBox.xhtml" id="citations-box" ></iframe>`,
-			// onRender: ({ body, item, editable, tabType }) => {
-			// 	const citationsBox = body.ownerDocument.getElementById(
-			// 		"citations-box-container",
-			// 	) as HTMLInputElement;
-			// 	if (citationsBox) {
-			// 		citationsBox.value = new ItemWrapper(item).qid || "None";
-			// 	}
-			// },
 			onInit: ({ body, refresh }) => {
 				citationBoxRoot = createRoot(
 					body.ownerDocument.getElementById(
@@ -585,10 +592,7 @@ class ZoteroOverlay {
 			},
 			onRender: ({ body, item, editable, tabType }) => {
 				citationBoxRoot.render(
-					// <ReactTest></ReactTest>
 					<CitationsBoxContainer
-						// 	//Having the key change, makes the CitationsBoxContainer
-						// 	//component unmount when the item selected changes
 						key={"citationsBox-" + item.id}
 						item={item}
 						editable={
@@ -602,12 +606,7 @@ class ZoteroOverlay {
 						// ref={_citationsBox}
 						// onResetSelection={focusItemsList}
 					/>,
-					// // body.ownerDocument.getElementById("citations-box-container"),
-					// // () => this.updateCitationsBoxSize(document)
 				);
-				// body.textContent = JSON.stringify({
-				// 	qid: new ItemWrapper(item).qid || "None",
-				// });
 			},
 		});
 	}
