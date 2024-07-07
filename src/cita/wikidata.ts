@@ -2,9 +2,9 @@ import Wikicite, { debug } from "./wikicite";
 import Progress from "./progress";
 // ignore until we find / make types for these packages
 import WBK, { Entity, EntityId, SimplifiedPropertyClaims } from "wikibase-sdk";
-// @ts-ignore
+// @ts-ignore - couldn't find the types for this
 import qs2wbEdit from "quickstatements-to-wikibase-edit";
-// @ts-ignore
+// @ts-ignore - couldn't find the types for this
 import wbEdit from "wikibase-edit";
 import ItemWrapper from "./itemWrapper";
 
