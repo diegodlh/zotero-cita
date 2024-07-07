@@ -16,7 +16,7 @@ import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "./preferences";
 
-import { initLocale, getString } from "../utils/locale";
+import { initLocale, getString, getLocaleID } from "../utils/locale";
 
 // import "./overlay.css";
 
@@ -561,11 +561,11 @@ class ZoteroOverlay {
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
 			header: {
-				l10nID: "wikicite.citations-pane.label",
+				l10nID: getLocaleID("wikicite-citations-pane"),
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			sidenav: {
-				l10nID: "wikicite.citations-pane.label",
+				l10nID: getLocaleID("wikicite-citations-pane"),
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"> Test </html:div>`,
