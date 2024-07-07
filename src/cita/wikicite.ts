@@ -5,6 +5,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Wikidata from "./wikidata";
 
+import { getString as _getString } from "../utils/locale";
+
 // declare const Components: any;
 // declare const Services: any;
 // declare const Zotero: any;
@@ -69,7 +71,7 @@ export default {
 		// fix: plugin wouldn't start when running this
 		// const zoteroLocale = Zotero.locale;
 		// const requestedLocale = Services.locale.requestedLocale;
-		const propertiesFile = "chrome://cita/locale/wikicite.properties";
+		const propertiesFile = "chrome://wikicite/locale/wikicite.ftl";
 		// if (zoteroLocale.split("-")[0] === requestedLocale.split("-")[0]) {
 		// 	propertiesFile = "chrome://cita/locale/wikicite.properties";
 		// } else {
@@ -181,48 +183,54 @@ export default {
 	},
 
 	getString: function (name: string) {
-		// convert camelCase to hyphen-divided for translatewiki.net
 		name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-		const nameParts = name.split(".");
-		// if leading part of the name is not 'wikicite', add it
-		if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
-		name = nameParts.join(".");
-		try {
-			return this._bundle.GetStringFromName(name);
-		} catch {
-			try {
-				return this._fallbackBundle.GetStringFromName(name);
-			} catch {
-				throw Error("Failed getting string from name " + name);
-			}
-		}
+		name = name.replace(/\./g, "-"); // convert . to - for fluent
+		return _getString(name);
+		// // convert camelCase to hyphen-divided for translatewiki.net
+		// name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+		// const nameParts = name.split(".");
+		// // if leading part of the name is not 'wikicite', add it
+		// if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
+		// name = nameParts.join(".");
+		// try {
+		// 	return this._bundle.GetStringFromName(name);
+		// } catch {
+		// 	try {
+		// 		return this._fallbackBundle.GetStringFromName(name);
+		// 	} catch {
+		// 		throw Error("Failed getting string from name " + name);
+		// 	}
+		// }
 	},
 
-	formatString: function (name: string, params: any) {
-		if (!Array.isArray(params)) params = [params];
-		// convert camelCase to hyphen-divided for translatewiki.net
+	formatString: function (name: string, params: Record<string, unknown>) {
 		name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-		const nameParts = name.split(".");
-		// if leading part of the name is not 'wikicite', add it
-		if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
-		name = nameParts.join(".");
-		try {
-			return this._bundle.formatStringFromName(
-				name,
-				params,
-				params.length,
-			);
-		} catch {
-			try {
-				return this._fallbackBundle.formatStringFromName(
-					name,
-					params,
-					params.length,
-				);
-			} catch {
-				throw Error("Failed formatting string from name " + name);
-			}
-		}
+		name = name.replace(/\./g, "-"); // convert . to - for fluent
+		return _getString(name, { args: params });
+		// if (!Array.isArray(params)) params = [params];
+		// // convert camelCase to hyphen-divided for translatewiki.net
+		// name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+		// const nameParts = name.split(".");
+		// // if leading part of the name is not 'wikicite', add it
+		// if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
+		// name = nameParts.join(".");
+		// try {
+		// 	return this._bundle.formatStringFromName(
+		// 		name,
+		// 		params,
+		// 		params.length,
+		// 	);
+		// } catch {
+		// 	try {
+		// 		return this._fallbackBundle.formatStringFromName(
+		// 			name,
+		// 			params,
+		// 			params.length,
+		// 		);
+		// 	} catch {
+		// 		throw Error("Failed formatting string from name " + name);
+		// 	}
+		// }
 	},
 
 	selectItem: function () {
