@@ -237,13 +237,14 @@ function CitationsBox(props: {
 				Services.prompt.alert(
 					window,
 					Wikicite.getString("wikicite.oci.mismatch.title"),
-					Wikicite.formatString("wikicite.oci.mismatch.message", [
-						oci.supplierName.charAt(0).toUpperCase() +
+					Wikicite.formatString("wikicite.oci.mismatch.message", {
+						supplierName:
+							oci.supplierName.charAt(0).toUpperCase() +
 							oci.supplierName.slice(1),
-						oci.idType.toUpperCase(),
-						oci.citingId,
-						oci.citedId,
-					]),
+						idType: oci.idType.toUpperCase(),
+						citingId: oci.citingId,
+						citedId: oci.citedId,
+					}),
 				);
 			}
 		} else if (syncable) {
@@ -344,20 +345,15 @@ function CitationsBox(props: {
 		<div className="citations-box">
 			<div className="citations-box-header">
 				<div className="citations-box-count">
-					{/* todo: proper formatting */}
-					{`${citations.length} citation(s):`}
-					{/* {
-						Wikicite.formatString(
+					{Wikicite.formatString(
 						"wikicite.citations-pane.citations.count",
-						citations.length,
-					)} */}
+						{ numCitations: citations.length },
+					)}
 				</div>
 				{props.editable && (
 					<div>
 						<button onClick={() => handleCitationAdd()}>
-							{/* todo: proper formatting */}
-							Add
-							{/* {Wikicite.getString("wikicite.citations-pane.add")} */}
+							{Wikicite.getString("wikicite.citations-pane.add")}
 						</button>
 					</div>
 				)}

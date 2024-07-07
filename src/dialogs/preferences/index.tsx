@@ -13,6 +13,7 @@ const { Wikicite, Prefs } = window.arguments[0];
 document.title = Wikicite.getString("wikicite.prefs.title");
 ReactDOM.render(
 	<PreferenceDialog
+		// fix: params need to be named when updating to Fluent instead of .properties
 		formatString={(name: string, params: string | string[]) =>
 			Wikicite.formatString(name, params)
 		}

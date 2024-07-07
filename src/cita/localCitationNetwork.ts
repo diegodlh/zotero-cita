@@ -236,6 +236,7 @@ function getString(name, params) {
 	name = "wikicite.lcn.window." + name;
 	let string;
 	if (params) {
+		// fix: params need to be named when updating to Fluent instead of .properties
 		string = Wikicite.formatString(name, params);
 	} else {
 		string = Wikicite.getString(name);

@@ -39,7 +39,10 @@ const PreferenceDialog = (props: any) => {
 							"loading",
 							props.formatString(
 								"wikicite.prefs.citation-storage.progress.loaded-n-items",
-								[++loadedItems, items.length],
+								{
+									numItemsComplete: ++loadedItems,
+									numItemsTotal: items.length,
+								},
 							),
 						);
 					}
@@ -52,7 +55,10 @@ const PreferenceDialog = (props: any) => {
 							"loading",
 							props.formatString(
 								"wikicite.prefs.citation-storage.progress.migrated-n-items",
-								[++migratedItems, items.length],
+								{
+									numItemsComplete: ++migratedItems,
+									numItemsTotal: items.length,
+								},
 							),
 						);
 					}
