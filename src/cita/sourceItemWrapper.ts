@@ -487,7 +487,7 @@ class SourceItemWrapper extends ItemWrapper {
 				Wikicite.getString("wikicite.source-item.check-pid.conflict"),
 				Wikicite.formatString(
 					"wikicite.source-item.check-pid.conflict." + conflict,
-					[type, value],
+					{ PIDType: type, PID: value },
 				),
 			);
 		}
@@ -672,7 +672,7 @@ class SourceItemWrapper extends ItemWrapper {
 						"done",
 						Wikicite.formatString(
 							"wikicite.source-item.import.progress.done",
-							citations.length,
+							{ numCitations: citations.length },
 						),
 					);
 				} else {
@@ -808,7 +808,7 @@ class SourceItemWrapper extends ItemWrapper {
 							"done",
 							Wikicite.formatString(
 								"wikicite.source-item.add-identifier.progress.done",
-								citations.length,
+								{ numCitations: citations.length },
 							),
 						);
 					} else {

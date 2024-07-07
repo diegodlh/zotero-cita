@@ -16,6 +16,8 @@ import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "./preferences";
 
+import { initLocale, getString } from "../utils/locale";
+
 // import "./overlay.css";
 
 const TRANSLATORS_PATH = "chrome://cita/content/translators/";
@@ -87,6 +89,8 @@ class ZoteroOverlay {
 		// AddonManager.getAddonByID(Wikicite.id, (addon: any) => {
 		//     Wikicite.version = addon.version
 		// });
+
+		initLocale();
 
 		this.setDefaultPreferences();
 
@@ -201,9 +205,7 @@ class ZoteroOverlay {
 	async addItemPaneColumns() {
 		this.qidColumnID = await Zotero.ItemTreeManager.registerColumns({
 			dataKey: ITEM_PANE_COLUMN_IDS.QID,
-			// fix localisation
-			label: "QID",
-			// label: Wikicite.getString('wikicite.item-tree.column-label.qid'),
+			label: Wikicite.getString("wikicite.item-tree.column-label.qid"),
 			pluginID: config.addonID,
 			dataProvider: (item: Zotero.Item, dataKey: string) => {
 				return (
@@ -218,9 +220,9 @@ class ZoteroOverlay {
 		this.numCitationsColumnID =
 			await Zotero.ItemTreeManager.registerColumns({
 				dataKey: ITEM_PANE_COLUMN_IDS.CITATIONS,
-				// fix localisation
-				label: "Citations",
-				// label: Wikicite.getString('wikicite.item-tree.column-label.citations'),
+				label: Wikicite.getString(
+					"wikicite.item-tree.column-label.citations",
+				),
 				pluginID: config.addonID,
 				dataProvider: (item: Zotero.Item, dataKey: string) => {
 					return (
@@ -453,11 +455,8 @@ class ZoteroOverlay {
 		// see #39
 		Services.prompt.alert(
 			window,
-			// fix: localisation
-			"Unsupported",
-			"Adding items as citations to other items not yet supported.",
-			// Wikicite.getString("wikicite.global.unsupported"),
-			// Wikicite.getString("wikicite.citations.from-items.unsupported"),
+			Wikicite.getString("wikicite.global.unsupported"),
+			Wikicite.getString("wikicite.citations.from-items.unsupported"),
 		);
 	}
 
@@ -536,9 +535,7 @@ class ZoteroOverlay {
 		wikiciteMenuItem.setAttribute("id", wikiciteMenuItemID);
 		wikiciteMenuItem.setAttribute(
 			"label",
-			// fix: localisation
-			"Cita Preferences...",
-			// Wikicite.getString("wikicite.preferences.menuitem"),
+			Wikicite.getString("wikicite.preferences.menuitem"),
 		);
 		wikiciteMenuItem.addEventListener(
 			"command",
@@ -617,9 +614,7 @@ class ZoteroOverlay {
 		itemWikidataSync.setAttribute("id", "item-menu-wikidata-sync");
 		itemWikidataSync.setAttribute(
 			"label",
-			// fix: localisation
-			"Sync citations with Wikidata",
-			// Wikicite.getString("wikicite.item-menu.sync-wikidata"),
+			Wikicite.getString("wikicite.item-menu.sync-wikidata"),
 		);
 		itemWikidataSync.addEventListener("command", () =>
 			this._sourceItem!.syncWithWikidata(),
@@ -634,9 +629,7 @@ class ZoteroOverlay {
 		);
 		itemFetchCitationQIDs.setAttribute(
 			"label",
-			// fix: localisation
-			"Fetch QIDs for cited items",
-			// Wikicite.getString("wikicite.item-menu.fetch-citation-qids"),
+			Wikicite.getString("wikicite.item-menu.fetch-citation-qids"),
 		);
 		itemFetchCitationQIDs.addEventListener("command", () =>
 			this._sourceItem!.fetchCitationQIDs(),
@@ -648,9 +641,7 @@ class ZoteroOverlay {
 		itemCrossrefGet.setAttribute("id", "item-menu-crossref-get");
 		itemCrossrefGet.setAttribute(
 			"label",
-			// fix: localisation
-			"Get citations from Crossref",
-			// Wikicite.getString("wikicite.item-menu.get-crossref"),
+			Wikicite.getString("wikicite.item-menu.get-crossref"),
 		);
 		itemCrossrefGet.addEventListener("command", () =>
 			this._sourceItem!.getFromCrossref(),
@@ -662,9 +653,7 @@ class ZoteroOverlay {
 		itemOccGet.setAttribute("id", "item-menu-occ-get");
 		itemOccGet.setAttribute(
 			"label",
-			// fix: localisation
-			"Get citations from OpenCitations Corpus",
-			// Wikicite.getString("wikicite.item-menu.get-occ"),
+			Wikicite.getString("wikicite.item-menu.get-occ"),
 		);
 		itemOccGet.addEventListener("command", () =>
 			this._sourceItem!.getFromOcc(),
@@ -676,9 +665,7 @@ class ZoteroOverlay {
 		itemPdfExtract.setAttribute("id", "item-menu-pdf-extract");
 		itemPdfExtract.setAttribute(
 			"label",
-			// fix: localisation
-			"Extract citations from attachments",
-			// Wikicite.getString("wikicite.item-menu.get-pdf"),
+			Wikicite.getString("wikicite.item-menu.get-pdf"),
 		);
 		itemPdfExtract.addEventListener("command", () =>
 			this._sourceItem!.getFromPDF(),
@@ -690,9 +677,7 @@ class ZoteroOverlay {
 		itemIdentifierImport.setAttribute("id", "item-menu-identifier-import");
 		itemIdentifierImport.setAttribute(
 			"label",
-			// fix: localisation
-			"Add citation(s) by identifier",
-			// Wikicite.getString("wikicite.item-menu.import-identifier"),
+			Wikicite.getString("wikicite.item-menu.import-identifier"),
 		);
 		itemIdentifierImport.addEventListener("command", () =>
 			this._sourceItem!.addCitationsByIdentifier(),
@@ -704,9 +689,7 @@ class ZoteroOverlay {
 		itemCitationsImport.setAttribute("id", "item-menu-citations-import");
 		itemCitationsImport.setAttribute(
 			"label",
-			// fix: localisation
-			"Import citations",
-			// Wikicite.getString("wikicite.item-menu.import-citations"),
+			Wikicite.getString("wikicite.item-menu.import-citations"),
 		);
 		itemCitationsImport.addEventListener("command", () =>
 			this._sourceItem!.importCitations(),
@@ -718,9 +701,7 @@ class ZoteroOverlay {
 		itemFileExport.setAttribute("id", "item-menu-file-export");
 		itemFileExport.setAttribute(
 			"label",
-			// fix: localisation
-			"Export citations to file",
-			// Wikicite.getString("wikicite.item-menu.export-file"),
+			Wikicite.getString("wikicite.item-menu.export-file"),
 		);
 		itemFileExport.addEventListener("command", () =>
 			this._sourceItem!.exportToFile(),
@@ -732,9 +713,7 @@ class ZoteroOverlay {
 		itemCrociExport.setAttribute("id", "item-menu-croci-export");
 		itemCrociExport.setAttribute(
 			"label",
-			// fix: localisation
-			"Export citations to CROCI",
-			// Wikicite.getString("wikicite.item-menu.export-croci"),
+			Wikicite.getString("wikicite.item-menu.export-croci"),
 		);
 		itemCrociExport.addEventListener("command", () =>
 			this._sourceItem!.exportToCroci(),
@@ -746,9 +725,7 @@ class ZoteroOverlay {
 		menuSort.setAttribute("id", "item-menu-sort-submenu");
 		menuSort.setAttribute(
 			"label",
-			// fix: localisation
-			"Sort by",
-			// Wikicite.getString("wikicite.item-menu.sort"),
+			Wikicite.getString("wikicite.item-menu.sort"),
 		);
 
 		const sortPopup = doc.createElementNS(ns, "menupopup");
@@ -762,21 +739,13 @@ class ZoteroOverlay {
 			"date",
 			"title",
 		];
-		const menuNames = new Map<string, string>();
-		menuNames.set("ordinal", "Index");
-		menuNames.set("authors", "Authors");
-		menuNames.set("date", "Date");
-		menuNames.set("title", "Title");
 		const sortByValue = prefs.getSortBy();
 		for (const value of sortValues) {
 			const itemSort = doc.createElementNS(ns, "menuitem");
 			itemSort.setAttribute("id", "item-menu-sort-" + value);
 			itemSort.setAttribute(
 				"label",
-				// fix: localisation
-				// the map is just a dummy until the localisation works
-				menuNames.get(value)!,
-				// Wikicite.getString("wikicite.item-menu.sort." + value),
+				Wikicite.getString("wikicite.item-menu.sort." + value),
 			);
 			itemSort.setAttribute("type", "radio");
 			if (value === sortByValue) {
@@ -792,9 +761,7 @@ class ZoteroOverlay {
 		autoLinkCitations.setAttribute("id", "item-menu-autolink-citations");
 		autoLinkCitations.setAttribute(
 			"label",
-			// fix: localisation
-			"Auto link citations with Zotero items",
-			// Wikicite.getString("wikicite.item-menu.autolink-citations"),
+			Wikicite.getString("wikicite.item-menu.autolink-citations"),
 		);
 		autoLinkCitations.addEventListener("command", () =>
 			this._sourceItem!.autoLinkCitations(),
@@ -831,9 +798,7 @@ class ZoteroOverlay {
 		citationWikidataSync.setAttribute("id", "citation-menu-wikidata-sync");
 		citationWikidataSync.setAttribute(
 			"label",
-			// fix: localisation
-			"Sync citation with Wikidata",
-			// Wikicite.getString("wikicite.citation-menu.sync-wikidata"),
+			Wikicite.getString("wikicite.citation-menu.sync-wikidata"),
 		);
 		citationWikidataSync.addEventListener("command", () =>
 			this._sourceItem!.syncWithWikidata(this._citationIndex),
@@ -843,9 +808,7 @@ class ZoteroOverlay {
 		citationFetchQID.setAttribute("id", "citation-menu-fetch-qid");
 		citationFetchQID.setAttribute(
 			"label",
-			// fix: localisation
-			"Fetch cited item QID",
-			// Wikicite.getString("wikicite.citation-menu.fetch-qid"),
+			Wikicite.getString("wikicite.citation-menu.fetch-qid"),
 		);
 		citationFetchQID.addEventListener("command", () =>
 			this._sourceItem!.fetchCitationQIDs(this._citationIndex),
@@ -855,9 +818,7 @@ class ZoteroOverlay {
 		itemFileExport.setAttribute("id", "citation-menu-file-export");
 		itemFileExport.setAttribute(
 			"label",
-			// fix: localisation
-			"Export cited item to file",
-			// Wikicite.getString("wikicite.citation-menu.export-file"),
+			Wikicite.getString("wikicite.citation-menu.export-file"),
 		);
 		itemFileExport.addEventListener("command", () =>
 			this._sourceItem!.exportToFile(this._citationIndex),
@@ -867,9 +828,7 @@ class ZoteroOverlay {
 		itemCrociExport.setAttribute("id", "citation-menu-croci-export");
 		itemCrociExport.setAttribute(
 			"label",
-			// fix: localisation
-			"Export citation to CROCI",
-			// Wikicite.getString("wikicite.citation-menu.export-croci"),
+			Wikicite.getString("wikicite.citation-menu.export-croci"),
 		);
 		itemCrociExport.addEventListener("command", () =>
 			this._sourceItem!.exportToCroci(this._citationIndex),
@@ -882,28 +841,19 @@ class ZoteroOverlay {
 		ociMenu.setAttribute("id", "citation-menu-oci-submenu");
 		ociMenu.setAttribute(
 			"label",
-			// fix: localisation
-			"See in OpenCitations",
-			// Wikicite.getString("wikicite.citation-menu.oci"),
+			Wikicite.getString("wikicite.citation-menu.oci"),
 		);
 
 		const ociPopup = doc.createElementNS(ns, "menupopup");
 		ociPopup.setAttribute("id", "citation-menu-oci-submenu-popup");
 		ociMenu.appendChild(ociPopup);
 
-		// map is just a placeholder for localisation
-		const menuNames = new Map<string, string>();
-		menuNames.set("crossref", "Crossref supplier");
-		menuNames.set("occ", "OCC supplier");
-		menuNames.set("wikidata", "Wikidata supplier");
 		for (const supplier of ["crossref", "occ", "wikidata"]) {
 			const ociItem = doc.createElementNS(ns, "menuitem");
 			ociItem.setAttribute("id", "citation-menu-oci-" + supplier);
 			ociItem.setAttribute(
 				"label",
-				// fix: localisation
-				menuNames.get(supplier)!,
-				// Wikicite.getString("wikicite.citation-menu.oci." + supplier),
+				Wikicite.getString("wikicite.citation-menu.oci." + supplier),
 			);
 			ociItem.addEventListener("command", () =>
 				this._sourceItem!.citations[this._citationIndex!].resolveOCI(
@@ -1123,9 +1073,7 @@ class ZoteroOverlay {
 		wikiciteSubmenu.setAttribute("id", wikiciteSubmenuID);
 		wikiciteSubmenu.setAttribute(
 			"label",
-			// fix: localisation
-			"Cita",
-			// Wikicite.getString(`wikicite.submenu.label`),
+			Wikicite.getString(`wikicite.submenu.label`),
 		);
 		zoteroMenu.appendChild(wikiciteSubmenu);
 		WikiciteChrome.registerXUL(wikiciteSubmenuID, doc);
@@ -1248,9 +1196,7 @@ class ZoteroOverlay {
 		menuFunc.setAttribute("id", IDPrefix + functionName);
 		menuFunc.setAttribute(
 			"label",
-			// fix: localisation
-			functionName,
-			// Wikicite.getString(`wikicite.submenu.${functionName}`),
+			Wikicite.getString(`wikicite.submenu.${functionName}`),
 		);
 		menuFunc.addEventListener(
 			"command",

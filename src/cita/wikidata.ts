@@ -344,10 +344,12 @@ export default class {
 						),
 						Wikicite.formatString(
 							"wikicite.wikidata.reconcile.approx.message",
-							[
-								item.title,
-								Zotero.ItemTypes.getLocalizedString(item.type),
-							],
+							{
+								itemTitle: item.title,
+								itemType: Zotero.ItemTypes.getLocalizedString(
+									item.type,
+								),
+							},
 						),
 						choices.length,
 						choices,
@@ -404,7 +406,11 @@ export default class {
 				),
 				Wikicite.formatString(
 					"wikicite.wikidata.reconcile.unavailable.message",
-					unavailable.map((item) => item.title).join("\n"),
+					{
+						itemTitles: unavailable
+							.map((item) => item.title)
+							.join("\n"),
+					},
 				),
 			);
 			if (result) {
@@ -629,7 +635,7 @@ export default class {
 				Wikicite.getString("wikicite.wikidata.create.confirm.title"),
 				Wikicite.formatString(
 					"wikicite.wikidata.create.confirm.message",
-					item.title,
+					{ itemTitle: item.title },
 				),
 				buttonFlags,
 				Wikicite.getString(
@@ -652,10 +658,11 @@ export default class {
 						),
 						Wikicite.formatString(
 							"wikicite.wikidata.create.auto.confirm.message",
-							[
-								item.title,
-								"https://www.wikidata.org/wiki/Wikidata:Notability",
-							],
+							{
+								itemTitle: item.title,
+								wikidataLink:
+									"https://www.wikidata.org/wiki/Wikidata:Notability",
+							},
 						),
 					);
 					if (!confirm) {
@@ -709,7 +716,7 @@ export default class {
 							requestConfig.summary =
 								Wikicite.formatString(
 									"wikicite.wikidata.create.auto.summary",
-									`[[${instanceOf}]]`,
+									{ instanceType: `[[${instanceOf}]]` },
 								) + " [[[Wikidata:Zotero/Cita|Cita]]]";
 							const { entity } = await wdEdit.entity.create(
 								creation,
@@ -1021,7 +1028,9 @@ export default class {
 								Wikicite.formatString(
 									"wikicite.wikidata.updateCitesWork." +
 										actionType,
-									`[[Property:${properties.citesWork}]]`,
+									{
+										numStatements: `[[Property:${properties.citesWork}]]`,
+									},
 								) + " [[[Wikidata:Zotero/Cita|Cita]]]",
 						},
 						requestConfig,
@@ -1126,11 +1135,17 @@ class Login {
 		promptText +=
 			Wikicite.formatString(
 				"wikicite.wikidata.login.message.create-account",
-				"https://www.wikidata.org/w/index.php?title=Special:CreateAccount",
+				{
+					createAccountLink:
+						"https://www.wikidata.org/w/index.php?title=Special:CreateAccount",
+				},
 			) + "\n\n";
 		promptText += Wikicite.formatString(
 			"wikicite.wikidata.login.message.bot-pass",
-			"https://www.mediawiki.org/wiki/Special:BotPasswords",
+			{
+				botPasswordLink:
+					"https://www.mediawiki.org/wiki/Special:BotPasswords",
+			},
 		);
 
 		const username = { value: this.username };
