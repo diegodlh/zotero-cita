@@ -90,10 +90,9 @@ export default class {
 			Services.prompt.alert(
 				window,
 				Wikicite.getString("wikicite.wikidata.ignored.title"),
-				Wikicite.formatString(
-					"wikicite.wikidata.ignored.message",
-					noQidItems.length,
-				),
+				Wikicite.formatString("wikicite.wikidata.ignored.message", {
+					numIgnored: noQidItems.length,
+				}),
 			);
 		}
 
@@ -279,10 +278,9 @@ export default class {
 			const result = Services.prompt.select(
 				window,
 				Wikicite.getString("wikicite.wikidata.orphaned.title"),
-				Wikicite.formatString(
-					"wikicite.wikidata.orphaned.message",
-					counters.orphanedCitations,
-				),
+				Wikicite.formatString("wikicite.wikidata.orphaned.message", {
+					numOrphaned: counters.orphanedCitations,
+				}),
 				orphanedActions.length,
 				orphanedActions.map((orphanedAction) =>
 					Wikicite.getString(
@@ -680,7 +678,7 @@ export default class {
 				"",
 				Wikicite.formatString(
 					"wikicite.wikidata.deviations.unsupported-citations",
-					unsupportedCitations,
+					{ numUnsupported: unsupportedCitations },
 				),
 			);
 		}
@@ -719,7 +717,7 @@ function composeConfirmation(
 			"\n\n" +
 			Wikicite.formatString(
 				"wikicite.wikidata.confirm.message.local-items",
-				localItemsToUpdate.size,
+				{ numItems: localItemsToUpdate.size },
 			) +
 			":";
 		if (counters.localAddCitations) {
@@ -727,7 +725,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-add",
-					counters.localAddCitations,
+					{ numCitations: counters.localAddCitations },
 				);
 		}
 		if (counters.localFlagCitations) {
@@ -735,7 +733,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-flag",
-					counters.localFlagCitations,
+					{ numCitations: counters.localFlagCitations },
 				);
 		}
 		if (counters.localUnflagCitations) {
@@ -743,7 +741,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-unflag",
-					counters.localUnflagCitations,
+					{ numCitations: counters.localUnflagCitations },
 				);
 		}
 		if (counters.localDeleteCitations) {
@@ -751,7 +749,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-delete",
-					counters.localDeleteCitations,
+					{ numCitations: counters.localDeleteCitations },
 				);
 		}
 	}
@@ -762,7 +760,7 @@ function composeConfirmation(
 			"\n\n" +
 			Wikicite.formatString(
 				"wikicite.wikidata.confirm.message.remote-entities",
-				remoteEntitiesToUpdate.size,
+				{ numEntities: remoteEntitiesToUpdate.size },
 			) +
 			":";
 		if (counters.remoteAddCitations) {
@@ -770,7 +768,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.remote-add",
-					counters.remoteAddCitations,
+					{ numCitations: counters.remoteAddCitations },
 				);
 		}
 	}
@@ -788,7 +786,7 @@ function composeConfirmation(
 			"\n\n" +
 			Wikicite.formatString(
 				"wikicite.wikidata.confirm.message.unchanged",
-				unchangedCitationsCount,
+				{ numCitations: unchangedCitationsCount },
 			) +
 			":";
 		if (counters.syncedCitations) {
@@ -796,7 +794,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.synced",
-					counters.syncedCitations,
+					{ numCitations: counters.syncedCitations },
 				);
 		}
 		if (counters.noQidCitations) {
@@ -804,7 +802,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.no-qid",
-					counters.noQidCitations,
+					{ numCitations: counters.noQidCitations },
 				);
 		}
 		if (counters.invalidOci) {
@@ -812,7 +810,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.invalid-oci",
-					counters.invalidOci,
+					{ numCitations: counters.invalidOci },
 				);
 		}
 	}

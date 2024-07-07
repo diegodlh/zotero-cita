@@ -27,7 +27,7 @@ function ZoteroButton(props: any) {
 				),
 				Wikicite.formatString(
 					"wikicite.citations-pane.linked.confirm.message",
-					item.getField("title"),
+					{ itemTitle: item.getField("title") },
 				),
 				bttnFlags,
 				Wikicite.getString("wikicite.citations-pane.linked.confirm.go"),
