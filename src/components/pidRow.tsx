@@ -73,9 +73,9 @@ function PIDRow(props: {
                 which has been renamed and is not recommended. But won't show
                 in non-strict mode because Zotero devs renamed it to UNSAFE_*/}
 				{/* <Editable */}
-				{/* fix: replaced Editable with div until we work out how to import zotero components */}
-				<div
-					// type="text"
+				{/* fix: replaced Editable with input until we work out how to import zotero components */}
+				<input
+					type="text"
 					// There is a bug in Zotero's React Input component
 					// Its handleChange event is waiting for an options
 					// parameter from the child input element's onChange
@@ -91,23 +91,28 @@ function PIDRow(props: {
 					// ...and a ref too
 					// ref={textboxRef}
 					// autoFocus
-					// className={
-					// 	props.editable && !selected ? "zotero-clicky" : ""
-					// }
+					className={
+						props.editable && !selected ? "zotero-clicky" : ""
+					}
 					// isActive={selected}
 					// isReadOnly={!props.editable}
-					// readOnly={!props.editable}
+					readOnly={!props.editable}
 					// onAbort={handleCancel}
 					// onCancel={handleCancel}
-					onClick={handleEdit}
+					// onClick={handleEdit}
 					// onCommit={handleCommit}
-					onFocus={handleEdit}
+					// onFocus={handleEdit}
 					// onPaste={handlePaste}  // what happens if I paste multiline?
 					// selectOnFocus={true}
-					// value={value || ""}
-				>
-					{value || ""}
-				</div>
+
+					// note: input needs an onchange handler or it won't render
+					onChange={
+						(event) => {
+							return;
+						} /* do something */
+					}
+					value={value || ""}
+				/>
 			</div>
 			<button onClick={() => onFetch()}>
 				<img
