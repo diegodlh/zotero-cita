@@ -18,9 +18,7 @@ import * as prefs from "./preferences";
 
 import { initLocale, getString, getLocaleID } from "../utils/locale";
 
-// import "./overlay.css";
-
-const TRANSLATORS_PATH = "chrome://cita/content/translators/";
+const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
 	"Wikidata API",
 	"Wikidata JSON",
@@ -149,7 +147,7 @@ class ZoteroOverlay {
 		// );
 		// this.switcherObserver = observer;
 
-		// this.installTranslators();
+		this.installTranslators();
 
 		// this.addNewTabListener()
 	}
@@ -187,7 +185,7 @@ class ZoteroOverlay {
 		// document.getElementById('zotero-items-splitter').removeEventListener('mousemove', updateCitationsBoxSize, false);
 		// document.getElementById('zotero-items-splitter').removeEventListener('command', updateCitationsBoxSize, false);
 		// this.switcherObserver.disconnect();
-		// this.uninstallTranslators();
+		this.uninstallTranslators();
 		// this.removeNewTabListener()
 	}
 
@@ -311,11 +309,11 @@ class ZoteroOverlay {
 
 	async installTranslator(label: string) {
 		const source = Zotero.File.getContentsFromURL(
-			`${TRANSLATORS_PATH}${label}.js`,
+			`${TRANSLATORS_PATH}/${label}.js`,
 		);
 		const header = /^\s*{[\S\s]*?}\s*?[\r\n]/.exec(source)?.[0];
 		if (header === undefined) {
-			debug(
+			ztoolkit.log(
 				`Failed to install translator ${label} - couldn't find header`,
 			);
 			return;
@@ -328,14 +326,14 @@ class ZoteroOverlay {
 			const oldDate = new Date(installed.lastUpdated);
 			if (oldDate > newDate) {
 				// do not install
-				debug("Skipping installation of translator " + label);
+				ztoolkit.log("Skipping installation of translator " + label);
 				return;
 			}
 		}
 		try {
 			await Zotero.Translators.save(metadata, code);
 		} catch (err) {
-			debug(`Failed to install translator ${label}`, err as Error);
+			ztoolkit.log(`Failed to install translator ${label}`, err as Error);
 			this.uninstallTranslator(label);
 		}
 	}
@@ -349,7 +347,7 @@ class ZoteroOverlay {
 				destFile.remove(false);
 			}
 		} catch (err) {
-			debug(`Failed to remove translator ${label}`, err as Error);
+			ztoolkit.log(`Failed to remove translator ${label}`, err as Error);
 		}
 	}
 
