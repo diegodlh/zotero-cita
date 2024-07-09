@@ -22,7 +22,7 @@ const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
 	"Wikidata API",
 	"Wikidata JSON",
-	"Wikidata QuickStatements",
+	"zotkat/Wikidata QuickStatements",
 ];
 
 const ITEM_PANE_COLUMN_IDS = {
@@ -332,6 +332,7 @@ class ZoteroOverlay {
 		}
 		try {
 			await Zotero.Translators.save(metadata, code);
+			ztoolkit.log(`Installed translator ${label}`);
 		} catch (err) {
 			ztoolkit.log(`Failed to install translator ${label}`, err as Error);
 			this.uninstallTranslator(label);
@@ -346,6 +347,7 @@ class ZoteroOverlay {
 			if (destFile.exists()) {
 				destFile.remove(false);
 			}
+			ztoolkit.log(`Uninstalled translator ${label}`);
 		} catch (err) {
 			ztoolkit.log(`Failed to remove translator ${label}`, err as Error);
 		}
