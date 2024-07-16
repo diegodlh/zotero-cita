@@ -1,6 +1,7 @@
 window#citation-editor {
 	height: 500px;
-	width: 400px;
+	/* width: 400px; */
+	width: 200px;
 	padding: 1em;
 }
 

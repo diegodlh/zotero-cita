@@ -8,6 +8,7 @@ import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import WikidataButton from "./wikidataButton";
 import ZoteroButton from "./zoteroButton";
+import { config } from "../../../package.json";
 
 function CitationsBox(props: {
 	editable: boolean;
@@ -15,7 +16,6 @@ function CitationsBox(props: {
 	sourceItem: SourceItemWrapper;
 	onItemPopup: (event: React.MouseEvent) => void;
 	onCitationPopup: (event: React.MouseEvent, index: number) => void;
-	// Button: any;
 }) {
 	const [citations, setCitations] = useState([] as Citation[]);
 	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
@@ -82,22 +82,21 @@ function CitationsBox(props: {
 	 * @returns {Zotero.Item} - Edited cited item.
 	 */
 	function openEditor(citation: Citation) {
-		// const args = {
-		// 	citation: citation,
-		// 	Wikicite: Wikicite,
-		// };
-		// const retVals: { [key: string]: any } = {};
-		// fix
-		// window.openDialog(
-		// 	"chrome://cita/content/citationEditor.xul",
-		// 	"",
-		// 	"chrome,dialog=no,modal,centerscreen,resizable=yes",
-		// 	args,
-		// 	retVals,
-		// );
-		window.alert("citation editor not implemented yet");
-		// return retVals.item;
-		return undefined;
+		// Zotero[config.addonInstance].data.zoteroOverlay.citationEditor();
+
+		const args = {
+			citation: citation,
+			Wikicite: Wikicite,
+		};
+		const retVals: { [key: string]: any } = {};
+		window.openDialog(
+			`chrome://${config.addonRef}/content/citationEditor.xhtml`,
+			"",
+			"chrome,dialog=no,modal,centerscreen,resizable=yes",
+			args,
+			retVals,
+		);
+		return retVals.item;
 	}
 
 	function handleCitationAdd() {

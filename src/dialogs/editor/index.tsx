@@ -1,17 +1,21 @@
 import CitationEditor from "./CitationEditor";
 import ItemWrapper from "../../cita/itemWrapper";
-import React from "react";
-import ReactDOM from "react-dom";
+import * as React from "react";
+import { createRoot } from "react-dom/client";
+import Citation from "../../cita/citation";
 
-declare const Components: any;
+// const citation: Citation = (window as any).arguments[0][0];
+// const Wikicite: any = (window as any).arguments[0][1];
+// const retVals: { item: Zotero.Item } = (window as any).arguments[1];
 
-// import Services into the new window
-Components.utils.import("resource://gre/modules/Services.jsm");
+let citation: Citation;
+let Wikicite: any;
+({ citation, Wikicite } = (window as any).arguments[0]);
+const retVals: { item: Zotero.Item } = (window as any).arguments[1];
 
-const { citation, Wikicite } = window.arguments[0];
-const retVals = window.arguments[1];
+citation = citation as Citation;
 
-let newItem: any;
+let newItem: ItemWrapper;
 
 function onCancel() {
 	retVals.item = false;
@@ -21,7 +25,7 @@ function onCancel() {
 function onSave() {
 	for (const pidType of newItem.getPIDTypes()) {
 		const pid = newItem.getPID(pidType);
-		if (!checkPID(pidType, pid)) {
+		if (pid == undefined || !checkPID(pidType, pid)) {
 			return;
 		}
 	}
@@ -41,20 +45,46 @@ window.addEventListener("load", () => {
 	document.title = Wikicite.getString("wikicite.editor.title");
 	newItem = new ItemWrapper();
 	newItem.fromJSON(citation.target.toJSON());
+
+	// remove the collapsible section:
+	// item box contains
+	// <collapsible section>
+	//     <head/>
+	//     <body/>
+	// </collapsible section>
+	// we want to replace the collapsible section with its body
+	const itemBox = document.getElementById("citation-editor-item-box")!;
+	// const collapsibleSection = itemBox.firstChild!;
+	// itemBox.firstChild!.replaceWith(itemBox.firstChild!.lastChild!);
+	// win.replaceChild(itemBox, itemBoxWrapper);
+	// itemBox.firstChild!.replaceWith(itemBox.firstChild!.lastChild!);
+	// just hide the head of the collapsible section
+	// (collapsibleSection as any).toggleAttribute("open", false);
+	// (collapsibleSection as any).toggleAttribute("open", true);
+
+	(itemBox.firstChild!.firstChild! as HTMLElement).hidden = true;
+
 	// itemBox.removeCreator is calling itemBox.item.saveTx
 	// even if itemBox.saveOnEdit is set to false;
 	// overwrite saveTx as workaround
-	newItem.item.saveTx = () =>
-		(document.getElementById("citation-editor-item-box") as any).refresh();
-	ReactDOM.render(
+	newItem.item.saveTx = () => (itemBox as any).refresh();
+	const root = createRoot(document.getElementById("root")!);
+	root.render(
 		<CitationEditor
 			checkCitationPID={checkPID}
 			item={newItem}
-			itemBox={document.getElementById("citation-editor-item-box")}
+			// itemBox={document.getElementById("citation-editor-item-box")!}
+			itemBox={itemBox}
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}
 			onSave={onSave}
 		/>,
-		document.getElementById("root"),
 	);
+	// itemBox.firstChild!.replaceWith(itemBox.firstChild!.lastChild!);
+	// alert("opening");
+	// (collapsibleSection as any).toggleAttribute("open", false);
+	// (collapsibleSection as any).toggleAttribute("open", true);
+	// (collapsibleSection as any).open = true;
+	// alert("opened");
+	// alert("rendered1");
 });

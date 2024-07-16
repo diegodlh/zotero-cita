@@ -37,7 +37,8 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
 	ctx._globalThis = ctx;
 
 	Services.scriptloader.loadSubScript(
-		`${rootURI}/chrome/content/scripts/__addonRef__.js`,
+		// `${rootURI}/chrome/content/scripts/__addonRef__.js`,
+		`${rootURI}/chrome/content/scripts/index.js`,
 		ctx,
 	);
 	Zotero.__addonInstance__.hooks.onStartup();
