@@ -63,7 +63,7 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
     4. You can also use a different Zotero database by changing `dataDir` but I setup my debug profile to use a debug database so didn't need to
 5. Run `npm install`
 6. This plugin is built using esbuild. Run `npm run start` to launch Zotero and rebuild the plugin automatically each time the source code is changed (thanks to [zotero-plugin-template](https://github.com/windingwind/zotero-plugin-template)). For some changes like CSS the hot reloading doesn't work and you will need to restart Zotero. Built files will be saved to `build/chrome/content`.
-7. For distribution, pack the contents of the `dist` directory into a ZIP file and change its extension to `.xpi`.
+7. For distribution, pack the contents of the `build` directory into a ZIP file and change its extension to `.xpi`.
 
 ## Publishing
 
@@ -75,10 +75,10 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
    - `/static/install.rdf`
      - **Note:** Choose the correct update script in `em:updateURL` depending on beta/full release
 3. Update `version` and `updateLink`s in `/update.rdf` or `./update-beta.rdf` (for the beta release).
-4. Run `git clean -xdf` to remove untracked files, including `/dist` and `/node_modules`.
+4. Run `git clean -xdf` to remove untracked files, including `/build` and `/node_modules`.
 5. Run `npm install`. This will also update `/package-lock.json` with the new version.
 6. Run `npm run build` to build the plugin.
-7. Zip the contents of `/dist` into a zip file named `zotero-cita-vX.Y.Z.xpi`. E. g. `cd dist && zip -r ../zotero-cita-v0.0.1.xpi *`
+7. Zip the contents of `/build` into a zip file named `zotero-cita-vX.Y.Z.xpi`. E. g. `cd build && zip -r ../zotero-cita-v0.0.1.xpi *`
 8. Until integration tests have been implemented (#30), install the new version
 on a fresh Zotero profile and run some manual tests.
 1. Run `git commit -m "Bump vX.Y.Z"` and `git push`.
