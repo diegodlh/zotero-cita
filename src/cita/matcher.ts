@@ -1,26 +1,29 @@
 import Wikicite, { debug } from "./wikicite";
 
-declare const Zotero: any;
-
 // Widely based on Zotero.Duplicates._findDuplicates
 export default class Matcher {
 	_libraryID: number;
-	_scopeIDs: any;
-	_isbnCache: any;
-	_isbnMap: any;
-	_doiCache: any;
-	_doiMap: any;
-	_qidCache: any;
-	_qidMap: any;
-	_titleMap: any;
-	_creatorsCache: any;
-	_yearCache: any;
+	_scopeIDs?: number[];
+	_isbnCache?: { [itemID: number]: string };
+	_isbnMap?: { [isbn: string]: number[] };
+	_doiCache?: { [itemID: number]: string };
+	_doiMap?: { [doi: string]: number[] };
+	_qidCache?: { [itemID: number]: QID };
+	_qidMap?: { [doi: QID]: number[] };
+	_titleMap?: { [title: string]: number[] };
+	_creatorsCache?: {
+		[itemID: number]: {
+			lastName: string;
+			firstInitial: string | boolean;
+		}[];
+	};
+	_yearCache?: { [itemID: number]: number };
 	/**
 	 * Create a Matcher
 	 * @param {Number} libraryID Target library ID
 	 * @param {Array} [scopeIDs] Array of item IDs to limit matches to
 	 */
-	constructor(libraryID, scopeIDs?) {
+	constructor(libraryID: number, scopeIDs?: number[]) {
 		if (!Zotero.Libraries.exists(libraryID)) {
 			throw new Error("Invalid library ID");
 		}
@@ -44,15 +47,11 @@ export default class Matcher {
 
 		debug(
 			`Matcher took ${Date.now() - start}ms to initialize ` +
-				`for ${Object.keys(this._yearCache).length} items`,
+				`for ${Object.keys(this._yearCache!).length} items`,
 		);
 	}
-	// fix: disabled this
-	// _yearCache(_yearCache: any) {
-	//     throw new Error('Method not implemented.');
-	// }
 
-	findMatches(item) {
+	findMatches(item: Zotero.Item) {
 		if (
 			!this._isbnCache ||
 			!this._isbnMap ||
@@ -71,7 +70,7 @@ export default class Matcher {
 
 		// ISBN
 		const isbn = Zotero.Utilities.cleanISBN(String(item.getField("ISBN")));
-		const isbnMatches = this._isbnMap[isbn] ?? [];
+		const isbnMatches = isbn ? this._isbnMap[isbn] : [];
 
 		// DOI
 		const doi = (
@@ -82,12 +81,12 @@ export default class Matcher {
 		// QID
 		const qid = (
 			Wikicite.getExtraField(item, "qid").values[0] ?? ""
-		).toUpperCase();
+		).toUpperCase() as QID;
 		const qidMatches = this._qidMap[qid] ?? [];
 
 		// title
 		const title = normalizeString(item.getField("title", undefined, true));
-		const year = item.getField("year");
+		const year = Number(item.getField("year"));
 		const creators = item
 			.getCreators()
 			.map((creator) => parseCreator(creator));
@@ -121,7 +120,12 @@ export default class Matcher {
 
 		const matches = [
 			...new Set(
-				[].concat(isbnMatches, doiMatches, qidMatches, titleMatches),
+				([] as number[]).concat(
+					isbnMatches,
+					doiMatches,
+					qidMatches,
+					titleMatches,
+				),
 			),
 		].sort((a, b) => a - b);
 		debug("Found matches in " + (Date.now() - start) + " ms");
@@ -144,13 +148,14 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows = await Zotero.DB.queryAsync(sql, [
-			this._libraryID,
-			Zotero.ItemTypes.getID("book"),
-			Zotero.ItemFields.getID("ISBN"),
-		]);
-		const isbnCache = {};
-		const isbnMap = {};
+		const rows: { itemID: number; value: string }[] =
+			await Zotero.DB.queryAsync(sql, [
+				this._libraryID,
+				Zotero.ItemTypes.getID("book"),
+				Zotero.ItemFields.getID("ISBN"),
+			]);
+		const isbnCache: { [itemID: number]: string } = {};
+		const isbnMap: { [isbn: string]: number[] } = {};
 		for (const row of rows) {
 			const newVal = Zotero.Utilities.cleanISBN(String(row.value));
 			if (!newVal) continue;
@@ -172,13 +177,14 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows = await Zotero.DB.queryAsync(sql, [
-			this._libraryID,
-			Zotero.ItemFields.getID("DOI"),
-			"10.%",
-		]);
-		const doiCache = {};
-		const doiMap = {};
+		const rows: { itemID: number; value: string }[] =
+			await Zotero.DB.queryAsync(sql, [
+				this._libraryID,
+				Zotero.ItemFields.getID("DOI"),
+				"10.%",
+			]);
+		const doiCache: { [itemID: number]: string } = {};
+		const doiMap: { [doi: string]: number[] } = {};
 		for (const row of rows) {
 			// DOIs are case insensitive
 			const newVal = (
@@ -203,17 +209,18 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows = await Zotero.DB.queryAsync(sql, [
-			this._libraryID,
-			Zotero.ItemFields.getID("extra"),
-		]);
-		const qidCache = {};
-		const qidMap = {};
+		const rows: { itemID: number; value: string }[] =
+			await Zotero.DB.queryAsync(sql, [
+				this._libraryID,
+				Zotero.ItemFields.getID("extra"),
+			]);
+		const qidCache: { [itemID: number]: QID } = {};
+		const qidMap: { [qid: QID]: number[] } = {};
 		for (const row of rows) {
 			// keep first QID only
 			const match = row.value.match(/^qid:\s*(q\d+)$/im);
 			if (!match) continue;
-			const newVal = match[1].toUpperCase();
+			const newVal = match[1].toUpperCase() as QID;
 			qidCache[row.itemID] = newVal;
 			if (qidMap[newVal] === undefined) qidMap[newVal] = [];
 			qidMap[newVal].push(row.itemID);
@@ -239,11 +246,12 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows = await Zotero.DB.queryAsync(
-			sql,
-			[this._libraryID].concat(dateFields),
-		);
-		const yearCache = {};
+		const rows: { itemID: number; year: number }[] =
+			await Zotero.DB.queryAsync(
+				sql,
+				[this._libraryID].concat(dateFields),
+			);
+		const yearCache: { [itemID: number]: number } = {};
 		for (const row of rows) {
 			yearCache[row.itemID] = row.year;
 		}
@@ -269,8 +277,9 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows = await Zotero.DB.queryAsync(sql, [this._libraryID]);
-		const titleMap = {};
+		const rows: { itemID: number; value: string }[] =
+			await Zotero.DB.queryAsync(sql, [this._libraryID]);
+		const titleMap: { [title: string]: number[] } = {};
 		for (const row of rows) {
 			const newVal = normalizeString(row.value);
 			if (!newVal) continue;
@@ -295,9 +304,19 @@ export default class Matcher {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
 		// sql += " ORDER BY itemID, orderIndex";
-		const rows = await Zotero.DB.queryAsync(sql, this._libraryID);
+		const rows: {
+			itemID: number;
+			lastName: string;
+			firstName: string;
+			fieldMode: number;
+		}[] = await Zotero.DB.queryAsync(sql, this._libraryID);
 
-		const creatorsCache = {};
+		const creatorsCache: {
+			[itemID: number]: {
+				lastName: string;
+				firstInitial: string | boolean;
+			}[];
+		} = {};
 		for (const row of rows) {
 			if (creatorsCache[row.itemID] === undefined)
 				creatorsCache[row.itemID] = [];
@@ -335,7 +354,10 @@ export default class Matcher {
 	}
 }
 
-function compareCreators(aCreators, bCreators) {
+function compareCreators(
+	aCreators: { lastName: string; firstInitial: string | boolean }[],
+	bCreators: { lastName: string; firstInitial: string | boolean }[],
+) {
 	if (!aCreators && !bCreators) {
 		return true;
 	}
@@ -358,7 +380,7 @@ function compareCreators(aCreators, bCreators) {
 	return false;
 }
 
-function normalizeString(str) {
+function normalizeString(str: string) {
 	// Make sure we have a string and not an integer
 	str = String(str);
 
@@ -374,7 +396,16 @@ function normalizeString(str) {
 	return str;
 }
 
-function parseCreator(creator) {
+function parseCreator(
+	creator:
+		| Zotero.Item.Creator
+		| {
+				lastName: string;
+				firstName: string;
+				fieldMode: number;
+				// eslint-disable-next-line no-mixed-spaces-and-tabs
+		  },
+) {
 	const lastName = normalizeString(creator.lastName);
 	const firstInitial =
 		creator.fieldMode === 0
