@@ -37,7 +37,8 @@ export default defineConfig({
 				bundle: true,
 				target: "firefox115",
 				outfile: `build/addon/chrome/content/scripts/${pkg.config.addonRef}.js`,
-				sourcemap: "linked"
+				sourcemap:
+					process.env.NODE_ENV == "development" ? "linked" : false,
 			},
 		],
 		// If you want to checkout update.json into the repository, uncomment the following lines:
