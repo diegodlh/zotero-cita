@@ -754,9 +754,10 @@ class SourceItemWrapper extends ItemWrapper {
 		);
 
 		if (retVals.text !== undefined) {
-			const identifiers = Zotero.Utilities.Internal.extractIdentifiers(
-				retVals.text,
-			);
+			// fix: add to zotero-types
+			const identifiers = (
+				Zotero.Utilities.Internal as any
+			).extractIdentifiers(retVals.text) as string[];
 
 			const progress = new Progress(
 				"loading",
