@@ -3,7 +3,7 @@ import pkg from "./package.json";
 import { copyFileSync } from "fs";
 
 export default defineConfig({
-	source: ["src", "addon"],
+	source: ["src", "static"],
 	dist: "build",
 	name: pkg.config.addonName,
 	id: pkg.config.addonID,
@@ -19,7 +19,7 @@ export default defineConfig({
 	},
 
 	build: {
-		assets: ["addon/**/*.*"],
+		assets: ["static/**/*.*"],
 		define: {
 			...pkg.config,
 			author: pkg.author,
