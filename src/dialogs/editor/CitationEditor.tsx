@@ -57,7 +57,13 @@ const CitationEditor = (props: {
 			//     }
 			// }
 			props.itemBox.addHandler("itemtypechange", onItemTypeChange);
+
+			// todo: this is a weird hack to get the item box to appear
+			// but not to change the state of the item box in the main Zotero pane
+			const originalOpenState = props.itemBox.open;
 			props.itemBox.open = true;
+			props.itemBox.open = originalOpenState;
+
 			// props.itemBox.toggleAttribute("open", false);
 			// props.itemBox.toggleAttribute("open", true);
 			// alert("done rendering");
@@ -69,7 +75,7 @@ const CitationEditor = (props: {
 	function onItemTypeChange() {
 		setPidTypes(props.item.getPIDTypes());
 		setHiddenFields(props.item.item.itemTypeID);
-		props.itemBox.refresh();
+		props.itemBox.render();
 	}
 
 	function setHiddenFields(itemTypeID: number) {

@@ -11,21 +11,21 @@ import Citation from "../../cita/citation";
 let citation: Citation;
 let Wikicite: any;
 ({ citation, Wikicite } = (window as any).arguments[0]);
-const retVals: { item: Zotero.Item } = (window as any).arguments[1];
+const retVals: { item?: Zotero.Item } = (window as any).arguments[1];
 
 citation = citation as Citation;
 
 let newItem: ItemWrapper;
 
 function onCancel() {
-	retVals.item = false;
+	retVals.item = undefined;
 	window.close();
 }
 
 function onSave() {
 	for (const pidType of newItem.getPIDTypes()) {
 		const pid = newItem.getPID(pidType);
-		if (pid == undefined || !checkPID(pidType, pid)) {
+		if (pid !== undefined && !checkPID(pidType, pid)) {
 			return;
 		}
 	}
@@ -67,7 +67,8 @@ window.addEventListener("load", () => {
 	// itemBox.removeCreator is calling itemBox.item.saveTx
 	// even if itemBox.saveOnEdit is set to false;
 	// overwrite saveTx as workaround
-	newItem.item.saveTx = () => (itemBox as any).refresh();
+	// newItem.item.saveTx = () => (itemBox as any).refresh();
+	newItem.item.saveTx = () => (itemBox as any).render(); // refresh isn't a function
 	const root = createRoot(document.getElementById("root")!);
 	root.render(
 		<CitationEditor

@@ -81,7 +81,7 @@ function CitationsBox(props: {
 	 * @param {Citation} citation - Citation to be edited.
 	 * @returns {Zotero.Item} - Edited cited item.
 	 */
-	function openEditor(citation: Citation) {
+	function openEditor(citation: Citation): Zotero.Item | undefined {
 		// Zotero[config.addonInstance].data.zoteroOverlay.citationEditor();
 
 		const args = {
