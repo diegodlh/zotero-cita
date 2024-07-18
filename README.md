@@ -54,15 +54,16 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
 ## Development
 
 1. Download a beta version of Zotero from [here](https://www.zotero.org/support/beta_builds) - these come with the debug tools already enabled so you don't need to build it from source.
-2. Install nodejs and npm if you don't already have (Currently Node v18 and npm v8.1 are the minimum required versions)
+2. Install nodejs and npm if you don't already have them (Currently Node v18 and npm v8.1 are the minimum required versions)
 3. Clone the source code `git clone https://github.com/diegodlh/zotero-cita`, and run `git submodule update --init --recursive` to fetch the nested submodules.
 4. Setup the plugin to run with the debug version of Zotero
-    1. Make a new file in the repo root called `.env` (you can also copy and example `.env` file from [here](https://github.com/northword/zotero-plugin-scaffold?tab=readme-ov-file#03-create-a-env-file))
+    1. Make a new file in the repo root called `.env` (you can also copy an example `.env` file from [here](https://github.com/northword/zotero-plugin-scaffold?tab=readme-ov-file#03-create-a-env-file))
     2. Add a line in `.env` like `ZOTERO_PLUGIN_ZOTERO_BIN_PATH = <path-to-your-zotero-binary>` to point to the executable of the Zotero debug build you downloaded in step 1.
-    4. Add a line in `.env` pointing to the Zotero profile you will be using: `ZOTERO_PLUGIN_PROFILE_PATH = <path-to-your-zotero-profile-folder>` (ideally, create a new Zotero profile for debugging). For me the folder is called `3vvlvf75.debug`. Instructions on how to find this folder can be found [here](https://www.zotero.org/support/kb/profile_directory)
+    3. Add a line in `.env` pointing to the Zotero profile you will be using: `ZOTERO_PLUGIN_PROFILE_PATH = <path-to-your-zotero-profile-folder>` (ideally, create a new Zotero profile for debugging). For me the folder is called `3vvlvf75.debug`. Instructions on how to find this folder can be found [here](https://www.zotero.org/support/kb/profile_directory)
 5. Run `npm install`
-6. This plugin is built using esbuild. Run `npm run start` to launch Zotero and rebuild the plugin automatically each time the source code is changed (thanks to [zotero-plugin-template](https://github.com/windingwind/zotero-plugin-template)). For some changes like CSS the hot reloading doesn't work and you will need to restart Zotero. Built files will be saved to `build/chrome/content`.
-7. For distribution, pack the contents of the `build` directory into a ZIP file and change its extension to `.xpi`.
+6. This plugin is built using esbuild. Run `npm run start` to launch Zotero and rebuild the plugin automatically each time the source code is changed (thanks to [zotero-plugin-scaffold](https://github.com/northword/zotero-plugin-scaffold)). For some changes like CSS the hot reloading doesn't work and you will need to restart Zotero. Built files will be saved to `build/addon/chrome/content`.
+   1. Depending on your platform, the firefox debug tools might automatically pop up, and might ask you for permission to connect to Zotero. If this isn't the case, see the debug instructions below.
+7. For distribution, run `npm run build`, then you can find the extension at `build/zotero-cita.xpi`.
 
 ## Publishing
 
@@ -91,8 +92,9 @@ on a fresh Zotero profile and run some manual tests.
 
 ### Debugging
 
-To debug, make sure as mentioned [above](#development) you downloaded a beta version of Zotero from [here](https://www.zotero.org/support/beta_builds) - these come with the debug tools already enabled so you don't need to build it from source.
-download Firefox 115ESR from [here](https://ftp.mozilla.org/pub/firefox/releases/115.12.0esr/).
+> **Note:** Depending on your operating system and Zotero version you downloaded, the debug tools might automatically popup when you call `npm run start`. If this isn't the case, then follow the steps below to setup debugging.
+
+To debug, make sure as mentioned [above](#development) you downloaded a beta version of Zotero from [here](https://www.zotero.org/support/beta_builds) - these come with the debug tools already enabled so you don't need to build it from source. Download Firefox 115ESR from [here](https://ftp.mozilla.org/pub/firefox/releases/115.12.0esr/).
 
 1. Clone Zotero source code and scripts.
 2. Download and use a Firefox version compatible with the Firefox version used by Zotero. For example, Zotero 7 is based on [Firefox 115esr](https://ftp.mozilla.org/pub/firefox/releases/115.12.0esr/). See [1] below for how to stop it auto updating.
