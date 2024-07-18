@@ -38,5 +38,5 @@
 		"node_modules/zotero-types",
 		"src/components"
 	],
-	"exclude": ["build", "addon"]
+	"exclude": ["build", "static"]
 }
