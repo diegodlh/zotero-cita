@@ -60,13 +60,26 @@ const CitationEditor = (props: {
 
 			// todo: this is a weird hack to get the item box to appear
 			// but not to change the state of the item box in the main Zotero pane
+			// changing .open changes the item pane item box
+			// but using toggleAttribute doesn't
+			// but toggleAttribute doesn't work until open has been manually set to true
+			// so set to false, then true, the back to what it was, then toggle it to open
 			const originalOpenState = props.itemBox.open;
+			props.itemBox.open = false;
 			props.itemBox.open = true;
 			props.itemBox.open = originalOpenState;
+			props.itemBox._section.toggleAttribute("open", true);
 
-			// props.itemBox.toggleAttribute("open", false);
-			// props.itemBox.toggleAttribute("open", true);
-			// alert("done rendering");
+			// now hide the section header for toggling the item box
+			// remove the collapsible section:
+			// item box contains
+			// <collapsible section>
+			//     <head/>
+			//     <body/>
+			// </collapsible section>
+			(
+				props.itemBox.firstChild!.firstChild! as HTMLElement
+			).style.display = "none";
 		} catch (error: any) {
 			alert(error);
 		}

@@ -46,23 +46,7 @@ window.addEventListener("load", () => {
 	newItem = new ItemWrapper();
 	newItem.fromJSON(citation.target.toJSON());
 
-	// remove the collapsible section:
-	// item box contains
-	// <collapsible section>
-	//     <head/>
-	//     <body/>
-	// </collapsible section>
-	// we want to replace the collapsible section with its body
 	const itemBox = document.getElementById("citation-editor-item-box")!;
-	// const collapsibleSection = itemBox.firstChild!;
-	// itemBox.firstChild!.replaceWith(itemBox.firstChild!.lastChild!);
-	// win.replaceChild(itemBox, itemBoxWrapper);
-	// itemBox.firstChild!.replaceWith(itemBox.firstChild!.lastChild!);
-	// just hide the head of the collapsible section
-	// (collapsibleSection as any).toggleAttribute("open", false);
-	// (collapsibleSection as any).toggleAttribute("open", true);
-
-	(itemBox.firstChild!.firstChild! as HTMLElement).hidden = true;
 
 	// itemBox.removeCreator is calling itemBox.item.saveTx
 	// even if itemBox.saveOnEdit is set to false;
