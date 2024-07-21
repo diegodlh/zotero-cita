@@ -82,8 +82,6 @@ function CitationsBox(props: {
 	 * @returns {Zotero.Item} - Edited cited item.
 	 */
 	function openEditor(citation: Citation): Zotero.Item | undefined {
-		// Zotero[config.addonInstance].data.zoteroOverlay.citationEditor();
-
 		const args = {
 			citation: citation,
 			Wikicite: Wikicite,

@@ -111,7 +111,7 @@ const CitationEditor = (props: {
 						autosave={false}
 						editable={true}
 						item={props.item}
-						key={`citation-editor-row-${pidType}`}
+						key={pidType}
 						type={pidType}
 						validate={props.checkCitationPID}
 					/>
