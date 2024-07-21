@@ -231,8 +231,10 @@ class SourceItemWrapper extends ItemWrapper {
 					parser = new DOMParser();
 				} catch {
 					// Workaround fix Pubpeer compatibility issue #41
+					// @ts-ignore Components.classes[] isn't support by the types
 					parser = Components.classes[
 						"@mozilla.org/xmlextras/domparser;1"
+						// @ts-ignore the types don't include nsIDOMParser
 					].createInstance(Components.interfaces.nsIDOMParser);
 				}
 				const doc = parser.parseFromString(note.getNote(), "text/html");
@@ -440,12 +442,18 @@ class SourceItemWrapper extends ItemWrapper {
 		// this.updateCitationLabels();  //deprecated
 	}
 
-	getCitedPIDs(type: PIDType, options: { clean?: boolean, skipCitation?: Citation }) {
+	getCitedPIDs(
+		type: PIDType,
+		options: { clean?: boolean; skipCitation?: Citation },
+	) {
 		const citedPIDs = this.citations.reduce(
 			(citedPIDs: string[], citation: Citation) => {
-				if (options.skipCitation == undefined || citation !== options.skipCitation) {
-				// todo: check if I correctly updated this
-				// if (citation !== undefined) {
+				if (
+					options.skipCitation == undefined ||
+					citation !== options.skipCitation
+				) {
+					// todo: check if I correctly updated this
+					// if (citation !== undefined) {
 					const pid = citation.target.getPID(type, options.clean);
 					if (pid && !citedPIDs.includes(pid)) {
 						citedPIDs.push(pid);
@@ -475,7 +483,8 @@ class SourceItemWrapper extends ItemWrapper {
 				conflict = "citing";
 			} else {
 				const cleanCitedPIDs = this.getCitedPIDs(type, {
-					clean: true, skipCitation: options.skipCitation
+					clean: true,
+					skipCitation: options.skipCitation,
 				});
 				if (cleanCitedPIDs.includes(cleanPID)) {
 					conflict = "cited";
@@ -484,7 +493,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 		if (conflict && options.alert) {
 			Services.prompt.alert(
-				options.parentWindow,
+				options.parentWindow! as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.source-item.check-pid.conflict"),
 				Wikicite.formatString(
 					"wikicite.source-item.check-pid.conflict." + conflict,
@@ -548,7 +557,7 @@ class SourceItemWrapper extends ItemWrapper {
 		if (citationIndex !== undefined) {
 			// Alternatively, do this for the citationIndex provided
 			Services.prompt.alert(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.global.unsupported"),
 				Wikicite.getString(
 					"wikicite.source-item.sync-single-citation.unsupported",
@@ -755,10 +764,9 @@ class SourceItemWrapper extends ItemWrapper {
 		);
 
 		if (retVals.text !== undefined) {
-			// fix: add to zotero-types
-			const identifiers = (
-				Zotero.Utilities.Internal as any
-			).extractIdentifiers(retVals.text) as string[];
+			const identifiers = Zotero.Utilities.extractIdentifiers(
+				retVals.text,
+			);
 
 			const progress = new Progress(
 				"loading",

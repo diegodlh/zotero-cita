@@ -181,7 +181,7 @@ export default class {
 					"POST",
 					RECONCILE_API.replace(
 						"$lng",
-						Services.locale.getRequestedLocale().split("-")[0],
+						Services.locale.requestedLocale.split("-")[0],
 					),
 					{
 						body: `queries=${encodeURIComponent(JSON.stringify(queries))}`,
@@ -338,7 +338,7 @@ export default class {
 					];
 					const selection: any = {};
 					const select = Services.prompt.select(
-						window,
+						window as mozIDOMWindowProxy,
 						Wikicite.getString(
 							"wikicite.wikidata.reconcile.approx.title",
 						),
@@ -351,7 +351,6 @@ export default class {
 								),
 							},
 						),
-						choices.length,
 						choices,
 						selection,
 					);
@@ -400,7 +399,7 @@ export default class {
 		}
 		if (unavailable.length && options.create) {
 			const result = Services.prompt.confirm(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString(
 					"wikicite.wikidata.reconcile.unavailable.title",
 				),
@@ -631,7 +630,7 @@ export default class {
 				Services.prompt.BUTTON_POS_2 *
 					Services.prompt.BUTTON_TITLE_CANCEL;
 			const response = Services.prompt.confirmEx(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.wikidata.create.confirm.title"),
 				Wikicite.formatString(
 					"wikicite.wikidata.create.confirm.message",
@@ -645,14 +644,14 @@ export default class {
 					"wikicite.wikidata.create.confirm.button.qs",
 				),
 				"",
-				undefined,
-				{},
+				"",
+				{ value: false },
 			);
 			switch (response) {
 				case 0: {
 					// create
 					const confirm = Services.prompt.confirm(
-						window,
+						window as mozIDOMWindowProxy,
 						Wikicite.getString(
 							"wikicite.wikidata.create.auto.confirm.title",
 						),
@@ -749,7 +748,7 @@ export default class {
 				case 1: {
 					// quickstatements
 					const confirm = Services.prompt.confirm(
-						window,
+						window as mozIDOMWindowProxy,
 						Wikicite.getString("wikicite.wikidata.create.qs.title"),
 						Wikicite.getString(
 							"wikicite.wikidata.create.qs.message",
@@ -1149,18 +1148,16 @@ class Login {
 		);
 
 		const username = { value: this.username };
-		const password = { value: undefined };
+		const password = { value: "" };
 		const save = { value: false };
 		let loginPrompt;
 		do {
 			loginPrompt = Services.prompt.promptUsernameAndPassword(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.wikidata.login.title"),
 				promptText,
 				username,
 				password,
-				null, // "Save login credentials",
-				save,
 			);
 			// if user entered username and clicked OK but forgot password
 			// display prompt again
@@ -1230,21 +1227,12 @@ async function getTypeMapping() {
 
 function resetCookies() {
 	// remove cookies for API host before proceeding
-	const iter = Services.cookies.getCookiesFromHost(
+	const cookies = Services.cookies.getCookiesFromHost(
 		new URL(WBK_INSTANCE).host,
 		{},
 	);
-	while (iter.hasMoreElements()) {
-		const cookie = iter.getNext();
-		if (cookie instanceof Components.interfaces.nsICookie) {
-			Services.cookies.remove(
-				cookie.host,
-				cookie.name,
-				cookie.path,
-				false,
-				{},
-			);
-		}
+	for (const cookie of cookies) {
+		Services.cookies.remove(cookie.host, cookie.name, cookie.path, {});
 	}
 }
 

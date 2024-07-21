@@ -454,7 +454,7 @@ class ZoteroOverlay {
 		// 5. finally, link citations to the Zotero items
 		// see #39
 		Services.prompt.alert(
-			window,
+			window as mozIDOMWindowProxy,
 			Wikicite.getString("wikicite.global.unsupported"),
 			Wikicite.getString("wikicite.citations.from-items.unsupported"),
 		);
@@ -598,7 +598,7 @@ class ZoteroOverlay {
 	}
 
 	// Item-wide popup menu (More...)
-	itemPopupMenu(doc: Document, mainWindow: HTMLElement) {
+	itemPopupMenu(doc: Document, mainWindow: Element) {
 		const ns =
 			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 		const itemMenu = doc.createElementNS(ns, "menupopup");
@@ -784,7 +784,7 @@ class ZoteroOverlay {
 	}
 
 	// Citation-specific popup menu
-	citationPopupMenu(doc: Document, mainWindow: HTMLElement) {
+	citationPopupMenu(doc: Document, mainWindow: Element) {
 		const ns =
 			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 		const citationMenu = doc.createElementNS(ns, "menupopup");
@@ -1132,10 +1132,14 @@ class ZoteroOverlay {
 			}
 		}
 
-		doc.getElementById(`wikicite-${menuName}submenu-separator`)!.hidden =
-			!showSubmenu;
-		doc.getElementById(`wikicite-${menuName}submenu`)!.hidden =
-			!showSubmenu;
+		(
+			doc.getElementById(
+				`wikicite-${menuName}submenu-separator`,
+			)! as HTMLElement
+		).hidden = !showSubmenu;
+		(
+			doc.getElementById(`wikicite-${menuName}submenu`)! as HTMLElement
+		).hidden = !showSubmenu;
 	}
 
 	// Create Zotero item menu items as children of menuPopup
