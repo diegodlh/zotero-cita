@@ -92,7 +92,7 @@ function CitationsBox(props: {
 		window.openDialog(
 			`chrome://${config.addonRef}/content/citationEditor.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable=yes",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=300,height=500",
 			args,
 			retVals,
 		);

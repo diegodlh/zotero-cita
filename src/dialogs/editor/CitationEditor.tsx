@@ -106,7 +106,7 @@ const CitationEditor = (props: {
 	return (
 		// TS gives an error about using orient here
 		// <div orient="vertical">
-		<div box-orient="vertical">
+		<div id="citation-editor-footer" box-orient="vertical">
 			<ul className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow

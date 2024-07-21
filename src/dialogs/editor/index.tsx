@@ -65,11 +65,4 @@ window.addEventListener("load", () => {
 			onSave={onSave}
 		/>,
 	);
-	// itemBox.firstChild!.replaceWith(itemBox.firstChild!.lastChild!);
-	// alert("opening");
-	// (collapsibleSection as any).toggleAttribute("open", false);
-	// (collapsibleSection as any).toggleAttribute("open", true);
-	// (collapsibleSection as any).open = true;
-	// alert("opened");
-	// alert("rendered1");
 });
