@@ -1,10 +1,3 @@
-<!-- <?xml version="1.0"?>
-<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<?xml-stylesheet href="chrome://zotero/skin/zotero.css" type="text/css"?>
-<?xml-stylesheet href="chrome://zotero-wikicite/content/skin/editor.css" type="text/css"?>
-<?xml-stylesheet href="chrome://zotero-wikicite/content/skin/overlay.css" type="text/css"?> -->
-<!-- <!DOCTYPE window SYSTEM "chrome://zotero/locale/zotero.dtd"> -->
-
 <window id="citation-editor" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	xmlns:html="http://www.w3.org/1999/xhtml">
 	<linkset>
@@ -17,8 +10,8 @@
 	</linkset>
 
 	<script type="text/javascript" src="chrome://zotero/content/include.js"></script>
+	<!-- need customElements.js to pull in Zotero's item-box component -->
 	<script src="chrome://zotero/content/customElements.js"></script>
-	<!-- <script src="editor.js"></script> -->
 	<script src="chrome://__addonRef__/content/scripts/dialogs/editor/index.js"></script>
 
 
