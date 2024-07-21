@@ -52,7 +52,7 @@ window.addEventListener("load", () => {
 	// even if itemBox.saveOnEdit is set to false;
 	// overwrite saveTx as workaround
 	// newItem.item.saveTx = () => (itemBox as any).refresh();
-	newItem.item.saveTx = () => (itemBox as any).render(); // refresh isn't a function
+	newItem.item.saveTx = () => (itemBox as any)._forceRenderAll(); // refresh isn't a function
 	const root = createRoot(document.getElementById("root")!);
 	root.render(
 		<CitationEditor

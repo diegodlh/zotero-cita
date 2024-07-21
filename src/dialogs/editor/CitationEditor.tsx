@@ -88,7 +88,7 @@ const CitationEditor = (props: {
 	function onItemTypeChange() {
 		setPidTypes(props.item.getPIDTypes());
 		setHiddenFields(props.item.item.itemTypeID);
-		props.itemBox.render();
+		props.itemBox._forceRenderAll(); // need to force a new render
 	}
 
 	function setHiddenFields(itemTypeID: number) {
@@ -113,7 +113,7 @@ const CitationEditor = (props: {
 						autosave={false}
 						editable={true}
 						item={props.item}
-						key={pidType}
+						key={`citation-editor-row-${pidType}`}
 						type={pidType}
 						validate={props.checkCitationPID}
 					/>
