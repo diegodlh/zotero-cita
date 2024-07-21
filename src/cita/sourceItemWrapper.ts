@@ -440,12 +440,12 @@ class SourceItemWrapper extends ItemWrapper {
 		// this.updateCitationLabels();  //deprecated
 	}
 
-	getCitedPIDs(type: PIDType, options: { clean?: boolean }) {
+	getCitedPIDs(type: PIDType, options: { clean?: boolean, skipCitation?: Citation }) {
 		const citedPIDs = this.citations.reduce(
 			(citedPIDs: string[], citation: Citation) => {
-				// if (citation !== options.skipCitation) {
+				if (options.skipCitation == undefined || citation !== options.skipCitation) {
 				// todo: check if I correctly updated this
-				if (citation !== undefined) {
+				// if (citation !== undefined) {
 					const pid = citation.target.getPID(type, options.clean);
 					if (pid && !citedPIDs.includes(pid)) {
 						citedPIDs.push(pid);
@@ -464,6 +464,7 @@ class SourceItemWrapper extends ItemWrapper {
 		options: {
 			alert: boolean;
 			parentWindow?: Window;
+			skipCitation?: Citation;
 		},
 	) {
 		const cleanPID = Wikicite.cleanPID(type, value);
@@ -474,7 +475,7 @@ class SourceItemWrapper extends ItemWrapper {
 				conflict = "citing";
 			} else {
 				const cleanCitedPIDs = this.getCitedPIDs(type, {
-					clean: true,
+					clean: true, skipCitation: options.skipCitation
 				});
 				if (cleanCitedPIDs.includes(cleanPID)) {
 					conflict = "cited";

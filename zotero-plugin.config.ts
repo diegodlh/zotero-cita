@@ -1,6 +1,7 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
 import { copyFileSync } from "fs";
+import path from "path";
 
 export default defineConfig({
 	source: ["src", "static"],
@@ -30,13 +31,13 @@ export default defineConfig({
 		},
 		esbuildOptions: [
 			{
-				entryPoints: ["src/index.ts"],
+				entryPoints: ["src/index.ts", "src/dialogs/editor/index.tsx"],
 				define: {
 					__env__: `"${process.env.NODE_ENV}"`,
 				},
 				bundle: true,
 				target: "firefox115",
-				outfile: `build/addon/chrome/content/scripts/${pkg.config.addonRef}.js`,
+				outdir: "build/addon/chrome/content/scripts",
 				sourcemap:
 					process.env.NODE_ENV == "development" ? "linked" : false,
 			},

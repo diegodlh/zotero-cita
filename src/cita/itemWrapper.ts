@@ -215,7 +215,7 @@ export default class ItemWrapper {
 		if (save) this.saveHandler();
 	}
 
-	isValidField(fieldName: string) {
+	isValidField(fieldName: string): boolean{
 		return Zotero.ItemFields.isValidForType(
 			Zotero.ItemFields.getID(fieldName),
 			this.item.itemTypeID,

@@ -1,13 +1,22 @@
-import React, { useEffect, useState } from "react";
 import PIDRow from "../../components/pidRow";
-import PropTypes from "prop-types";
+import * as React from "react";
+import { useEffect, useState } from "react";
+import * as PropTypes from "prop-types";
+import ItemWrapper from "../../cita/itemWrapper";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
 // Fixme: as a Citation Editor (not a target item editor)
 // consider providing at least some read only information about the citation
 // such as label of the source item, OCIs, and Zotero link status
-const CitationEditor = (props: any) => {
+const CitationEditor = (props: {
+	checkCitationPID: (type: string, value: string) => boolean;
+	item: ItemWrapper;
+	itemBox: any;
+	getString: (name: string) => string;
+	onCancel: () => void;
+	onSave: () => void;
+}) => {
 	const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
 
 	useEffect(() => {
@@ -23,39 +32,66 @@ const CitationEditor = (props: any) => {
 		// if item's saveTx overwritten with itembox.refresh,
 		// sometimes itembox gets stucked in a loop
 		// overwrite _focusNextField as a workaround
-		props.itemBox._focusNextField = () => {};
+		try {
+			props.itemBox._focusNextField = () => {};
 
-		// const disableButton = props.itemBox.disableButton.bind(props.itemBox);
-		// props.itemBox.disableButton = function(button) {
-		//     if (
-		//         button.value === '+' &&
-		//         this._dynamicFields.getElementsByAttribute('value', '+').length === 1
-		//     ) return;
-		//     disableButton(button);
-		// }
-		props.itemBox.mode = "edit";
+			// const disableButton = props.itemBox.disableButton.bind(props.itemBox);
+			// props.itemBox.disableButton = function(button) {
+			//     if (
+			//         button.value === '+' &&
+			//         this._dynamicFields.getElementsByAttribute('value', '+').length === 1
+			//     ) return;
+			//     disableButton(button);
+			// }
+			props.itemBox.mode = "edit";
 
-		// itembox sometimes fails to update if saveOnEdit is set to false
-		// make sure item's saveTx is overwritten to prevent actual item saving
-		props.itemBox.saveOnEdit = true;
-		setHiddenFields(props.item.item.itemTypeID);
-		props.itemBox.item = props.item.item;
+			// itembox sometimes fails to update if saveOnEdit is set to false
+			// make sure item's saveTx is overwritten to prevent actual item saving
+			props.itemBox.saveOnEdit = true;
+			setHiddenFields(props.item.item.itemTypeID);
+			props.itemBox.item = props.item.item;
 
-		// props.itemBox.item.saveTx = function() {
-		//     if (!props.itemBox.item._refreshed) {
-		//         props.itemBox.refresh();
-		//     }
-		// }
-		props.itemBox.addHandler("itemtypechange", onItemTypeChange);
+			// props.itemBox.item.saveTx = function() {
+			//     if (!props.itemBox.item._refreshed) {
+			//         props.itemBox.refresh();
+			//     }
+			// }
+			props.itemBox.addHandler("itemtypechange", onItemTypeChange);
+
+			// todo: this is a weird hack to get the item box to appear
+			// but not to change the state of the item box in the main Zotero pane
+			// changing .open changes the item pane item box
+			// but using toggleAttribute doesn't
+			// but toggleAttribute doesn't work until open has been manually set to true
+			// so set to false, then true, the back to what it was, then toggle it to open
+			const originalOpenState = props.itemBox.open;
+			props.itemBox.open = false;
+			props.itemBox.open = true;
+			props.itemBox.open = originalOpenState;
+			props.itemBox._section.toggleAttribute("open", true);
+
+			// now hide the section header for toggling the item box
+			// remove the collapsible section:
+			// item box contains
+			// <collapsible section>
+			//     <head/>
+			//     <body/>
+			// </collapsible section>
+			(
+				props.itemBox.firstChild!.firstChild! as HTMLElement
+			).style.display = "none";
+		} catch (error: any) {
+			alert(error);
+		}
 	}, []);
 
 	function onItemTypeChange() {
 		setPidTypes(props.item.getPIDTypes());
 		setHiddenFields(props.item.item.itemTypeID);
-		props.itemBox.refresh();
+		props.itemBox._forceRenderAll(); // need to force a new render
 	}
 
-	function setHiddenFields(itemTypeID: string) {
+	function setHiddenFields(itemTypeID: number) {
 		const visibleFieldIDs = visibleBaseFieldNames.map((fieldName) =>
 			Zotero.ItemFields.getFieldIDFromTypeAndBase(itemTypeID, fieldName),
 		);
@@ -68,11 +104,9 @@ const CitationEditor = (props: any) => {
 	}
 
 	return (
-		// TS gives an error about using orient here
-		// <div orient="vertical">
-		<div>
+		<div id="citation-editor-footer" box-orient="vertical">
 			<ul className="pid-list">
-				{pidTypes.map((pidType: string) => (
+				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow
 						autosave={false}
 						editable={true}
@@ -85,10 +119,10 @@ const CitationEditor = (props: any) => {
 			</ul>
 			<div id="citation-editor-buttons">
 				<button onClick={props.onCancel}>
-					{props.getString("editor.cancel")}
+					{props.getString("wikicite.editor.cancel")}
 				</button>
 				<button onClick={props.onSave}>
-					{props.getString("editor.save")}
+					{props.getString("wikicite.editor.save")}
 				</button>
 			</div>
 		</div>
@@ -97,8 +131,8 @@ const CitationEditor = (props: any) => {
 
 CitationEditor.propTypes = {
 	checkCitationPID: PropTypes.func,
-	item: PropTypes.object, // ItemWrapper
-	itemBox: PropTypes.object, // zoteroitembox
+	item: PropTypes.instanceOf(ItemWrapper),
+	itemBox: PropTypes.object,
 	getString: PropTypes.func,
 	onCancel: PropTypes.func,
 	onSave: PropTypes.func,

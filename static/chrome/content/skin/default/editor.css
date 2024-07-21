@@ -1,9 +1,29 @@
 window#citation-editor {
-	height: 500px;
-	width: 400px;
+	height: 100%;
+	width: 100%;
 	padding: 1em;
+}
+
+div#citation-editor-container {
+	display: grid;
+	height: 100%;
+}
+/* get the item box to contract into a scrollbar if the window is too small */
+div#citation-editor-item-box-container {
+	overflow-y: auto;
+	overflow-x: clip;
+}
+/* keep the PID rows anchored to the bottom of the window */
+div#citation-editor-footer {
+	align-self: end;
+	width: 100%;
 }
 
 div#citation-editor-buttons {
 	text-align: right;
+}
+
+#root {
+	flex-grow: 1;
+	display: flex;
 }
