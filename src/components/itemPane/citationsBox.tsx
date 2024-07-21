@@ -181,7 +181,7 @@ function CitationsBox(props: {
 					Services.prompt.BUTTON_TITLE_YES +
 				Services.prompt.BUTTON_POS_2_DEFAULT;
 			const response = Services.prompt.confirmEx(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString(
 					"wikicite.citations-pane.delete.remote.title",
 				),
@@ -192,8 +192,8 @@ function CitationsBox(props: {
 				"",
 				"",
 				"",
-				undefined, // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
-				{}, // remember
+				"", // Wikicite.getString('wikicite.citations-pane.delete.remote.remember'),
+				{ value: false }, // remember
 			);
 			switch (response) {
 				case 0:
@@ -232,7 +232,7 @@ function CitationsBox(props: {
 				// oci is invalid, i.e., citing or cited id do not match with
 				// local source or target id
 				Services.prompt.alert(
-					window,
+					window as mozIDOMWindowProxy,
 					Wikicite.getString("wikicite.oci.mismatch.title"),
 					Wikicite.formatString("wikicite.oci.mismatch.message", {
 						supplierName:
@@ -248,7 +248,7 @@ function CitationsBox(props: {
 			props.sourceItem.syncWithWikidata(index);
 		} else {
 			Services.prompt.alert(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.citation.sync.error"),
 				Wikicite.getString("wikicite.citation.sync.error.qid"),
 			);

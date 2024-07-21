@@ -136,7 +136,7 @@ export default class ItemWrapper {
 			}
 			default:
 				Services.prompt.alert(
-					window,
+					window as mozIDOMWindowProxy,
 					Wikicite.getString("wikicite.global.unsupported"),
 					Wikicite.formatString(
 						"wikicite.item-wrapper.fetch-pid.unsupported",
@@ -215,7 +215,7 @@ export default class ItemWrapper {
 		if (save) this.saveHandler();
 	}
 
-	isValidField(fieldName: string): boolean{
+	isValidField(fieldName: string): boolean {
 		return Zotero.ItemFields.isValidForType(
 			Zotero.ItemFields.getID(fieldName),
 			this.item.itemTypeID,

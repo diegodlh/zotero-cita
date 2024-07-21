@@ -21,7 +21,7 @@ function ZoteroButton(props: any) {
 				Services.prompt.BUTTON_POS_2 *
 					Services.prompt.BUTTON_TITLE_IS_STRING;
 			const response = Services.prompt.confirmEx(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString(
 					"wikicite.citations-pane.linked.confirm.title",
 				),
@@ -35,8 +35,8 @@ function ZoteroButton(props: any) {
 				Wikicite.getString(
 					"wikicite.citations-pane.linked.confirm.unlink",
 				),
-				undefined,
-				{},
+				"",
+				{ value: false },
 			);
 			switch (response) {
 				case 0:

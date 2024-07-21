@@ -88,7 +88,7 @@ export default class {
 
 		if (noQidItems.length) {
 			Services.prompt.alert(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.wikidata.ignored.title"),
 				Wikicite.formatString("wikicite.wikidata.ignored.message", {
 					numIgnored: noQidItems.length,
@@ -276,12 +276,11 @@ export default class {
 		const orphanedActionSelection: { value?: number } = {};
 		if (counters.orphanedCitations) {
 			const result = Services.prompt.select(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.wikidata.orphaned.title"),
 				Wikicite.formatString("wikicite.wikidata.orphaned.message", {
 					numOrphaned: counters.orphanedCitations,
 				}),
-				orphanedActions.length,
 				orphanedActions.map((orphanedAction) =>
 					Wikicite.getString(
 						"wikicite.wikidata.orphaned.action." + orphanedAction,
@@ -355,7 +354,7 @@ export default class {
 		// Show verbose confirmation message with actions to be taken
 		// before proceeding.
 		const confirmed = Services.prompt.confirm(
-			window,
+			window as mozIDOMWindowProxy,
 			Wikicite.getString("wikicite.wikidata.confirm.title"),
 			composeConfirmation(
 				localItemsToUpdate,
@@ -504,7 +503,7 @@ export default class {
 				if (localItemsToUpdate.size) {
 					// if local changes pending, ask user whether to proceed
 					const proceed = Services.prompt.confirm(
-						window,
+						window as mozIDOMWindowProxy,
 						Wikicite.getString(
 							"wikicite.wikidata.upload.error.title",
 						),
@@ -520,7 +519,7 @@ export default class {
 				} else {
 					// no local changes pending, just show information dialog
 					Services.prompt.alert(
-						window,
+						window as mozIDOMWindowProxy,
 						Wikicite.getString(
 							"wikicite.wikidata.upload.error.title",
 						),
@@ -674,7 +673,7 @@ export default class {
 		// display information dialog with deviations from confirmation message above
 		if (unsupportedCitations) {
 			Services.prompt.alert(
-				null,
+				window as mozIDOMWindowProxy,
 				"",
 				Wikicite.formatString(
 					"wikicite.wikidata.deviations.unsupported-citations",

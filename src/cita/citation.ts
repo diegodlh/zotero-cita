@@ -288,7 +288,7 @@ class Citation {
 					),
 				);
 			const result = Services.prompt.confirm(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.citation.auto-link.failure.title"),
 				Wikicite.getString(
 					"wikicite.citation.auto-link.failure.message",
@@ -304,7 +304,7 @@ class Citation {
 				)
 			) {
 				Services.prompt.alert(
-					null,
+					window as mozIDOMWindowProxy,
 					"",
 					Wikicite.getString(
 						"wikicite.citation.link.error.duplicate",
@@ -323,7 +323,7 @@ class Citation {
 	linkToZoteroItem(item: Zotero.Item) {
 		if (item === this.source.item) {
 			Services.prompt.alert(
-				null,
+				window as mozIDOMWindowProxy,
 				"",
 				Wikicite.getString("wikicite.citation.link.error.source-item"),
 			);
@@ -332,7 +332,7 @@ class Citation {
 
 		if (item.libraryID !== this.source.item.libraryID) {
 			Services.prompt.alert(
-				null,
+				window as mozIDOMWindowProxy,
 				"",
 				Wikicite.getString("wikicite.citation.link.error.library"),
 			);
