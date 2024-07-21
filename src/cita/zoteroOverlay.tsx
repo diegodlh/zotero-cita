@@ -1,7 +1,6 @@
 import Wikicite, { debug } from "./wikicite";
 import Citations from "./citations";
 import CitationsBoxContainer from "../containers/citationsBoxContainer";
-import CitationEditor from "../dialogs/editor/CitationEditor";
 import Crossref from "./crossref";
 import Extraction from "./extract";
 // import LCN from './localCitationNetwork';
@@ -1208,60 +1207,6 @@ class ZoteroOverlay {
 			false,
 		);
 		return menuFunc;
-	}
-
-	/******************************************/
-	// Dialog boxes (popups)
-	/******************************************/
-
-	citationEditor() {
-		const itemBox = new (window.customElements.get("item-box")!)();
-		const dialogData: { [key: string | number]: any } = {
-			inputValue: "test",
-			checkboxValue: true,
-			loadCallback: (window: Window) => {
-				ztoolkit.log(dialogData, "Dialog Opened!");
-				ztoolkit.log("Dialog Window - ", window);
-				window.document
-					.getElementById("citation-editor-div")!
-					.appendChild(itemBox);
-			},
-			unloadCallback: () => {
-				ztoolkit.log(dialogData, "Dialog closed!");
-			},
-		};
-		const citationEditor = new ztoolkit.Dialog(2, 1)
-			.addCell(0, 0, {
-				tag: "h1",
-				namespace: "html",
-				properties: { innerHTML: "Citation Editor" },
-			})
-			.addCell(1, 0, {
-				id: "citation-editor-div",
-				tag: "div",
-				namespace: "html",
-			})
-			.addButton("Save")
-			.addButton("Cancel");
-
-		// document.getElementById("citation-editor")!.appendChild(itemBox);
-
-		// const citationEditorRoot = createRoot(
-		// 	document.getElementById("citation-editor")!,
-		// );
-
-		// citationEditorRoot.render(
-		// 	<CitationEditor
-		// 		checkCitationPID={checkPID}
-		// 		item={newItem}
-		// 		itemBox={document.getElementById("citation-editor-item-box")!}
-		// 		getString={(name) => Wikicite.getString(name)}
-		// 		onCancel={onCancel}
-		// 		onSave={onSave}
-		// 	/>,
-		// );
-
-		citationEditor.setDialogData(dialogData).open("Citation Editor");
 	}
 }
 
