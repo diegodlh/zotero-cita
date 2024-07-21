@@ -1,27 +1,25 @@
 import CitationEditor from "./CitationEditor";
 import ItemWrapper from "../../cita/itemWrapper";
-import React from "react";
-import ReactDOM from "react-dom";
+import * as React from "react";
+import { createRoot } from "react-dom/client";
+import Citation from "../../cita/citation";
 
-declare const Components: any;
+let citation: Citation;
+let Wikicite: any;
+({ citation, Wikicite } = (window as any).arguments[0]);
+const retVals: { item?: Zotero.Item } = (window as any).arguments[1];
 
-// import Services into the new window
-Components.utils.import("resource://gre/modules/Services.jsm");
-
-const { citation, Wikicite } = window.arguments[0];
-const retVals = window.arguments[1];
-
-let newItem: any;
+let newItem: ItemWrapper;
 
 function onCancel() {
-	retVals.item = false;
+	retVals.item = undefined;
 	window.close();
 }
 
 function onSave() {
 	for (const pidType of newItem.getPIDTypes()) {
 		const pid = newItem.getPID(pidType);
-		if (!checkPID(pidType, pid)) {
+		if (pid !== undefined && !checkPID(pidType, pid)) {
 			return;
 		}
 	}
@@ -41,20 +39,22 @@ window.addEventListener("load", () => {
 	document.title = Wikicite.getString("wikicite.editor.title");
 	newItem = new ItemWrapper();
 	newItem.fromJSON(citation.target.toJSON());
+
+	const itemBox = document.getElementById("citation-editor-item-box")!;
+
 	// itemBox.removeCreator is calling itemBox.item.saveTx
 	// even if itemBox.saveOnEdit is set to false;
 	// overwrite saveTx as workaround
-	newItem.item.saveTx = () =>
-		(document.getElementById("citation-editor-item-box") as any).refresh();
-	ReactDOM.render(
+	newItem.item.saveTx = () => (itemBox as any)._forceRenderAll();
+	const root = createRoot(document.getElementById("root")!);
+	root.render(
 		<CitationEditor
 			checkCitationPID={checkPID}
 			item={newItem}
-			itemBox={document.getElementById("citation-editor-item-box")}
+			itemBox={itemBox}
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}
 			onSave={onSave}
 		/>,
-		document.getElementById("root"),
 	);
 });
