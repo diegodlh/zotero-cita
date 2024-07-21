@@ -104,8 +104,6 @@ const CitationEditor = (props: {
 	}
 
 	return (
-		// TS gives an error about using orient here
-		// <div orient="vertical">
 		<div id="citation-editor-footer" box-orient="vertical">
 			<ul className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
@@ -134,7 +132,7 @@ const CitationEditor = (props: {
 CitationEditor.propTypes = {
 	checkCitationPID: PropTypes.func,
 	item: PropTypes.instanceOf(ItemWrapper),
-	itemBox: PropTypes.object, // item-box,
+	itemBox: PropTypes.object,
 	getString: PropTypes.func,
 	onCancel: PropTypes.func,
 	onSave: PropTypes.func,
