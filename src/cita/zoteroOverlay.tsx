@@ -206,11 +206,11 @@ class ZoteroOverlay {
 			label: Wikicite.getString("wikicite.item-tree.column-label.qid"),
 			pluginID: config.addonID,
 			dataProvider: (item: Zotero.Item, dataKey: string) => {
-				return (
-					new SourceItemWrapper(item, prefs.getStorage()).getPID(
-						"QID",
-					) || ""
-				);
+				return item.isRegularItem()
+					? new SourceItemWrapper(item, prefs.getStorage()).getPID(
+							"QID",
+						) || ""
+					: "";
 			},
 		});
 
@@ -223,12 +223,12 @@ class ZoteroOverlay {
 				),
 				pluginID: config.addonID,
 				dataProvider: (item: Zotero.Item, dataKey: string) => {
-					return (
-						new SourceItemWrapper(
-							item,
-							prefs.getStorage(),
-						).citations.length.toString() || ""
-					);
+					return item.isRegularItem()
+						? new SourceItemWrapper(
+								item,
+								prefs.getStorage(),
+							).citations.length.toString() || ""
+						: "";
 				},
 			});
 	}
