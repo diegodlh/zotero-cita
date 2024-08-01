@@ -8,6 +8,7 @@ import Matcher from "./matcher";
 import OpenCitations from "./opencitations";
 import Progress from "./progress";
 import Wikidata from "./wikidata";
+import { config } from "../../package.json";
 // import { getExtraField } from './wikicite';
 
 declare const Zotero_File_Exporter: any;
@@ -756,9 +757,10 @@ class SourceItemWrapper extends ItemWrapper {
 		};
 		const retVals: { text?: string } = {};
 		window.openDialog(
-			"chrome://cita/content/identifierImporter.xul",
+			// "chrome://cita/content/identifierImporter.xul",
+			`chrome://${config.addonRef}/content/identifierImporter.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable=yes",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=250",
 			args,
 			retVals,
 		);

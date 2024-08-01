@@ -31,7 +31,11 @@ export default defineConfig({
 		},
 		esbuildOptions: [
 			{
-				entryPoints: ["src/index.ts", "src/dialogs/editor/index.tsx"],
+				entryPoints: [
+					"src/index.ts",
+					"src/dialogs/editor/index.tsx",
+					"src/dialogs/identifier-importer/index.tsx",
+				],
 				define: {
 					__env__: `"${process.env.NODE_ENV}"`,
 				},
