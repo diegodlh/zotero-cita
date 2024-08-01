@@ -118,23 +118,27 @@ export default class Progress {
 			this.addStyleSheetToProgressWindow(progress);
 		}
 
-		if (status === "error") {
-			progress.setError();
-		} else if (status) {
+		progress.setProgress(100);
+		if (status) {
 			// @ts-ignore new version of Progress
 			progress.setItemTypeAndIcon(null, status);
+			if (status === "error") {
+				// need to call setItemTypeAndIcon before setError or error icon won't show
+				progress.setError();
+			}
 		}
-		progress.setProgress(100);
 		this.progress.push(progress);
 	}
 
 	updateLine(status?: StatusType, message?: string) {
 		const progress = this.progress.slice(-1)[0];
-		if (status === "error") {
-			progress.setError();
-		} else if (status) {
+		if (status) {
 			// @ts-ignore new version of Progress
 			progress.setItemTypeAndIcon(null, status);
+			if (status === "error") {
+				// need to call setItemTypeAndIcon before setError or error icon won't show
+				progress.setError();
+			}
 		}
 		if (message) {
 			progress.setText(message);
