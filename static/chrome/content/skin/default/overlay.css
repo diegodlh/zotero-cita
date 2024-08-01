@@ -34,7 +34,7 @@
 	list-style: none;
 	margin: 0;
 	padding: 2px 0 0;
-	overflow-y: auto;
+	overflow-y: clip;
 }
 .citations-box ul.citations-box-list > li {
 	display: flex;
