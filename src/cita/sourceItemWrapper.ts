@@ -9,6 +9,7 @@ import OpenCitations from "./opencitations";
 import Progress from "./progress";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
+import { StorageType } from "./preferences";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -282,7 +283,7 @@ class SourceItemWrapper extends ItemWrapper {
 	 * Note: This needs to be executed inside a Zotero DB transaction (Zotero.DB.executeTransaction).
 	 * @param {string} [to] The new storage location
 	 */
-	async migrateCitations(to: "note" | "extra") {
+	async migrateCitations(to: StorageType) {
 		const oldStorage = this._storage;
 		this._storage = to;
 		if (this._citations.length > 0) {

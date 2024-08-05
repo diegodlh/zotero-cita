@@ -39,6 +39,7 @@ export default defineConfig({
 					"src/dialogs/editor/index.tsx",
 					"src/dialogs/identifier-importer/index.tsx",
 					"src/dialogs/citation-importer/index.tsx",
+					// "src/dialogs/preferences/index.tsx",
 				],
 				define: {
 					__env__: `"${process.env.NODE_ENV}"`,
@@ -88,6 +89,12 @@ export default defineConfig({
 					files: localePath + "/**/*.ftl",
 					from: /(?<!%)%\w/g,
 					to: "{ $$s1 }",
+				});
+				// add .label tags for preferences localisation
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /wikicite_prefs_citation-storage-(note|extra)=/g,
+					to: "$&\n    .label=",
 				});
 			},
 		},
