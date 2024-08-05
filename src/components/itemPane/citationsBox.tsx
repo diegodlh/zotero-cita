@@ -234,14 +234,13 @@ function CitationsBox(props: {
 				Services.prompt.alert(
 					window as mozIDOMWindowProxy,
 					Wikicite.getString("wikicite.oci.mismatch.title"),
-					Wikicite.formatString("wikicite.oci.mismatch.message", {
-						supplierName:
-							oci.supplierName.charAt(0).toUpperCase() +
+					Wikicite.formatString("wikicite.oci.mismatch.message", [
+						oci.supplierName.charAt(0).toUpperCase() +
 							oci.supplierName.slice(1),
-						idType: oci.idType.toUpperCase(),
-						citingId: oci.citingId,
-						citedId: oci.citedId,
-					}),
+						oci.idType.toUpperCase(),
+						oci.citingId,
+						oci.citedId,
+					]),
 				);
 			}
 		} else if (syncable) {
@@ -344,7 +343,7 @@ function CitationsBox(props: {
 				<div className="citations-box-count">
 					{Wikicite.formatString(
 						"wikicite.citations-pane.citations.count",
-						{ numCitations: citations.length },
+						citations.length,
 					)}
 				</div>
 				{props.editable && (
@@ -356,7 +355,7 @@ function CitationsBox(props: {
 				)}
 				{
 					<button onClick={(event) => props.onItemPopup(event)}>
-						More
+						{Wikicite.getString("wikicite.citations-pane.more")}
 					</button>
 				}
 				{/* fix: button is broken */}

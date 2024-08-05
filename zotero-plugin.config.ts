@@ -1,7 +1,10 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
-import { copyFileSync } from "fs";
+import { copyFileSync, readdirSync, renameSync } from "fs";
 import path from "path";
+
+import fse from "fs-extra";
+import { replaceInFileSync } from "replace-in-file"
 
 export default defineConfig({
 	source: ["src", "static"],
@@ -46,6 +49,40 @@ export default defineConfig({
 					process.env.NODE_ENV == "development" ? "linked" : false,
 			},
 		],
+		hooks: {
+			"build:copyAssets": (ctx) => {
+				const localePath = "build/addon/locale/";
+				fse.moveSync("build/addon/chrome/locale/", localePath);
+				// rename wikicite.properties to addon.ftl
+				for (const path of readdirSync(localePath, { encoding: "utf-8", recursive: true })) {
+					if (path.endsWith("wikicite.properties")) {
+						renameSync(
+							localePath + path,
+							localePath + path.replace("wikicite.properties", "addon.ftl")
+						)
+					}
+				};
+
+				// replace . for _ in message keys
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /\.(?=.*=)/g,
+					to: "_"
+				});
+				// replace %1$s, %2$s, etc for { $s1 }, { $s2 }
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /(?<!%)%(\d+)\$\w/g,
+					to: "{ $$s$1 }"
+				});
+				// replace %s for { $s1 }, literally
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /(?<!%)%\w/g,
+					to: "{ $$s1 }"
+				});
+			}
+		},
 		// If you want to checkout update.json into the repository, uncomment the following lines:
 		// makeUpdateJson: {
 		//   hash: false,

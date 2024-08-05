@@ -67,27 +67,6 @@ export default {
 	// zoteroID: 'zotero@chnm.gmu.edu',
 	// zoteroTabURL: 'chrome://zotero/content/tab.xul',
 
-	_bundle: (() => {
-		// fix: plugin wouldn't start when running this
-		// const zoteroLocale = Zotero.locale;
-		// const requestedLocale = Services.locale.requestedLocale;
-		const propertiesFile = "chrome://wikicite/locale/wikicite.ftl";
-		// if (zoteroLocale.split("-")[0] === requestedLocale.split("-")[0]) {
-		// 	propertiesFile = "chrome://cita/locale/wikicite.properties";
-		// } else {
-		// 	// support locales not supported by Zotero
-		// 	propertiesFile = [
-		// 		"chrome://cita/content/locale",
-		// 		requestedLocale,
-		// 		"wikicite.properties",
-		// 	].join("/");
-		// }
-		return Services.strings.createBundle(propertiesFile);
-	})(),
-	_fallbackBundle: Services.strings.createBundle(
-		"chrome://cita/content/locale/en-US/wikicite.properties",
-	),
-
 	cleanPID: function (type: PIDType, value: string) {
 		switch (type) {
 			case "DOI":
@@ -183,15 +162,14 @@ export default {
 	},
 
 	getString: function (name: string) {
+		// convert camelCase to hyphen-divided for translatewiki.net
 		name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-		name = name.replace(/\./g, "-"); // convert . to - for fluent
+		name = name.replace(/\./g, "_"); // convert . to - for fluent
+		const nameParts = name.split("_");
+		// if leading part of the name is not 'wikicite', add it
+		if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
+		name = nameParts.join("_");
 		return _getString(name);
-		// // convert camelCase to hyphen-divided for translatewiki.net
-		// name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-		// const nameParts = name.split(".");
-		// // if leading part of the name is not 'wikicite', add it
-		// if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
-		// name = nameParts.join(".");
 		// try {
 		// 	return this._bundle.GetStringFromName(name);
 		// } catch {
@@ -203,17 +181,20 @@ export default {
 		// }
 	},
 
-	formatString: function (name: string, params: Record<string, unknown>) {
+	formatString: function (name: string, params: unknown | unknown[]) {
+		// convert camelCase to hyphen-divided for translatewiki.net
 		name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-		name = name.replace(/\./g, "-"); // convert . to - for fluent
-		return _getString(name, { args: params });
-		// if (!Array.isArray(params)) params = [params];
-		// // convert camelCase to hyphen-divided for translatewiki.net
-		// name = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-		// const nameParts = name.split(".");
-		// // if leading part of the name is not 'wikicite', add it
-		// if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
-		// name = nameParts.join(".");
+		name = name.replace(/\./g, "_"); // convert . to - for fluent
+		const nameParts = name.split("_");
+		// if leading part of the name is not 'wikicite', add it
+		if (nameParts[0] !== "wikicite") nameParts.unshift("wikicite");
+		name = nameParts.join("_");
+		if (!Array.isArray(params)) params = [params];
+		// pass ordered parameters as "s1", "s2", ..., "sn"
+		const args = Object.fromEntries(
+			(params as unknown[]).map((param, index) => [`s${index+1}`, param])
+		)
+		return _getString(name, { args });
 		// try {
 		// 	return this._bundle.formatStringFromName(
 		// 		name,

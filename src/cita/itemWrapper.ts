@@ -140,7 +140,7 @@ export default class ItemWrapper {
 					Wikicite.getString("wikicite.global.unsupported"),
 					Wikicite.formatString(
 						"wikicite.item-wrapper.fetch-pid.unsupported",
-						{ PIDType: type.toUpperCase() },
+						type.toUpperCase(),
 					),
 				);
 		}
