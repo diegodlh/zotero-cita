@@ -515,19 +515,10 @@ class ZoteroOverlay {
 	}
 
 	overlayZoteroPane(doc: Document) {
-		// // add wikicite preferences command to tools popup menu
-		// this.prefsMenuItem(
-		// 	doc,
-		// 	doc.getElementById("menu_ToolsPopup")! as HTMLMenuElement,
-		// );
 		const prefOptions = {
 			pluginID: config.addonID,
 			src: `chrome://${config.addonRef}/content/preferences.xhtml`,
-			// src: rootURI + "chrome/content/preferences.xhtml",
-			// label: getString("prefs-title"),
-			// label: "CITA",
 			label: Wikicite.getString("wikicite.global.name"),
-			// image: `chrome://${config.addonRef}/content/icons/favicon.png`,
 			image: `chrome://${config.addonRef}/content/skin/default/cita.svg`,
 			defaultXUL: true,
 		};
@@ -566,35 +557,6 @@ class ZoteroOverlay {
 		window.document
 			.getElementById(`${config.addonRef}-overlay-stylesheet`)
 			?.remove();
-	}
-
-	prefsMenuItem(doc: Document, menuPopup: HTMLMenuElement) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		// Add Wikicite preferences item to Tools menu
-		if (menuPopup === null) {
-			// Don't do anything if elements not loaded yet
-			return;
-		}
-
-		const wikiciteMenuItem = doc.createElementNS(ns, "menuitem");
-		const wikiciteMenuItemID = "wikicite-preferences";
-		wikiciteMenuItem.setAttribute("id", wikiciteMenuItemID);
-		wikiciteMenuItem.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.preferences.menuitem"),
-		);
-		wikiciteMenuItem.addEventListener(
-			"command",
-			function () {
-				WikiciteChrome.openPreferences();
-			},
-			false,
-		);
-
-		menuPopup.appendChild(wikiciteMenuItem);
-
-		WikiciteChrome.registerXUL(wikiciteMenuItemID, doc);
 	}
 
 	/******************************************/

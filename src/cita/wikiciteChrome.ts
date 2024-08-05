@@ -26,35 +26,6 @@ class WikiciteChrome {
 	static showUpgradeMessage = function () {};
 
 	/******************************************/
-	// UI functions
-	/******************************************/
-
-	// Fix: did changing this to a class break this scoping here?
-	// Open Wikicite preferences window
-	static openPreferences = function () {
-		// if (
-		// 	!("_preferencesWindow" in this) ||
-		// 	this._preferencesWindow === null ||
-		// 	this._preferencesWindow.closed
-		// ) {
-		// 	var featureStr = "chrome, titlebar, toolbar=yes, centerscreen, ";
-		// 	var modalStr = Services.prefs.getBoolPref(
-		// 		"browser.preferences.instantApply",
-		// 	)
-		// 		? "dialog=no"
-		// 		: "modal";
-		// 	featureStr = featureStr + modalStr;
-		// 	this._preferencesWindow = window.openDialog(
-		// 		"chrome://cita/content/preferences.xul",
-		// 		"wikicite-prefs-window",
-		// 		featureStr,
-		// 		{ Wikicite: Wikicite, Prefs: window.Wikicite.Prefs },
-		// 	);
-		// }
-		// this._preferencesWindow.focus();
-	};
-
-	/******************************************/
 	// XUL related functions
 	/******************************************/
 
