@@ -128,9 +128,6 @@ export default {
 	 * @param {String[]} values - An array of values for the field that wants to be set.
 	 */
 	setExtraField: function (item: any, fieldName: string, values: string[]) {
-		if (!Array.isArray(values)) {
-			values = [values];
-		}
 		let { newExtra } = this.getExtraField(item, fieldName);
 		for (const value of values) {
 			if (value) {
@@ -192,8 +189,11 @@ export default {
 		if (!Array.isArray(params)) params = [params];
 		// pass ordered parameters as "s1", "s2", ..., "sn"
 		const args = Object.fromEntries(
-			(params as unknown[]).map((param, index) => [`s${index+1}`, param])
-		)
+			(params as unknown[]).map((param, index) => [
+				`s${index + 1}`,
+				param,
+			]),
+		);
 		return _getString(name, { args });
 		// try {
 		// 	return this._bundle.formatStringFromName(
