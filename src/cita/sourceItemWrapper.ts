@@ -9,9 +9,6 @@ import OpenCitations from "./opencitations";
 import Progress from "./progress";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
-// import { getExtraField } from './wikicite';
-
-declare const Zotero_File_Exporter: any;
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -711,7 +708,9 @@ class SourceItemWrapper extends ItemWrapper {
 	exportToFile(citationIndex?: number) {
 		this.loadCitations();
 		if (this.citations.length) {
-			const exporter = new Zotero_File_Exporter();
+			// Zotero_File_Exporter is here https://github.com/zotero/zotero/blob/main/chrome/content/zotero/fileInterface.js#L43
+			// somehow I can only access Zotero_File_Exporter as a property of the window
+			const exporter = new window.Zotero_File_Exporter();
 
 			// export all citations, or only those selected?
 			let citationsToExport;
