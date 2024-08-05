@@ -6,10 +6,16 @@ export { initLocale, getString, getLocaleID };
  * Initialize locale data
  */
 function initLocale() {
+	// as seen in https://www.zotero.org/support/dev/zotero_7_for_developers#replacing_properties_files
+	// do we "really need to generate a localized string completely outside the
+	// context of a window"?
 	const l10n = new (
 		typeof Localization === "undefined"
 			? ztoolkit.getGlobal("Localization")
 			: Localization
+	// using the Localization interface synchronously by passing true as the
+	// second parameter to the constructor, though "strongly discouraged by
+	// Mozilla"
 	)([`${config.addonRef}-addon.ftl`], true);
 	addon.data.locale = {
 		current: l10n,

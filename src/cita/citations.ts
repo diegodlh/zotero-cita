@@ -90,9 +90,10 @@ export default class {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.wikidata.ignored.title"),
-				Wikicite.formatString("wikicite.wikidata.ignored.message", {
-					numIgnored: noQidItems.length,
-				}),
+				Wikicite.formatString(
+					"wikicite.wikidata.ignored.message",
+					noQidItems.length,
+				),
 			);
 		}
 
@@ -278,9 +279,10 @@ export default class {
 			const result = Services.prompt.select(
 				window as mozIDOMWindowProxy,
 				Wikicite.getString("wikicite.wikidata.orphaned.title"),
-				Wikicite.formatString("wikicite.wikidata.orphaned.message", {
-					numOrphaned: counters.orphanedCitations,
-				}),
+				Wikicite.formatString(
+					"wikicite.wikidata.orphaned.message",
+					counters.orphanedCitations,
+				),
 				orphanedActions.map((orphanedAction) =>
 					Wikicite.getString(
 						"wikicite.wikidata.orphaned.action." + orphanedAction,
@@ -677,7 +679,7 @@ export default class {
 				"",
 				Wikicite.formatString(
 					"wikicite.wikidata.deviations.unsupported-citations",
-					{ numUnsupported: unsupportedCitations },
+					unsupportedCitations,
 				),
 			);
 		}
@@ -716,7 +718,7 @@ function composeConfirmation(
 			"\n\n" +
 			Wikicite.formatString(
 				"wikicite.wikidata.confirm.message.local-items",
-				{ numItems: localItemsToUpdate.size },
+				localItemsToUpdate.size,
 			) +
 			":";
 		if (counters.localAddCitations) {
@@ -724,7 +726,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-add",
-					{ numCitations: counters.localAddCitations },
+					counters.localAddCitations,
 				);
 		}
 		if (counters.localFlagCitations) {
@@ -732,7 +734,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-flag",
-					{ numCitations: counters.localFlagCitations },
+					counters.localFlagCitations,
 				);
 		}
 		if (counters.localUnflagCitations) {
@@ -740,7 +742,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-unflag",
-					{ numCitations: counters.localUnflagCitations },
+					counters.localUnflagCitations,
 				);
 		}
 		if (counters.localDeleteCitations) {
@@ -748,7 +750,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.local-delete",
-					{ numCitations: counters.localDeleteCitations },
+					counters.localDeleteCitations,
 				);
 		}
 	}
@@ -759,7 +761,7 @@ function composeConfirmation(
 			"\n\n" +
 			Wikicite.formatString(
 				"wikicite.wikidata.confirm.message.remote-entities",
-				{ numEntities: remoteEntitiesToUpdate.size },
+				remoteEntitiesToUpdate.size,
 			) +
 			":";
 		if (counters.remoteAddCitations) {
@@ -767,7 +769,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.remote-add",
-					{ numCitations: counters.remoteAddCitations },
+					counters.remoteAddCitations,
 				);
 		}
 	}
@@ -785,7 +787,7 @@ function composeConfirmation(
 			"\n\n" +
 			Wikicite.formatString(
 				"wikicite.wikidata.confirm.message.unchanged",
-				{ numCitations: unchangedCitationsCount },
+				unchangedCitationsCount,
 			) +
 			":";
 		if (counters.syncedCitations) {
@@ -793,7 +795,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.synced",
-					{ numCitations: counters.syncedCitations },
+					counters.syncedCitations,
 				);
 		}
 		if (counters.noQidCitations) {
@@ -801,7 +803,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.no-qid",
-					{ numCitations: counters.noQidCitations },
+					counters.noQidCitations,
 				);
 		}
 		if (counters.invalidOci) {
@@ -809,7 +811,7 @@ function composeConfirmation(
 				"\n\t" +
 				Wikicite.formatString(
 					"wikicite.wikidata.confirm.message.invalid-oci",
-					{ numCitations: counters.invalidOci },
+					counters.invalidOci,
 				);
 		}
 	}
