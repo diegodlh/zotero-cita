@@ -1,31 +1,19 @@
 import CitationImporter from "./CitationImporter";
-import React from "react";
-import ReactDOM from "react-dom";
+import * as React from "react";
+import { createRoot } from "react-dom/client";
 
-declare const Components: any;
-
-// import Services into the new window
-Components.utils.import("resource://gre/modules/Services.jsm");
-
-const { Wikicite } = window.arguments[0];
-const retVals = window.arguments[1];
+const { Wikicite } = (window as any).arguments[0];
+const retVals: { path?: string; text?: string } = (window as any).arguments[1];
 
 function onCancel() {
 	window.close();
 }
 
 async function onImportFile() {
-	let FilePicker;
-	try {
-		FilePicker = await import("zotero@zotero/filePicker").then(
-			(mod) => mod.default,
-		);
-	} catch {
-		// support Zotero af597d9
-		FilePicker = await import("zotero@zotero/modules/filePicker").then(
-			(mod) => mod.default,
-		);
-	}
+	// @ts-ignore see: https://www.zotero.org/support/dev/zotero_7_for_developers#zotero_platform
+	const { FilePicker } = ChromeUtils.importESModule(
+		"chrome://zotero/content/modules/filePicker.mjs",
+	);
 	const filePicker = new FilePicker();
 
 	filePicker.init(
@@ -52,13 +40,13 @@ function onImportText(text) {
 
 window.addEventListener("load", () => {
 	document.title = Wikicite.getString("wikicite.citation-importer.title");
-	ReactDOM.render(
+	const root = createRoot(document.getElementById("root")!);
+	root.render(
 		<CitationImporter
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}
 			onImportFile={onImportFile}
 			onImportText={onImportText}
 		/>,
-		document.getElementById("root"),
 	);
 });

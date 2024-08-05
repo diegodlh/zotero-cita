@@ -4,7 +4,7 @@ import { copyFileSync, readdirSync, renameSync } from "fs";
 import path from "path";
 
 import fse from "fs-extra";
-import { replaceInFileSync } from "replace-in-file"
+import { replaceInFileSync } from "replace-in-file";
 
 export default defineConfig({
 	source: ["src", "static"],
@@ -38,6 +38,7 @@ export default defineConfig({
 					"src/index.ts",
 					"src/dialogs/editor/index.tsx",
 					"src/dialogs/identifier-importer/index.tsx",
+					"src/dialogs/citation-importer/index.tsx",
 				],
 				define: {
 					__env__: `"${process.env.NODE_ENV}"`,
@@ -54,34 +55,41 @@ export default defineConfig({
 				const localePath = "build/addon/locale/";
 				fse.moveSync("build/addon/chrome/locale/", localePath);
 				// rename wikicite.properties to addon.ftl
-				for (const path of readdirSync(localePath, { encoding: "utf-8", recursive: true })) {
+				for (const path of readdirSync(localePath, {
+					encoding: "utf-8",
+					recursive: true,
+				})) {
 					if (path.endsWith("wikicite.properties")) {
 						renameSync(
 							localePath + path,
-							localePath + path.replace("wikicite.properties", "addon.ftl")
-						)
+							localePath +
+								path.replace(
+									"wikicite.properties",
+									"addon.ftl",
+								),
+						);
 					}
-				};
+				}
 
 				// replace . for _ in message keys
 				replaceInFileSync({
 					files: localePath + "/**/*.ftl",
 					from: /\.(?=.*=)/g,
-					to: "_"
+					to: "_",
 				});
 				// replace %1$s, %2$s, etc for { $s1 }, { $s2 }
 				replaceInFileSync({
 					files: localePath + "/**/*.ftl",
 					from: /(?<!%)%(\d+)\$\w/g,
-					to: "{ $$s$1 }"
+					to: "{ $$s$1 }",
 				});
 				// replace %s for { $s1 }, literally
 				replaceInFileSync({
 					files: localePath + "/**/*.ftl",
 					from: /(?<!%)%\w/g,
-					to: "{ $$s1 }"
+					to: "{ $$s1 }",
 				});
-			}
+			},
 		},
 		// If you want to checkout update.json into the repository, uncomment the following lines:
 		// makeUpdateJson: {
