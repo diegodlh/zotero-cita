@@ -705,7 +705,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	exportToFile(citationIndex?: number) {
+	async exportToFile(citationIndex?: number) {
 		this.loadCitations();
 		if (this.citations.length) {
 			// Zotero_File_Exporter is here https://github.com/zotero/zotero/blob/main/chrome/content/zotero/fileInterface.js#L43
@@ -731,6 +731,29 @@ class SourceItemWrapper extends ItemWrapper {
 				tmpItem.fromJSON(citation.target.item.toJSON());
 				return tmpItem;
 			});
+
+			// Make sure items have better bibtex citation keys for export (if BetterBibTeX is installed) #145
+			if (Zotero.BetterBibTeX) {
+				await Zotero.BetterBibTeX.ready;
+				const proposed_keys = [];
+				for (const item of citedItems) {
+					const citationKeyMatch = Wikicite.getExtraField(
+						item,
+						"Citation Key",
+					);
+					if (citationKeyMatch.values.length != 1) {
+						const proposal: string =
+							Zotero.BetterBibTeX.KeyManager.propose(
+								item,
+								proposed_keys,
+							).citationKey;
+						proposed_keys.push(proposal);
+						Wikicite.setExtraField(item, "Citation Key", [
+							proposal,
+						]);
+					}
+				}
+			}
 
 			exporter.items = citedItems;
 			exporter.name = Wikicite.getString(
