@@ -16,7 +16,8 @@ import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "./preferences";
 
-import { initLocale, getString, getLocaleID } from "../utils/locale";
+import { initLocale, getLocaleID } from "../utils/locale";
+import { getPrefGlobalName } from "../utils/prefs";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -79,6 +80,7 @@ class ZoteroOverlay {
 	numCitationsColumnID?: string | false;
 	_sourceItem?: SourceItemWrapper;
 	_citationIndex?: number;
+	preferenceUpdateObservers?: symbol[];
 	/******************************************/
 	// Window load handling
 	/******************************************/
@@ -95,6 +97,8 @@ class ZoteroOverlay {
 		this.fullOverlay();
 
 		this.addItemPaneColumns();
+
+		this.addPreferenceUpdateObservers();
 
 		// // refresh item and collection submenus each time they show
 		window.document
@@ -157,6 +161,8 @@ class ZoteroOverlay {
 
 		this.removeItemPaneColumns();
 
+		this.removePreferenceUpdateObservers();
+
 		// // This event listener is never added
 		// // var toolsPopup = document.getElementById('menu_ToolsPopup')
 		// // toolsPopup.removeEventListener('popupshowing',
@@ -195,6 +201,35 @@ class ZoteroOverlay {
 	setDefaultPreferences() {
 		prefs.initialiseStorage();
 		prefs.initialiseSortBy();
+	}
+
+	addPreferenceUpdateObservers() {
+		this.preferenceUpdateObservers = [
+			Zotero.Prefs.registerObserver(
+				getPrefGlobalName(prefs.STORAGE_PREF_KEY),
+				(value: prefs.StorageType) => {
+					switch (value) {
+						case "extra":
+							prefs.migrateStorageLocation("note", "extra");
+							break;
+						case "note":
+							prefs.migrateStorageLocation("extra", "note");
+							break;
+					}
+				},
+				true,
+			),
+		];
+	}
+
+	removePreferenceUpdateObservers() {
+		if (this.preferenceUpdateObservers) {
+			for (const preferenceUpdateObserverSymbol of this
+				.preferenceUpdateObservers) {
+				Zotero.Prefs.unregisterObserver(preferenceUpdateObserverSymbol);
+			}
+			this.preferenceUpdateObservers = undefined;
+		}
 	}
 
 	/******************************************/
@@ -480,11 +515,14 @@ class ZoteroOverlay {
 	}
 
 	overlayZoteroPane(doc: Document) {
-		// // add wikicite preferences command to tools popup menu
-		this.prefsMenuItem(
-			doc,
-			doc.getElementById("menu_ToolsPopup")! as HTMLMenuElement,
-		);
+		const prefOptions = {
+			pluginID: config.addonID,
+			src: `chrome://${config.addonRef}/content/preferences.xhtml`,
+			label: Wikicite.getString("wikicite.global.name"),
+			image: `chrome://${config.addonRef}/content/skin/default/cita.svg`,
+			defaultXUL: true,
+		};
+		ztoolkit.PreferencePane.register(prefOptions);
 
 		// // add wikicite submenu to item and collection menus
 		this.zoteroPopup("item", doc);
@@ -519,35 +557,6 @@ class ZoteroOverlay {
 		window.document
 			.getElementById(`${config.addonRef}-overlay-stylesheet`)
 			?.remove();
-	}
-
-	prefsMenuItem(doc: Document, menuPopup: HTMLMenuElement) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		// Add Wikicite preferences item to Tools menu
-		if (menuPopup === null) {
-			// Don't do anything if elements not loaded yet
-			return;
-		}
-
-		const wikiciteMenuItem = doc.createElementNS(ns, "menuitem");
-		const wikiciteMenuItemID = "wikicite-preferences";
-		wikiciteMenuItem.setAttribute("id", wikiciteMenuItemID);
-		wikiciteMenuItem.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.preferences.menuitem"),
-		);
-		wikiciteMenuItem.addEventListener(
-			"command",
-			function () {
-				WikiciteChrome.openPreferences();
-			},
-			false,
-		);
-
-		menuPopup.appendChild(wikiciteMenuItem);
-
-		WikiciteChrome.registerXUL(wikiciteMenuItemID, doc);
 	}
 
 	/******************************************/
