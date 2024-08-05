@@ -577,7 +577,7 @@ class ZoteroOverlay {
 				l10nID: getLocaleID("wikicite-citations-pane"),
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
-			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"> Test </html:div>`,
+			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"></html:div>`,
 			onInit: ({ body, refresh }) => {
 				citationBoxRoot = createRoot(
 					body.ownerDocument.getElementById(
