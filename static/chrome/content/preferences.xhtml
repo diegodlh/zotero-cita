@@ -1,19 +1,19 @@
-<?xml version="1.0"?>
-<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<?xml-stylesheet href="chrome://zotero/skin/zotero.css" type="text/css"?>
-<?xml-stylesheet href="chrome://zotero-wikicite/content/skin/preferences.css" type="text/css"?>
+<linkset>
+	<html:link rel="localization" href="__addonRef__-addon.ftl" />
+</linkset>
 
-<!-- <!DOCTYPE window SYSTEM "chrome://zotero/locale/zotero.dtd"> -->
-
-<vbox
-	id="wikicite-preferences-window"
-	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-	xmlns:html="http://www.w3.org/1999/xhtml"
->
-	<html:div id="root"></html:div>
-	<script
-		type="text/javascript"
-		src="chrome://zotero/content/include.js"
-	></script>
-	<script src="preferences.js"></script>
+<vbox id="zotero-prefpane-__addonRef__">
+	<html:div id="root">
+		<groupbox>
+			<label>
+				<html:h2 data-l10n-id="zotero-wikicite-wikicite_prefs_citation-storage"></html:h2>
+				<html:p data-l10n-id="zotero-wikicite-wikicite_prefs_citation-storage-desc"></html:p>
+			</label>
+			<radiogroup preference="__prefsPrefix__.storage">
+				<!-- Note: need to manually make these .labels in the fluent during build -->
+				<radio value="note" data-l10n-id="zotero-wikicite-wikicite_prefs_citation-storage-note" />
+				<radio value="extra" data-l10n-id="zotero-wikicite-wikicite_prefs_citation-storage-extra" />
+			</radiogroup>
+		</groupbox>
+	</html:div>
 </vbox>
