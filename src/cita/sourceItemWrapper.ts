@@ -736,7 +736,7 @@ class SourceItemWrapper extends ItemWrapper {
 			// Make sure items have better bibtex citation keys for export (if BetterBibTeX is installed) #145
 			if (Zotero.BetterBibTeX) {
 				await Zotero.BetterBibTeX.ready;
-				const proposed_keys = [];
+				const proposed_keys = new Set<string>();
 				for (const item of citedItems) {
 					const citationKeyMatch = Wikicite.getExtraField(
 						item,
@@ -748,7 +748,7 @@ class SourceItemWrapper extends ItemWrapper {
 								item,
 								proposed_keys,
 							).citationKey;
-						proposed_keys.push(proposal);
+						proposed_keys.add(proposal);
 						Wikicite.setExtraField(item, "Citation Key", [
 							proposal,
 						]);
