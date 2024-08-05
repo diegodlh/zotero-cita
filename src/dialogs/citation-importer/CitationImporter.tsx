@@ -1,7 +1,13 @@
-import React, { useState } from "react";
-import PropTypes from "prop-types";
+import * as React from "react";
+import { useState } from "react";
+import * as PropTypes from "prop-types";
 
-const CitationImporter = (props: any) => {
+const CitationImporter = (props: {
+	getString: (name: string) => string;
+	onCancel: () => void;
+	onImportFile: () => void;
+	onImportText: (string) => void;
+}) => {
 	const [text, setText] = useState("");
 
 	return (

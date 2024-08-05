@@ -22,6 +22,11 @@ div#identifier-importer-buttons {
 	text-align: right;
 }
 
+div#identifier-importer-buttons > button {
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
 textarea#identifier-input {
 	width: 100%;
 }

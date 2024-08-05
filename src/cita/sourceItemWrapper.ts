@@ -629,9 +629,9 @@ class SourceItemWrapper extends ItemWrapper {
 		};
 		const retVals: { text?: string; path?: string } = {};
 		window.openDialog(
-			"chrome://cita/content/citationImporter.xul",
+			`chrome://${config.addonRef}/content/citationImporter.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable=yes",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=400",
 			args,
 			retVals,
 		);
@@ -757,10 +757,9 @@ class SourceItemWrapper extends ItemWrapper {
 		};
 		const retVals: { text?: string } = {};
 		window.openDialog(
-			// "chrome://cita/content/identifierImporter.xul",
 			`chrome://${config.addonRef}/content/identifierImporter.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=250",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=220",
 			args,
 			retVals,
 		);
