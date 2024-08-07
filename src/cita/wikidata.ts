@@ -7,6 +7,7 @@ import qs2wbEdit from "quickstatements-to-wikibase-edit";
 // @ts-ignore - couldn't find the types for this
 import wbEdit from "wikibase-edit";
 import ItemWrapper from "./itemWrapper";
+import { config } from "../../package.json";
 
 // this is ugly but it automatically pulls the external package versions for us
 import { version as wbSdkVersion } from "../../node_modules/wikibase-sdk/package.json";
@@ -241,6 +242,7 @@ export default class {
 					)
 				) {
 					// query batch succeeded and at least one query returned results
+					// fix: this says "done" when the selector pops up if only partial matches are found
 					progress.updateLine(
 						"done",
 						Wikicite.getString(
@@ -336,23 +338,26 @@ export default class {
 							return candidateStr;
 						}),
 					];
-					const selection: any = {};
-					const select = Services.prompt.select(
-						window as mozIDOMWindowProxy,
-						Wikicite.getString(
-							"wikicite.wikidata.reconcile.approx.title",
-						),
-						Wikicite.formatString(
+					const args = {
+						choices: choices,
+						message: Wikicite.formatString(
 							"wikicite.wikidata.reconcile.approx.message",
 							[
 								item.title,
 								Zotero.ItemTypes.getLocalizedString(item.type),
 							],
 						),
-						choices,
+						Wikicite: Wikicite,
+					};
+					const selection: { value?: number } = {};
+					window.openDialog(
+						`chrome://${config.addonRef}/content/selector.xhtml`,
+						"",
+						"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=340",
+						args,
 						selection,
 					);
-					if (select) {
+					if (selection.value) {
 						if (selection.value > 0) {
 							const index = selection.value - 1;
 							qids.set(item, candidates[index].id);
