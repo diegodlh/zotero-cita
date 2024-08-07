@@ -5,6 +5,7 @@ import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
+import { getPrefGlobalName } from "../utils/prefs.js";
 
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
@@ -78,7 +79,7 @@ function CitationsBoxContainer(props: {
 						item.isNote(),
 					);
 					if (
-						// todo: this as number[] fixes is TS error
+						// todo: this as number[] fixes TS error
 						(ids as number[]).includes(props.item.id) ||
 						notes
 							.map((note) => note.parentID)
@@ -140,25 +141,15 @@ function CitationsBoxContainer(props: {
 
 	useEffect(() => {
 		// single-run effect to register listeners for preference-change topics
-		const observers = {
-			observe: function (subject: any, topic: string, data: any) {
-				switch (topic) {
-					case "wikicite-sortby-update":
-						setSortBy(prefs.getSortBy());
-						break;
-					default:
-				}
+		const id = Zotero.Prefs.registerObserver(
+			getPrefGlobalName(prefs.SORT_BY_PREF_KEY),
+			(value: prefs.SortByType) => {
+				setSortBy(value);
 			},
-			register: function () {
-				Services.obs.addObserver(this, "wikicite-sortby-update", false);
-			},
-			unregister: function () {
-				Services.obs.removeObserver(this, "wikicite-sortby-update");
-			},
-		};
-		observers.register();
+			true,
+		);
 		return () => {
-			observers.unregister();
+			Zotero.Prefs.unregisterObserver(id);
 		};
 	}, []);
 
