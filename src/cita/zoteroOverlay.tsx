@@ -565,7 +565,9 @@ class ZoteroOverlay {
 	// Create XUL for Zotero item pane
 	citationsPane() {
 		// todo: remove when unloading
-		let citationBoxRoot: Root;
+		const citationBoxRoots: {
+			[id: string]: Root;
+		} = {};
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
@@ -579,14 +581,22 @@ class ZoteroOverlay {
 			},
 			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"></html:div>`,
 			onInit: ({ body, refresh }) => {
-				citationBoxRoot = createRoot(
-					body.ownerDocument.getElementById(
-						"citations-box-container",
-					)!,
+				// We get a react error if we try to create a root on the same HTML Element more than once
+				// so we need to keep track of each separate item pane's root so we can re-render it when the item changes
+				// we do this because each tab (library and every reader) has a unique tab_id that we can get by walking
+				// up the DOM from the body
+				const tab_id: string =
+					body.parentElement?.parentElement?.parentElement
+						?.parentElement?.parentElement?.parentElement?.id!;
+				citationBoxRoots[tab_id] = createRoot(
+					body.firstChild! as Element,
 				);
 			},
 			onRender: ({ body, item, editable, tabType }) => {
-				citationBoxRoot.render(
+				const tab_id: string =
+					body.parentElement?.parentElement?.parentElement
+						?.parentElement?.parentElement?.parentElement?.id!;
+				citationBoxRoots[tab_id].render(
 					<CitationsBoxContainer
 						key={"citationsBox-" + item.id}
 						item={item}
@@ -595,11 +605,6 @@ class ZoteroOverlay {
 								? ZoteroPane.collectionsView.editable
 								: true
 						}
-						// onSourceItem={this.handleSourceItem}
-						// citationIndexRef={this._citationIndex}
-						// In principle I don't need a ref; I may have to use it if I need to force blur
-						// ref={_citationsBox}
-						// onResetSelection={focusItemsList}
 					/>,
 				);
 			},
