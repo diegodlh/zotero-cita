@@ -592,7 +592,10 @@ class ZoteroOverlay {
 					body.firstChild! as Element,
 				);
 			},
-			onRender: ({ body, item, editable, tabType }) => {
+			onRender: ({ body, item }) => {
+				if (!item.isRegularItem()) {
+					return;
+				}
 				const tab_id: string =
 					body.parentElement?.parentElement?.parentElement
 						?.parentElement?.parentElement?.parentElement?.id!;
@@ -607,6 +610,9 @@ class ZoteroOverlay {
 						}
 					/>,
 				);
+			},
+			onItemChange: ({ item, setEnabled }) => {
+				setEnabled(item.isRegularItem());
 			},
 		});
 	}
