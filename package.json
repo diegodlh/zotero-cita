@@ -47,10 +47,9 @@
 		"@types/react-dom": "^18.3.0",
 		"eslint": "^8.55.0",
 		"prettier": "^3.1.1",
-		"replace-in-file": "^8.1.0",
 		"typescript": "^5.3.3",
 		"typescript-eslint": "^7.14.1",
-		"zotero-plugin-scaffold": "^0.0.33",
+		"zotero-plugin-scaffold": "^0.0.34",
 		"zotero-types": "^2.1.0"
 	},
 	"engines": {
