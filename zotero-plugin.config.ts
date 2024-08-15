@@ -4,7 +4,7 @@ import { copyFileSync, readdirSync, renameSync } from "fs";
 import path from "path";
 
 import fse from "fs-extra";
-import { replaceInFileSync } from "replace-in-file";
+import { replaceInFileSync } from "zotero-plugin-scaffold/tools";
 
 export default defineConfig({
 	source: ["src", "static"],
