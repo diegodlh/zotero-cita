@@ -3,12 +3,11 @@ import ItemWrapper from "../../cita/itemWrapper";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import Citation from "../../cita/citation";
+import Wikicite from "../../cita/wikicite";
 
 let citation: Citation;
-let Wikicite: any;
-({ citation, Wikicite } = (window as any).arguments[0]);
+({ citation, addon: window.addon } = (window as any).arguments[0]);
 const retVals: { item?: Zotero.Item } = (window as any).arguments[1];
-
 let newItem: ItemWrapper;
 
 function onCancel() {
@@ -27,7 +26,7 @@ function onSave() {
 	window.close();
 }
 
-function checkPID(type: string, value: string) {
+function checkPID(type: PIDType, value: string) {
 	return citation.source.checkPID(type, value, {
 		alert: true,
 		parentWindow: window,

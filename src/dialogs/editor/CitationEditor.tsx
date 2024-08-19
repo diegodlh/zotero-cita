@@ -10,7 +10,7 @@ const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 // consider providing at least some read only information about the citation
 // such as label of the source item, OCIs, and Zotero link status
 const CitationEditor = (props: {
-	checkCitationPID: (type: string, value: string) => boolean;
+	checkCitationPID: (type: PIDType, value: string) => boolean;
 	item: ItemWrapper;
 	itemBox: any;
 	getString: (name: string) => string;

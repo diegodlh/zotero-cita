@@ -1,8 +1,9 @@
 import CitationImporter from "./CitationImporter";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
+import Wikicite from "../../cita/wikicite";
 
-const { Wikicite } = (window as any).arguments[0];
+({ addon: window.addon } = (window as any).arguments[0]);
 const retVals: { path?: string; text?: string } = (window as any).arguments[1];
 
 function onCancel() {
@@ -33,7 +34,7 @@ async function onImportFile() {
 	window.close();
 }
 
-function onImportText(text) {
+function onImportText(text: string) {
 	retVals.text = text;
 	window.close();
 }

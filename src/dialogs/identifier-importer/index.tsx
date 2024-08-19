@@ -1,8 +1,9 @@
 import IdentifierImporter from "./IdentifierImporter";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
+import Wikicite from "../../cita/wikicite";
 
-const { Wikicite } = (window as any).arguments[0];
+({ addon: window.addon } = (window as any).arguments[0]);
 const retVals: { text?: string } = (window as any).arguments[1];
 
 function onCancel() {
