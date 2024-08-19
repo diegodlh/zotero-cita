@@ -6,7 +6,7 @@ const CitationImporter = (props: {
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onImportFile: () => void;
-	onImportText: (string) => void;
+	onImportText: (text: string) => void;
 }) => {
 	const [text, setText] = useState("");
 
