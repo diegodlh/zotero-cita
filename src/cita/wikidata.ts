@@ -347,7 +347,7 @@ export default class {
 								Zotero.ItemTypes.getLocalizedString(item.type),
 							],
 						),
-						Wikicite: Wikicite,
+						addon: addon,
 					};
 					const selection: { value?: number } = {};
 					window.openDialog(

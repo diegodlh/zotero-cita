@@ -84,7 +84,7 @@ function CitationsBox(props: {
 	function openEditor(citation: Citation): Zotero.Item | undefined {
 		const args = {
 			citation: citation,
-			Wikicite: Wikicite,
+			addon: addon,
 		};
 		const retVals: { [key: string]: any } = {};
 		window.openDialog(
