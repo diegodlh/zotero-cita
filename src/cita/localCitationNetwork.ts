@@ -4,19 +4,34 @@ import Progress from "./progress";
 import SourceItemWrapper from "./sourceItemWrapper";
 import Wikicite from "./wikicite";
 import * as prefs from "../cita/preferences";
-
-declare const Zotero: any;
-declare const ZoteroPane: any;
+import { config } from "../../package.json";
 
 export default class LCN {
-	items: any[];
-	itemMap: Map<any, any>;
+	items: Zotero.Item[];
+	itemMap: Map<
+		string,
+		{
+			id: string | undefined;
+			doi: string | undefined;
+			title: string;
+			authors: {
+				LN: string;
+				FN: string;
+			}[];
+			year: string;
+			journal: string;
+			references: (string | undefined)[];
+			abstract: string;
+			url: string | undefined;
+		}
+	>;
 	inputKeys: string[];
 	libraryID: number;
 	progress: Progress;
 
-	constructor(items) {
-		if (!items.length) return;
+	constructor(items: Zotero.Item[]) {
+		if (!items.length)
+			throw `Can't create a local citation network without any items`;
 		this.items = items;
 		this.itemMap = new Map(); // itemKey/tmpItemKey -> ItemWrapper
 
@@ -89,7 +104,7 @@ export default class LCN {
 						const linkedToItem = Zotero.Items.getByLibraryAndKey(
 							this.libraryID,
 							citation.target.key,
-						);
+						) as Zotero.Item;
 						// Non-linked citation target items are not part of the
 						// LCN "input items" set.
 						// Citations of these non-linked citation target items
@@ -114,10 +129,10 @@ export default class LCN {
 					// collect item's unique identifiers (including name) and clean
 					// them, to make sure the same item always gets the same tmp key
 					const cleanDOI = Zotero.Utilities.cleanDOI(
-						citation.target.doi,
+						citation.target.doi!,
 					);
 					const cleanISBN = Zotero.Utilities.cleanISBN(
-						citation.target.isbn,
+						citation.target.isbn!,
 					);
 					const qid = citation.target.qid;
 					const uids = {
@@ -139,13 +154,13 @@ export default class LCN {
 					// retrieve tmp keys already given to this item,
 					// i.e., the target item of another source item's citation
 					// had one or more of the same uids or title
-					const tmpKeys = new Set();
+					const tmpKeys: Set<string> = new Set();
 					for (const [key, value] of Object.entries(uids)) {
 						const tmpKey = tmpKeyMap.get(`${key}:${value}`);
 						if (tmpKey) tmpKeys.add(tmpKey);
 					}
 
-					let tmpKey;
+					let tmpKey: string;
 					if (tmpKeys.size === 0) {
 						// if no matching temp keys found, create a new one
 						do {
@@ -182,14 +197,14 @@ export default class LCN {
 					);
 				}
 			}
-			this.itemMap.set(wrappedItem.key, parseWrappedItem(wrappedItem));
+			this.itemMap.set(wrappedItem.key!, parseWrappedItem(wrappedItem));
 		}
 		this.progress.updateLine("done");
 	}
 
-	openItem(key) {
+	openItem(key: string) {
 		ZoteroPane.selectItem(
-			Zotero.Items.getIDFromLibraryAndKey(this.libraryID, key),
+			Zotero.Items.getIDFromLibraryAndKey(this.libraryID, key) as number,
 		);
 		window.focus();
 	}
@@ -212,7 +227,7 @@ export default class LCN {
 		await Zotero.Promise.delay(100);
 
 		window.openDialog(
-			"chrome://cita/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=" +
+			`chrome://${config.addonRef}//content/Local-Citation-Network/index.html?API=Cita&listOfKeys=` +
 				this.inputKeys.join(","),
 			"",
 			windowFeatures.join(","),
@@ -232,7 +247,7 @@ export default class LCN {
 /**
  * Get localized string for LCN window
  */
-function getString(name, params) {
+function getString(name: string, params: unknown) {
 	name = "wikicite.lcn.window." + name;
 	let string;
 	if (params) {
@@ -246,11 +261,11 @@ function getString(name, params) {
 /**
  * Get ItemWrapper and return Data Item as understood by Local Citations Network
  */
-function parseWrappedItem(wrappedItem) {
+function parseWrappedItem(wrappedItem: ItemWrapper | SourceItemWrapper) {
 	const authors = wrappedItem.item
 		.getCreators()
 		.map((creator) => ({ LN: creator.lastName, FN: creator.firstName }));
-	if (!authors.length) authors.push({ LN: undefined });
+	if (!authors.length) authors.push({ LN: "", FN: "" });
 	return {
 		id: wrappedItem.key,
 		doi: wrappedItem.doi,
@@ -258,9 +273,10 @@ function parseWrappedItem(wrappedItem) {
 		authors: authors,
 		year: wrappedItem.item.getField("year"),
 		journal: wrappedItem.item.getField("publicationTitle"),
-		references: wrappedItem.citations
-			? wrappedItem.citations.map((citation) => citation.target.key)
-			: [],
+		references:
+			"citations" in wrappedItem
+				? wrappedItem.citations.map((citation) => citation.target.key)
+				: [],
 		abstract: wrappedItem.item.getField("abstractNote"),
 		url: wrappedItem.url,
 	};

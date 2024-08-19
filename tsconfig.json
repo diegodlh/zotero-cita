@@ -11,5 +11,5 @@
 		"sourceMap": true
 	},
 	"include": ["src/**/*", "typings", "node_modules/zotero-types"],
-	"exclude": ["build", "static", "src/cita/localCitationNetwork.ts"]
+	"exclude": ["build", "static"]
 }
