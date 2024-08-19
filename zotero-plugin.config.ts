@@ -39,7 +39,6 @@ export default defineConfig({
 					"src/dialogs/editor/index.tsx",
 					"src/dialogs/identifier-importer/index.tsx",
 					"src/dialogs/citation-importer/index.tsx",
-					// "src/dialogs/preferences/index.tsx",
 					"src/dialogs/selector/index.tsx",
 				],
 				define: {

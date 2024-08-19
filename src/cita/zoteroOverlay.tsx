@@ -1,4 +1,4 @@
-import Wikicite, { debug } from "./wikicite";
+import Wikicite from "./wikicite";
 import Citations from "./citations";
 import CitationsBoxContainer from "../containers/citationsBoxContainer";
 import Crossref from "./crossref";
