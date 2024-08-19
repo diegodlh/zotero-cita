@@ -1,6 +1,6 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
-import { copyFileSync, readdirSync, renameSync, mkdirSync } from "fs";
+import { copyFileSync, readdirSync, renameSync, mkdirSync, cpSync } from "fs";
 
 import fse from "fs-extra";
 import { replaceInFileSync } from "zotero-plugin-scaffold/tools";
@@ -105,6 +105,11 @@ export default defineConfig({
 				copyFileSync(
 					"Local-Citation-Network/index.html",
 					"build/addon/chrome/content/Local-Citation-Network/index.html",
+				);
+				cpSync(
+					"Local-Citation-Network/lib",
+					"build/addon/chrome/content/Local-Citation-Network/lib",
+					{ recursive: true },
 				);
 			},
 		},
