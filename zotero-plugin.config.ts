@@ -1,7 +1,6 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
-import { copyFileSync, readdirSync, renameSync } from "fs";
-import path from "path";
+import { copyFileSync, readdirSync, renameSync, mkdirSync } from "fs";
 
 import fse from "fs-extra";
 import { replaceInFileSync } from "zotero-plugin-scaffold/tools";
@@ -96,6 +95,17 @@ export default defineConfig({
 					from: /wikicite_prefs_citation-storage-(note|extra)=/g,
 					to: "$&\n    .label=",
 				});
+
+				// Copy local citations network
+				mkdirSync("build/addon/chrome/content/Local-Citation-Network/");
+				copyFileSync(
+					"Local-Citation-Network/index.js",
+					"build/addon/chrome/content/Local-Citation-Network/index.js",
+				);
+				copyFileSync(
+					"Local-Citation-Network/index.html",
+					"build/addon/chrome/content/Local-Citation-Network/index.html",
+				);
 			},
 		},
 		// If you want to checkout update.json into the repository, uncomment the following lines:
