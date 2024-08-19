@@ -623,7 +623,7 @@ class SourceItemWrapper extends ItemWrapper {
 	async importCitations() {
 		// open a new window where the user can paste in bibliographic text, or select a file
 		const args = {
-			Wikicite: Wikicite,
+			addon: addon,
 		};
 		const retVals: { text?: string; path?: string } = {};
 		window.openDialog(
@@ -776,7 +776,7 @@ class SourceItemWrapper extends ItemWrapper {
 	async addCitationsByIdentifier() {
 		// open a new window where the user can paste in identifier strings
 		const args = {
-			Wikicite: Wikicite,
+			addon: addon,
 		};
 		const retVals: { text?: string } = {};
 		window.openDialog(
