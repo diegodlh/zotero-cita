@@ -592,7 +592,7 @@ class ZoteroOverlay {
 					body.firstChild! as Element,
 				);
 			},
-			onRender: ({ body, item }) => {
+			onRender: ({ body, item, setSectionSummary }) => {
 				if (!item.isRegularItem()) {
 					return;
 				}
@@ -609,6 +609,13 @@ class ZoteroOverlay {
 								: true
 						}
 					/>,
+				);
+				setSectionSummary(
+					Wikicite.formatString(
+						"wikicite.citations-pane.citations.count",
+						new SourceItemWrapper(item, prefs.getStorage())
+							.citations.length,
+					).slice(0, -1), // remove ':' from end
 				);
 			},
 			onItemChange: ({ item, setEnabled }) => {
