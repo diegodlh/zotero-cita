@@ -227,7 +227,7 @@ export default class LCN {
 		await Zotero.Promise.delay(100);
 
 		window.openDialog(
-			`chrome://${config.addonRef}//content/Local-Citation-Network/index.html?API=Cita&listOfKeys=` +
+			`chrome://${config.addonRef}/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=` +
 				this.inputKeys.join(","),
 			"",
 			windowFeatures.join(","),
