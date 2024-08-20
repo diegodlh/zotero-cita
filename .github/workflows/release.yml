@@ -9,6 +9,8 @@ jobs:
         steps:
             - name: checkout
               uses: actions/checkout@v2
+              with:
+                submodules: recursive
 
             - name: install node
               uses: actions/setup-node@v1
