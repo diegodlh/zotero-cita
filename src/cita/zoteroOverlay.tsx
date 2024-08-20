@@ -3,7 +3,7 @@ import Citations from "./citations";
 import CitationsBoxContainer from "../containers/citationsBoxContainer";
 import Crossref from "./crossref";
 import Extraction from "./extract";
-// import LCN from './localCitationNetwork';
+import LCN from "./localCitationNetwork";
 import OCI from "../oci";
 import OpenCitations from "./opencitations";
 import * as React from "react";
@@ -397,7 +397,15 @@ class ZoteroOverlay {
 	 * @param {Boolean} [wrap=true] Whether to return wrapped items or not
 	 * @return {Array} Array of selected regular items
 	 */
-	async getSelectedItems(menuName: MenuSelectionType, wrap = true) {
+	async getSelectedItems(
+		menuName: MenuSelectionType,
+		wrap: false,
+	): Promise<Zotero.Item[]>;
+	async getSelectedItems(
+		menuName: MenuSelectionType,
+		wrap: true,
+	): Promise<SourceItemWrapper[]>;
+	async getSelectedItems(menuName: MenuSelectionType, wrap: boolean = true) {
 		// Fixme: Consider using the Citations class methods instead
 		let items;
 		switch (menuName) {
@@ -435,10 +443,7 @@ class ZoteroOverlay {
 	}
 
 	async fetchQIDs(menuName: MenuSelectionType) {
-		const items = (await this.getSelectedItems(
-			menuName,
-			true,
-		)) as SourceItemWrapper[];
+		const items = await this.getSelectedItems(menuName, true);
 		const qidMap = await Wikidata.reconcile(items);
 		if (qidMap) {
 			for (const item of items) {
@@ -449,10 +454,7 @@ class ZoteroOverlay {
 	}
 
 	async syncWithWikidata(menuName: MenuSelectionType) {
-		const items = (await this.getSelectedItems(
-			menuName,
-			true,
-		)) as SourceItemWrapper[];
+		const items = await this.getSelectedItems(menuName, true);
 		if (items.length) {
 			Citations.syncItemCitationsWithWikidata(items);
 		}
@@ -496,14 +498,12 @@ class ZoteroOverlay {
 	}
 
 	async localCitationNetwork(menuName: MenuSelectionType) {
-		// fix: enable LCN
-		alert("Local Citation Network isn't supported yet");
-		// const items = await this.getSelectedItems(menuName, false);
-		// if (items.length) {
-		// 	const lcn = new LCN(items);
-		// 	await lcn.init();
-		// 	lcn.show();
-		// }
+		const items = await this.getSelectedItems(menuName, false);
+		if (items.length) {
+			const lcn = new LCN(items);
+			await lcn.init();
+			lcn.show();
+		}
 	}
 
 	/******************************************/
@@ -1174,13 +1174,13 @@ class ZoteroOverlay {
 			MenuFunction,
 			(menuName: MenuSelectionType) => void
 		> = new Map([
-			["fetchQIDs", this.fetchQIDs],
-			["syncWithWikidata", this.syncWithWikidata],
-			["getFromCrossref", this.getFromCrossref],
-			["getFromOCC", this.getFromOCC],
-			["getFromAttachments", this.getFromAttachments],
-			["addAsCitations", this.addAsCitations],
-			["localCitationNetwork", this.localCitationNetwork],
+			["fetchQIDs", () => this.fetchQIDs(menuName)],
+			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
+			["getFromCrossref", () => this.getFromCrossref(menuName)],
+			["getFromOCC", () => this.getFromOCC(menuName)],
+			["getFromAttachments", () => this.getFromAttachments(menuName)],
+			["addAsCitations", () => this.addAsCitations(menuName)],
+			["localCitationNetwork", () => this.localCitationNetwork(menuName)],
 		]);
 		for (const [functionName, func] of menuFunctions) {
 			if (
