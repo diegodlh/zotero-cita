@@ -572,11 +572,11 @@ class ZoteroOverlay {
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
 			header: {
-				l10nID: getLocaleID("wikicite-citations-pane"),
+				l10nID: getLocaleID("wikicite_citations-pane_label"),
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			sidenav: {
-				l10nID: getLocaleID("wikicite-citations-pane"),
+				l10nID: getLocaleID("wikicite_citations-pane_tooltip"),
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"></html:div>`,

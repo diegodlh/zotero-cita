@@ -95,6 +95,18 @@ export default defineConfig({
 					from: /wikicite_prefs_citation-storage-(note|extra)=/g,
 					to: "$&\n    .label=",
 				});
+				// add .label tag for citation pane label
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /citations-pane_label =/g,
+					to: "$&\n    .label=",
+				});
+				// add .tooltip tags for citation pane tooltip
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /citations-pane_tooltip =/g,
+					to: "$&\n    .tooltip=",
+				});
 
 				// Copy local citations network
 				mkdirSync("build/addon/chrome/content/Local-Citation-Network/");
