@@ -5,6 +5,8 @@ import { copyFileSync, readdirSync, renameSync, mkdirSync, cpSync } from "fs";
 import fse from "fs-extra";
 import { replaceInFileSync } from "zotero-plugin-scaffold/tools";
 
+import tags from "language-tags";
+
 export default defineConfig({
 	source: ["src", "static"],
 	dist: "build",
@@ -54,6 +56,23 @@ export default defineConfig({
 			"build:copyAssets": (ctx) => {
 				const localePath = "build/addon/locale/";
 				fse.moveSync("build/addon/chrome/locale/", localePath);
+
+				// rename language tags using the correct casing
+				// otherwise they are ignored by Zotero
+				for (const dirent of readdirSync(
+					localePath, { withFileTypes: true }
+				)) {
+					if (dirent.isDirectory()) {
+						const langTag = tags(dirent.name);
+						if (langTag.valid()) {
+							renameSync(
+								localePath + dirent.name,
+								localePath + langTag.format()
+							)
+						}
+					}
+				}
+
 				// rename wikicite.properties to addon.ftl
 				for (const path of readdirSync(localePath, {
 					encoding: "utf-8",
