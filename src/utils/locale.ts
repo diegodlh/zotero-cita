@@ -20,6 +20,76 @@ function initLocale() {
 	addon.data.locale = {
 		current: l10n,
 	};
+	
+	// Zotero 7 automatically registers Fluent sources for enabled plugins
+	// found in [plugin-root]/locale/{locale}/
+	// See https://www.zotero.org/support/dev/zotero_7_for_developers#registering_fluent_files
+	// This is handled by function Zotero.Plugins.registerLocales() in
+	// chrome://zotero/content/xpcom/plugins.js
+	// However, because of this function's implementation, only exact matches of
+	// locales supported by Zotero (as listed by
+	// Services.locale.availableLocales) are registered. This results in, for
+	// example, our locale "es" not being registered because Zotero supports
+	// "es-ES" instead.
+	// The code below removes the source registered by the registerLocales()
+	// function and replaces it with one that includes all locales supported by
+	// us. This results in:
+	//   * Our locale "es" will be used even if requested locale is "es-ES",
+	//   * Our locale "pt-BR" will be used even if reqeusted locel is "pt-PT",
+	//   * Locales not supported by Zotero but supported by us (such as kaa)
+	//     will be used if requested, even if the rest of the interface falls
+	//     back to English.
+	// TODO: Consider moving this code to bootstrap.js.
+	// TODO: Consider requesting Zotero developers to change the
+	// registerLocales() function.
+
+	ztoolkit.getGlobal("L10nRegistry").getInstance().removeSources([config.addonID]);
+
+	let source = new (ztoolkit.getGlobal("L10nFileSource"))(
+		config.addonID,
+		'app',
+		[
+			// List of locales supported by us
+			// TODO: consider picking this up from manifest.json, maybe using
+			// "l10n_resources" property, as used in Zotero's
+			// resource://gre/modules/Extension.sys.mjs
+			"ar",
+			"ca",
+			"de",
+			"en-US",
+			"es",
+			"fa",
+			"fi",
+			"fr",
+			"gl",
+			"he",
+			"hi",
+			"id",
+			"io",
+			"it",
+			"kaa",
+			"ko",
+			"lt",
+			"mk",
+			"nl",
+			"pms",
+			"pt-br",
+			// qqq,
+			"ro",
+			"ru",
+			"sk",
+			"sl",
+			"sv",
+			"tk",
+			"tr",
+			"uk",
+			"zh-hans",
+			"zh-hant"
+		],
+		rootURI + 'locale/{locale}/'
+	);
+	
+	ztoolkit.getGlobal("L10nRegistry").getInstance().registerSources([source]);
 }
 
 /**

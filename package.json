@@ -43,9 +43,11 @@
 		"zotero-plugin-toolkit": "^2.3.37"
 	},
 	"devDependencies": {
+		"@types/language-tags": "^1.0.4",
 		"@types/node": "^20.10.4",
 		"@types/react-dom": "^18.3.0",
 		"eslint": "^8.55.0",
+		"language-tags": "^1.0.9",
 		"prettier": "^3.1.1",
 		"typescript": "^5.3.3",
 		"typescript-eslint": "^7.14.1",
