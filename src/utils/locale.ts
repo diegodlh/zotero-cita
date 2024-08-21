@@ -30,7 +30,7 @@ function initLocale() {
 	// locales supported by Zotero (as listed by
 	// Services.locale.availableLocales) are registered. This results in, for
 	// example, our locale "es" not being registered because Zotero supports
-	// "es-ES" instead.
+	// "es-ES" instead. See https://groups.google.com/g/zotero-dev/c/GUovOSrtQy4
 	// The code below removes the source registered by the registerLocales()
 	// function and replaces it with one that includes all locales supported by
 	// us. This results in:
@@ -40,8 +40,6 @@ function initLocale() {
 	//     will be used if requested, even if the rest of the interface falls
 	//     back to English.
 	// TODO: Consider moving this code to bootstrap.js.
-	// TODO: Consider requesting Zotero developers to change the
-	// registerLocales() function.
 
 	ztoolkit.getGlobal("L10nRegistry").getInstance().removeSources([config.addonID]);
 
