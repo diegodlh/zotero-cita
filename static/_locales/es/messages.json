@@ -1,0 +1,11 @@
+{
+    "author": {
+        "message": "Diego de la Hera, Dominic Dall'Osto, y otrxs",
+        "description": "Autor de la extensión"
+    },
+
+    "description": {
+        "message": "Soporte para metadatos de citas en Zotero",
+        "description": "Descripción de la extensión"
+    }
+}

@@ -2,13 +2,14 @@
 	"manifest_version": 2,
 	"name": "__addonName__",
 	"version": "__buildVersion__",
-	"description": "__description__",
+	"description": "__MSG_description__",
 	"homepage_url": "__homepage__",
-	"author": "__author__",
+	"author": "__MSG_author__",
 	"icons": {
-		"48": "chrome/content/icons/favicon.png",
-		"96": "chrome/content/icons/favicon@2x.png"
+		"48": "chrome/content/skin/default/cita.png",
+		"64": "chrome/content/skin/default/cita64.png"
 	},
+	"default_locale": "en",
 	"applications": {
 		"zotero": {
 			"id": "__addonID__",
