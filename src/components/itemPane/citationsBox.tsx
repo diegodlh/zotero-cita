@@ -318,7 +318,7 @@ function CitationsBox(props: {
 								className="cita-icon"
 								title={removeStr}
 								// Fixme: does it change when active?
-								src={`chrome://zotero/skin/16/universal/minus.svg`}
+								src={`chrome://zotero/skin/16/universal/minus-circle.svg`}
 							/>
 						</button>
 						<button
@@ -327,9 +327,10 @@ function CitationsBox(props: {
 								props.onCitationPopup(event, index)
 							}
 						>
-							{/* todo: the text shouldn't be here, but instead the span should pull it in... */}
-							...
-							<span className="menu-marker"></span>
+							<img
+								className="cita-icon"
+								src={`chrome://zotero/skin/16/universal/options.svg`}
+							/>
 						</button>
 					</>
 				)}
