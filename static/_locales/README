@@ -1,0 +1,5 @@
+Messages in this folder are only for localization of strings in the extension's
+manifest.json file, according to WebExtensions internationalization guidelines:
+https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization#internationalizing_manifest.json
+
+Translations for the rest of the extension are found in ../chrome/locale/.
