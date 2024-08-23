@@ -576,7 +576,7 @@ class ZoteroOverlay {
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			sidenav: {
-				l10nID: getLocaleID("wikicite_citations-pane_tooltip"),
+				l10nID: getLocaleID("wikicite_citations-pane_tooltiptext"),
 				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
 			},
 			bodyXHTML: `<html:div id="citations-box-container" xmlns:html="http://www.w3.org/1999/xhtml"></html:div>`,
@@ -593,6 +593,11 @@ class ZoteroOverlay {
 				);
 			},
 			onRender: ({ body, item, setSectionSummary }) => {
+				// Use Fluent for localization
+				// As mentioned in https://groups.google.com/g/zotero-dev/c/wirqnj_EQUQ/m/ud3k0SpMAAAJ
+				// As seen in https://github.com/zotero/make-it-red/blob/5a7ee1be2f147a327220c1e5a4129d6c6169999c/src-2.0/make-it-red.js#L33
+				window.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-addon.ftl`);
+
 				if (!item.isRegularItem()) {
 					return;
 				}
