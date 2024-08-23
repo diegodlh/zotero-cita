@@ -117,14 +117,14 @@ export default defineConfig({
 				// add .label tag for citation pane label
 				replaceInFileSync({
 					files: localePath + "/**/*.ftl",
-					from: /citations-pane_label =/g,
-					to: "$&\n    .label=",
+					from: /wikicite_citations-pane_label\s*=/g,
+					to: "$&\n    .label =",
 				});
-				// add .tooltip tags for citation pane tooltip
+				// add .tooltiptext tag for citation pane tooltip
 				replaceInFileSync({
 					files: localePath + "/**/*.ftl",
-					from: /citations-pane_tooltip =/g,
-					to: "$&\n    .tooltip=",
+					from: /wikicite_citations-pane_tooltiptext\s*=/g,
+					to: "$&\n    .tooltiptext =",
 				});
 
 				// Copy local citations network
