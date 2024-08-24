@@ -105,13 +105,7 @@ function PIDRow(props: {
 					// onPaste={handlePaste}  // what happens if I paste multiline?
 					// selectOnFocus={true}
 
-					// note: input needs an onchange handler or it won't render
-					onChange={
-						(event) => {
-							return;
-						} /* do something */
-					}
-					value={value || ""}
+					defaultValue={value || ""}
 				/>
 			</div>
 			<button onClick={() => onFetch()}>
