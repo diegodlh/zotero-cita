@@ -1,0 +1,13 @@
+diff --git a/node_modules/wikibase-edit/lib/request/fetch.js b/node_modules/wikibase-edit/lib/request/fetch.js
+index 127cadb..faebc22 100644
+--- a/node_modules/wikibase-edit/lib/request/fetch.js
++++ b/node_modules/wikibase-edit/lib/request/fetch.js
+@@ -13,7 +13,7 @@ export async function customFetch (url, { timeout, ...options } = {}) {
+ 
+ // Based on https://stackoverflow.com/questions/46946380/fetch-api-request-timeout#57888548
+ function fetchWithTimeout (url, options, timeoutMs = 120_000) {
+-  const controller = new AbortController()
++  const controller = new window.AbortController()
+   const promise = fetch(url, {
+     keepalive: true,
+     signal: controller.signal,
