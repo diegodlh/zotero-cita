@@ -90,8 +90,6 @@ class ZoteroOverlay {
 		//     Wikicite.version = addon.version
 		// });
 
-		initLocale();
-
 		this.setDefaultPreferences();
 
 		this.fullOverlay();
