@@ -317,19 +317,17 @@ function CitationsBox(props: {
 								alt={removeStr}
 								className="cita-icon"
 								title={removeStr}
-								// Fixme: does it change when active?
-								src={`chrome://zotero/skin/16/universal/minus-circle.svg`}
+								src="chrome://zotero/skin/16/universal/minus-circle.svg"
 							/>
 						</button>
 						<button
-							className="btn-icon"
 							onClick={(event) =>
 								props.onCitationPopup(event, index)
 							}
 						>
 							<img
 								className="cita-icon"
-								src={`chrome://zotero/skin/16/universal/options.svg`}
+								src="chrome://zotero/skin/16/universal/options.svg"
 							/>
 						</button>
 					</>

@@ -46,8 +46,13 @@
 	border: 0;
 	background: none;
 	padding: 1px;
-	/*	 width: 20px;
-	 height: 18px;*/
+	/* this lets us edit the fill property of the included SVGs with CSS */
+	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
+	fill: var(--fill-secondary);
+	height: 100%;
+}
+.citations-box ul.citations-box-list>li button :hover {
+	background-color: var(--fill-quinary);
 }
 .citations-box ul.citations-box-list > li button:disabled {
 	filter: grayscale(100%) opacity(50%);
