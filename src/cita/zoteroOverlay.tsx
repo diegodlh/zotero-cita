@@ -7,8 +7,6 @@ import LCN from "./localCitationNetwork";
 import OCI from "../oci";
 import OpenCitations from "./opencitations";
 import * as React from "react";
-// https://react.dev/blog/2022/03/08/react-18-upgrade-guide#updates-to-client-rendering-apis
-import { Root, createRoot } from "react-dom/client";
 import SourceItemWrapper from "./sourceItemWrapper";
 import WikiciteChrome from "./wikiciteChrome";
 import Wikidata from "./wikidata";
@@ -561,10 +559,15 @@ class ZoteroOverlay {
 	// Item pane functions
 	/******************************************/
 	// Create XUL for Zotero item pane
-	citationsPane() {
+	async citationsPane() {
+		// import react-dom dynamically otherwise it's imported before window is defined
+		// and we get errors like https://github.com/capricorn86/happy-dom/issues/534
+		// when clicking on text inputs in PID rows
+		const { createRoot } = await import("react-dom/client");
 		// todo: remove when unloading
 		const citationBoxRoots: {
-			[id: string]: Root;
+			// todo: how do I get the Root type from the dynamically imported react-dom?
+			[id: string]: any;
 		} = {};
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
@@ -594,7 +597,9 @@ class ZoteroOverlay {
 				// Use Fluent for localization
 				// As mentioned in https://groups.google.com/g/zotero-dev/c/wirqnj_EQUQ/m/ud3k0SpMAAAJ
 				// As seen in https://github.com/zotero/make-it-red/blob/5a7ee1be2f147a327220c1e5a4129d6c6169999c/src-2.0/make-it-red.js#L33
-				window.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-addon.ftl`);
+				window.MozXULElement.insertFTLIfNeeded(
+					`${config.addonRef}-addon.ftl`,
+				);
 
 				if (!item.isRegularItem()) {
 					return;

@@ -2,7 +2,6 @@
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as PropTypes from "prop-types";
-// import Editable from "zotero@components/editable";
 import ItemWrapper from "../cita/itemWrapper";
 
 function PIDRow(props: {
@@ -12,8 +11,6 @@ function PIDRow(props: {
 	type: PIDType;
 	validate: (type: PIDType, value: string) => boolean;
 }) {
-	const textboxRef = useRef(null);
-	const [selected, setSelected] = useState(false);
 	const [value, setValue] = useState(props.item.getPID(props.type));
 	const [url, setUrl] = useState(props.item.getPidUrl(props.type));
 
@@ -25,17 +22,9 @@ function PIDRow(props: {
 		setUrl(props.item.getPidUrl(props.type));
 	}, [props.type, value]);
 
-	function handleCancel() {
-		setSelected(false);
-	}
-
-	function handleCommit(newPid: string, hasChanged: boolean) {
-		if (hasChanged) {
-			if (
-				newPid &&
-				props.validate &&
-				!props.validate(props.type, newPid)
-			) {
+	function handleCommit(newPid: string) {
+		if (newPid != value) {
+			if (props.validate && !props.validate(props.type, newPid)) {
 				return;
 			}
 			props.item.setPID(props.type, newPid, props.autosave);
@@ -44,14 +33,6 @@ function PIDRow(props: {
 			// but second time (via props.item) might take some time
 			setValue(props.item.getPID(props.type));
 		}
-		setSelected(false);
-	}
-
-	function handleEdit() {
-		if (!props.editable) {
-			return;
-		}
-		setSelected(true);
 	}
 
 	async function onFetch() {
@@ -69,43 +50,13 @@ function PIDRow(props: {
 				{props.type.toUpperCase()}
 			</label>
 			<div className="editable-container">
-				{/* Causes a warning, because Input uses componentWillReceiveProps
-                which has been renamed and is not recommended. But won't show
-                in non-strict mode because Zotero devs renamed it to UNSAFE_*/}
-				{/* <Editable */}
-				{/* fix: replaced Editable with input until we work out how to import zotero components */}
 				<input
 					type="text"
-					// There is a bug in Zotero's React Input component
-					// Its handleChange event is waiting for an options
-					// parameter from the child input element's onChange
-					// event. This is provided by the custom input element
-					// Autosuggest, but not by the regular HTML input.
-					// This doesn't happen with TextArea, because its
-					// handleChange doesn't expect an options parameter.
-					// autoComplete={true}
-					// For the autoComplete workaround to work above,
-					// a getSuggestions function must be provided.
-					// Have it return an empty suggestions array.
-					// getSuggestions={(): any => []}
-					// ...and a ref too
-					// ref={textboxRef}
-					// autoFocus
-					className={
-						props.editable && !selected ? "zotero-clicky" : ""
-					}
-					// isActive={selected}
-					// isReadOnly={!props.editable}
+					className={props.editable ? "zotero-clicky" : ""}
 					readOnly={!props.editable}
-					// onAbort={handleCancel}
-					// onCancel={handleCancel}
-					// onClick={handleEdit}
-					// onCommit={handleCommit}
-					// onFocus={handleEdit}
-					// onPaste={handlePaste}  // what happens if I paste multiline?
-					// selectOnFocus={true}
-
 					defaultValue={value || ""}
+					// when the input loses focus, update the item's PID
+					onBlur={(event) => handleCommit(event.target.value)}
 				/>
 			</div>
 			<button onClick={() => onFetch()}>
