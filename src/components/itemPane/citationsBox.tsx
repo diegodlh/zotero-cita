@@ -85,6 +85,9 @@ function CitationsBox(props: {
 		const args = {
 			citation: citation,
 			addon: addon,
+			ZoteroPane: ZoteroPane,
+			goUpdateGlobalEditMenuItems:
+				window.document.defaultView!.goUpdateGlobalEditMenuItems,
 		};
 		const retVals: { [key: string]: any } = {};
 		window.openDialog(
