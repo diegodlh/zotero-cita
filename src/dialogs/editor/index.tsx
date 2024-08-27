@@ -6,7 +6,13 @@ import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
 
 let citation: Citation;
-({ citation, addon: window.addon } = (window as any).arguments[0]);
+({
+	citation,
+	addon: window.addon,
+	ZoteroPane: window.ZoteroPane,
+	goUpdateGlobalEditMenuItems:
+		window.document.defaultView!.goUpdateGlobalEditMenuItems,
+} = (window as any).arguments[0]);
 const retVals: { item?: Zotero.Item } = (window as any).arguments[1];
 let newItem: ItemWrapper;
 
