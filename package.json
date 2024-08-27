@@ -16,7 +16,7 @@
 		"start": "zotero-plugin serve",
 		"build": "tsc --noEmit && zotero-plugin build",
 		"lint": "prettier --write . && eslint . --fix",
-		"release": "zotero-plugin release",
+		"release": "release-it --only-version --preReleaseId=beta",
 		"postinstall": "patch-package",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"update-deps": "npm update --save"
@@ -51,6 +51,7 @@
 		"language-tags": "^1.0.9",
 		"patch-package": "^8.0.0",
 		"prettier": "^3.1.1",
+		"release-it": "^17.6.0",
 		"typescript": "^5.3.3",
 		"typescript-eslint": "^7.14.1",
 		"zotero-plugin-scaffold": "^0.0.34",
@@ -83,7 +84,7 @@
 			"release": false,
 			"assets": [
 				"build/*.xpi",
-				"update.json"
+				"build/update*.json"
 			]
 		},
 		"hooks": {
