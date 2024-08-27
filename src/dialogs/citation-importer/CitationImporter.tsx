@@ -23,7 +23,7 @@ const CitationImporter = (props: {
 				<textarea
 					id="citation-input"
 					onChange={(event) => setText(event.target.value)}
-					rows={15}
+					rows={5}
 					value={text}
 				/>
 			</div>

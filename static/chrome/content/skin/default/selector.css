@@ -4,7 +4,23 @@ window#selector {
 	padding: 1em;
 }
 
+#root {
+	height: 100%;
+	width: 100%;
+}
+
+#root>div {
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	min-height: 100%;
+}
+
 div#selector-description {
+	margin-bottom: 10px;
+}
+
+div#selector-select {
+	margin-top: 10px;
 	margin-bottom: 10px;
 }
 
@@ -24,9 +40,4 @@ div#selector-buttons {
 div#selector-buttons > button {
 	margin-left: 5px;
 	margin-right: 5px;
-}
-
-#root {
-	height: 100%;
-	width: 100%;
 }

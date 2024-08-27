@@ -782,7 +782,7 @@ class SourceItemWrapper extends ItemWrapper {
 		window.openDialog(
 			`chrome://${config.addonRef}/content/identifierImporter.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=220",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=250",
 			args,
 			retVals,
 		);

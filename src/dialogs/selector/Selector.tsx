@@ -12,11 +12,13 @@ const Selector = (props: {
 		<div id="selector-description">
 			<label>{props.message}</label>
 		</div>
-		<select size={10} id="selector-list">
-			{props.choices.map((text) => (
-				<option>{text}</option>
-			))}
-		</select>
+		<div id="selector-select">
+			<select size={10} id="selector-list">
+				{props.choices.map((text) => (
+					<option>{text}</option>
+				))}
+			</select>
+		</div>
 		<div id="selector-buttons">
 			<button onClick={props.onCancel}>
 				{props.getString("wikicite.wikidata.reconcile.approx.cancel")}
