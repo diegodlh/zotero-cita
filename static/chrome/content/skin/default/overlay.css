@@ -51,7 +51,7 @@
 	fill: var(--fill-secondary);
 	height: 100%;
 }
-.citations-box ul.citations-box-list>li button :hover {
+.citations-box ul.citations-box-list > li button :hover {
 	background-color: var(--fill-quinary);
 }
 .citations-box ul.citations-box-list > li button:disabled {

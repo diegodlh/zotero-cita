@@ -13,14 +13,17 @@ function initLocale() {
 		typeof Localization === "undefined"
 			? ztoolkit.getGlobal("Localization")
 			: Localization
-	// using the Localization interface synchronously by passing true as the
-	// second parameter to the constructor, though "strongly discouraged by
-	// Mozilla"
-	)([`${config.addonRef}-addon.ftl`], true);
+	)(
+		// using the Localization interface synchronously by passing true as the
+		// second parameter to the constructor, though "strongly discouraged by
+		// Mozilla"
+		[`${config.addonRef}-addon.ftl`],
+		true,
+	);
 	addon.data.locale = {
 		current: l10n,
 	};
-	
+
 	// Zotero 7 automatically registers Fluent sources for enabled plugins
 	// found in [plugin-root]/locale/{locale}/
 	// See https://www.zotero.org/support/dev/zotero_7_for_developers#registering_fluent_files
@@ -41,11 +44,14 @@ function initLocale() {
 	//     back to English.
 	// TODO: Consider moving this code to bootstrap.js.
 
-	ztoolkit.getGlobal("L10nRegistry").getInstance().removeSources([config.addonID]);
+	ztoolkit
+		.getGlobal("L10nRegistry")
+		.getInstance()
+		.removeSources([config.addonID]);
 
-	let source = new (ztoolkit.getGlobal("L10nFileSource"))(
+	const source = new (ztoolkit.getGlobal("L10nFileSource"))(
 		config.addonID,
-		'app',
+		"app",
 		[
 			// List of locales supported by us
 			// TODO: consider picking this up from manifest.json, maybe using
@@ -82,11 +88,11 @@ function initLocale() {
 			"tr",
 			"uk",
 			"zh-hans",
-			"zh-hant"
+			"zh-hant",
 		],
-		rootURI + 'locale/{locale}/'
+		rootURI + "locale/{locale}/",
 	);
-	
+
 	ztoolkit.getGlobal("L10nRegistry").getInstance().registerSources([source]);
 }
 

@@ -9,7 +9,7 @@ window#citation-importer {
 	width: 100%;
 }
 
-#root>div {
+#root > div {
 	display: grid;
 	grid-template-rows: auto 1fr auto;
 	min-height: 100%;
@@ -24,7 +24,7 @@ div#citation-importer-textbox {
 	margin-bottom: 10px;
 }
 
-div#citation-importer-textbox > textarea{
+div#citation-importer-textbox > textarea {
 	height: 100%;
 }
 

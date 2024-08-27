@@ -1,11 +1,11 @@
 {
-    "author": {
-        "message": "Diego de la Hera, Dominic Dall'Osto, and others",
-        "description": "Author of the extension"
-    },
+	"author": {
+		"message": "Diego de la Hera, Dominic Dall'Osto, and others",
+		"description": "Author of the extension"
+	},
 
-    "description": {
-        "message": "Citations metadata support for Zotero",
-        "description": "Description of the extension"
-    }
+	"description": {
+		"message": "Citations metadata support for Zotero",
+		"description": "Description of the extension"
+	}
 }
