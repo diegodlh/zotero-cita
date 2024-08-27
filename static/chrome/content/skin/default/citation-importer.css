@@ -4,6 +4,17 @@ window#citation-importer {
 	padding: 1em;
 }
 
+#root {
+	height: 100%;
+	width: 100%;
+}
+
+#root>div {
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	min-height: 100%;
+}
+
 div#citation-importer-description {
 	margin-bottom: 10px;
 }
@@ -11,7 +22,6 @@ div#citation-importer-description {
 div#citation-importer-textbox {
 	margin-top: 10px;
 	margin-bottom: 10px;
-	height: 100%;
 }
 
 div#citation-importer-textbox > textarea{
@@ -20,6 +30,7 @@ div#citation-importer-textbox > textarea{
 
 div#citation-importer-buttons {
 	text-align: right;
+	margin-top: 10px;
 }
 
 div#citation-importer-buttons > button {
@@ -28,10 +39,5 @@ div#citation-importer-buttons > button {
 }
 
 textarea#citation-input {
-	width: 100%;
-}
-
-#root {
-	height: 100%;
 	width: 100%;
 }

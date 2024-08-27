@@ -4,6 +4,17 @@ window#identifier-importer {
 	padding: 1em;
 }
 
+#root {
+	height: 100%;
+	width: 100%;
+}
+
+#root>div {
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	min-height: 100%;
+}
+
 div#identifier-importer-description {
 	margin-bottom: 10px;
 }
@@ -11,7 +22,6 @@ div#identifier-importer-description {
 div#identifier-importer-textbox {
 	margin-top: 10px;
 	margin-bottom: 10px;
-	height: 100%;
 }
 
 div#identifier-importer-textbox > textarea {
@@ -20,6 +30,7 @@ div#identifier-importer-textbox > textarea {
 
 div#identifier-importer-buttons {
 	text-align: right;
+	margin-top: 10px;
 }
 
 div#identifier-importer-buttons > button {
@@ -28,10 +39,5 @@ div#identifier-importer-buttons > button {
 }
 
 textarea#identifier-input {
-	width: 100%;
-}
-
-#root {
-	height: 100%;
 	width: 100%;
 }
