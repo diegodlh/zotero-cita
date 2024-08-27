@@ -67,28 +67,10 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
 
 ## Publishing
 
-> **Note:** these instructions are outdated
-
-1. Decide new version number vX.Y.Z using [Semantic Versioning](https://semver.org/).
-2. Update version number in:
-    - `/package.json`
-    - `/static/install.rdf`
-        - **Note:** Choose the correct update script in `em:updateURL` depending on beta/full release
-3. Update `version` and `updateLink`s in `/update.rdf` or `./update-beta.rdf` (for the beta release).
-4. Run `git clean -xdf` to remove untracked files, including `/build` and `/node_modules`.
-5. Run `npm install`. This will also update `/package-lock.json` with the new version.
-6. Run `npm run build` to build the plugin.
-7. Zip the contents of `/build` into a zip file named `zotero-cita-vX.Y.Z.xpi`. E. g. `cd build && zip -r ../zotero-cita-v0.0.1.xpi *`
-8. Until integration tests have been implemented (#30), install the new version
-   on a fresh Zotero profile and run some manual tests.
-9. Run `git commit -m "Bump vX.Y.Z"` and `git push`.
-10. Run `git tag vX.Y.Z` and `git push --tags`.
-11. On GitHub, create a new release:
-    1. Choose tag vX.Y.Z.
-    2. Set release title "vX.Y.Z".
-    3. In the description, list changes since last release.
-    4. Attach the xpi file created above.
-    5. Click "Publish release" and hope everything is alright.
+1. `npm run lint` to make sure the code is formatted properly
+2. Decide a new version number vX.Y.Z using [Semantic Versioning](https://semver.org/), and depending on whether it's a beta release or not.
+3. `npm run release` and choose this version number and the version will be automatically bumped in `package.json` and the release tagged. This will trigger github actions to build the code and make a new release at this version
+4. Until integration tests have been implemented (#30), install the new version on a fresh Zotero profile and run some manual tests.
 
 ## Acknowledgements
 
