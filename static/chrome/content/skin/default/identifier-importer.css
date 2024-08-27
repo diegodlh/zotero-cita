@@ -9,7 +9,7 @@ window#identifier-importer {
 	width: 100%;
 }
 
-#root>div {
+#root > div {
 	display: grid;
 	grid-template-rows: auto 1fr auto;
 	min-height: 100%;

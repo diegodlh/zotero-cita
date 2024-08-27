@@ -59,16 +59,16 @@ export default defineConfig({
 
 				// rename language tags using the correct casing
 				// otherwise they are ignored by Zotero
-				for (const dirent of readdirSync(
-					localePath, { withFileTypes: true }
-				)) {
+				for (const dirent of readdirSync(localePath, {
+					withFileTypes: true,
+				})) {
 					if (dirent.isDirectory()) {
 						const langTag = tags(dirent.name);
 						if (langTag.valid()) {
 							renameSync(
 								localePath + dirent.name,
-								localePath + langTag.format()
-							)
+								localePath + langTag.format(),
+							);
 						}
 					}
 				}
