@@ -62,7 +62,7 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
     3. Add a line in `.env` pointing to the Zotero profile you will be using: `ZOTERO_PLUGIN_PROFILE_PATH = <path-to-your-zotero-profile-folder>` (ideally, create a new Zotero profile for debugging). For me the folder is called `3vvlvf75.debug`. Instructions on how to find this folder can be found [here](https://www.zotero.org/support/kb/profile_directory)
 5. Run `npm install`
 6. This plugin is built using esbuild. Run `npm run start` to launch Zotero and rebuild the plugin automatically each time the source code is changed (thanks to [zotero-plugin-scaffold](https://github.com/northword/zotero-plugin-scaffold)). For some changes like CSS the hot reloading doesn't work and you will need to restart Zotero. Built files will be saved to `build/addon/chrome/content`.
-   1. Depending on your platform, the firefox debug tools might automatically pop up, and might ask you for permission to connect to Zotero. If this isn't the case, see the debug instructions below.
+   1. The firefox debug tools should automatically pop up, allowing you to see console output, debug code, and edit CSS. Most code should be visible under `file://` in the debugger
 7. For distribution, run `npm run build`, then you can find the extension at `build/zotero-cita.xpi`.
 
 ## Publishing
@@ -89,31 +89,6 @@ on a fresh Zotero profile and run some manual tests.
     3.  In the description, list changes since last release.
     4.  Attach the xpi file created above.
     5.  Click "Publish release" and hope everything is alright.
-
-### Debugging
-
-> **Note:** Depending on your operating system and Zotero version you downloaded, the debug tools might automatically popup when you call `npm run start`. If this isn't the case, then follow the steps below to setup debugging.
-
-To debug, make sure as mentioned [above](#development) you downloaded a beta version of Zotero from [here](https://www.zotero.org/support/beta_builds) - these come with the debug tools already enabled so you don't need to build it from source. Download Firefox 115ESR from [here](https://ftp.mozilla.org/pub/firefox/releases/115.12.0esr/).
-
-1. Clone Zotero source code and scripts.
-2. Download and use a Firefox version compatible with the Firefox version used by Zotero. For example, Zotero 7 is based on [Firefox 115esr](https://ftp.mozilla.org/pub/firefox/releases/115.12.0esr/). See [1] below for how to stop it auto updating.
-3. Run the Firefox version you downloaded using the `--new-instance` flag in case you have another Firefox instance running, and the `-p <Profile>` flag to use a separate profile for this version.
-4. Go to the remote debug menu [about:debugging](about:debugging)
-5. Add a network connection `localhost:6100`
-6. Now you should be able to click on it on the left to connect, then under "Processes -> Multiprocess Toolbox" down the bottom click "Inspect"
-
-[1] To prevent your downloaded Firefox version from upgrading to a newer version, you
-have to disable automatic updates:
-
-1. Run your system's Firefox version from the command line with the `-P` flag to open the Profile Manager.
-2. Create a new profile that you will use with the Firefox version you downloaded.
-3. Click on 'Start Firefox' to start your system Firefox using the profile you have just created.
-4. Go to `about:config` and set `app.udpate.auto` to `false`.
-5. Close your system Firefox.
-6. Run the Firefox version you downloaded using the `-P <ProfileName>` flag.
-
-The reason why the setting must be changed using your system Firefox is because it seems that Firefox checks for updates on startup, before one can change the setting. And if an update is found, it will be applied on next start, irrespective of this setting's value, overwriting the version you downloaded.
 
 ## Acknowledgements
 
