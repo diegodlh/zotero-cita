@@ -587,8 +587,8 @@ class ZoteroOverlay {
 				// we do this because each tab (library and every reader) has a unique tab_id that we can get by walking
 				// up the DOM from the body
 				const tab_id: string =
-					body.parentElement?.parentElement?.parentElement
-						?.parentElement?.parentElement?.parentElement?.id!;
+					body.parentElement!.parentElement!.parentElement!
+						.parentElement!.parentElement!.parentElement!.id;
 				citationBoxRoots[tab_id] = createRoot(
 					body.firstChild! as Element,
 				);
@@ -605,8 +605,8 @@ class ZoteroOverlay {
 					return;
 				}
 				const tab_id: string =
-					body.parentElement?.parentElement?.parentElement
-						?.parentElement?.parentElement?.parentElement?.id!;
+					body.parentElement!.parentElement!.parentElement!
+						.parentElement!.parentElement!.parentElement!.id;
 				citationBoxRoots[tab_id].render(
 					<CitationsBoxContainer
 						key={"citationsBox-" + item.id}
@@ -1090,21 +1090,21 @@ class ZoteroOverlay {
 	zoteroPopup(menuName: MenuSelectionType, doc: Document) {
 		const ns =
 			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		var zoteroMenu = doc.getElementById(`zotero-${menuName}menu`);
+		const zoteroMenu = doc.getElementById(`zotero-${menuName}menu`);
 		if (zoteroMenu === null) {
 			// Don't do anything if elements not loaded yet
 			return;
 		}
 
-		var wikiciteSeparator = doc.createElementNS(ns, "menuseparator");
-		var wikiciteSeparatorID = `wikicite-${menuName}submenu-separator`;
+		const wikiciteSeparator = doc.createElementNS(ns, "menuseparator");
+		const wikiciteSeparatorID = `wikicite-${menuName}submenu-separator`;
 		wikiciteSeparator.setAttribute("id", wikiciteSeparatorID);
 		zoteroMenu.appendChild(wikiciteSeparator);
 		WikiciteChrome.registerXUL(wikiciteSeparatorID, doc);
 
 		// Wikicite submenu
-		var wikiciteSubmenu = doc.createElementNS(ns, "menu");
-		var wikiciteSubmenuID = `wikicite-${menuName}submenu`;
+		const wikiciteSubmenu = doc.createElementNS(ns, "menu");
+		const wikiciteSubmenuID = `wikicite-${menuName}submenu`;
 		wikiciteSubmenu.setAttribute("id", wikiciteSubmenuID);
 		wikiciteSubmenu.setAttribute(
 			"label",
@@ -1114,7 +1114,7 @@ class ZoteroOverlay {
 		WikiciteChrome.registerXUL(wikiciteSubmenuID, doc);
 
 		// Wikicite submenu popup
-		var wikiciteSubmenuPopup = doc.createElementNS(ns, "menupopup");
+		const wikiciteSubmenuPopup = doc.createElementNS(ns, "menupopup");
 		wikiciteSubmenuPopup.setAttribute(
 			"id",
 			`wikicite-${menuName}submenu-popup`,
@@ -1231,7 +1231,7 @@ class ZoteroOverlay {
 	) {
 		const ns =
 			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		var menuFunc = doc.createElementNS(ns, "menuitem");
+		const menuFunc = doc.createElementNS(ns, "menuitem");
 		menuFunc.setAttribute("id", IDPrefix + functionName);
 		menuFunc.setAttribute(
 			"label",
