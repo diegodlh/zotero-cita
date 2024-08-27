@@ -90,6 +90,14 @@ ul.pid-list > li {
 	display: flex;
 }
 
+ul.pid-list > li > label {
+	width: 30px;
+}
+
+ul.pid-list > li input {
+	width: 100%;
+}
+
 ul.pid-list > li * {
 	margin-left: 2px;
 	margin-right: 2px;
@@ -99,6 +107,7 @@ ul.pid-list > li button {
 	border: 0;
 	background: none;
 	padding: 1px;
+	margin-left: 15px;
 }
 
 ul.pid-list > li .editable-container {
