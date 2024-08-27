@@ -49,13 +49,15 @@ function CitationsBox(props: {
 			(citation: Citation, index: number) => {
 				let value;
 				switch (props.sortBy) {
-					case "ordinal":
+					case "ordinal": {
 						value = index;
 						break;
-					case "authors":
+					}
+					case "authors": {
 						value = citation.target.item.getField("firstCreator");
 						break;
-					case "date":
+					}
+					case "date": {
 						const date = Zotero.Date.strToISO(
 							citation.target.item.getField("date"),
 						);
@@ -64,9 +66,11 @@ function CitationsBox(props: {
 							value = new Date(date);
 						}
 						break;
-					case "title":
+					}
+					case "title": {
 						value = citation.target.title;
 						break;
+					}
 					default:
 				}
 				return { index: index, value: value };
