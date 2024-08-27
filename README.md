@@ -3,8 +3,6 @@
 A [Zotero](http://www.zotero.org/) plugin adding citation metadata support, with back and forth communication to
 [WikiData](https://www.wikidata.org/), citation extraction from file attachments, and local citation network visualization.
 
-> **Note:** until [#247](https://github.com/diegodlh/zotero-cita/issues/247) is fixed please change your language setting in Zotero (Edit -> Preference -> Advanced -> Miscellaneous) from `English` to a variant (such as `English (UK)` or `English (Canada)`) for Cita to work correctly!
-
 Initial development of this plugin was supported by a [grant](https://meta.wikimedia.org/wiki/Wikicite/grant/WikiCite_addon_for_Zotero_with_citation_graph_support)
 from the Wikimedia Foundation.
 
