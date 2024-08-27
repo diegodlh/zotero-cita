@@ -1,0 +1,28 @@
+{
+	"addons": {
+		"zotero-wikicite@wikidata.org": {
+			"updates": [
+				{
+					"version": "0.5.5",
+					"update_link": "https://github.com/diegodlh/zotero-cita/releases/download/v0.5.5/zotero-cita-v0.5.5.xpi",
+					"applications": {
+						"gecko": {
+							"strict_min_version": "60.9",
+							"strict_max_version": "60.9"
+						}
+					}
+				},
+				{
+					"version": "1.0.0",
+					"update_link": "https://github.com/diegodlh/zotero-cita/releases/download/v1.0.0/zotero-cita.xpi",
+					"applications": {
+						"zotero": {
+							"strict_min_version": "6.999",
+							"strict_max_version": "7.0.*"
+						}
+					}
+				}
+			]
+		}
+	}
+}
