@@ -13,6 +13,7 @@ import Wikidata from "./wikidata";
 import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "./preferences";
+import { Root, createRoot } from "react-dom/client";
 
 import { initLocale, getLocaleID } from "../utils/locale";
 import { getPrefGlobalName } from "../utils/prefs";
@@ -560,14 +561,9 @@ class ZoteroOverlay {
 	/******************************************/
 	// Create XUL for Zotero item pane
 	async citationsPane() {
-		// import react-dom dynamically otherwise it's imported before window is defined
-		// and we get errors like https://github.com/capricorn86/happy-dom/issues/534
-		// when clicking on text inputs in PID rows
-		const { createRoot } = await import("react-dom/client");
 		// todo: remove when unloading
 		const citationBoxRoots: {
-			// todo: how do I get the Root type from the dynamically imported react-dom?
-			[id: string]: any;
+			[id: string]: Root;
 		} = {};
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
