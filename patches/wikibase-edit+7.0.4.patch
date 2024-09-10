@@ -11,3 +11,19 @@ index 127cadb..faebc22 100644
    const promise = fetch(url, {
      keepalive: true,
      signal: controller.signal,
+diff --git a/node_modules/wikibase-edit/lib/request/login.js b/node_modules/wikibase-edit/lib/request/login.js
+index ab914e1..e4cd400 100644
+--- a/node_modules/wikibase-edit/lib/request/login.js
++++ b/node_modules/wikibase-edit/lib/request/login.js
+@@ -44,6 +44,11 @@ const getSessionCookies = async (loginUrl, config, headers, loginCookies) => {
+ 
+   const resBody = await parseResponseBody(res)
+   if (resBody.login.result !== 'Success') {
++    if (
++      resBody.login.reason == 'Unable to continue login. Your session most likely timed out.'
++    ) {
++      throw error_.new('failed to login: session timed out or no login cookies provided')
++    }
+     throw error_.new('failed to login: invalid username/password')
+   }
+ 
