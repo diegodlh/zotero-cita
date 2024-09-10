@@ -14,8 +14,8 @@ const Selector = (props: {
 		</div>
 		<div id="selector-select">
 			<select size={10} id="selector-list">
-				{props.choices.map((text) => (
-					<option>{text}</option>
+				{props.choices.map((text, index) => (
+					<option key={index}>{text}</option>
 				))}
 			</select>
 		</div>
