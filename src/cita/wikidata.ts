@@ -1065,12 +1065,12 @@ export default class {
 class Login {
 	cancelled: any;
 	anonymous: any;
-	error: boolean;
+	error: string;
 	username: any;
 	password: any;
 	save?: boolean;
 	constructor() {
-		this.error = false;
+		this.error = "";
 	}
 
 	get credentials() {
@@ -1082,23 +1082,23 @@ class Login {
 	}
 
 	onError(error: Error) {
-		this.error = false;
+		this.error = "";
 		if (error.name == "badtoken") {
 			if (this.anonymous) {
 				// See https://github.com/maxlath/wikibase-edit/issues/63
 				// fix: not sure if this should be bool or string?
-				this.error = true; //'unsupportedAnonymous';
+				this.error = 'unsupportedAnonymous';
 			} else {
 				debug("Unexpected login error", error);
-				this.error = true; // = 'unknown';
+				this.error = 'unknown';
 			}
 		} else if (error.message.split(":")[0] == "failed to login") {
 			const reason = error.message.split(":")[1].trim();
 			if (reason === "invalid username/password") {
-				this.error = true; // = 'wrongCredentials';
+				this.error = 'wrongCredentials';
 			} else {
 				debug("Unexpected login error", error);
-				this.error = true; // = 'unknown';
+				this.error = 'unknown';
 			}
 		}
 		// I don't want permissiondenied errors to be treated as
@@ -1111,7 +1111,7 @@ class Login {
 	}
 
 	onSuccess() {
-		this.error = false;
+		this.error = "";
 		if (!this.anonymous && this.save) {
 			debug("Saving credentials to be implemented");
 		}
