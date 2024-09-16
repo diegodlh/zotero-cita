@@ -401,6 +401,32 @@ const zoteroOverlay = {
         }
     },
 
+    /**
+     * Set the URL value of a Zotero item with the value of it's P953 wikidata element statement 
+     */
+    fetchOpenAccessUrls: async function(menuName) {
+        const items = await this.getSelectedItems(menuName);
+
+        for (const item of items) {
+            // get the QID of the item
+            const qid = item.getPID('QID');
+
+            // fetch the value of the P953 property of the element via the Wikidata API
+            const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&ids=${qid}&props=claims&languages=en`;
+            const response = await Zotero.HTTP.request('GET', url);
+            const data = JSON.parse(response.responseText);
+            const claims = data.entities[qid].claims;
+            const propertyId = 'P953';
+            
+            if (claims[propertyId]) {
+                const value = claims[propertyId][0].mainsnak.datavalue.value;
+
+                // set the URL field with the new Open Access URL
+                item.setPID('url', value);
+            }
+    }
+    },
+
     syncWithWikidata: async function(menuName) {
         const items = await this.getSelectedItems(menuName);
         if (items.length) {
@@ -1057,6 +1083,7 @@ const zoteroOverlay = {
     createMenuItems: function(menuName, menuPopup, IDPrefix, elementsAreRoot, doc) {
         const menuFunctions = [
             'fetchQIDs',
+            'fetchOpenAccessUrls',
             'syncWithWikidata',
             'getFromCrossref',
             'getFromOCC',
