@@ -1086,19 +1086,18 @@ class Login {
 		if (error.name == "badtoken") {
 			if (this.anonymous) {
 				// See https://github.com/maxlath/wikibase-edit/issues/63
-				// fix: not sure if this should be bool or string?
-				this.error = 'unsupportedAnonymous';
+				this.error = "unsupportedAnonymous";
 			} else {
 				debug("Unexpected login error", error);
-				this.error = 'unknown';
+				this.error = "unknown";
 			}
 		} else if (error.message.split(":")[0] == "failed to login") {
 			const reason = error.message.split(":")[1].trim();
 			if (reason === "invalid username/password") {
-				this.error = 'wrongCredentials';
+				this.error = "wrongCredentials";
 			} else {
 				debug("Unexpected login error", error);
-				this.error = 'unknown';
+				this.error = "unknown";
 			}
 		}
 		// I don't want permissiondenied errors to be treated as
