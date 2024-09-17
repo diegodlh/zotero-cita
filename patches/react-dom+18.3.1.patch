@@ -1,37 +1,24 @@
 diff --git a/node_modules/react-dom/cjs/react-dom.development.js b/node_modules/react-dom/cjs/react-dom.development.js
-index a11d72f..b1c1e6e 100644
+index a11d72f..c7d28e1 100644
 --- a/node_modules/react-dom/cjs/react-dom.development.js
 +++ b/node_modules/react-dom/cjs/react-dom.development.js
-@@ -29884,19 +29884,19 @@ var foundDevTools = injectIntoDevTools({
-   rendererPackageName: 'react-dom'
- });
+@@ -7843,7 +7843,8 @@ if (canUseDOM) {
+ function startWatchingForValueChange(target, targetInst) {
+   activeElement = target;
+   activeElementInst = targetInst;
+-  activeElement.attachEvent('onpropertychange', handlePropertyChange);
++  // activeElement.attachEvent('onpropertychange', handlePropertyChange);
++  activeElement.addEventListener('propertychange', handlePropertyChange);
+ }
+ /**
+  * (For IE <=9) Removes the event listeners from the currently-tracked element,
+@@ -7856,7 +7857,8 @@ function stopWatchingForValueChange() {
+     return;
+   }
  
--{
--  if (!foundDevTools && canUseDOM && window.top === window.self) {
--    // If we're in Chrome or Firefox, provide a download link if not installed.
--    if (navigator.userAgent.indexOf('Chrome') > -1 && navigator.userAgent.indexOf('Edge') === -1 || navigator.userAgent.indexOf('Firefox') > -1) {
--      var protocol = window.location.protocol; // Don't warn in exotic cases like chrome-extension://.
--
--      if (/^(https?|file):$/.test(protocol)) {
--        // eslint-disable-next-line react-internal/no-production-logging
--        console.info('%cDownload the React DevTools ' + 'for a better development experience: ' + 'https://reactjs.org/link/react-devtools' + (protocol === 'file:' ? '\nYou might need to use a local HTTP server (instead of file://): ' + 'https://reactjs.org/link/react-devtools-faq' : ''), 'font-weight:bold');
--      }
--    }
--  }
--}
-+// {
-+//   if (!foundDevTools && canUseDOM && window.top === window.self) {
-+//     // If we're in Chrome or Firefox, provide a download link if not installed.
-+//     if (navigator.userAgent.indexOf('Chrome') > -1 && navigator.userAgent.indexOf('Edge') === -1 || navigator.userAgent.indexOf('Firefox') > -1) {
-+//       var protocol = window.location.protocol; // Don't warn in exotic cases like chrome-extension://.
-+
-+//       if (/^(https?|file):$/.test(protocol)) {
-+//         // eslint-disable-next-line react-internal/no-production-logging
-+//         console.info('%cDownload the React DevTools ' + 'for a better development experience: ' + 'https://reactjs.org/link/react-devtools' + (protocol === 'file:' ? '\nYou might need to use a local HTTP server (instead of file://): ' + 'https://reactjs.org/link/react-devtools-faq' : ''), 'font-weight:bold');
-+//       }
-+//     }
-+//   }
-+// }
- 
- exports.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = Internals;
- exports.createPortal = createPortal$1;
+-  activeElement.detachEvent('onpropertychange', handlePropertyChange);
++  // activeElement.detachEvent('onpropertychange', handlePropertyChange);
++  activeElement.removeEventListener('propertychange', handlePropertyChange);
+   activeElement = null;
+   activeElementInst = null;
+ }
