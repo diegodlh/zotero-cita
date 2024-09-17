@@ -39,6 +39,12 @@ function PIDRow(props: {
 		await props.item.fetchPID(props.type, props.autosave);
 		// set new value immediately (see note in handleCommit)
 		setValue(props.item.getPID(props.type));
+		// update the value of the input to match the new fetched value
+		(
+			document.getElementById(
+				`pid-row-input-${props.item.key}-${props.type}`,
+			)! as HTMLInputElement
+		).value = props.item.getPID(props.type) || "";
 	}
 
 	return (
@@ -52,6 +58,7 @@ function PIDRow(props: {
 			<div className="editable-container">
 				<input
 					type="text"
+					id={`pid-row-input-${props.item.key}-${props.type}`}
 					className={props.editable ? "zotero-clicky" : ""}
 					readOnly={!props.editable}
 					defaultValue={value || ""}
