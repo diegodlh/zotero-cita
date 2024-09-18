@@ -78,13 +78,13 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: update.json
-            uses: echapmanFromBunnings/upload-release-assets@1.3
-            with:
-              releaseTag: 'update'
-              githubToken: ${{ secrets.GITHUB_TOKEN }}
-              files: build/update*.json
-              overrideExistingArtefact: true
+            - name: upload update.json
+              uses: echapmanFromBunnings/upload-release-assets@1.3
+              with:
+                releaseTag: 'update'
+                githubToken: ${{ secrets.GITHUB_TOKEN }}
+                files: build/update*.json
+                overrideExistingArtefact: true
 
             - name: Notify release
               uses: apexskier/github-release-commenter@v1
