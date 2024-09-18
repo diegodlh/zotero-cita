@@ -20,6 +20,12 @@ function PIDRow(props: {
 
 	useEffect(() => {
 		setUrl(props.item.getPidUrl(props.type));
+		// update the value of the input to match the new PID
+		(
+			document.getElementById(
+				`pid-row-input-${props.item.key}-${props.type}`,
+			)! as HTMLInputElement
+		).value = props.item.getPID(props.type) || "";
 	}, [props.type, value]);
 
 	function handleCommit(newPid: string) {
@@ -39,12 +45,6 @@ function PIDRow(props: {
 		await props.item.fetchPID(props.type, props.autosave);
 		// set new value immediately (see note in handleCommit)
 		setValue(props.item.getPID(props.type));
-		// update the value of the input to match the new fetched value
-		(
-			document.getElementById(
-				`pid-row-input-${props.item.key}-${props.type}`,
-			)! as HTMLInputElement
-		).value = props.item.getPID(props.type) || "";
 	}
 
 	return (
