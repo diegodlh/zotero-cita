@@ -13,7 +13,10 @@ const Selector = (props: {
 			<label>{props.message}</label>
 		</div>
 		<div id="selector-select">
-			<select size={10} id="selector-list">
+			<select
+				size={Math.min(props.choices.length, 10)}
+				id="selector-list"
+			>
 				{props.choices.map((text, index) => (
 					<option key={index}>{text}</option>
 				))}
