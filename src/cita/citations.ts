@@ -6,6 +6,7 @@ import OCI from "../oci";
 import Progress from "./progress";
 import SourceItemWrapper from "./sourceItemWrapper";
 import * as prefs from "../cita/preferences";
+import { config } from "../../package.json";
 
 // Fixme: Consider moving these as static methods of the CitationList class
 // These are methods used to run batch actions on multiple items, where
@@ -276,21 +277,26 @@ export default class {
 		const orphanedActions = ["keep", "remove", "upload"];
 		const orphanedActionSelection: { value?: number } = {};
 		if (counters.orphanedCitations) {
-			const result = Services.prompt.select(
-				window as mozIDOMWindowProxy,
-				Wikicite.getString("wikicite.wikidata.orphaned.title"),
-				Wikicite.formatString(
-					"wikicite.wikidata.orphaned.message",
-					counters.orphanedCitations,
-				),
-				orphanedActions.map((orphanedAction) =>
+			const args = {
+				choices: orphanedActions.map((orphanedAction) =>
 					Wikicite.getString(
 						"wikicite.wikidata.orphaned.action." + orphanedAction,
 					),
 				),
+				message: Wikicite.formatString(
+					"wikicite.wikidata.orphaned.message",
+					counters.orphanedCitations,
+				),
+				addon: addon,
+			};
+			window.openDialog(
+				`chrome://${config.addonRef}/content/selector.xhtml`,
+				Wikicite.getString("wikicite.wikidata.orphaned.title"),
+				"chrome,dialog=no,modal,centerscreen,resizable,width=500,height=300",
+				args,
 				orphanedActionSelection,
 			);
-			if (!result) {
+			if (!orphanedActionSelection.value) {
 				// user cancelled
 				progress.newLine(
 					"error",
@@ -301,7 +307,7 @@ export default class {
 				progress.close();
 				return;
 			}
-			switch (orphanedActions[orphanedActionSelection.value!]) {
+			switch (orphanedActions[orphanedActionSelection.value]) {
 				case "keep":
 					// keep local citation, but remove outdated Wikidata OCI
 					for (const itemId of Object.keys(orphanedCitations)) {
