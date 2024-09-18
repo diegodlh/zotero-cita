@@ -1,6 +1,6 @@
 {
 	"name": "zotero-cita",
-	"version": "1.0.0-beta.2",
+	"version": "1.0.0-beta.3",
 	"description": "Cita: a Wikidata addon for Zotero",
 	"config": {
 		"addonName": "Zotero Cita",
