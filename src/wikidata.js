@@ -934,10 +934,7 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
             const actionType = getActionType(citesWorkClaims[id]);
 
             do {
-                if (
-                    !login.cancelled &&
-                    (!login.anonymous || login.error)
-                ) {
+                if (!login.cancelled && (!login.anonymous || login.error)) {
                     login.prompt();
                 }
                 if (login.cancelled) {
@@ -999,6 +996,8 @@ SELECT ?item ?itemLabel ?doi ?isbn WHERE {
 class Login {
     constructor() {
         this.error = false;
+        this.username = Zotero.Prefs.get('wikidata-username');
+        this.password = Zotero.Prefs.get('wikidata-password');
     }
 
     get credentials() {
@@ -1070,7 +1069,7 @@ class Login {
         );
 
         const username = {value: this.username};
-        const password = {value: undefined};
+        const password = {value: this.password};
         const save = {value: false};
         let loginPrompt;
         do {
