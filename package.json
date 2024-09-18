@@ -86,8 +86,7 @@
 		"github": {
 			"release": false,
 			"assets": [
-				"build/*.xpi",
-				"build/update*.json"
+				"build/*.xpi"
 			]
 		},
 		"hooks": {
