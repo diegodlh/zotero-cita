@@ -496,21 +496,7 @@ class SourceItemWrapper extends ItemWrapper {
     // if not, do it for all
 
     getFromCrossref() {
-        Crossref.getCitations();
-        // fail if item doesn't have a DOI specified
-        // In general I would say to try and get DOI with another plugin if not available locally
-        // call the crossref api
-        // the zotero-citationcounts already calls crossref for citations. Check it
-        // call this.add multiple times, or provide an aray
-        // if citation retrieved has doi, check if citation already exists locally
-        // if yes, set providers.crossref to true
-        // decide whether to ignore citations retrieved without doi
-        // or if I will check if they exist already using other fields (title, etc)
-
-        // offer to automatically get QID from wikidata for target items
-        // using Wikidata.getQID(items)
-
-        // offer to automatically link to zotero items
+        Crossref.addCrossrefCitationsToItems([this]);
     }
 
     getFromOcc() {
