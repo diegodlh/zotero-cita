@@ -83,8 +83,8 @@ jobs:
               env:
                 FILES: build/update*.json
                 ARTEFACT_NAME_INPUT: "${{ inputs.artefactName }}"
+                RELEASE_TAG: 'update'
               with:
-                releaseTag: 'update'
                 debug: true
                 script: |
                   const path = require('path');
@@ -96,7 +96,7 @@ jobs:
                   var { data: release } = await github.rest.repos.getReleaseByTag({
                       owner: context.repo.owner,
                       repo: context.repo.repo,
-                      tag: '${{releaseTag}}'
+                      tag: process.env.RELEASE_TAG,
                   });
                   
                   console.log("found release " + release.name)
