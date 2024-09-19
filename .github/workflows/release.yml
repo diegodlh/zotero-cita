@@ -79,12 +79,63 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: upload update.json
-              uses: echapmanFromBunnings/upload-release-assets@1.3
+              uses: actions/github-script@v7
+              env:
+                FILES: build/update*.json
+                ARTEFACT_NAME_INPUT: "${{ inputs.artefactName }}"
               with:
                 releaseTag: 'update'
-                githubToken: ${{ secrets.GITHUB_TOKEN }}
-                files: build/update*.json
-                overrideExistingArtefact: true
+                debug: true
+                script: |
+                  const path = require('path');
+                  const fs = require('fs');
+
+                  const __dirname = path.resolve()
+          
+                  console.log('searching for release...')
+                  var { data: release } = await github.rest.repos.getReleaseByTag({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      tag: '${{releaseTag}}'
+                  });
+                  
+                  console.log("found release " + release.name)
+
+                  console.log('doing globbing option');
+                  const globOptions = {
+                      followSymbolicLinks: 'FALSE'
+                  }
+                  const files = process.env.FILES.split(os.EOL);
+                  const globber = await glob.create(files.join('\n'), globOptions)
+
+                  for await (const file of globber.globGenerator()) {
+                    console.log(file)
+                    fs.readFile(file, 'utf8', (err, data) => {
+                      if (err) {
+                          console.error(err);
+                          return;
+                      }
+                      
+                      const fileName = file.split("/").pop();
+                      const asset = release.assets.filter(asset=>asset.name == fileName);
+                      if(asset.length > 0){
+                        github.rest.repos.deleteReleaseAsset({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            asset_id: asset.id
+                        });                  
+                      }
+                      
+                      console.log('write to '+ release.id)
+                      github.rest.repos.uploadReleaseAsset({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          release_id: release.id,
+                          name: fileName,
+                          data: data
+                      });
+                    });
+                  }
 
             - name: Notify release
               uses: apexskier/github-release-commenter@v1
