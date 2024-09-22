@@ -330,7 +330,7 @@ class Citation {
 			return;
 		}
 
-		if (item.libraryID !== this.source.item.libraryID) {
+		if (item.libraryID && item.libraryID !== this.source.item.libraryID) {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				"",

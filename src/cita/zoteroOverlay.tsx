@@ -457,12 +457,15 @@ class ZoteroOverlay {
 		}
 	}
 
-	getFromCrossref(menuName: MenuSelectionType) {
+	async getFromCrossref(menuName: MenuSelectionType) {
 		// get items selected
 		// filter items with doi
 		// generate batch call to crossref
 		// only add items not available locally yet
-		Crossref.getCitations();
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			Crossref.addCrossrefCitationsToItems(items);
+		}
 	}
 
 	getFromOCC(menuName: MenuSelectionType) {

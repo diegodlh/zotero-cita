@@ -8,6 +8,7 @@ import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import WikidataButton from "./wikidataButton";
 import ZoteroButton from "./zoteroButton";
+import ImportButton from "./importButton";
 import { config } from "../../../package.json";
 
 function CitationsBox(props: {
@@ -287,6 +288,7 @@ function CitationsBox(props: {
 					// https://github.com/babel/babel-sublime/issues/368
 					<>
 						<ZoteroButton citation={citation} />
+						<ImportButton citation={citation} />
 						<WikidataButton
 							citation={citation}
 							onClick={() => handleCitationSync(index)}

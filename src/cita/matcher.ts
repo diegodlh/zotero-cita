@@ -51,7 +51,7 @@ export default class Matcher {
 		);
 	}
 
-	findMatches(item: Zotero.Item) {
+	findMatches(item: Zotero.Item): number[] {
 		if (
 			!this._isbnCache ||
 			!this._isbnMap ||
@@ -127,7 +127,9 @@ export default class Matcher {
 					titleMatches,
 				),
 			),
-		].sort((a, b) => a - b);
+		]
+			.filter(Boolean)
+			.sort((a, b) => a - b);
 		debug("Found matches in " + (Date.now() - start) + " ms");
 
 		return matches;

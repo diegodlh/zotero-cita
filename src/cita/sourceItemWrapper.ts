@@ -10,6 +10,7 @@ import Progress from "./progress";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
 import { StorageType } from "./preferences";
+import Lookup from "./zotLookup";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -374,7 +375,7 @@ class SourceItemWrapper extends ItemWrapper {
 	/*
 	 * @param {Boolean} batch - Do not update or save citations at the beginning and at the end.
 	 */
-	addCitations(citations: any) {
+	addCitations(citations: Citation[] | Citation) {
 		// Fixme: apart from one day implementing possible duplicates
 		// here I have to check other UUIDs too (not only QID)
 		// and if they overlap, add the new OCIs provided only
@@ -386,6 +387,40 @@ class SourceItemWrapper extends ItemWrapper {
 		if (!Array.isArray(citations)) citations = [citations];
 		if (citations.length) {
 			this.loadCitations();
+			const existingTargetDOIs = new Set(
+				this._citations
+					.map((citation) => citation.target.doi)
+					.filter((id): id is string => id !== undefined),
+			);
+			const existingTargetISBNs = new Set(
+				this._citations
+					.map((citation) => citation.target.isbn)
+					.filter((id): id is string => id !== undefined)
+					.flatMap((isbnList) => isbnList.split(" ")),
+			);
+			debug(`Old: ${this._citations}`);
+			// Filter out existing DOIs
+			citations = citations.filter((citation) => {
+				// Exclude if DOI already exists
+				if (
+					citation.target.doi &&
+					existingTargetDOIs.has(citation.target.doi)
+				)
+					return false;
+				// Exclude if ISBN already exists
+				if (
+					citation.target.isbn &&
+					citation.target.isbn
+						.split(" ")
+						.some((item) => existingTargetISBNs.has(item))
+				)
+					return false;
+				// Exclude if title, date, type and creators match (best effort)
+				// TODO
+
+				return true;
+			});
+			debug(`New: ${citations}`);
 			this._citations = this._citations.concat(citations);
 			this.saveCitations();
 		}
@@ -525,21 +560,7 @@ class SourceItemWrapper extends ItemWrapper {
 	// if not, do it for all
 
 	getFromCrossref() {
-		Crossref.getCitations();
-		// fail if item doesn't have a DOI specified
-		// In general I would say to try and get DOI with another plugin if not available locally
-		// call the crossref api
-		// the zotero-citationcounts already calls crossref for citations. Check it
-		// call this.add multiple times, or provide an aray
-		// if citation retrieved has doi, check if citation already exists locally
-		// if yes, set providers.crossref to true
-		// decide whether to ignore citations retrieved without doi
-		// or if I will check if they exist already using other fields (title, etc)
-
-		// offer to automatically get QID from wikidata for target items
-		// using Wikidata.getQID(items)
-
-		// offer to automatically link to zotero items
+		Crossref.addCrossrefCitationsToItems([this]);
 	}
 
 	getFromOcc() {
@@ -771,6 +792,63 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
+	async parseCitationIdentifiers(
+		identifiers: (
+			| { DOI: string }
+			| { ISBN: string }
+			| { arXiv: string }
+			| { adsBibcode: string }
+			| { PMID: string }
+		)[],
+	) {
+		await Zotero.Schema.schemaUpdatePromise;
+		// look up each identifier asynchronously in parallel - multiple web requests
+		// can run at the same time, so this speeds things up a lot #141
+
+		const items = await Lookup.lookupItemsByIdentifiers(identifiers);
+
+		const citations = items
+			? items.map((item) => {
+					return new Citation({ item: item, ocis: [] }, this);
+				})
+			: [];
+
+		return citations;
+
+		// const citations = await Promise.all(
+		// 	identifiers.map(async (identifier) => {
+		// 		const translation = new Zotero.Translate.Search();
+		// 		translation.setIdentifier(identifier);
+
+		// 		let jsonItems;
+		// 		try {
+		// 			// set libraryID to false so we don't save this item in the Zotero library
+		// 			jsonItems = await translation.translate({
+		// 				libraryID: false,
+		// 			});
+		// 		} catch {
+		// 			// `translation.translate` throws an error if no item was found for an identifier.
+		// 			// Catch these errors so we don't abort the `Promise.all`.
+		// 			debug(
+		// 				`No items returned for identifier: ${identifier}`,
+		// 			);
+		// 		}
+		// 		if (jsonItems && jsonItems.length > 0) {
+		// 			const jsonItem = jsonItems[0];
+		// 			const newItem = new Zotero.Item(
+		// 				jsonItem.itemType,
+		// 			);
+		// 			newItem.fromJSON(jsonItem);
+		// 			return new Citation(
+		// 				{ item: newItem, ocis: [] },
+		// 				this,
+		// 			);
+		// 		} else return false; // no item added
+		// 	}),
+		// );
+		// return citations.filter(Boolean); // filter out if no item found
+	}
+
 	// import citation by identifier (DOI/ISBN/ArXiV/PMID...)
 	// - also supports multiple items (but only one type at once)
 	async addCitationsByIdentifier() {
@@ -800,41 +878,8 @@ class SourceItemWrapper extends ItemWrapper {
 			);
 			try {
 				if (identifiers.length > 0) {
-					await Zotero.Schema.schemaUpdatePromise;
-					// look up each identifier asynchronously in parallel - multiple web requests
-					// can run at the same time, so this speeds things up a lot #141
-					let citations = await Promise.all(
-						identifiers.map(async (identifier) => {
-							const translation = new Zotero.Translate.Search();
-							translation.setIdentifier(identifier);
-
-							let jsonItems;
-							try {
-								// set libraryID to false so we don't save this item in the Zotero library
-								jsonItems = await translation.translate({
-									libraryID: false,
-								});
-							} catch {
-								// `translation.translate` throws an error if no item was found for an identifier.
-								// Catch these errors so we don't abort the `Promise.all`.
-								debug(
-									`No items returned for identifier: ${identifier}`,
-								);
-							}
-							if (jsonItems && jsonItems.length > 0) {
-								const jsonItem = jsonItems[0];
-								const newItem = new Zotero.Item(
-									jsonItem.itemType,
-								);
-								newItem.fromJSON(jsonItem);
-								return new Citation(
-									{ item: newItem, ocis: [] },
-									this,
-								);
-							} else return false; // no item added
-						}),
-					);
-					citations = citations.filter(Boolean); // filter out if no item found
+					const citations =
+						await this.parseCitationIdentifiers(identifiers);
 
 					if (citations.length) {
 						this.addCitations(citations);
