@@ -85,6 +85,7 @@ jobs:
                 tag: update
                 files: build/update*.json
                 allow_override: true
+                gzip: false
                 
 
             - name: Notify release
