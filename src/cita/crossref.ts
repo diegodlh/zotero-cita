@@ -2,9 +2,7 @@ import SourceItemWrapper from "./sourceItemWrapper";
 import Progress from "./progress";
 import Citation from "./citation";
 import Wikicite, { debug } from "./wikicite";
-import { number } from "prop-types";
 import Lookup from "./zotLookup";
-import Matcher from "./matcher";
 import Bottleneck from "bottleneck";
 
 // Initialize Bottleneck for rate limiting (max 50 requests per second)
@@ -58,8 +56,8 @@ export default class Crossref {
 		if (sourceItemsWithDOI.some((item) => item.citations.length)) {
 			const confirmed = Services.prompt.confirm(
 				window,
-				"Citations already exist",
-				"Some items already have citations. Loading citations from CrossRef might lead to duplicates. Continue anyway?",
+				Wikicite.getString("wikicite.crossref.get-citations.existing-citations-title"),
+				Wikicite.getString("wikicite.crossref.get-citations.existing-citations-message"),
 			);
 			if (!confirmed) return;
 		}

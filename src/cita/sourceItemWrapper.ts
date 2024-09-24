@@ -11,6 +11,7 @@ import Wikidata from "./wikidata";
 import { config } from "../../package.json";
 import { StorageType } from "./preferences";
 import Lookup from "./zotLookup";
+import * as _ from "lodash";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -399,7 +400,7 @@ class SourceItemWrapper extends ItemWrapper {
 					.flatMap((isbnList) => isbnList.split(" ")),
 			);
 			debug(`Old: ${this._citations}`);
-			// Filter out existing DOIs
+			// Filter out items whose DOI or ISBN are part of the existing citations
 			citations = citations.filter((citation) => {
 				// Exclude if DOI already exists
 				if (
@@ -415,12 +416,12 @@ class SourceItemWrapper extends ItemWrapper {
 						.some((item) => existingTargetISBNs.has(item))
 				)
 					return false;
-				// Exclude if title, date, type and creators match (best effort)
-				// TODO
 
 				return true;
 			});
-			debug(`New: ${citations}`);
+
+			// Filter out identical items (might be slow)
+			citations = _.differenceWith(citations, this._citations, (a, b) => _.isEqual(a.target.item.toJSON(), b.target.item.toJSON()));
 			this._citations = this._citations.concat(citations);
 			this.saveCitations();
 		}
