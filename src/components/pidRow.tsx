@@ -14,37 +14,28 @@ function PIDRow(props: {
 	const [value, setValue] = useState(props.item.getPID(props.type));
 	const [url, setUrl] = useState(props.item.getPidUrl(props.type));
 
+	const [oldPid, setOldPid] = useState(value);
+
 	useEffect(() => {
 		setValue(props.item.getPID(props.type));
 	}, [props.item, props.type]);
 
 	useEffect(() => {
 		setUrl(props.item.getPidUrl(props.type));
-		// update the value of the input to match the new PID
-		(
-			document.getElementById(
-				`pid-row-input-${props.item.key}-${props.type}`,
-			)! as HTMLInputElement
-		).value = props.item.getPID(props.type) || "";
 	}, [props.type, value]);
 
 	function handleCommit(newPid: string) {
-		if (newPid != value) {
+		if (newPid != oldPid) {
 			if (props.validate && !props.validate(props.type, newPid)) {
+				setValue(oldPid);
 				return;
 			}
 			props.item.setPID(props.type, newPid, props.autosave);
-			// set new value immediately
-			// if autosave is true, it will be updated twice
-			// but second time (via props.item) might take some time
-			setValue(props.item.getPID(props.type));
 		}
 	}
 
 	async function onFetch() {
 		await props.item.fetchPID(props.type, props.autosave);
-		// set new value immediately (see note in handleCommit)
-		setValue(props.item.getPID(props.type));
 	}
 
 	return (
@@ -58,10 +49,12 @@ function PIDRow(props: {
 			<div className="editable-container">
 				<input
 					type="text"
-					id={`pid-row-input-${props.item.key}-${props.type}`}
 					className={props.editable ? "zotero-clicky" : ""}
 					readOnly={!props.editable}
-					defaultValue={value || ""}
+					value={value || ""}
+					onChange={(event) => setValue(event.target.value)}
+					// when the input gains focus, save its value for reference
+					onFocus={() => setOldPid(value || "")}
 					// when the input loses focus, update the item's PID
 					onBlur={(event) => handleCommit(event.target.value)}
 				/>
