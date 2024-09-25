@@ -1,7 +1,7 @@
 import Bottleneck from "bottleneck";
 
 const limiter = new Bottleneck({
-	minTime: 100, // Crossref allows up to 50 requests per second, but 10 seems reasonable enough
+	minTime: 100, // Max 10 requests per second to avoid overloading translators
 });
 
 export default class Lookup {
@@ -15,15 +15,12 @@ export default class Lookup {
 			| { PMID: string }
 		)[],
 		addToZotero: boolean = false,
-	) {
-		//if (Array.isArray(rawIdentifiers)) rawIdentifiers = rawIdentifiers.join();
-		//Zotero.log(identifiers);
-		//let identifiers = Zotero.Utilities.extractIdentifiers(rawIdentifiers);
+	): Promise<false | Zotero.Item[]> {
 		if (!identifiers.length) {
-			Zotero.alert(
-				window,
-				Zotero.getString("lookup.failure.title"),
-				Zotero.getString("lookup.failureToID.description"),
+			Zotero.logError(
+				new Error(
+					`Lookup input did not contain any identifiers ${JSON.stringify(identifiers)}`,
+				),
 			);
 			return false;
 		}
@@ -49,7 +46,8 @@ export default class Lookup {
 		// limit for GET, which we currently use, and passing batches of 200 seems...fine.
 		//
 		// https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.id
-		if (identifiers.length && identifiers[0].PMID) {
+		// TODO: this code was taken from chrome/content/zotero/lookup.js, which assumes that all identifiers are of the same type, yet we don't make that assumption and we also don't do batch requests
+		/*if (identifiers.length && 'PMID' in identifiers[0]) {
 			const chunkSize = 200;
 			const newIdentifiers = [];
 			for (let i = 0; i < identifiers.length; i += chunkSize) {
@@ -60,9 +58,8 @@ export default class Lookup {
 				});
 			}
 			identifiers = newIdentifiers;
-		}
+		}*/
 
-		//const newItems: Zotero.Item[] = [];
 		const promises = [];
 
 		for (const identifier of identifiers) {
@@ -74,29 +71,34 @@ export default class Lookup {
 			translate.setTranslator(translators);
 
 			// Schedule the translation request with the rate limiter
-			const translationPromise: Promise<Zotero.Item[]> = limiter
-				.schedule(
-					async () =>
-						translate.translate({
-							libraryID: libraryID,
-							collections: collections,
-							saveAttachments: addToZotero,
-						}) as Promise<Zotero.Item[]>,
-				)
-				.then((result: Zotero.Item[] | null): Zotero.Item[] => {
-					// If null is returned, treat it as an empty array to match Zotero.Item[]
-					Zotero.debug(
-						`Found item for identifier ${identifier.DOI ?? identifier.ISBN}: ${result}`,
-					);
-					return result || [];
-				})
-				.catch((e): Zotero.Item[] => {
-					Zotero.logError(e);
-					Zotero.log(
-						`While looking for ${identifier.DOI ?? identifier.ISBN}`,
-					);
-					return [];
-				});
+			const translationPromise: Promise<ZoteroTranslators.Item[]> =
+				limiter
+					.schedule(
+						async () =>
+							translate.translate({
+								libraryID: libraryID,
+								collections: collections,
+								saveAttachments: addToZotero,
+							}) as Promise<ZoteroTranslators.Item[]>, // Note that translate returns a serialized version of the item, not a Zotero.Item
+					)
+					.then(
+						(
+							result: ZoteroTranslators.Item[] | null,
+						): ZoteroTranslators.Item[] => {
+							// If null is returned, treat it as an empty array to match ZoteroTranslators.Item[]
+							Zotero.debug(
+								`Found item for identifier ${JSON.stringify(identifier)}: ${result}`,
+							);
+							return result || [];
+						},
+					)
+					.catch((e): ZoteroTranslators.Item[] => {
+						Zotero.logError(e);
+						Zotero.log(
+							`While looking for ${JSON.stringify(identifier)}`,
+						);
+						return [];
+					});
 
 			promises.push(translationPromise);
 		}
@@ -110,11 +112,13 @@ export default class Lookup {
 				const firstItem = result[0];
 				if (!addToZotero) {
 					// delete irrelevant fields to avoid warnings in Item#fromJSON
-					delete firstItem["notes"];
-					delete firstItem["seeAlso"];
-					delete firstItem["attachments"];
+					delete firstItem.notes;
+					delete firstItem.seeAlso;
+					delete firstItem.attachments;
 				}
-				return firstItem;
+				const newItem = new Zotero.Item(firstItem.itemType);
+				newItem.fromJSON(firstItem);
+				return newItem;
 			} else return [];
 		});
 
@@ -128,6 +132,6 @@ export default class Lookup {
 		}
 		// TODO: Give indication if some, but not all failed
 
-		return newItems; // TODO: type _should_ be Zotero.Iem[]
+		return newItems;
 	}
 }

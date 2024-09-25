@@ -53,11 +53,16 @@ export default class Crossref {
 			return;
 		}
 
+		// Ask user confirmation in case some selected items already have citations
 		if (sourceItemsWithDOI.some((item) => item.citations.length)) {
 			const confirmed = Services.prompt.confirm(
 				window,
-				Wikicite.getString("wikicite.crossref.get-citations.existing-citations-title"),
-				Wikicite.getString("wikicite.crossref.get-citations.existing-citations-message"),
+				Wikicite.getString(
+					"wikicite.crossref.get-citations.existing-citations-title",
+				),
+				Wikicite.getString(
+					"wikicite.crossref.get-citations.existing-citations-message",
+				),
 			);
 			if (!confirmed) return;
 		}
@@ -70,14 +75,15 @@ export default class Crossref {
 
 		const sourceItemReferences = await Promise.all(
 			sourceItemsWithDOI.flatMap((sourceItem) => {
-				if (sourceItem.doi) {
+				const doi = sourceItem.getPID("DOI"); // Guaranteed to be defined
+				if (doi) {
 					// Use rate limiting to fetch references from Crossref
 					return limiter
-						.schedule(() => Crossref.getReferences(sourceItem.doi))
+						.schedule(() => Crossref.getReferences(doi))
 						.catch((error) => {
 							// Handle and log the error within the promise chain
 							Zotero.log(
-								`Error fetching references for DOI ${sourceItem.doi}`,
+								`Error fetching references for DOI ${doi}`,
 							);
 							Zotero.logError(error);
 							return []; // Return an empty array on error so that the promise resolves
@@ -128,13 +134,12 @@ export default class Crossref {
 
 		try {
 			let parsedItems = 0;
-			const parsedItemReferences = await Promise.all(
+			const parsedItemReferences: Zotero.Item[][] = await Promise.all(
 				sourceItemReferences.map(async (sourceItemReferenceList) => {
 					if (!sourceItemReferenceList.length) return [];
 
-					const parsedReferences = await Crossref.parseReferences(
-						sourceItemReferenceList,
-					);
+					const parsedReferences: Zotero.Item[] =
+						await Crossref.parseReferences(sourceItemReferenceList);
 					progress.updateLine(
 						"loading",
 						Wikicite.formatString(
@@ -220,14 +225,20 @@ export default class Crossref {
 			(e) => {
 				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
 				if (e.status == 429) {
+					// Extract rate limit headers
+					const rateLimitLimit =
+						e.xmlhttp.getResponseHeader("X-Rate-Limit-Limit");
+					const rateLimitInterval = e.xmlhttp.getResponseHeader(
+						"X-Rate-Limit-Interval",
+					);
+
 					throw new Error(
-						"Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time.",
+						"Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Rate limits in action: Limit: ${rateLimitLimit}, Interval: ${rateLimitInterval}",
 					);
 				}
 			},
 		);
 		if (!response) return [];
-
 		return response.response.message.reference || [];
 	}
 
@@ -244,20 +255,21 @@ export default class Crossref {
 			return [];
 		}
 
+		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
 		const crossrefIdentifiers = crossrefReferences
 			.map((item) => item.DOI ?? item.ISBN ?? null)
 			.filter(Boolean)
 			.flatMap(Zotero.Utilities.extractIdentifiers);
-		//Zotero.debug(`Will look up following identifiers: ${JSON.stringify(crossrefIdentifiers)}`);
 		const crossrefReferencesWithoutIdentifier = crossrefReferences.filter(
 			(item) => !item.DOI && !item.ISBN,
 		);
+
+		// Use Lookup to get items for all identifiers
 		const result =
 			await Lookup.lookupItemsByIdentifiers(crossrefIdentifiers);
 		const parsedReferences = result ? result : [];
-		//Zotero.debug(`Found ${parsedReferences.length} references with identifier`);
 
-		//Zotero.log(`Will now manually process ${crossrefReferencesWithoutIdentifier.length} refs`);
+		// Manually create items for references without identifiers
 		const manualResult = await Promise.allSettled(
 			crossrefReferencesWithoutIdentifier.map((item) =>
 				this.parseItemFromCrossrefReference(item),
@@ -269,23 +281,21 @@ export default class Crossref {
 					ref.status === "fulfilled",
 			) // Only keep fulfilled promises
 			.map((ref) => ref.value); // Extract the `value` from fulfilled promises;
-		//Zotero.debug(`Parsed ${parsedReferencesWithoutIdentifier.length} references without identifier`);
 		parsedReferences.push(...parsedReferencesWithoutIdentifier);
 
-		//Zotero.debug(`Got ${parsedReferences.length} refs`);
 		return parsedReferences;
 	}
 
 	/**
-	 * Get a Zotero Item from a Crossref reference item that doesn't include an identifier.
-	 * @param {string} crossrefItem - A reference item in JSON Crossref format.
+	 * Create a Zotero Item from a Crossref reference item that doesn't include an identifier.
+	 * @param {any} crossrefItem - A reference item in JSON Crossref format.
 	 * @returns {Promise<Zotero.Item>} Zotero item parsed from the identifier, or null if parsing failed.
 	 */
 	static async parseItemFromCrossrefReference(
-		crossrefItem: string,
+		crossrefItem: any,
 	): Promise<Zotero.Item> {
 		//Zotero.log(`Parsing ${crossrefItem.unstructured}`);
-		const jsonItem = {};
+		const jsonItem: any = {};
 		if (crossrefItem["journal-title"]) {
 			jsonItem.itemType = "journalArticle";
 			jsonItem.title =

@@ -6,7 +6,7 @@ import Wikicite from "../../cita/wikicite";
 function ImportButton(props: any) {
 	const citation = props.citation as Citation;
 	const key = citation.target.key;
-	let identifier: { DOI: string } | { ISBN: string };
+	let identifier: { DOI?: string; ISBN?: string } | false = false;
 	if (citation.target.doi) identifier = { DOI: citation.target.doi };
 	else if (citation.target.isbn) identifier = { ISBN: citation.target.isbn };
 	async function handleClick() {
@@ -22,7 +22,7 @@ function ImportButton(props: any) {
 		collections.unshift({ name: "(None)", id: NaN });
 
 		// Select collection
-		const selected = {};
+		const selected: { value: number } = { value: 0 };
 		let selectedCollectionID: number;
 		if (collections && collections.length > 1) {
 			const result = Services.prompt.select(
@@ -61,7 +61,7 @@ function ImportButton(props: any) {
 					default:
 						await citation.autoLink();
 				}
-			} catch (e) {
+			} catch (e: any) {
 				Zotero.logError(e);
 			}
 		} else {

@@ -421,7 +421,9 @@ class SourceItemWrapper extends ItemWrapper {
 			});
 
 			// Filter out identical items (might be slow)
-			citations = _.differenceWith(citations, this._citations, (a, b) => _.isEqual(a.target.item.toJSON(), b.target.item.toJSON()));
+			citations = _.differenceWith(citations, this._citations, (a, b) =>
+				_.isEqual(a.target.item.toJSON(), b.target.item.toJSON()),
+			);
 			this._citations = this._citations.concat(citations);
 			this.saveCitations();
 		}
