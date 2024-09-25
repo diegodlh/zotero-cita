@@ -47,6 +47,8 @@ function PIDRow(props: {
 				{props.type.toUpperCase()}
 			</label>
 			<div className="editable-container">
+				{/* <Editable */}
+				{/* 973e924 replaced Editable with input until we work out how to import zotero components */}
 				<input
 					type="text"
 					className={props.editable ? "zotero-clicky" : ""}
