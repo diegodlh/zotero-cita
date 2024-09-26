@@ -35,9 +35,9 @@ const ITEM_PANE_COLUMN_IDS = {
 declare type MenuFunction =
 	| "fetchQIDs"
 	| "syncWithWikidata"
-	| "getFromCrossref"
-	| "getFromSemantic"
-	| "getFromOpenAlex"
+	| "getFromIndexer.Crossref"
+	| "getFromIndexer.Semantic"
+	| "getFromIndexer.OpenAlex"
 	| "getFromOCC"
 	| "getFromAttachments"
 	| "addAsCitations"
@@ -1253,9 +1253,9 @@ class ZoteroOverlay {
 		> = new Map([
 			["fetchQIDs", () => this.fetchQIDs(menuName)],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
-			["getFromCrossref", () => this.getFromCrossref(menuName)],
-			["getFromSemantic", () => this.getFromSemantic(menuName)],
-			["getFromOpenAlex", () => this.getFromOpenAlex(menuName)],
+			["getFromIndexer.Crossref", () => this.getFromCrossref(menuName)],
+			["getFromIndexer.Semantic", () => this.getFromSemantic(menuName)],
+			["getFromIndexer.OpenAlex", () => this.getFromOpenAlex(menuName)],
 			["getFromOCC", () => this.getFromOCC(menuName)],
 			["getFromAttachments", () => this.getFromAttachments(menuName)],
 			["addAsCitations", () => this.addAsCitations(menuName)],
@@ -1293,14 +1293,21 @@ class ZoteroOverlay {
 		IDPrefix: string,
 		doc: Document,
 	) {
+		let label: string;
+		Zotero.log(`Building menu for ${functionName}`);
+		if (functionName.includes("getFromIndexer.")) {
+			const indexerName = functionName.split(".")[1];
+			label = Wikicite.formatString(
+				"wikicite.submenu.get-from-indexer",
+				indexerName,
+			);
+			Zotero.log(label);
+		} else label = Wikicite.getString(`wikicite.submenu.${functionName}`);
 		const ns =
 			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 		const menuFunc = doc.createElementNS(ns, "menuitem");
 		menuFunc.setAttribute("id", IDPrefix + functionName);
-		menuFunc.setAttribute(
-			"label",
-			Wikicite.getString(`wikicite.submenu.${functionName}`),
-		);
+		menuFunc.setAttribute("label", label);
 		menuFunc.addEventListener(
 			"command",
 			(event) => {
