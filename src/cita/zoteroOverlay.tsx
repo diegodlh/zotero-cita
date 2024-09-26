@@ -2,6 +2,8 @@ import Wikicite from "./wikicite";
 import Citations from "./citations";
 import CitationsBoxContainer from "../containers/citationsBoxContainer";
 import Crossref from "./crossref";
+import Semantic from "./semantic";
+import OpenAlex from "./openalex";
 import Extraction from "./extract";
 import LCN from "./localCitationNetwork";
 import OCI from "../oci";
@@ -34,6 +36,8 @@ declare type MenuFunction =
 	| "fetchQIDs"
 	| "syncWithWikidata"
 	| "getFromCrossref"
+	| "getFromSemantic"
+	| "getFromOpenAlex"
 	| "getFromOCC"
 	| "getFromAttachments"
 	| "addAsCitations"
@@ -464,7 +468,29 @@ class ZoteroOverlay {
 		// only add items not available locally yet
 		const items = await this.getSelectedItems(menuName, true);
 		if (items.length) {
-			Crossref.addCrossrefCitationsToItems(items);
+			new Crossref().addCitationsToItems(items);
+		}
+	}
+
+	async getFromSemantic(menuName: MenuSelectionType) {
+		// get items selected
+		// filter items with doi
+		// generate batch call to crossref
+		// only add items not available locally yet
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			new Semantic().addCitationsToItems(items);
+		}
+	}
+
+	async getFromOpenAlex(menuName: MenuSelectionType) {
+		// get items selected
+		// filter items with doi
+		// generate batch call to crossref
+		// only add items not available locally yet
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			new OpenAlex().addCitationsToItems(items);
 		}
 	}
 
@@ -675,10 +701,37 @@ class ZoteroOverlay {
 		itemCrossrefGet.setAttribute("id", "item-menu-crossref-get");
 		itemCrossrefGet.setAttribute(
 			"label",
-			Wikicite.getString("wikicite.item-menu.get-crossref"),
+			Wikicite.formatString("wikicite.item-menu.get-indexer", "Crossref"),
 		);
 		itemCrossrefGet.addEventListener("command", () =>
 			this._sourceItem!.getFromCrossref(),
+		);
+
+		// Get Semantic citations menu item
+
+		const itemSemanticGet = doc.createElementNS(ns, "menuitem");
+		itemSemanticGet.setAttribute("id", "item-menu-semantic-get");
+		itemSemanticGet.setAttribute(
+			"label",
+			Wikicite.formatString(
+				"wikicite.item-menu.get-indexer",
+				"Semantic Scholar",
+			),
+		);
+		itemSemanticGet.addEventListener("command", () =>
+			this._sourceItem!.getFromSemantic(),
+		);
+
+		// Get OpenAlex citations menu item
+
+		const itemOpenAlexGet = doc.createElementNS(ns, "menuitem");
+		itemOpenAlexGet.setAttribute("id", "item-menu-openalex-get");
+		itemOpenAlexGet.setAttribute(
+			"label",
+			Wikicite.formatString("wikicite.item-menu.get-indexer", "OpenAlex"),
+		);
+		itemOpenAlexGet.addEventListener("command", () =>
+			this._sourceItem!.getFromOpenAlex(),
 		);
 
 		// Get OCC citations menu item
@@ -804,6 +857,8 @@ class ZoteroOverlay {
 		itemMenu.appendChild(itemWikidataSync);
 		itemMenu.appendChild(itemFetchCitationQIDs);
 		itemMenu.appendChild(itemCrossrefGet);
+		itemMenu.appendChild(itemSemanticGet);
+		itemMenu.appendChild(itemOpenAlexGet);
 		itemMenu.appendChild(itemOccGet);
 		itemMenu.appendChild(itemPdfExtract);
 		itemMenu.appendChild(itemIdentifierImport);
@@ -983,6 +1038,12 @@ class ZoteroOverlay {
 		const itemCrossrefGet = document.getElementById(
 			"item-menu-crossref-get",
 		) as HTMLButtonElement;
+		const itemSemanticGet = document.getElementById(
+			"item-menu-semantic-get",
+		) as HTMLButtonElement;
+		const itemOpenAlexGet = document.getElementById(
+			"item-menu-openalex-get",
+		) as HTMLButtonElement;
 		const itemOccGet = document.getElementById(
 			"item-menu-occ-get",
 		) as HTMLButtonElement;
@@ -1005,6 +1066,8 @@ class ZoteroOverlay {
 		itemWikidataSync.disabled = !sourceQid;
 		itemFetchCitationQIDs.disabled = !hasCitations;
 		itemCrossrefGet.disabled = !sourceDoi;
+		itemSemanticGet.disabled = !sourceDoi;
+		itemOpenAlexGet.disabled = !sourceDoi;
 		itemOccGet.disabled = !sourceOcc;
 		itemPdfExtract.disabled = !hasAttachments;
 		itemCitationsImport.disabled = false;
@@ -1191,6 +1254,8 @@ class ZoteroOverlay {
 			["fetchQIDs", () => this.fetchQIDs(menuName)],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
 			["getFromCrossref", () => this.getFromCrossref(menuName)],
+			["getFromSemantic", () => this.getFromSemantic(menuName)],
+			["getFromOpenAlex", () => this.getFromOpenAlex(menuName)],
 			["getFromOCC", () => this.getFromOCC(menuName)],
 			["getFromAttachments", () => this.getFromAttachments(menuName)],
 			["addAsCitations", () => this.addAsCitations(menuName)],

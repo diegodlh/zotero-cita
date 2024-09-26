@@ -2,6 +2,8 @@ import Wikicite, { debug } from "./wikicite";
 import Citation from "./citation";
 import Citations from "./citations";
 import Crossref from "./crossref";
+import Semantic from "./semantic";
+import OpenAlex from "./openalex";
 import Extraction from "./extract";
 import ItemWrapper from "./itemWrapper";
 import Matcher from "./matcher";
@@ -562,8 +564,20 @@ class SourceItemWrapper extends ItemWrapper {
 	// if provided, sync to wikidata, export to croci, etc, only for that citation
 	// if not, do it for all
 
+	/*getFrom<T extends IndexerBase>(indexer: T) {
+		(new indexer()).addCitationsToItems([this]);
+	}*/
+
 	getFromCrossref() {
-		Crossref.addCrossrefCitationsToItems([this]);
+		new Crossref().addCitationsToItems([this]);
+	}
+
+	getFromSemantic() {
+		new Semantic().addCitationsToItems([this]);
+	}
+
+	getFromOpenAlex() {
+		new OpenAlex().addCitationsToItems([this]);
 	}
 
 	getFromOcc() {

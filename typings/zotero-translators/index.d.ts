@@ -23,10 +23,10 @@ declare namespace ZoteroTranslators {
 	 */
 	type Item = ItemTypes[ItemType];
 
-	/*var Item: {
+	let Item: {
 		new <T extends ItemType>(itemType: T): ItemTypes[T];
 		new (itemType: string): Item;
-	};*/
+	};
 
 	interface Creator<T extends CreatorType> {
 		lastName: string?;
@@ -1501,9 +1501,6 @@ declare namespace ZoteroTranslators {
 	function nextItem(): Zotero.Item?;
 	function nextCollection(): Zotero.Collection?;
 }
-
-import Z = Zotero;
-import ZU = Zotero.Utilities;
 
 declare function attr(
 	node: ParentNode,

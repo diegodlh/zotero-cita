@@ -25,3 +25,12 @@ declare class Localization {}
 
 declare type PIDType = "DOI" | "ISBN" | "QID" | "OCC";
 declare type QID = `Q${number}`;
+
+declare type Identifier =
+	| { DOI: string }
+	| { ISBN: string }
+	| { arXiv: string }
+	| { adsBibcode: string }
+	| { PMID: string };
+
+declare type Identifiers = Identifier[];

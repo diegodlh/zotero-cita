@@ -1,4 +1,6 @@
 import Bottleneck from "bottleneck";
+import OpenAlex from "openalex-sdk";
+import { SearchParameters } from "openalex-sdk/dist/src/types/work";
 
 const limiter = new Bottleneck({
 	minTime: 100, // Max 10 requests per second to avoid overloading translators
@@ -95,7 +97,7 @@ export default class Lookup {
 					.catch((e): ZoteroTranslators.Item[] => {
 						Zotero.logError(e);
 						Zotero.log(
-							`While looking for ${JSON.stringify(identifier)}`,
+							`While looking for identifiers: ${JSON.stringify(identifier)}`,
 						);
 						return [];
 					});
@@ -121,6 +123,105 @@ export default class Lookup {
 				return newItem;
 			} else return [];
 		});
+
+		//toggleProgress(false);
+		if (!newItems.length) {
+			Zotero.alert(
+				window,
+				Zotero.getString("lookup.failure.title"),
+				Zotero.getString("lookup.failure.description"),
+			);
+		}
+		// TODO: Give indication if some, but not all failed
+
+		return newItems;
+	}
+
+	static async lookupItemsOpenAlex(
+		identifiers: string[],
+		addToZotero: boolean = false,
+	): Promise<false | Zotero.Item[]> {
+		if (!identifiers.length) {
+			Zotero.logError(
+				new Error(
+					`Lookup input did not contain any identifiers ${JSON.stringify(identifiers)}`,
+				),
+			);
+			return false;
+		}
+
+		let libraryID: false | number = false;
+		let collections: false | number[] = false;
+
+		if (addToZotero) {
+			try {
+				libraryID = ZoteroPane.getSelectedLibraryID();
+				const collection = ZoteroPane.getSelectedCollection();
+				collections = collection ? [collection.id] : false; // TODO: this should be selected by user
+			} catch (e) {
+				/* TODO: handle this */
+			}
+		}
+
+		//const promises = [];
+
+		// Taken from the OpenAlex search translator
+		//const apiURL = `https://api.openalex.org/works?filter=openalex:${identifiers.join("|")}&mailto=cita@duck.com`;
+		// Z.debug(apiURL);
+		//const apiJSON = (await Zotero.HTTP.request("GET", apiURL)).responseText;
+		const sdk = new OpenAlex("cita@duck.com");
+		const oaIds: { openalex: string }[] = identifiers.map((id) => {
+			return { openalex: id };
+		});
+		const params: SearchParameters = {
+			filter: {
+				ids: oaIds,
+			},
+		};
+		const works = await sdk.works(params);
+
+		// We have to tweak the JSON a bit to favor DOI imports and reserve the (potentially failing) OpenAlex JSON translator to whatever remains
+		const dois = works.results
+			.map((work) => work.doi ?? null)
+			.filter((e) => e !== null)
+			.flatMap((e) => Zotero.Utilities.extractIdentifiers(e!));
+		const newItems =
+			(await this.lookupItemsByIdentifiers(dois, addToZotero)) || [];
+
+		// Filter out
+		works.results = works.results.filter((work) => !work.doi);
+		works.meta.count = works.results.length;
+		const apiJSON = JSON.stringify(works);
+		const translator = new Zotero.Translate.Import(); // as ZoteroTranslators.Translate<ZoteroTranslators.ImportTranslator>;
+		translator.setTranslator("faa53754-fb55-4658-9094-ae8a7e0409a2"); // OpenAlex JSON
+		translator.setString(apiJSON);
+		const promise = translator.translate({
+			libraryID: libraryID,
+			collections: collections,
+			saveAttachments: addToZotero,
+		}) as Promise<ZoteroTranslators.Item[]>;
+		const results = await promise.catch((e): ZoteroTranslators.Item[] => {
+			Zotero.logError(e);
+			Zotero.log(
+				`While looking for OpenAlex items: ${JSON.stringify(identifiers)}`,
+			);
+			return [];
+		});
+
+		// Flatten the results and push only the first item from each result (or none if it's empty), cleaning it up if needed
+		const oaItems = results.map((result) => {
+			if (!addToZotero) {
+				// delete irrelevant fields to avoid warnings in Item#fromJSON
+				delete result.notes;
+				delete result.seeAlso;
+				delete result.attachments;
+			}
+			const newItem = new Zotero.Item(result.itemType);
+			newItem.fromJSON(result);
+			return newItem;
+		});
+
+		newItems.push(...oaItems);
 
 		//toggleProgress(false);
 		if (!newItems.length) {

@@ -35,6 +35,7 @@
 	},
 	"homepage": "https://github.com/diegodlh/zotero-cita",
 	"dependencies": {
+		"openalex-sdk": "^1.1.6",
 		"prop-types": "^15.7.2",
 		"quickstatements-to-wikibase-edit": "^1.2.1",
 		"react": "^18.3.1",

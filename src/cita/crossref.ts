@@ -1,228 +1,69 @@
-import SourceItemWrapper from "./sourceItemWrapper";
-import Progress from "./progress";
-import Citation from "./citation";
+import { IndexerBase, IndexedWork } from "./indexer";
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
-import Bottleneck from "bottleneck";
 
-// Initialize Bottleneck for rate limiting (max 50 requests per second)
-const limiter = new Bottleneck({
-	minTime: 20, // 50 requests per second
-});
+interface CrossrefResponse {
+	status: string;
+	"message-type": string;
+	"message-version": string;
+	message: CrossrefWork;
+}
 
-declare const Services: any;
+interface CrossrefWork {
+	"reference-count": number;
+	reference: Reference[];
+	"references-count": number;
+}
 
-export default class Crossref {
-	/*static getCitations(items: SourceItemWrapper[]) {
-    
-    if (items.length) {
-    Crossref.addCrossrefCitationsToItems(items);
-    }
-    
-    Services.prompt.alert(
-    window,
-    Wikicite.getString("wikicite.global.unsupported"),
-    Wikicite.getString("wikicite.crossref.get-citations.unsupported"),
-    );
-    }
-    
-    static getDOI() {}*/
+interface Reference {
+	key: string;
+	DOI?: string;
+	ISBN?: string;
+	"volume-title"?: string;
+	author?: string;
+	year?: string;
+	unstructured?: string;
+	issue?: string;
+	"first-page"?: string;
+	volume?: string;
+	"journal-title"?: string;
+}
 
-	/**
-	 * Get source item citations from CrossRef.
-	 * @param {SourceItemWrapper[]} sourceItems - One or more source items to get citations for.
-	 */
-	static async addCrossrefCitationsToItems(
-		sourceItems: SourceItemWrapper[],
-		autoLinkCitations = true,
-	) {
-		// Make sure that at least some of the source items have DOIs
-		const sourceItemsWithDOI = sourceItems.filter((sourceItem) =>
-			sourceItem.getPID("DOI"),
-		);
-		if (sourceItemsWithDOI.length == 0) {
-			Services.prompt.alert(
-				window,
-				Wikicite.getString(
-					"wikicite.crossref.get-citations.no-doi-title",
-				),
-				Wikicite.getString(
-					"wikicite.crossref.get-citations.no-doi-message",
-				),
-			);
-			return;
-		}
+function mapCrossrefWorkToIndexedWork(
+	work: CrossrefWork,
+): IndexedWork<Reference> {
+	return {
+		referenceCount: work["reference-count"], // Map Crossref's `reference-count` to `IndexedWork`'s `referenceCount`
+		referencedWorks: work.reference, // Map `reference` to `referencedWorks`
+	};
+}
 
-		// Ask user confirmation in case some selected items already have citations
-		if (sourceItemsWithDOI.some((item) => item.citations.length)) {
-			const confirmed = Services.prompt.confirm(
-				window,
-				Wikicite.getString(
-					"wikicite.crossref.get-citations.existing-citations-title",
-				),
-				Wikicite.getString(
-					"wikicite.crossref.get-citations.existing-citations-message",
-				),
-			);
-			if (!confirmed) return;
-		}
-
-		// Get reference information for items from CrossRef
-		const progress = new Progress(
-			"loading",
-			Wikicite.getString("wikicite.crossref.get-citations.loading"),
-		);
-
-		const sourceItemReferences = await Promise.all(
-			sourceItemsWithDOI.flatMap((sourceItem) => {
-				const doi = sourceItem.getPID("DOI"); // Guaranteed to be defined
-				if (doi) {
-					// Use rate limiting to fetch references from Crossref
-					return limiter
-						.schedule(() => Crossref.getReferences(doi))
-						.catch((error) => {
-							// Handle and log the error within the promise chain
-							Zotero.log(
-								`Error fetching references for DOI ${doi}`,
-							);
-							Zotero.logError(error);
-							return []; // Return an empty array on error so that the promise resolves
-						});
-				}
-				return []; // Return empty array for items without DOI
-			}),
-		);
-
-		// Confirm with the user to add these citations
-		const numberOfCitations = sourceItemReferences.map(
-			(references) => references.length,
-		);
-		const itemsToBeUpdated = numberOfCitations.filter(
-			(number) => number > 0,
-		).length;
-		const citationsToBeAdded = numberOfCitations.reduce(
-			(sum, value) => sum + value,
-			0,
-		);
-		if (citationsToBeAdded == 0) {
-			progress.updateLine(
-				"error",
-				Wikicite.getString(
-					"wikicite.crossref.get-citations.no-references",
-				),
-			);
-			return;
-		}
-		const confirmed = Services.prompt.confirm(
-			window,
-			Wikicite.getString("wikicite.crossref.get-citations.confirm-title"),
-			Wikicite.formatString(
-				"wikicite.crossref.get-citations.confirm-message",
-				[itemsToBeUpdated, sourceItems.length, citationsToBeAdded],
-			),
-		);
-		if (!confirmed) {
-			progress.close();
-			return;
-		}
-
-		// Parse this reference information, then add to sourceItems
-		progress.updateLine(
-			"loading",
-			Wikicite.getString("wikicite.crossref.get-citations.parsing"),
-		);
-
-		try {
-			let parsedItems = 0;
-			const parsedItemReferences: Zotero.Item[][] = await Promise.all(
-				sourceItemReferences.map(async (sourceItemReferenceList) => {
-					if (!sourceItemReferenceList.length) return [];
-
-					const parsedReferences: Zotero.Item[] =
-						await Crossref.parseReferences(sourceItemReferenceList);
-					progress.updateLine(
-						"loading",
-						Wikicite.formatString(
-							"wikicite.crossref.get-citations.parsing-progress",
-							[++parsedItems, itemsToBeUpdated],
-						),
-					);
-					return parsedReferences;
-				}),
-			);
-
-			// Add these citations to the items
-			await Zotero.DB.executeTransaction(async function () {
-				sourceItemsWithDOI.forEach((sourceItem, index) => {
-					const newCitedItems = parsedItemReferences[index];
-					if (newCitedItems.length > 0) {
-						const newCitations = newCitedItems.map(
-							(newItem) =>
-								new Citation(
-									{ item: newItem, ocis: [] },
-									sourceItem,
-								),
-						);
-						sourceItem.addCitations(newCitations);
-						if (autoLinkCitations) sourceItem.autoLinkCitations();
-					}
-				});
-			});
-
-			// Auto-linking
-			// FIXME: even though this is the same code as in localCitationNetwork, items are not updated. Workaround is to open the citation network
-			/*if (autoLinkCitations) {
-                Zotero.log("Auto-linking citations");
-                const libraryID = sourceItemsWithDOI[0].item.libraryID;
-                const matcher = new Matcher(libraryID);
-                progress.updateLine(
-                    'loading',
-                    Wikicite.getString('wikicite.source-item.auto-link.progress.loading')
-                    );
-                await matcher.init();
-                for (const wrappedItem of sourceItemsWithDOI) {
-                    wrappedItem.autoLinkCitations(matcher, true);
-                }
-            }*/
-
-			progress.updateLine(
-				"done",
-				Wikicite.getString("wikicite.crossref.get-citations.done"),
-			);
-		} catch (error) {
-			progress.updateLine(
-				"error",
-				Wikicite.getString(
-					"wikicite.crossref.get-citations.error-parsing-references",
-				),
-			);
-			Zotero.log(
-				`Adding Crossref citations failed due to error: ${error}`,
-			);
-		} finally {
-			progress.close();
-		}
-	}
+export default class Crossref extends IndexerBase<Reference> {
+	indexerName = "Crossref";
 
 	/**
 	 * Get a list of references from Crossref for an item with a certain DOI.
 	 * Returned in JSON Crossref format.
-	 * @param {string} doi - DOI for the item for which to get references.
-	 * @returns {Promise<string[]>} list of references, or [] if none.
+	 * @param {string[]} identifiers - DOI for the item for which to get references.
+	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
 	 */
-	static async getReferences(doi: string): Promise<string[]> {
-		const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(
-			doi,
-		)}`;
-		const options = {
-			headers: {
-				"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
-			},
-			responseType: "json",
-		};
-
-		const response = await Zotero.HTTP.request("GET", url, options).catch(
-			(e) => {
+	async getReferences(
+		identifiers: string[],
+	): Promise<IndexedWork<Reference>[]> {
+		// Crossref-specific logic for fetching references
+		const requests = identifiers.map(async (doi) => {
+			const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(doi)}`;
+			const options = {
+				headers: {
+					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+				},
+				responseType: "json",
+			};
+			const response = await Zotero.HTTP.request(
+				"GET",
+				url,
+				options,
+			).catch((e) => {
 				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
 				if (e.status == 429) {
 					// Extract rate limit headers
@@ -236,37 +77,33 @@ export default class Crossref {
 						"Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Rate limits in action: Limit: ${rateLimitLimit}, Interval: ${rateLimitInterval}",
 					);
 				}
-			},
-		);
-		if (!response) return [];
-		return response.response.message.reference || [];
+			});
+
+			const crossrefWork = (response?.response as CrossrefResponse)
+				.message;
+			return mapCrossrefWorkToIndexedWork(crossrefWork); // Map to IndexedWork<Reference>
+		});
+		return Promise.all(requests);
 	}
 
 	/**
 	 * Parse a list of references in JSON Crossref format.
-	 * @param {any[]} crossrefReferences - Array of Crossref references to parse to Zotero items.
+	 * @param {Reference[]} references - Array of Crossref references to parse to Zotero items.
 	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from references (where parsing is possible).
 	 */
-	static async parseReferences(
-		crossrefReferences: any[],
-	): Promise<Zotero.Item[]> {
-		if (!crossrefReferences.length) {
-			debug("Item found in Crossref but doesn't contain any references");
-			return [];
-		}
-
+	async parseReferences(references: Reference[]): Promise<Zotero.Item[]> {
+		// Crossref-specific parsing logic
 		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
-		const crossrefIdentifiers = crossrefReferences
-			.map((item) => item.DOI ?? item.ISBN ?? null)
-			.filter(Boolean)
-			.flatMap(Zotero.Utilities.extractIdentifiers);
-		const crossrefReferencesWithoutIdentifier = crossrefReferences.filter(
+		const identifiers = references
+			.map((ref) => ref.DOI ?? ref.ISBN ?? null)
+			.filter((e) => e !== null)
+			.flatMap((e) => Zotero.Utilities.extractIdentifiers(e!));
+		const crossrefReferencesWithoutIdentifier = references.filter(
 			(item) => !item.DOI && !item.ISBN,
 		);
 
 		// Use Lookup to get items for all identifiers
-		const result =
-			await Lookup.lookupItemsByIdentifiers(crossrefIdentifiers);
+		const result = await Lookup.lookupItemsByIdentifiers(identifiers);
 		const parsedReferences = result ? result : [];
 
 		// Manually create items for references without identifiers
@@ -291,7 +128,7 @@ export default class Crossref {
 	 * @param {any} crossrefItem - A reference item in JSON Crossref format.
 	 * @returns {Promise<Zotero.Item>} Zotero item parsed from the identifier, or null if parsing failed.
 	 */
-	static async parseItemFromCrossrefReference(
+	async parseItemFromCrossrefReference(
 		crossrefItem: any,
 	): Promise<Zotero.Item> {
 		//Zotero.log(`Parsing ${crossrefItem.unstructured}`);
@@ -319,12 +156,11 @@ export default class Crossref {
 		jsonItem.pages = crossrefItem["first-page"];
 		jsonItem.volume = crossrefItem.volume;
 		jsonItem.issue = crossrefItem.issue;
-		jsonItem.creators = [
-			{
-				creatorType: "author",
-				name: crossrefItem.author,
-			},
-		];
+		const author = Zotero.Utilities.cleanAuthor(
+			crossrefItem.author,
+			"author",
+		);
+		jsonItem.creators = [author];
 		// remove undefined properties
 		for (const key in jsonItem) {
 			if (jsonItem[key] === undefined) {
