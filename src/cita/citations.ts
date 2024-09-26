@@ -296,7 +296,7 @@ export default class {
 				args,
 				orphanedActionSelection,
 			);
-			if (!orphanedActionSelection.value) {
+			if (orphanedActionSelection.value == undefined) {
 				// user cancelled
 				progress.newLine(
 					"error",
