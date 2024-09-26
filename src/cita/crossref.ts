@@ -17,8 +17,15 @@ interface CrossrefWork {
 
 interface Reference {
 	key: string;
+	issn?: string;
+	"standards-body"?: string;
+	"series-title"?: string;
+	"isbn-type"?: string;
+	"doi-asserted-by"?: string;
 	DOI?: string;
 	ISBN?: string;
+	component?: string;
+	"article-title"?: string;
 	"volume-title"?: string;
 	author?: string;
 	year?: string;
@@ -27,6 +34,9 @@ interface Reference {
 	"first-page"?: string;
 	volume?: string;
 	"journal-title"?: string;
+	edition?: string;
+	"standard-designator"?: string;
+	"issn-type"?: string;
 }
 
 function mapCrossrefWorkToIndexedWork(
@@ -125,11 +135,11 @@ export default class Crossref extends IndexerBase<Reference> {
 
 	/**
 	 * Create a Zotero Item from a Crossref reference item that doesn't include an identifier.
-	 * @param {any} crossrefItem - A reference item in JSON Crossref format.
+	 * @param {Reference} crossrefItem - A reference item in JSON Crossref format.
 	 * @returns {Promise<Zotero.Item>} Zotero item parsed from the identifier, or null if parsing failed.
 	 */
 	async parseItemFromCrossrefReference(
-		crossrefItem: any,
+		crossrefItem: Reference,
 	): Promise<Zotero.Item> {
 		//Zotero.log(`Parsing ${crossrefItem.unstructured}`);
 		const jsonItem: any = {};
@@ -137,6 +147,7 @@ export default class Crossref extends IndexerBase<Reference> {
 			jsonItem.itemType = "journalArticle";
 			jsonItem.title =
 				crossrefItem["article-title"] || crossrefItem["volume-title"];
+			jsonItem.publicationTitle = crossrefItem["journal-title"];
 		} else if (crossrefItem["volume-title"]) {
 			jsonItem.itemType = "book";
 			jsonItem.title = crossrefItem["volume-title"];
@@ -156,11 +167,9 @@ export default class Crossref extends IndexerBase<Reference> {
 		jsonItem.pages = crossrefItem["first-page"];
 		jsonItem.volume = crossrefItem.volume;
 		jsonItem.issue = crossrefItem.issue;
-		const author = Zotero.Utilities.cleanAuthor(
-			crossrefItem.author,
-			"author",
-		);
-		jsonItem.creators = [author];
+		jsonItem.creators = crossrefItem.author
+			? [Zotero.Utilities.cleanAuthor(crossrefItem.author, "author")]
+			: [];
 		// remove undefined properties
 		for (const key in jsonItem) {
 			if (jsonItem[key] === undefined) {
