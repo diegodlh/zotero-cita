@@ -122,8 +122,13 @@ export abstract class IndexerBase<Ref> {
 			),
 			Wikicite.formatString(
 				"wikicite.indexer.get-citations.confirm-message",
-				[itemsToBeUpdated, sourceItems.length, citationsToBeAdded],
-			),
+				[itemsToBeUpdated, sourceItems.length],
+			) +
+				"\n\n" +
+				Wikicite.formatString(
+					"wikicite.indexer.get-citations.confirm-message-count",
+					citationsToBeAdded,
+				),
 		);
 		if (!confirmed) {
 			progress.close();

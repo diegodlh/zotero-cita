@@ -39,7 +39,8 @@ export default class OpenAlex extends IndexerBase<string> {
 		}
 
 		// Use Lookup to get items from OpenAlex
-		const result = await Lookup.lookupItemsOpenAlex(works);
+		const uniqueWorks = [...new Set(works)];
+		const result = await Lookup.lookupItemsOpenAlex(uniqueWorks);
 		const parsedReferences = result ? result : [];
 		return parsedReferences;
 	}

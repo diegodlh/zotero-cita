@@ -104,10 +104,13 @@ export default class Crossref extends IndexerBase<Reference> {
 	async parseReferences(references: Reference[]): Promise<Zotero.Item[]> {
 		// Crossref-specific parsing logic
 		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
-		const identifiers = references
+		const _identifiers = references
 			.map((ref) => ref.DOI ?? ref.ISBN ?? null)
-			.filter((e) => e !== null)
-			.flatMap((e) => Zotero.Utilities.extractIdentifiers(e!));
+			.filter((e) => e !== null);
+		// Remove duplicates and extract identifiers
+		const identifiers = [...new Set(_identifiers)].flatMap((e) =>
+			Zotero.Utilities.extractIdentifiers(e!),
+		);
 		const crossrefReferencesWithoutIdentifier = references.filter(
 			(item) => !item.DOI && !item.ISBN,
 		);

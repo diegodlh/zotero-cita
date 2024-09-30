@@ -56,6 +56,11 @@ function ImportButton(props: any) {
 					case 0:
 						break;
 					case 1:
+						if (citation.target.qid)
+							newItems[0].setField(
+								"extra",
+								`QID: ${citation.target.qid}`,
+							);
 						citation.linkToZoteroItem(newItems[0]);
 						break;
 					default:

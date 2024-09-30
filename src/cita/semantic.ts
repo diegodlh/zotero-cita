@@ -82,7 +82,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		}
 
 		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
-		const identifiers = references
+		const _identifiers = references
 			.map(
 				(item) =>
 					item.externalIds?.DOI ??
@@ -90,8 +90,11 @@ export default class Semantic extends IndexerBase<Reference> {
 					item.externalIds?.PubMed ??
 					null,
 			)
-			.filter((e) => e !== null)
-			.flatMap((e) => Zotero.Utilities.extractIdentifiers(e!));
+			.filter((e) => e !== null);
+		// Remove duplicates and extract identifiers
+		const identifiers = [...new Set(_identifiers)].flatMap((e) =>
+			Zotero.Utilities.extractIdentifiers(e!),
+		);
 		/*const semanticReferencesWithoutIdentifier = semanticReferences.filter(
 			(item) => !item.DOI && !item.ISBN,
 		);*/ // TODO: consider supporting, but those are usually some PDF text
