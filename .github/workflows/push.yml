@@ -1,4 +1,4 @@
-name: release
+name: push
 
 on:
     push:
@@ -73,20 +73,10 @@ jobs:
 
             - name: release
               run: |
-                  npm run release -- --no-increment --no-git --github.release --ci --VV
+                  npm run release
                   sleep 1s
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: upload update.json
-              uses: meeDamian/github-release@2.0
-              with:
-                token: ${{ secrets.GITHUB_TOKEN }}
-                tag: update
-                files: build/update*.json
-                allow_override: true
-                gzip: false
-                
 
             - name: Notify release
               uses: apexskier/github-release-commenter@v1

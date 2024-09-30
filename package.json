@@ -54,7 +54,6 @@
 		"lint-staged": "^15.2.10",
 		"patch-package": "^8.0.0",
 		"prettier": "^3.1.1",
-		"release-it": "^17.6.0",
 		"typescript": "^5.3.3",
 		"typescript-eslint": "^7.14.1",
 		"zotero-plugin-scaffold": "^0.0.34",
@@ -78,24 +77,6 @@
 				}
 			}
 		]
-	},
-	"release-it": {
-		"git": {
-			"tagName": "v${version}"
-		},
-		"npm": {
-			"publish": false
-		},
-		"github": {
-			"release": false,
-			"assets": [
-				"build/*.xpi"
-			]
-		},
-		"hooks": {
-			"before:init": "npm run lint",
-			"after:bump": "npm run build"
-		}
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": [
