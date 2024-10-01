@@ -1,5 +1,7 @@
 # Cita: a Wikidata addon for Zotero
 
+[![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
+
 A [Zotero](http://www.zotero.org/) plugin adding citation metadata support, with back and forth communication to
 [WikiData](https://www.wikidata.org/), citation extraction from file attachments, and local citation network visualization.
 
@@ -65,10 +67,9 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
 
 ## Publishing
 
-1. `npm run lint` to make sure the code is formatted properly
-2. Decide a new version number vX.Y.Z using [Semantic Versioning](https://semver.org/), and depending on whether it's a beta release or not.
-3. `npm run release` and choose this version number and the version will be automatically bumped in `package.json` and the release tagged. This will trigger github actions to build the code and make a new release at this version
-4. Until integration tests have been implemented (#30), install the new version on a fresh Zotero profile and run some manual tests.
+1. Decide a new version number vX.Y.Z using [Semantic Versioning](https://semver.org/), and depending on whether it's a beta release or not.
+2. `npm run release` and choose this version number and the version will be automatically bumped in `package.json` and the release tagged. This will trigger github actions to build the code and make a new release at this version
+3. Until integration tests have been implemented (#30), install the new version on a fresh Zotero profile and run some manual tests.
 
 ## Acknowledgements
 
