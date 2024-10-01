@@ -163,6 +163,10 @@ export abstract class IndexerBase<Ref> {
 				}),
 			);
 
+			const refsFound = parsedItemReferences
+				.map((ref) => ref.length)
+				.reduce((sum, n) => sum + n, 0);
+
 			await Zotero.DB.executeTransaction(async () => {
 				sourceItemsWithDOI.forEach((sourceItem, index) => {
 					const newCitedItems = parsedItemReferences[index];
@@ -198,10 +202,11 @@ export abstract class IndexerBase<Ref> {
 
 			progress.updateLine(
 				"done",
-				Wikicite.formatString(
-					"wikicite.indexer.get-citations.done",
+				Wikicite.formatString("wikicite.indexer.get-citations.done", [
+					refsFound,
+					citationsToBeAdded,
 					this.indexerName,
-				),
+				]),
 			);
 		} catch (error) {
 			progress.updateLine(
