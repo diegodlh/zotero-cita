@@ -23,14 +23,5 @@ declare const __env__: "production" | "development";
 
 declare class Localization {}
 
-declare type PIDType = "DOI" | "ISBN" | "QID" | "OCC";
+declare type PIDType = "DOI" | "ISBN" | "QID" | "OMID";
 declare type QID = `Q${number}`;
-
-declare type Identifier =
-	| { DOI: string }
-	| { ISBN: string }
-	| { arXiv: string }
-	| { adsBibcode: string }
-	| { PMID: string };
-
-declare type Identifiers = Identifier[];

@@ -4,6 +4,7 @@ import Citation from "./citation";
 import Wikicite from "./wikicite";
 import Bottleneck from "bottleneck";
 
+// TODO: limiter should debend on indexer
 // Initialize Bottleneck for rate limiting (max 50 requests per second)
 const limiter = new Bottleneck({
 	minTime: 20, // 50 requests per second
@@ -11,18 +12,43 @@ const limiter = new Bottleneck({
 
 declare const Services: any;
 
+//export type OpenAlexID = `W${number}`;
+export type UID =
+	| { DOI: string }
+	| { ISBN: string }
+	| { arXiv: string }
+	| { openAlex: string }
+	| { semantic: string }
+	| { OMID: string }
+	| { adsBibcode: string }
+	| { PMID: string }
+	| { PMCID: string };
+
 export interface IndexedWork<Ref> {
 	referenceCount: number;
 	referencedWorks: Ref[];
 }
 
-export abstract class IndexerBase<Ref> {
+export abstract class IndexerBase<Ref, SupportedUID> {
+	/**
+	 * Name of the indexer to be displayed.
+	 */
+	abstract indexerName: string;
+
+	/**
+	 * Extract supported UID from the source item.
+	 * @param item Source item to extract the UID from.
+	 */
+	abstract extractSupportedUID(item: SourceItemWrapper): SupportedUID | null;
+
 	/**
 	 * Abstract method to get references from the specific indexer.
-	 * @param {string[]} identifiers - List of DOIs or other identifiers.
+	 * @param {SupportedUID[]} identifiers - List of DOIs or other identifiers.
 	 * @returns {Promise<IndexedWork[]>} Corresponding works.
 	 */
-	abstract getReferences(identifiers: string[]): Promise<IndexedWork<Ref>[]>;
+	abstract getReferences(
+		identifiers: SupportedUID[],
+	): Promise<IndexedWork<Ref>[]>;
 
 	/**
 	 * Abstract method to parse a list of references into Zotero items.
@@ -31,7 +57,26 @@ export abstract class IndexerBase<Ref> {
 	 */
 	abstract parseReferences(references: Ref[]): Promise<Zotero.Item[]>;
 
-	abstract indexerName: string;
+	/**
+	 * Filter source items with supported UIDs.
+	 * @param sourceItems Selected items to filter depending on the indexer.
+	 */
+	filterItemsWithSupportedUIDs(
+		sourceItems: SourceItemWrapper[],
+	): [sourceItems: SourceItemWrapper[], identifiers: SupportedUID[]] {
+		const identifiers: SupportedUID[] = [];
+		const filteredItems: SourceItemWrapper[] = [];
+
+		for (const item of sourceItems) {
+			const uid = this.extractSupportedUID(item);
+			if (uid) {
+				identifiers.push(uid);
+				filteredItems.push(item);
+			}
+		}
+
+		return [filteredItems, identifiers];
+	}
 
 	/**
 	 * Get source item citations from the online database.
@@ -41,11 +86,10 @@ export abstract class IndexerBase<Ref> {
 		sourceItems: SourceItemWrapper[],
 		autoLinkCitations = true,
 	) {
-		// Filter items with valid identifiers (DOIs)
-		const sourceItemsWithDOI = sourceItems.filter((sourceItem) =>
-			sourceItem.getPID("DOI"),
-		);
-		if (sourceItemsWithDOI.length === 0) {
+		// Filter items with valid identifiers (DOI or other)
+		const [fetchableSourceItems, identifiers] =
+			this.filterItemsWithSupportedUIDs(sourceItems);
+		if (fetchableSourceItems.length === 0) {
 			Services.prompt.alert(
 				window,
 				Wikicite.formatString(
@@ -61,7 +105,7 @@ export abstract class IndexerBase<Ref> {
 		}
 
 		// Ask user confirmation in case some selected items already have citations
-		if (sourceItemsWithDOI.some((item) => item.citations.length)) {
+		if (fetchableSourceItems.some((item) => item.citations.length)) {
 			const confirmed = Services.prompt.confirm(
 				window,
 				Wikicite.getString(
@@ -84,9 +128,6 @@ export abstract class IndexerBase<Ref> {
 			),
 		);
 
-		const identifiers = sourceItemsWithDOI.map(
-			(item) => item.getPID("DOI")!, // Guaranteed
-		);
 		const sourceItemReferences = await limiter
 			.schedule(() => this.getReferences(identifiers))
 			.catch((error) => {
@@ -168,7 +209,7 @@ export abstract class IndexerBase<Ref> {
 				.reduce((sum, n) => sum + n, 0);
 
 			await Zotero.DB.executeTransaction(async () => {
-				sourceItemsWithDOI.forEach((sourceItem, index) => {
+				fetchableSourceItems.forEach((sourceItem, index) => {
 					const newCitedItems = parsedItemReferences[index];
 					if (newCitedItems.length > 0) {
 						const newCitations = newCitedItems.map(

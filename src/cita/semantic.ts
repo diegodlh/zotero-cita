@@ -2,6 +2,7 @@ import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
 //import Bottleneck from "bottleneck";
 import { IndexedWork, IndexerBase } from "./indexer";
+import SourceItemWrapper from "./sourceItemWrapper";
 
 interface SemanticPaper {
 	paperId: string;
@@ -32,21 +33,88 @@ interface ExternalIDS {
 	PubMedCentral?: string;
 }
 
-export default class Semantic extends IndexerBase<Reference> {
+type SupportedUID =
+	| { DOI: string }
+	| { arXiv: string }
+	| { openAlex: string }
+	| { semantic: string }
+	| { PMID: string }
+	| { PMCID: string };
+
+export default class Semantic extends IndexerBase<Reference, SupportedUID> {
 	indexerName = "Semantic Scholar";
+
+	/**
+	 * Extract supported UID from the source item.
+	 * @param item Source item to extract the UID from.
+	 * @returns Supported UID or null if not found.
+	 */
+	extractSupportedUID(item: SourceItemWrapper): SupportedUID | null {
+		// DOI
+		if (item.doi) return { DOI: item.doi };
+
+		// ArXiv
+		const rawarXiv =
+			item.item.getField("archiveID") || item.item.getExtraField("arXiv");
+		const arXiv_RE =
+			/((?:[^A-Za-z]|^)([-A-Za-z.]+\/\d{7})(?:(v[0-9]+)|)(?!\d))|((?:\D|^)(\d{4}\.\d{4,5})(?:(v[0-9]+)|)(?!\d))/g; // Taken from zotero/utilities
+		const m = arXiv_RE.exec(rawarXiv);
+		if (m) {
+			const arXiv = m[2] || m[5];
+			return { arXiv };
+		}
+
+		// Semantic Scholar
+		const semantic = Wikicite.getExtraField(item.item, "Corpus ID")
+			.values[0];
+		if (semantic) return { semantic };
+
+		// OpenAlex
+		const openAlex = Wikicite.getExtraField(item.item, "OpenAlex")
+			.values[0];
+		if (openAlex) return { openAlex };
+
+		// PMID
+		const PMID = Wikicite.getExtraField(item.item, "PMID").values[0];
+		if (PMID) return { PMID };
+
+		// PMCID
+		const PMCID = Wikicite.getExtraField(item.item, "PMCID").values[0];
+		if (PMCID) return { PMCID };
+
+		return null;
+	}
 
 	/**
 	 * Get a list of references from Semantic Scholar for multiple DOIs at once.
 	 * Returned in JSON Crossref format.
-	 * @param {string[]} identifiers - Identifier (DOI, etc.) for the item for which to get references.
+	 * @param {SupportedUID[]} identifiers - Identifier (DOI, etc.) for the item for which to get references.
 	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
+	 *
+	 * @remarks	According to API reference, supports the following identifiers:
+	 * The following types of IDs are supported (starred ones are supported here):
+	 * - `<sha>` - a Semantic Scholar ID, e.g. 649def34f8be52c8b66281af98ae884c09aef38b
+	 * - `CorpusId:<id>`* - a Semantic Scholar numerical ID, e.g. CorpusId:215416146
+	 * - `DOI:<doi>`* - a Digital Object Identifier, e.g. DOI:10.18653/v1/N18-3011
+	 * - `ARXIV:<id>`* - arXiv.rg, e.g. ARXIV:2106.15928
+	 * - `MAG:<id>`* - Microsoft Academic Graph, e.g. MAG:112218234 (OpenAlex without W)
+	 * - `ACL:<id>` - Association for Computational Linguistics, e.g. ACL:W12-3903
+	 * - `PMID:<id>`* - PubMed/Medline, e.g. PMID:19872477
+	 * - `PMCID:<id>`* - PubMed Central, e.g. PMCID:2323736
+	 * - `URL:<url>` - URL from one of the sites listed below, e.g. URL:https://arxiv.org/abs/2106.15928v1
+	 *
+	 * URLs are recognized from the following sites:
+	 * - semanticscholar.org
+	 * - arxiv.org
+	 * - aclweb.org
+	 * - acm.org
+	 * - biorxiv.org
 	 */
 	async getReferences(
-		identifiers: string[],
+		identifiers: SupportedUID[],
 	): Promise<IndexedWork<Reference>[]> {
 		// Semantic-specific logic for fetching references
-		// TODO: include support for all ids that Semantic Scholar supports. Parameter should therefore be of Identifier type
-		const paperIdentifiers = identifiers.map((id) => `DOI:${id}`);
+		const paperIdentifiers = identifiers.map(this.mapSupportedUIDToString);
 		//identifier = Zotero.Utilities.cleanDOI(identifier);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,title,references.externalIds,references.title`;
 		const options = {
@@ -65,6 +133,25 @@ export default class Semantic extends IndexerBase<Reference> {
 				referencedWorks: paper.references,
 			};
 		});
+	}
+
+	mapSupportedUIDToString(uid: SupportedUID): string {
+		switch (true) {
+			case "DOI" in uid:
+				return `DOI:${uid.DOI}`;
+			case "arXiv" in uid:
+				return `ARXIV:${uid.arXiv}`;
+			case "openAlex" in uid:
+				return `MAG:${uid.openAlex.substring(1)}`;
+			case "semantic" in uid:
+				return `CorpusId:${uid.semantic}`;
+			case "PMID" in uid:
+				return `PMID:${uid.PMID}`;
+			case "PMCID" in uid:
+				return `PMCID:${uid.PMCID}`;
+			default:
+				throw new Error("Unsupported UID type");
+		}
 	}
 
 	/**

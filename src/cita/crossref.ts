@@ -1,4 +1,5 @@
 import { IndexerBase, IndexedWork } from "./indexer";
+import SourceItemWrapper from "./sourceItemWrapper";
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
 
@@ -48,8 +49,16 @@ function mapCrossrefWorkToIndexedWork(
 	};
 }
 
-export default class Crossref extends IndexerBase<Reference> {
+export default class Crossref extends IndexerBase<Reference, { DOI: string }> {
 	indexerName = "Crossref";
+
+	/**
+	 * Extract supported UID from the source item.
+	 * @param item Source item to extract the UID from.
+	 */
+	extractSupportedUID(item: SourceItemWrapper): { DOI: string } | null {
+		return item.doi ? { DOI: item.doi } : null;
+	}
 
 	/**
 	 * Get a list of references from Crossref for an item with a certain DOI.
@@ -58,11 +67,11 @@ export default class Crossref extends IndexerBase<Reference> {
 	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
 	 */
 	async getReferences(
-		identifiers: string[],
+		identifiers: { DOI: string }[],
 	): Promise<IndexedWork<Reference>[]> {
 		// Crossref-specific logic for fetching references
 		const requests = identifiers.map(async (doi) => {
-			const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(doi)}`;
+			const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(doi.DOI)}`;
 			const options = {
 				headers: {
 					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,

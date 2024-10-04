@@ -88,12 +88,12 @@ export default class ItemWrapper {
 	}
 
 	// OpenCitations Corpus Internal Identifier
-	get occ(): string | undefined {
-		return this.getPID("OCC");
+	get omid(): string | undefined {
+		return this.getPID("OMID");
 	}
 
-	set occ(occ: string) {
-		this.setPID("OCC", occ);
+	set omid(omid: string) {
+		this.setPID("OMID", omid);
 	}
 
 	get url() {
@@ -102,12 +102,12 @@ export default class ItemWrapper {
 			url ||
 			this.getPidUrl("QID") ||
 			this.getPidUrl("DOI") ||
-			this.getPidUrl("OCC")
+			this.getPidUrl("OMID")
 		);
 	}
 
 	getPIDTypes() {
-		const allTypes: PIDType[] = ["DOI", "ISBN", "QID", "OCC"];
+		const allTypes: PIDType[] = ["DOI", "ISBN", "QID", "OMID"];
 		const pidTypes: PIDType[] = [];
 		for (const type of allTypes) {
 			// don't need this because we enforce that it's uppercase already
@@ -150,7 +150,7 @@ export default class ItemWrapper {
 	}
 
 	/*
-	 * Get PID (QID, DOI, ISBN, OCC) from item. If it doesn't have this PID, return undefined
+	 * Get PID (QID, DOI, ISBN, OMID) from item. If it doesn't have this PID, return undefined
 	 */
 	getPID(type: PIDType, clean = false) {
 		let pid: string | undefined;
@@ -185,8 +185,8 @@ export default class ItemWrapper {
 							.replace(/%/g, "%25")
 							.replace(/"/g, "%22");
 					break;
-				case "OCC":
-					url = "https://opencitations.net/corpus/br/" + cleanPID;
+				case "OMID":
+					url = "https://opencitations.net/meta/br/" + cleanPID;
 					break;
 				case "QID":
 					url = "https://www.wikidata.org/wiki/" + cleanPID;

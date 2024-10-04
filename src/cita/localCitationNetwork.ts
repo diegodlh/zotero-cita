@@ -149,7 +149,7 @@ export default class LCN {
 					const uids = {
 						doi: cleanDOI && cleanDOI.toUpperCase(),
 						isbn: cleanISBN,
-						occ: citation.target.occ, // Fixme: provide OCC cleaning function
+						occ: citation.target.omid, // Fixme: provide OMID cleaning function
 						qid: qid && qid.toUpperCase(),
 						// based on Zotero.Duplicates.prototype._findDuplicates'
 						// normalizeString function

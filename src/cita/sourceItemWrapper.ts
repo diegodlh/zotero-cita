@@ -580,14 +580,8 @@ class SourceItemWrapper extends ItemWrapper {
 		new OpenAlex().addCitationsToItems([this]);
 	}
 
-	getFromOcc() {
-		// What does getting from OpenCitations mean anyway?
-		// Will it get it from all indices? Or only for items in OCC?
-		// What about CROCI? I need DOI to get it from them,
-		// But they may not be available from crossref
-		// Maybe add Get from CROCI? Should I add get from Dryad too?
-		OpenCitations.getCitations();
-		//
+	getFromOpenCitations() {
+		new OpenCitations().addCitationsToItems([this]);
 	}
 
 	syncWithWikidata(citationIndex?: number) {
@@ -936,7 +930,7 @@ class SourceItemWrapper extends ItemWrapper {
 	}
 
 	exportToCroci(citationIndex?: number) {
-		OpenCitations.exportCitations();
+		//OpenCitations.exportCitations();
 	}
 }
 

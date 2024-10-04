@@ -1,14 +1,18 @@
 import lookup from "./lookup";
 
-const suppliers: { prefix: string; name: string; id: "qid" | "doi" | "occ" }[] =
-	[
-		// https://opencitations.net/oci
-		{ prefix: "010", name: "wikidata", id: "qid" },
-		{ prefix: "020", name: "crossref", id: "doi" },
-		{ prefix: "030", name: "occ", id: "occ" },
-		{ prefix: "040", name: "dryad", id: "doi" },
-		{ prefix: "050", name: "croci", id: "doi" },
-	];
+const suppliers: {
+	prefix: string;
+	name: string;
+	id: "qid" | "doi" | "omid";
+}[] = [
+	// https://opencitations.net/oci
+	{ prefix: "010", name: "wikidata", id: "qid" },
+	{ prefix: "020", name: "crossref", id: "doi" },
+	{ prefix: "030", name: "occ", id: "omid" },
+	{ prefix: "040", name: "dryad", id: "doi" },
+	{ prefix: "050", name: "croci", id: "doi" },
+	{ prefix: "050", name: "oc meta", id: "omid" },
+];
 
 const codes = new Map(lookup.map(({ c, code }) => [String(c), Number(code)]));
 
@@ -33,7 +37,7 @@ export default class {
 				case "qid":
 					pattern = /^Q([0-9]+)$/;
 					break;
-				case "occ":
+				case "omid":
 					pattern = /^([0-9])+$/;
 					break;
 			}

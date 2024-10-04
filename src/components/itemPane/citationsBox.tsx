@@ -408,7 +408,7 @@ function CitationsBox(props: {
 				<ul id="citations-box-pids" className="pid-list">
 					{
 						// Fixme: to avoid parsing the extra field multiple times
-						// (once per non-natively supported pid; e.g., QID, OCC)
+						// (once per non-natively supported pid; e.g., QID, OMID)
 						// consider having a pidBox component and
 						// redefining Wikicite.getExtraField to allow multiple fieldnames as input
 						// and return a fieldName: [values]} object instead

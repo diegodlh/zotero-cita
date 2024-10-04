@@ -61,7 +61,7 @@ function CitationsBoxContainer(props: {
 	// well, actually the forth of DOI may be export in CROCI format
 	// get citations from crossref for this DOI / export citations to CROCI for this DOI
 	// get citations from Wikidata for this QID / sync citations to Wikidata for this QID
-	// OCCID (OpenCitations Corpus ID) makes sense too, because OCI may relate two interanal OC corpus ids
+	// OMID (OpenCitations Metadata ID) makes sense too, because OCI may relate two interanal OC corpus ids
 
 	useEffect(() => {
 		// debug("First run, or props.item has changed");
