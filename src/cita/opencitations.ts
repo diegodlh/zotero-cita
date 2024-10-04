@@ -1,6 +1,7 @@
 import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
 import Lookup from "./zotLookup";
 import Wikicite, { debug } from "./wikicite";
+import ItemWrapper from "./itemWrapper";
 
 interface OCWork {
 	title: string;
@@ -45,6 +46,50 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 	 * For searching citations, a smaller set of identifiers is supported
 	 */
 	supportedPIDs: PIDType[] = ["DOI", "OMID", "PMID"];
+
+	async fetchOMID(item: ItemWrapper): Promise<string | null> {
+		// TODO: support getting for multiple items
+		const metatdataPIDs: PIDType[] = [
+			"DOI",
+			"ISBN",
+			"OMID",
+			"PMID",
+			"PMCID",
+			"OpenAlex",
+		];
+		let identifier: LookupIdentifier | null = null;
+		for (const pid of metatdataPIDs) {
+			const value = item.getPID(pid, true); // Already clean them up
+			if (value) identifier = { type: pid, id: value };
+		}
+
+		if (identifier) {
+			const param = `${identifier.type.toLowerCase()}:${identifier.id}`;
+			const url = `https://w3id.org/oc/meta/api/v1/metadata/${param}`;
+			const options = {
+				headers: {
+					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+				},
+				responseType: "json",
+			};
+			const response = await Zotero.HTTP.request(
+				"GET",
+				url,
+				options,
+			).catch((e) => {
+				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
+			});
+
+			const foundWork = (response?.response as OCWork[])[0];
+
+			for (const id of foundWork.id.split(" ")) {
+				const [type, value] = id.split(":");
+				if (type === "omid") return value;
+			}
+		}
+
+		return null;
+	}
 
 	getReferences(
 		identifiers: LookupIdentifier[],

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import OpenCitations from "./opencitations";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 
@@ -148,6 +149,12 @@ export default class ItemWrapper {
 				pid = qids?.get(this);
 				break;
 			}
+			case "OMID": {
+				const omid = await new OpenCitations().fetchOMID(this);
+				pid = omid;
+				break;
+			}
+
 			// TODO: add CrossRef and OpenCitations fetchers
 			default:
 				Services.prompt.alert(
