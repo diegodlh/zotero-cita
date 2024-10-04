@@ -77,6 +77,8 @@ export default {
 				return Wikidata.cleanQID(value);
 			case "OMID":
 				return Wikidata.cleanOMID(value);
+			case "arXiv":
+				return Wikidata.cleanArXiv(value);
 			case "OpenAlex":
 				return Wikidata.cleanOpenAlex(value);
 			default:

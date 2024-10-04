@@ -437,6 +437,18 @@ export default class {
 		return omid;
 	}
 
+	static cleanArXiv(arXiv: string) {
+		const arXiv_RE =
+			/\b(([-A-Za-z.]+\/\d{7}|\d{4}\.\d{4,5})(?:v(\d+))?)(?!\d)/g; // 1: full ID, 2: ID without version, 3: version #
+		const m = arXiv_RE.exec(arXiv);
+		if (m) {
+			const cleanArXiv = m[2];
+			return cleanArXiv;
+		}
+
+		return "";
+	}
+
 	static cleanOpenAlex(openAlex: string) {
 		openAlex = openAlex.toUpperCase().trim();
 		if (openAlex[0] !== "W") openAlex = "W" + openAlex;

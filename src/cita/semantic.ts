@@ -1,8 +1,7 @@
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
 //import Bottleneck from "bottleneck";
-import { IndexedWork, IndexerBase } from "./indexer";
-import SourceItemWrapper from "./sourceItemWrapper";
+import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
 
 interface SemanticPaper {
 	paperId: string;
@@ -33,62 +32,21 @@ interface ExternalIDS {
 	PubMedCentral?: string;
 }
 
-type SupportedUID =
-	| { DOI: string }
-	| { arXiv: string }
-	| { openAlex: string }
-	| { semantic: string }
-	| { PMID: string }
-	| { PMCID: string };
-
-export default class Semantic extends IndexerBase<Reference, SupportedUID> {
+export default class Semantic extends IndexerBase<Reference> {
 	indexerName = "Semantic Scholar";
 
-	/**
-	 * Extract supported UID from the source item.
-	 * @param item Source item to extract the UID from.
-	 * @returns Supported UID or null if not found.
-	 */
-	extractSupportedUID(item: SourceItemWrapper): SupportedUID | null {
-		// DOI
-		if (item.doi) return { DOI: item.doi };
-
-		// ArXiv
-		const rawarXiv =
-			item.item.getField("archiveID") ||
-			Wikicite.getExtraField(item.item, "arXiv").values[0];
-		const arXiv_RE =
-			/\b(([-A-Za-z.]+\/\d{7}|\d{4}\.\d{4,5})(?:v(\d+))?)(?!\d)/g; // 1: full ID, 2: ID without version, 3: version #
-		const m = arXiv_RE.exec(rawarXiv);
-		if (m) {
-			const arXiv = m[2];
-			return { arXiv };
-		}
-
-		// Semantic Scholar
-		const semantic = Wikicite.getExtraField(item.item, "Corpus ID")
-			.values[0];
-		if (semantic) return { semantic };
-
-		// OpenAlex
-		const openAlex = item.getPID("OpenAlex");
-		if (openAlex) return { openAlex };
-
-		// PMID
-		const PMID = Wikicite.getExtraField(item.item, "PMID").values[0];
-		if (PMID) return { PMID };
-
-		// PMCID
-		const PMCID = Wikicite.getExtraField(item.item, "PMCID").values[0];
-		if (PMCID) return { PMCID };
-
-		return null;
-	}
+	supportedPIDs: PIDType[] = [
+		"DOI",
+		"arXiv",
+		/*"semantic",*/ "OpenAlex",
+		"PMID",
+		"PMCID",
+	];
 
 	/**
 	 * Get a list of references from Semantic Scholar for multiple DOIs at once.
 	 * Returned in JSON Crossref format.
-	 * @param {SupportedUID[]} identifiers - Identifier (DOI, etc.) for the item for which to get references.
+	 * @param {LookupIdentifier[]} identifiers - Identifier (DOI, etc.) for the item for which to get references.
 	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
 	 *
 	 * @remarks	According to API reference, supports the following identifiers:
@@ -111,10 +69,10 @@ export default class Semantic extends IndexerBase<Reference, SupportedUID> {
 	 * - biorxiv.org
 	 */
 	async getReferences(
-		identifiers: SupportedUID[],
+		identifiers: LookupIdentifier[],
 	): Promise<IndexedWork<Reference>[]> {
 		// Semantic-specific logic for fetching references
-		const paperIdentifiers = identifiers.map(this.mapSupportedUIDToString);
+		const paperIdentifiers = identifiers.map(this.mapLookupIDToString);
 		//identifier = Zotero.Utilities.cleanDOI(identifier);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,title,references.externalIds,references.title`;
 		const options = {
@@ -135,20 +93,20 @@ export default class Semantic extends IndexerBase<Reference, SupportedUID> {
 		});
 	}
 
-	mapSupportedUIDToString(uid: SupportedUID): string {
-		switch (true) {
-			case "DOI" in uid:
-				return `DOI:${uid.DOI}`;
-			case "arXiv" in uid:
-				return `ARXIV:${uid.arXiv}`;
-			case "openAlex" in uid:
-				return `MAG:${uid.openAlex.substring(1)}`;
-			case "semantic" in uid:
-				return `CorpusId:${uid.semantic}`;
-			case "PMID" in uid:
-				return `PMID:${uid.PMID}`;
-			case "PMCID" in uid:
-				return `PMCID:${uid.PMCID}`;
+	mapLookupIDToString(uid: LookupIdentifier): string {
+		switch (uid.type) {
+			case "DOI":
+				return `DOI:${uid.id}`;
+			case "arXiv":
+				return `ARXIV:${uid.id}`;
+			case "OpenAlex":
+				return `MAG:${uid.id.substring(1)}`;
+			/*case "semantic":
+				return `CorpusId:${uid.id}`;*/
+			case "PMID":
+				return `PMID:${uid.id}`;
+			case "PMCID":
+				return `PMCID:${uid.id}`;
 			default:
 				throw new Error("Unsupported UID type");
 		}

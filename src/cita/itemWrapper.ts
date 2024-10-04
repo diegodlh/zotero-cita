@@ -114,6 +114,8 @@ export default class ItemWrapper {
 			"OMID",
 			"arXiv",
 			"OpenAlex",
+			"PMID",
+			"PMCID",
 		];
 		const pidTypes: PIDType[] = [];
 		for (const type of allTypes) {
@@ -172,6 +174,15 @@ export default class ItemWrapper {
 			case "ISBN":
 				pid = this.item.getField(type);
 				break;
+			case "arXiv": {
+				const field = this.item.getField("archiveID");
+				if (field && field.startsWith("arXiv:")) {
+					pid = field;
+				} else {
+					pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
+				}
+				break;
+			}
 			default:
 				pid = Wikicite.getExtraField(this.item, type).values[0]; // this could be undefined
 		}
@@ -204,9 +215,9 @@ export default class ItemWrapper {
 				case "OpenAlex":
 					url = "https://openalex.org/works/" + cleanPID;
 					break;
-				/*case "arXiv": // TODO: add arXiv PID cleaning
+				case "arXiv":
 					url = "https://arxiv.org/abs/" + cleanPID;
-					break*/
+					break;
 				case "QID":
 					url = "https://www.wikidata.org/wiki/" + cleanPID;
 					break;

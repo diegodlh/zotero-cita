@@ -29,25 +29,43 @@ export interface IndexedWork<Ref> {
 	referencedWorks: Ref[];
 }
 
-export abstract class IndexerBase<Ref, SupportedUID> {
+export interface LookupIdentifier {
+	type: PIDType;
+	id: string;
+}
+
+export abstract class IndexerBase<Ref> {
 	/**
 	 * Name of the indexer to be displayed.
 	 */
 	abstract indexerName: string;
 
 	/**
-	 * Extract supported UID from the source item.
-	 * @param item Source item to extract the UID from.
+	 * Supported PIDs for the indexer.
 	 */
-	abstract extractSupportedUID(item: SourceItemWrapper): SupportedUID | null;
+	abstract supportedPIDs: PIDType[];
+
+	/**
+	 * Extract supported PID from the source item.
+	 * @param item Source item to extract the PID from.
+	 * @returns Supported PID or null if none
+	 */
+	extractSupportedPID(item: SourceItemWrapper): LookupIdentifier | null {
+		for (const pid of this.supportedPIDs) {
+			const value = item.getPID(pid, true); // Already clean them up
+			if (value) return { type: pid, id: value };
+		}
+
+		return null;
+	}
 
 	/**
 	 * Abstract method to get references from the specific indexer.
-	 * @param {SupportedUID[]} identifiers - List of DOIs or other identifiers.
+	 * @param {LookupIdentifier[]} identifiers - List of DOIs or other identifiers.
 	 * @returns {Promise<IndexedWork[]>} Corresponding works.
 	 */
 	abstract getReferences(
-		identifiers: SupportedUID[],
+		identifiers: LookupIdentifier[],
 	): Promise<IndexedWork<Ref>[]>;
 
 	/**
@@ -61,14 +79,14 @@ export abstract class IndexerBase<Ref, SupportedUID> {
 	 * Filter source items with supported UIDs.
 	 * @param sourceItems Selected items to filter depending on the indexer.
 	 */
-	filterItemsWithSupportedUIDs(
+	filterItemsWithSupportedIdentifiers(
 		sourceItems: SourceItemWrapper[],
-	): [sourceItems: SourceItemWrapper[], identifiers: SupportedUID[]] {
-		const identifiers: SupportedUID[] = [];
+	): [sourceItems: SourceItemWrapper[], identifiers: LookupIdentifier[]] {
+		const identifiers: LookupIdentifier[] = [];
 		const filteredItems: SourceItemWrapper[] = [];
 
 		for (const item of sourceItems) {
-			const uid = this.extractSupportedUID(item);
+			const uid = this.extractSupportedPID(item);
 			if (uid) {
 				identifiers.push(uid);
 				filteredItems.push(item);
@@ -88,7 +106,7 @@ export abstract class IndexerBase<Ref, SupportedUID> {
 	) {
 		// Filter items with valid identifiers (DOI or other)
 		const [fetchableSourceItems, identifiers] =
-			this.filterItemsWithSupportedUIDs(sourceItems);
+			this.filterItemsWithSupportedIdentifiers(sourceItems);
 		if (fetchableSourceItems.length === 0) {
 			Services.prompt.alert(
 				window,

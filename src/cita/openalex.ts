@@ -1,46 +1,15 @@
-import { IndexedWork, IndexerBase } from "./indexer";
+import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
 import Lookup from "./zotLookup";
 import OpenAlexSDK from "openalex-sdk";
 import Wikicite, { debug } from "./wikicite";
 import { SearchParameters, Work } from "openalex-sdk/dist/src/types/work";
-import SourceItemWrapper from "./sourceItemWrapper";
 
-type SupportedUID =
-	| { DOI: string }
-	| { openAlex: string }
-	| { PMID: string }
-	| { PMCID: string };
-
-type SearchIds = {
-	pmcid?: string;
-	pmid?: string;
-	openalex?: string;
-	mag?: string;
-};
-
-export default class OpenAlex extends IndexerBase<string, SupportedUID> {
+export default class OpenAlex extends IndexerBase<string> {
 	indexerName = "Open Alex";
 
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
-	extractSupportedUID(item: SourceItemWrapper): SupportedUID | null {
-		// DOI
-		if (item.doi) return { DOI: item.doi };
-
-		// OpenAlex
-		if (item.getPID("OpenAlex"))
-			return { openAlex: item.getPID("OpenAlex")! };
-
-		// PMID
-		const PMID = Wikicite.getExtraField(item.item, "PMID").values[0];
-		if (PMID) return { PMID };
-
-		// PMCID
-		const PMCID = Wikicite.getExtraField(item.item, "PMCID").values[0];
-		if (PMCID) return { PMCID };
-
-		return null;
-	}
+	supportedPIDs: PIDType[] = ["DOI", "OpenAlex", "PMID", "PMCID"];
 
 	/**
 	 * Get references from OpenAlex for items with DOIs.
@@ -48,15 +17,15 @@ export default class OpenAlex extends IndexerBase<string, SupportedUID> {
 	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
 	 */
 	async getReferences(
-		identifiers: SupportedUID[],
+		identifiers: LookupIdentifier[],
 	): Promise<IndexedWork<string>[]> {
 		const dois = identifiers
-			.filter((id): id is { DOI: string } => "DOI" in id)
-			.map((id) => id.DOI);
+			.filter((id) => id.type === "DOI")
+			.map((id) => id.id);
 		const oaIds = identifiers
-			.filter((id): id is { openAlex: string } => "openAlex" in id)
+			.filter((id) => id.type === "OpenAlex")
 			.map((id) => {
-				return { openalex: id.openAlex };
+				return { openalex: id.id };
 			});
 		// TODO: add PMID and PMCID support
 		const doiParams: SearchParameters = {

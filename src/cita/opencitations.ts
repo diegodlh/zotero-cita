@@ -1,7 +1,6 @@
-import { IndexedWork, IndexerBase } from "./indexer";
+import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
 import Lookup from "./zotLookup";
 import Wikicite, { debug } from "./wikicite";
-import SourceItemWrapper from "./sourceItemWrapper";
 
 interface OCWork {
 	title: string;
@@ -38,44 +37,31 @@ interface OCCitation {
 	| { PMID: string }
 	| { PMCID: string };*/
 
-// For searching citations, a smaller set of identifiers is supported
-// https://opencitations.net/index/api/v2#/references/{id}
-type SupportedUID =
-	| { DOI: string }
-	| { OMID: string } // OpenCitations Metadata Identifier
-	| { PMID: string };
-
-export default class OpenCitations extends IndexerBase<
-	OCCitation,
-	SupportedUID
-> {
+export default class OpenCitations extends IndexerBase<OCCitation> {
 	indexerName = "Open Citations";
 
-	extractSupportedUID(item: SourceItemWrapper): SupportedUID | null {
-		// DOI
-		if (item.getPID("DOI")) return { DOI: item.getPID("DOI")! };
-
-		// OMID
-		if (item.getPID("OMID")) return { OMID: item.getPID("OMID")! };
-
-		// PMID
-		const PMID = Wikicite.getExtraField(item.item, "PMID").values[0];
-		if (PMID) return { PMID };
-
-		return null;
-	}
+	/**
+	 * Supported PIDs for OpenCitations
+	 * For searching citations, a smaller set of identifiers is supported
+	 */
+	supportedPIDs: PIDType[] = ["DOI", "OMID", "PMID"];
 
 	getReferences(
-		identifiers: SupportedUID[],
+		identifiers: LookupIdentifier[],
 	): Promise<IndexedWork<OCCitation>[]> {
 		const requests = identifiers.map(async (uid) => {
 			let param = "";
-			if ((uid as { DOI: string }).DOI)
-				param = `doi:${(uid as { DOI: string }).DOI}`;
-			if ((uid as { OMID: string }).OMID)
-				param = `omid:br/${(uid as { OMID: string }).OMID}`; // TODO: should clean these PIDs
-			if ((uid as { PMID: string }).PMID)
-				param = `pmid:${(uid as { PMID: string }).PMID}`;
+			switch (uid.type) {
+				case "DOI":
+					param = `doi:${uid.id}`;
+					break;
+				case "OMID":
+					param = `omid:${uid.id}`;
+					break;
+				case "PMID":
+					param = `pmid:${uid.id}`;
+					break;
+			}
 			const url = `https://opencitations.net/index/api/v2/references/${param}`;
 			const options = {
 				headers: {
