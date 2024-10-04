@@ -1037,7 +1037,6 @@ class ZoteroOverlay {
 		);
 		const hasCitations = Boolean(sourceItem!.citations.length);
 		const sourceDoi = sourceItem!.doi;
-		const sourceOcc = sourceItem!.omid;
 		const sourceQid = sourceItem!.qid;
 
 		const itemWikidataSync = document.getElementById(
@@ -1076,10 +1075,18 @@ class ZoteroOverlay {
 
 		itemWikidataSync.disabled = !sourceQid;
 		itemFetchCitationQIDs.disabled = !hasCitations;
+
+		// Indexers
 		itemCrossrefGet.disabled = !sourceDoi;
-		itemSemanticGet.disabled = !sourceDoi;
-		itemOpenAlexGet.disabled = !sourceDoi;
-		itemOpenCitationsGet.disabled = !sourceOcc;
+		itemSemanticGet.disabled = !new Semantic().extractSupportedPID(
+			sourceItem!,
+		);
+		itemOpenAlexGet.disabled = !new OpenAlex().extractSupportedPID(
+			sourceItem!,
+		);
+		itemOpenCitationsGet.disabled =
+			!new OpenCitations().extractSupportedPID(sourceItem!);
+
 		itemPdfExtract.disabled = !hasAttachments;
 		itemCitationsImport.disabled = false;
 		itemFileExport.disabled = !hasCitations;
@@ -1215,6 +1222,47 @@ class ZoteroOverlay {
 					"wikicite-itemsubmenu-localCitationNetwork",
 				)!.setAttribute("disabled", "true");
 			}
+			// Enable indexer citation lookup when appropriate identifiers are present
+			const enableCrossref = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return sourceItem.doi;
+			});
+			const enableSemantic = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return new Semantic().extractSupportedPID(sourceItem);
+			});
+			const enableOpenAlex = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return new OpenAlex().extractSupportedPID(sourceItem);
+			});
+			const enableOpenCitations = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return new OpenCitations().extractSupportedPID(sourceItem);
+			});
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.Crossref",
+			)!.setAttribute("disabled", enableCrossref ? "false" : "true");
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.Semantic Scholar",
+			)!.setAttribute("disabled", enableSemantic ? "false" : "true");
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.OpenAlex",
+			)!.setAttribute("disabled", enableOpenAlex ? "false" : "true");
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.OpenCitations",
+			)!.setAttribute("disabled", enableOpenCitations ? "false" : "true");
 		}
 
 		(
@@ -1290,7 +1338,6 @@ class ZoteroOverlay {
 				"wikicite.submenu.get-from-indexer",
 				indexerName,
 			);
-			Zotero.log(label);
 		} else label = Wikicite.getString(`wikicite.submenu.${functionName}`);
 		const menuOptions: MenuitemOptions = {
 			tag: "menuitem",
