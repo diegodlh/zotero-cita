@@ -28,9 +28,8 @@ export default class OpenAlex extends IndexerBase<string, SupportedUID> {
 		if (item.doi) return { DOI: item.doi };
 
 		// OpenAlex
-		const openAlex = Wikicite.getExtraField(item.item, "OpenAlex")
-			.values[0];
-		if (openAlex) return { openAlex };
+		if (item.getPID("OpenAlex"))
+			return { openAlex: item.getPID("OpenAlex")! };
 
 		// PMID
 		const PMID = Wikicite.getExtraField(item.item, "PMID").values[0];

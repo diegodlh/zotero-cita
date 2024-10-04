@@ -55,12 +55,13 @@ export default class Semantic extends IndexerBase<Reference, SupportedUID> {
 
 		// ArXiv
 		const rawarXiv =
-			item.item.getField("archiveID") || item.item.getExtraField("arXiv");
+			item.item.getField("archiveID") ||
+			Wikicite.getExtraField(item.item, "arXiv").values[0];
 		const arXiv_RE =
-			/((?:[^A-Za-z]|^)([-A-Za-z.]+\/\d{7})(?:(v[0-9]+)|)(?!\d))|((?:\D|^)(\d{4}\.\d{4,5})(?:(v[0-9]+)|)(?!\d))/g; // Taken from zotero/utilities
+			/\b(([-A-Za-z.]+\/\d{7}|\d{4}\.\d{4,5})(?:v(\d+))?)(?!\d)/g; // 1: full ID, 2: ID without version, 3: version #
 		const m = arXiv_RE.exec(rawarXiv);
 		if (m) {
-			const arXiv = m[2] || m[5];
+			const arXiv = m[2];
 			return { arXiv };
 		}
 
@@ -70,8 +71,7 @@ export default class Semantic extends IndexerBase<Reference, SupportedUID> {
 		if (semantic) return { semantic };
 
 		// OpenAlex
-		const openAlex = Wikicite.getExtraField(item.item, "OpenAlex")
-			.values[0];
+		const openAlex = item.getPID("OpenAlex");
 		if (openAlex) return { openAlex };
 
 		// PMID

@@ -107,7 +107,14 @@ export default class ItemWrapper {
 	}
 
 	getPIDTypes() {
-		const allTypes: PIDType[] = ["DOI", "ISBN", "QID", "OMID"];
+		const allTypes: PIDType[] = [
+			"DOI",
+			"ISBN",
+			"QID",
+			"OMID",
+			"arXiv",
+			"OpenAlex",
+		];
 		const pidTypes: PIDType[] = [];
 		for (const type of allTypes) {
 			// don't need this because we enforce that it's uppercase already
@@ -116,6 +123,11 @@ export default class ItemWrapper {
 				case "DOI":
 				case "ISBN":
 					if (this.isValidField(type)) {
+						pidTypes.push(type);
+					}
+					break;
+				case "arXiv":
+					if (this.item.itemType === "preprint") {
 						pidTypes.push(type);
 					}
 					break;
@@ -134,6 +146,7 @@ export default class ItemWrapper {
 				pid = qids?.get(this);
 				break;
 			}
+			// TODO: add CrossRef and OpenCitations fetchers
 			default:
 				Services.prompt.alert(
 					window as mozIDOMWindowProxy,
@@ -186,8 +199,14 @@ export default class ItemWrapper {
 							.replace(/"/g, "%22");
 					break;
 				case "OMID":
-					url = "https://opencitations.net/meta/br/" + cleanPID;
+					url = "https://opencitations.net/meta/" + cleanPID;
 					break;
+				case "OpenAlex":
+					url = "https://openalex.org/works/" + cleanPID;
+					break;
+				/*case "arXiv": // TODO: add arXiv PID cleaning
+					url = "https://arxiv.org/abs/" + cleanPID;
+					break*/
 				case "QID":
 					url = "https://www.wikidata.org/wiki/" + cleanPID;
 					break;

@@ -53,11 +53,10 @@ export default class OpenCitations extends IndexerBase<
 
 	extractSupportedUID(item: SourceItemWrapper): SupportedUID | null {
 		// DOI
-		if (item.doi) return { DOI: item.doi };
+		if (item.getPID("DOI")) return { DOI: item.getPID("DOI")! };
 
 		// OMID
-		const OMID = Wikicite.getExtraField(item.item, "OMID").values[0];
-		if (OMID) return { OMID };
+		if (item.getPID("OMID")) return { OMID: item.getPID("OMID")! };
 
 		// PMID
 		const PMID = Wikicite.getExtraField(item.item, "PMID").values[0];
