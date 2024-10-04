@@ -36,7 +36,7 @@ declare type MenuFunction =
 	| "fetchQIDs"
 	| "syncWithWikidata"
 	| "getFromIndexer.Crossref"
-	| "getFromIndexer.Semantic"
+	| "getFromIndexer.Semantic Scholar"
 	| "getFromIndexer.OpenAlex"
 	| "getFromIndexer.OpenCitations"
 	| "getFromAttachments"
@@ -1264,7 +1264,10 @@ class ZoteroOverlay {
 			["fetchQIDs", () => this.fetchQIDs(menuName)],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
 			["getFromIndexer.Crossref", () => this.getFromCrossref(menuName)],
-			["getFromIndexer.Semantic", () => this.getFromSemantic(menuName)],
+			[
+				"getFromIndexer.Semantic Scholar",
+				() => this.getFromSemantic(menuName),
+			],
 			["getFromIndexer.OpenAlex", () => this.getFromOpenAlex(menuName)],
 			[
 				"getFromIndexer.OpenCitations",
@@ -1310,6 +1313,7 @@ class ZoteroOverlay {
 		Zotero.log(`Building menu for ${functionName}`);
 		if (functionName.includes("getFromIndexer.")) {
 			const indexerName = functionName.split(".")[1];
+			Zotero.log(`Indexer name: ${indexerName} ${functionName}`);
 			label = Wikicite.formatString(
 				"wikicite.submenu.get-from-indexer",
 				indexerName,
