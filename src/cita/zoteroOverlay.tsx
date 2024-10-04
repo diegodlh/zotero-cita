@@ -19,6 +19,7 @@ import { Root, createRoot } from "react-dom/client";
 
 import { initLocale, getLocaleID } from "../utils/locale";
 import { getPrefGlobalName } from "../utils/prefs";
+import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -1160,46 +1161,23 @@ class ZoteroOverlay {
 	// /******************************************/
 	// // Create XUL for Zotero menu elements
 	zoteroPopup(menuName: MenuSelectionType, doc: Document) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const zoteroMenu = doc.getElementById(`zotero-${menuName}menu`);
-		if (zoteroMenu === null) {
-			// Don't do anything if elements not loaded yet
-			return;
-		}
-
-		const wikiciteSeparator = doc.createElementNS(ns, "menuseparator");
-		const wikiciteSeparatorID = `wikicite-${menuName}submenu-separator`;
-		wikiciteSeparator.setAttribute("id", wikiciteSeparatorID);
-		zoteroMenu.appendChild(wikiciteSeparator);
-		WikiciteChrome.registerXUL(wikiciteSeparatorID, doc);
-
 		// Wikicite submenu
-		const wikiciteSubmenu = doc.createElementNS(ns, "menu");
-		const wikiciteSubmenuID = `wikicite-${menuName}submenu`;
-		wikiciteSubmenu.setAttribute("id", wikiciteSubmenuID);
-		wikiciteSubmenu.setAttribute(
-			"label",
-			Wikicite.getString(`wikicite.submenu.label`),
-		);
-		zoteroMenu.appendChild(wikiciteSubmenu);
-		WikiciteChrome.registerXUL(wikiciteSubmenuID, doc);
+		ztoolkit.Menu.register(menuName, {
+			tag: "menuseparator",
+			id: `wikicite-${menuName}submenu-separator`,
+		});
 
-		// Wikicite submenu popup
-		const wikiciteSubmenuPopup = doc.createElementNS(ns, "menupopup");
-		wikiciteSubmenuPopup.setAttribute(
-			"id",
-			`wikicite-${menuName}submenu-popup`,
-		);
-		wikiciteSubmenu.appendChild(wikiciteSubmenuPopup);
-
-		this.createMenuItems(
+		const menuItems = this.createMenuItems(
 			menuName,
-			wikiciteSubmenuPopup,
 			`wikicite-${menuName}submenu-`,
-			false,
-			doc,
 		);
+
+		ztoolkit.Menu.register(menuName, {
+			tag: "menu",
+			id: `wikicite-${menuName}submenu`,
+			label: Wikicite.getString(`wikicite.submenu.label`),
+			children: menuItems,
+		});
 
 		this.refreshZoteroPopup(menuName, doc);
 	}
@@ -1252,11 +1230,8 @@ class ZoteroOverlay {
 	// Create Zotero item menu items as children of menuPopup
 	createMenuItems(
 		menuName: MenuSelectionType,
-		menuPopup: Element,
 		IDPrefix: string,
-		elementsAreRoot: boolean,
-		doc: Document,
-	) {
+	): MenuitemOptions[] {
 		const menuFunctions: Map<
 			MenuFunction,
 			(menuName: MenuSelectionType) => void
@@ -1277,6 +1252,8 @@ class ZoteroOverlay {
 			["addAsCitations", () => this.addAsCitations(menuName)],
 			["localCitationNetwork", () => this.localCitationNetwork(menuName)],
 		]);
+
+		const options: MenuitemOptions[] = [];
 		for (const [functionName, func] of menuFunctions) {
 			if (
 				menuName === "collection" &&
@@ -1292,13 +1269,10 @@ class ZoteroOverlay {
 				functionName,
 				func,
 				IDPrefix,
-				doc,
 			);
-			menuPopup.appendChild(menuFunc);
-			if (elementsAreRoot) {
-				WikiciteChrome.registerXUL(menuFunc.id, doc);
-			}
+			options.push(menuFunc);
 		}
+		return options;
 	}
 
 	// Create Zotero item menu item
@@ -1307,33 +1281,27 @@ class ZoteroOverlay {
 		functionName: MenuFunction,
 		func: (menuName: MenuSelectionType) => void,
 		IDPrefix: string,
-		doc: Document,
 	) {
 		let label: string;
 		Zotero.log(`Building menu for ${functionName}`);
 		if (functionName.includes("getFromIndexer.")) {
 			const indexerName = functionName.split(".")[1];
-			Zotero.log(`Indexer name: ${indexerName} ${functionName}`);
 			label = Wikicite.formatString(
 				"wikicite.submenu.get-from-indexer",
 				indexerName,
 			);
 			Zotero.log(label);
 		} else label = Wikicite.getString(`wikicite.submenu.${functionName}`);
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const menuFunc = doc.createElementNS(ns, "menuitem");
-		menuFunc.setAttribute("id", IDPrefix + functionName);
-		menuFunc.setAttribute("label", label);
-		menuFunc.addEventListener(
-			"command",
-			(event) => {
+		const menuOptions: MenuitemOptions = {
+			tag: "menuitem",
+			id: IDPrefix + functionName,
+			label: label,
+			commandListener: (event) => {
 				event.stopPropagation();
 				func(menuName);
 			},
-			false,
-		);
-		return menuFunc;
+		};
+		return menuOptions;
 	}
 }
 
