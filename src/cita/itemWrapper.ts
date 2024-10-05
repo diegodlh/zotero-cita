@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import OpenAlex from "./openalex";
 import OpenCitations from "./opencitations";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
@@ -152,6 +153,11 @@ export default class ItemWrapper {
 			case "OMID": {
 				const omid = await new OpenCitations().fetchOMID(this);
 				pid = omid;
+				break;
+			}
+			case "OpenAlex": {
+				const openAlex = await new OpenAlex().fetchOpenAlex(this);
+				pid = openAlex;
 				break;
 			}
 

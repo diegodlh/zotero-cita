@@ -2,7 +2,12 @@ import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
 import Lookup from "./zotLookup";
 import OpenAlexSDK from "openalex-sdk";
 import Wikicite, { debug } from "./wikicite";
-import { SearchParameters, Work } from "openalex-sdk/dist/src/types/work";
+import {
+	ExternalIdsWork,
+	SearchParameters,
+	Work,
+} from "openalex-sdk/dist/src/types/work";
+import ItemWrapper from "./itemWrapper";
 
 export default class OpenAlex extends IndexerBase<string> {
 	indexerName = "Open Alex";
@@ -10,6 +15,27 @@ export default class OpenAlex extends IndexerBase<string> {
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
 	supportedPIDs: PIDType[] = ["DOI", "OpenAlex", "PMID", "PMCID"];
+
+	async fetchOpenAlex(item: ItemWrapper): Promise<string | null> {
+		// TODO: support getting for multiple items
+		const metatdataPIDs: PIDType[] = ["DOI", "PMID", "PMCID", "OpenAlex"];
+		let identifier: LookupIdentifier | null = null;
+		for (const pid of metatdataPIDs) {
+			const value = item.getPID(pid, true); // Already clean them up
+			if (value) identifier = { type: pid, id: value };
+		}
+
+		if (identifier) {
+			const work = await this.openAlexSDK.work(
+				identifier.id,
+				identifier.type.toLowerCase() as ExternalIdsWork,
+			);
+			const cleaned = work.id.replace(/https?:\/\/openalex.org\//, "");
+			return cleaned;
+		}
+
+		return null;
+	}
 
 	/**
 	 * Get references from OpenAlex for items with DOIs.
