@@ -91,7 +91,7 @@ ul.pid-list > li {
 }
 
 ul.pid-list > li > label {
-	width: 30px;
+	width: 65px;
 }
 
 ul.pid-list > li input {
@@ -109,6 +109,9 @@ ul.pid-list > li button {
 	padding: 1px;
 	margin-left: 15px;
 }
+ul.pid-list > li button:disabled {
+	filter: grayscale(100%) opacity(50%);
+}
 
 ul.pid-list > li .editable-container {
 	flex-grow: 1;
@@ -118,6 +121,7 @@ ul.pid-list .editable-content {
 	min-height: 1em;
 }
 
-.pid-label.pointer:hover {
+.pid-label.pointer:hover,
+ul.pid-list .cita-icon.pointer:hover {
 	cursor: pointer !important;
 }
