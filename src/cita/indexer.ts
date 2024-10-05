@@ -10,8 +10,6 @@ const limiter = new Bottleneck({
 	minTime: 20, // 50 requests per second
 });
 
-declare const Services: any;
-
 //export type OpenAlexID = `W${number}`;
 export type UID =
 	| { DOI: string }
@@ -109,7 +107,7 @@ export abstract class IndexerBase<Ref> {
 			this.filterItemsWithSupportedIdentifiers(sourceItems);
 		if (fetchableSourceItems.length === 0) {
 			Services.prompt.alert(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.formatString(
 					"wikicite.indexer.get-citations.no-doi-title",
 					this.indexerName,
@@ -125,7 +123,7 @@ export abstract class IndexerBase<Ref> {
 		// Ask user confirmation in case some selected items already have citations
 		if (fetchableSourceItems.some((item) => item.citations.length)) {
 			const confirmed = Services.prompt.confirm(
-				window,
+				window as mozIDOMWindowProxy,
 				Wikicite.getString(
 					"wikicite.indexer.get-citations.existing-citations-title",
 				),
@@ -174,7 +172,7 @@ export abstract class IndexerBase<Ref> {
 		}
 
 		const confirmed = Services.prompt.confirm(
-			window,
+			window as mozIDOMWindowProxy,
 			Wikicite.formatString(
 				"wikicite.indexer.get-citations.confirm-title",
 				this.indexerName,

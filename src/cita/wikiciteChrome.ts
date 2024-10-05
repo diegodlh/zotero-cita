@@ -1,6 +1,5 @@
 // import Wikicite from "./wikicite";
 
-declare const Services: any;
 declare global {
 	interface Document {
 		WikiciteXULRootElements: string[];
