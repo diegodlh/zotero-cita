@@ -110,18 +110,17 @@ export default class ItemWrapper {
 	}
 
 	getPIDTypes() {
-		const allTypes: PIDType[] = [
+		const allTypesToShow: PIDType[] = [
 			"DOI",
 			"ISBN",
 			"QID",
 			"OMID",
 			"arXiv",
 			"OpenAlex",
-			"PMID",
-			"PMCID",
+			// Don't show PMID or PMCID because we can't fetch citaitons from them
 		];
 		const pidTypes: PIDType[] = [];
-		for (const type of allTypes) {
+		for (const type of allTypesToShow) {
 			// don't need this because we enforce that it's uppercase already
 			// type = type.toUpperCase();
 			switch (type) {
