@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import Crossref from "./crossref";
 import OpenAlex from "./openalex";
 import OpenCitations from "./opencitations";
 import Progress from "./progress";
@@ -142,7 +143,7 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
-	fetchablePIDs: PIDType[] = ["QID", "OMID", "OpenAlex"];
+	fetchablePIDs: PIDType[] = ["QID", "OMID", "OpenAlex", "DOI"];
 
 	canFetchPid(type: PIDType) {
 		return this.fetchablePIDs.includes(type);
@@ -180,12 +181,16 @@ export default class ItemWrapper {
 				pid = omid;
 				break;
 			}
+			case "DOI": {
+				const doi = await new Crossref().fetchDOI(this);
+				pid = doi;
+				break;
+			}
 			case "OpenAlex": {
 				const openAlex = await new OpenAlex().fetchOpenAlex(this);
 				pid = openAlex;
 				break;
 			}
-			// TODO: add CrossRef and OpenCitations fetchers
 		}
 		if (pid) {
 			progress.updateLine(

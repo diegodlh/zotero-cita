@@ -81,10 +81,11 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 			});
 
 			const foundWork = (response?.response as OCWork[])[0];
-
-			for (const id of foundWork.id.split(" ")) {
-				const [type, value] = id.split(":");
-				if (type === "omid") return value;
+			if (foundWork) {
+				for (const id of foundWork.id.split(" ")) {
+					const [type, value] = id.split(":");
+					if (type === "omid") return value;
+				}
 			}
 		}
 

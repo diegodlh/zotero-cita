@@ -1,4 +1,5 @@
 import { IndexerBase, IndexedWork, LookupIdentifier } from "./indexer";
+import ItemWrapper from "./itemWrapper";
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
 
@@ -52,6 +53,45 @@ export default class Crossref extends IndexerBase<Reference> {
 	indexerName = "Crossref";
 
 	supportedPIDs: PIDType[] = ["DOI"];
+
+	async fetchDOI(item: ItemWrapper): Promise<string | null> {
+		const crossrefOpenURL =
+			"https://doi.crossref.org/openurl?pid=cita@duck.com&";
+		const ctx = Zotero.OpenURL.createContextObject(item, "1.0");
+
+		if (ctx) {
+			const url = crossrefOpenURL + ctx + "&multihit=true";
+			const response = await Zotero.HTTP.request("GET", url).catch(
+				(e) => {
+					debug(
+						`Couldn't access URL: ${url}. Got status ${e.status}.`,
+					);
+				},
+			);
+
+			const xml = response?.responseXML;
+
+			if (xml) {
+				const status = xml
+					.getElementsByTagName("query")[0]
+					.getAttribute("status");
+				switch (status) {
+					case "resolved":
+					case "multiresolved": {
+						// We just take the first one
+						const doi =
+							xml.getElementsByTagName("doi")[0].textContent;
+						return doi;
+					}
+					case "unresolved":
+						return null;
+					default:
+						throw new Error(`Unexpected status: ${status}`);
+				}
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Get a list of references from Crossref for an item with a certain DOI.
