@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import OpenAlex from "./openalex";
 import OpenCitations from "./opencitations";
+import Progress from "./progress";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 
@@ -161,6 +162,13 @@ export default class ItemWrapper {
 			return;
 		}
 
+		const progress = new Progress(
+			"loading",
+			Wikicite.formatString(
+				"wikicite.item-wrapper.fetch-pid.loading",
+				type,
+			),
+		);
 		let pid;
 		switch (type) {
 			case "QID": {
@@ -181,7 +189,24 @@ export default class ItemWrapper {
 			// TODO: add CrossRef and OpenCitations fetchers
 		}
 		if (pid) {
+			progress.updateLine(
+				"done",
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.done",
+					type,
+				),
+			);
+			progress.close();
 			this.setPID(type, pid, autosave);
+		} else {
+			progress.updateLine(
+				"error",
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.error",
+					type,
+				),
+			);
+			progress.close();
 		}
 	}
 

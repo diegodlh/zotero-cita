@@ -53,7 +53,7 @@ function PIDRow(props: {
 				className={"pid-label" + (url ? " pointer" : "")}
 				onClick={url ? () => Zotero.launchURL(url) : undefined}
 			>
-				{props.type.toUpperCase()}
+				{props.type}
 			</label>
 			<div className="editable-container">
 				<input
