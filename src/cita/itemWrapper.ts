@@ -142,7 +142,25 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
+	fetchablePIDs: PIDType[] = ["QID", "OMID", "OpenAlex"];
+
+	canFetchPid(type: PIDType) {
+		return this.fetchablePIDs.includes(type);
+	}
+
 	async fetchPID(type: PIDType, autosave = true) {
+		if (!this.canFetchPid(type)) {
+			Services.prompt.alert(
+				window as mozIDOMWindowProxy,
+				Wikicite.getString("wikicite.global.unsupported"),
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.unsupported",
+					type.toUpperCase(),
+				),
+			);
+			return;
+		}
+
 		let pid;
 		switch (type) {
 			case "QID": {
@@ -160,17 +178,7 @@ export default class ItemWrapper {
 				pid = openAlex;
 				break;
 			}
-
 			// TODO: add CrossRef and OpenCitations fetchers
-			default:
-				Services.prompt.alert(
-					window as mozIDOMWindowProxy,
-					Wikicite.getString("wikicite.global.unsupported"),
-					Wikicite.formatString(
-						"wikicite.item-wrapper.fetch-pid.unsupported",
-						type.toUpperCase(),
-					),
-				);
 		}
 		if (pid) {
 			this.setPID(type, pid, autosave);

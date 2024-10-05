@@ -66,10 +66,20 @@ function PIDRow(props: {
 					onBlur={(event) => handleCommit(event.target.value)}
 				/>
 			</div>
-			<button onClick={() => onFetch()}>
+			<button
+				onClick={() => onFetch()}
+				disabled={!props.item.canFetchPid(props.type)}
+			>
 				<img
-					className="cita-icon"
-					title={`Fetch ${props.type}`}
+					className={
+						"cita-icon" +
+						(props.item.canFetchPid(props.type) ? " pointer" : "")
+					}
+					title={
+						props.item.canFetchPid(props.type)
+							? `Fetch ${props.type}`
+							: ""
+					}
 					src={`chrome://zotero/skin/arrow_refresh.png`}
 				/>
 			</button>
