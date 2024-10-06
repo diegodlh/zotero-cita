@@ -67,11 +67,11 @@ export default class ItemWrapper {
 	// this.place; // for books?
 
 	// UUIDs
-	get doi(): string | undefined {
-		return this.getPID("DOI");
+	get doi(): DOI | undefined {
+		return this.getPID("DOI") as DOI;
 	}
 
-	set doi(doi: string) {
+	set doi(doi: DOI) {
 		this.setPID("DOI", doi);
 	}
 
@@ -92,11 +92,11 @@ export default class ItemWrapper {
 	}
 
 	// OpenCitations Corpus Internal Identifier
-	get omid(): string | undefined {
-		return this.getPID("OMID");
+	get omid(): OMID | undefined {
+		return this.getPID("OMID") as OMID;
 	}
 
-	set omid(omid: string) {
+	set omid(omid: OMID) {
 		this.setPID("OMID", omid);
 	}
 
@@ -122,8 +122,6 @@ export default class ItemWrapper {
 		];
 		const pidTypes: PIDType[] = [];
 		for (const type of allTypesToShow) {
-			// don't need this because we enforce that it's uppercase already
-			// type = type.toUpperCase();
 			switch (type) {
 				case "DOI":
 				case "ISBN":
@@ -215,7 +213,7 @@ export default class ItemWrapper {
 	}
 
 	/*
-	 * Get PID (QID, DOI, ISBN, OMID) from item. If it doesn't have this PID, return undefined
+	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return undefined
 	 */
 	getPID(type: PIDType, clean = false) {
 		let pid: string | undefined;
