@@ -393,7 +393,7 @@ class SourceItemWrapper extends ItemWrapper {
 			const existingTargetDOIs = new Set(
 				this._citations
 					.map((citation) => citation.target.doi)
-					.filter((id): id is string => id !== undefined),
+					.filter((id): id is DOI => id !== undefined),
 			);
 			const existingTargetISBNs = new Set(
 				this._citations
