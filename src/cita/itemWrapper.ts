@@ -2,6 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import Crossref from "./crossref";
+import OpenAlex from "./openalex";
+import OpenCitations from "./opencitations";
+import Progress from "./progress";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 
@@ -63,11 +67,11 @@ export default class ItemWrapper {
 	// this.place; // for books?
 
 	// UUIDs
-	get doi(): string | undefined {
-		return this.getPID("DOI");
+	get doi(): DOI | undefined {
+		return this.getPID("DOI") as DOI;
 	}
 
-	set doi(doi: string) {
+	set doi(doi: DOI) {
 		this.setPID("DOI", doi);
 	}
 
@@ -88,12 +92,12 @@ export default class ItemWrapper {
 	}
 
 	// OpenCitations Corpus Internal Identifier
-	get occ(): string | undefined {
-		return this.getPID("OCC");
+	get omid(): OMID | undefined {
+		return this.getPID("OMID") as OMID;
 	}
 
-	set occ(occ: string) {
-		this.setPID("OCC", occ);
+	set omid(omid: OMID) {
+		this.setPID("OMID", omid);
 	}
 
 	get url() {
@@ -102,20 +106,31 @@ export default class ItemWrapper {
 			url ||
 			this.getPidUrl("QID") ||
 			this.getPidUrl("DOI") ||
-			this.getPidUrl("OCC")
+			this.getPidUrl("OMID")
 		);
 	}
 
 	getPIDTypes() {
-		const allTypes: PIDType[] = ["DOI", "ISBN", "QID", "OCC"];
+		const allTypesToShow: PIDType[] = [
+			"DOI",
+			"ISBN",
+			"QID",
+			"OMID",
+			"arXiv",
+			"OpenAlex",
+			// Don't show PMID or PMCID because we can't fetch citaitons from them
+		];
 		const pidTypes: PIDType[] = [];
-		for (const type of allTypes) {
-			// don't need this because we enforce that it's uppercase already
-			// type = type.toUpperCase();
+		for (const type of allTypesToShow) {
 			switch (type) {
 				case "DOI":
 				case "ISBN":
 					if (this.isValidField(type)) {
+						pidTypes.push(type);
+					}
+					break;
+				case "arXiv":
+					if (this.item.itemType === "preprint") {
 						pidTypes.push(type);
 					}
 					break;
@@ -126,7 +141,32 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
+	fetchablePIDs: PIDType[] = ["QID", "OMID", "OpenAlex", "DOI"];
+
+	canFetchPid(type: PIDType) {
+		return this.fetchablePIDs.includes(type);
+	}
+
 	async fetchPID(type: PIDType, autosave = true) {
+		if (!this.canFetchPid(type)) {
+			Services.prompt.alert(
+				window as mozIDOMWindowProxy,
+				Wikicite.getString("wikicite.global.unsupported"),
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.unsupported",
+					type.toUpperCase(),
+				),
+			);
+			return;
+		}
+
+		const progress = new Progress(
+			"loading",
+			Wikicite.formatString(
+				"wikicite.item-wrapper.fetch-pid.loading",
+				type,
+			),
+		);
 		let pid;
 		switch (type) {
 			case "QID": {
@@ -134,23 +174,46 @@ export default class ItemWrapper {
 				pid = qids?.get(this);
 				break;
 			}
-			default:
-				Services.prompt.alert(
-					window as mozIDOMWindowProxy,
-					Wikicite.getString("wikicite.global.unsupported"),
-					Wikicite.formatString(
-						"wikicite.item-wrapper.fetch-pid.unsupported",
-						type.toUpperCase(),
-					),
-				);
+			case "OMID": {
+				const omid = await new OpenCitations().fetchOMID(this);
+				pid = omid;
+				break;
+			}
+			case "DOI": {
+				const doi = await new Crossref().fetchDOI(this);
+				pid = doi;
+				break;
+			}
+			case "OpenAlex": {
+				const openAlex = await new OpenAlex().fetchOpenAlex(this);
+				pid = openAlex;
+				break;
+			}
 		}
 		if (pid) {
+			progress.updateLine(
+				"done",
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.done",
+					type,
+				),
+			);
+			progress.close();
 			this.setPID(type, pid, autosave);
+		} else {
+			progress.updateLine(
+				"error",
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.error",
+					type,
+				),
+			);
+			progress.close();
 		}
 	}
 
 	/*
-	 * Get PID (QID, DOI, ISBN, OCC) from item. If it doesn't have this PID, return undefined
+	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return undefined
 	 */
 	getPID(type: PIDType, clean = false) {
 		let pid: string | undefined;
@@ -159,6 +222,15 @@ export default class ItemWrapper {
 			case "ISBN":
 				pid = this.item.getField(type);
 				break;
+			case "arXiv": {
+				const field = this.item.getField("archiveID");
+				if (field && field.startsWith("arXiv:")) {
+					pid = field;
+				} else {
+					pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
+				}
+				break;
+			}
 			default:
 				pid = Wikicite.getExtraField(this.item, type).values[0]; // this could be undefined
 		}
@@ -185,8 +257,14 @@ export default class ItemWrapper {
 							.replace(/%/g, "%25")
 							.replace(/"/g, "%22");
 					break;
-				case "OCC":
-					url = "https://opencitations.net/corpus/br/" + cleanPID;
+				case "OMID":
+					url = "https://opencitations.net/meta/" + cleanPID;
+					break;
+				case "OpenAlex":
+					url = "https://openalex.org/works/" + cleanPID;
+					break;
+				case "arXiv":
+					url = "https://arxiv.org/abs/" + cleanPID;
 					break;
 				case "QID":
 					url = "https://www.wikidata.org/wiki/" + cleanPID;

@@ -23,5 +23,16 @@ declare const __env__: "production" | "development";
 
 declare class Localization {}
 
-declare type PIDType = "DOI" | "ISBN" | "QID" | "OCC";
+declare type PIDType =
+	| "DOI"
+	| "ISBN"
+	| "QID"
+	| "OMID"
+	| "arXiv"
+	| "OpenAlex"
+	| "PMID"
+	| "PMCID";
 declare type QID = `Q${number}`;
+declare type DOI = `10.${string}/${string}`;
+declare type OMID = `br/${number}`;
+declare type OpenAlexID = `W${number}`;

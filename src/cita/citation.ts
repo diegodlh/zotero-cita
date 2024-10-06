@@ -15,7 +15,7 @@ class Citation {
 	ocis: {
 		citingId: string;
 		citedId: string;
-		idType: "qid" | "doi" | "occ";
+		idType: "qid" | "doi" | "omid";
 		oci: string;
 		supplierName: string;
 		valid: boolean;
@@ -330,7 +330,7 @@ class Citation {
 			return;
 		}
 
-		if (item.libraryID !== this.source.item.libraryID) {
+		if (item.libraryID && item.libraryID !== this.source.item.libraryID) {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				"",

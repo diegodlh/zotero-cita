@@ -430,6 +430,32 @@ export default class {
 		return qid;
 	}
 
+	static cleanOMID(omid: string) {
+		omid = omid.toLowerCase().trim();
+		if (omid.substring(0, 3) !== "br/") omid = "br/" + omid;
+		if (!omid.match(/^br\/\d+$/)) omid = "";
+		return omid;
+	}
+
+	static cleanArXiv(arXiv: string) {
+		const arXiv_RE =
+			/\b(([-A-Za-z.]+\/\d{7}|\d{4}\.\d{4,5})(?:v(\d+))?)(?!\d)/g; // 1: full ID, 2: ID without version, 3: version #
+		const m = arXiv_RE.exec(arXiv);
+		if (m) {
+			const cleanArXiv = m[2];
+			return cleanArXiv;
+		}
+
+		return "";
+	}
+
+	static cleanOpenAlex(openAlex: string) {
+		openAlex = openAlex.toUpperCase().trim();
+		if (openAlex[0] !== "W") openAlex = "W" + openAlex;
+		if (!openAlex.match(/^W\d+$/)) openAlex = "";
+		return openAlex;
+	}
+
 	/**
 	 * DEPRECATED - use this.reconcile() instead
 	 * Fetches QIDs for item wrappers provided and returns item -> QID map

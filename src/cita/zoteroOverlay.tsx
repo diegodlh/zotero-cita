@@ -2,6 +2,8 @@ import Wikicite from "./wikicite";
 import Citations from "./citations";
 import CitationsBoxContainer from "../containers/citationsBoxContainer";
 import Crossref from "./crossref";
+import Semantic from "./semantic";
+import OpenAlex from "./openalex";
 import Extraction from "./extract";
 import LCN from "./localCitationNetwork";
 import OCI from "../oci";
@@ -34,8 +36,10 @@ const ITEM_PANE_COLUMN_IDS = {
 declare type MenuFunction =
 	| "fetchQIDs"
 	| "syncWithWikidata"
-	| "getFromCrossref"
-	| "getFromOCC"
+	| "getFromIndexer.Crossref"
+	| "getFromIndexer.Semantic Scholar"
+	| "getFromIndexer.OpenAlex"
+	| "getFromIndexer.OpenCitations"
 	| "getFromAttachments"
 	| "addAsCitations"
 	| "localCitationNetwork";
@@ -458,16 +462,48 @@ class ZoteroOverlay {
 		}
 	}
 
-	getFromCrossref(menuName: MenuSelectionType) {
+	async getFromCrossref(menuName: MenuSelectionType) {
 		// get items selected
 		// filter items with doi
 		// generate batch call to crossref
 		// only add items not available locally yet
-		Crossref.getCitations();
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			new Crossref().addCitationsToItems(items);
+		}
 	}
 
-	getFromOCC(menuName: MenuSelectionType) {
-		OpenCitations.getCitations();
+	async getFromSemantic(menuName: MenuSelectionType) {
+		// get items selected
+		// filter items with doi
+		// generate batch call to crossref
+		// only add items not available locally yet
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			new Semantic().addCitationsToItems(items);
+		}
+	}
+
+	async getFromOpenAlex(menuName: MenuSelectionType) {
+		// get items selected
+		// filter items with doi
+		// generate batch call to crossref
+		// only add items not available locally yet
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			new OpenAlex().addCitationsToItems(items);
+		}
+	}
+
+	async getFromOpenCitations(menuName: MenuSelectionType) {
+		// get items selected
+		// filter items with doi
+		// generate batch call to crossref
+		// only add items not available locally yet
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			new OpenCitations().addCitationsToItems(items);
+		}
 	}
 
 	getFromAttachments(menuName: MenuSelectionType) {
@@ -673,22 +709,52 @@ class ZoteroOverlay {
 		itemCrossrefGet.setAttribute("id", "item-menu-crossref-get");
 		itemCrossrefGet.setAttribute(
 			"label",
-			Wikicite.getString("wikicite.item-menu.get-crossref"),
+			Wikicite.formatString("wikicite.item-menu.get-indexer", "Crossref"),
 		);
 		itemCrossrefGet.addEventListener("command", () =>
 			this._sourceItem!.getFromCrossref(),
 		);
 
-		// Get OCC citations menu item
+		// Get Semantic citations menu item
 
-		const itemOccGet = doc.createElementNS(ns, "menuitem");
-		itemOccGet.setAttribute("id", "item-menu-occ-get");
-		itemOccGet.setAttribute(
+		const itemSemanticGet = doc.createElementNS(ns, "menuitem");
+		itemSemanticGet.setAttribute("id", "item-menu-semantic-get");
+		itemSemanticGet.setAttribute(
 			"label",
-			Wikicite.getString("wikicite.item-menu.get-occ"),
+			Wikicite.formatString(
+				"wikicite.item-menu.get-indexer",
+				"Semantic Scholar",
+			),
 		);
-		itemOccGet.addEventListener("command", () =>
-			this._sourceItem!.getFromOcc(),
+		itemSemanticGet.addEventListener("command", () =>
+			this._sourceItem!.getFromSemantic(),
+		);
+
+		// Get OpenAlex citations menu item
+
+		const itemOpenAlexGet = doc.createElementNS(ns, "menuitem");
+		itemOpenAlexGet.setAttribute("id", "item-menu-openalex-get");
+		itemOpenAlexGet.setAttribute(
+			"label",
+			Wikicite.formatString("wikicite.item-menu.get-indexer", "OpenAlex"),
+		);
+		itemOpenAlexGet.addEventListener("command", () =>
+			this._sourceItem!.getFromOpenAlex(),
+		);
+
+		// Get OpenCitations citations menu item
+
+		const itemOpenCitationsGet = doc.createElementNS(ns, "menuitem");
+		itemOpenCitationsGet.setAttribute("id", "item-menu-opencitations-get");
+		itemOpenCitationsGet.setAttribute(
+			"label",
+			Wikicite.formatString(
+				"wikicite.item-menu.get-indexer",
+				"OpenCitations",
+			),
+		);
+		itemOpenCitationsGet.addEventListener("command", () =>
+			this._sourceItem!.getFromOpenCitations(),
 		);
 
 		// Extract citations menu item
@@ -802,7 +868,9 @@ class ZoteroOverlay {
 		itemMenu.appendChild(itemWikidataSync);
 		itemMenu.appendChild(itemFetchCitationQIDs);
 		itemMenu.appendChild(itemCrossrefGet);
-		itemMenu.appendChild(itemOccGet);
+		itemMenu.appendChild(itemSemanticGet);
+		itemMenu.appendChild(itemOpenAlexGet);
+		itemMenu.appendChild(itemOpenCitationsGet);
 		itemMenu.appendChild(itemPdfExtract);
 		itemMenu.appendChild(itemIdentifierImport);
 		itemMenu.appendChild(itemCitationsImport);
@@ -969,7 +1037,6 @@ class ZoteroOverlay {
 		);
 		const hasCitations = Boolean(sourceItem!.citations.length);
 		const sourceDoi = sourceItem!.doi;
-		const sourceOcc = sourceItem!.occ;
 		const sourceQid = sourceItem!.qid;
 
 		const itemWikidataSync = document.getElementById(
@@ -981,8 +1048,14 @@ class ZoteroOverlay {
 		const itemCrossrefGet = document.getElementById(
 			"item-menu-crossref-get",
 		) as HTMLButtonElement;
-		const itemOccGet = document.getElementById(
-			"item-menu-occ-get",
+		const itemSemanticGet = document.getElementById(
+			"item-menu-semantic-get",
+		) as HTMLButtonElement;
+		const itemOpenAlexGet = document.getElementById(
+			"item-menu-openalex-get",
+		) as HTMLButtonElement;
+		const itemOpenCitationsGet = document.getElementById(
+			"item-menu-opencitations-get",
 		) as HTMLButtonElement;
 		const itemPdfExtract = document.getElementById(
 			"item-menu-pdf-extract",
@@ -1002,8 +1075,18 @@ class ZoteroOverlay {
 
 		itemWikidataSync.disabled = !sourceQid;
 		itemFetchCitationQIDs.disabled = !hasCitations;
+
+		// Indexers
 		itemCrossrefGet.disabled = !sourceDoi;
-		itemOccGet.disabled = !sourceOcc;
+		itemSemanticGet.disabled = !new Semantic().extractSupportedPID(
+			sourceItem!,
+		);
+		itemOpenAlexGet.disabled = !new OpenAlex().extractSupportedPID(
+			sourceItem!,
+		);
+		itemOpenCitationsGet.disabled =
+			!new OpenCitations().extractSupportedPID(sourceItem!);
+
 		itemPdfExtract.disabled = !hasAttachments;
 		itemCitationsImport.disabled = false;
 		itemFileExport.disabled = !hasCitations;
@@ -1139,6 +1222,47 @@ class ZoteroOverlay {
 					"wikicite-itemsubmenu-localCitationNetwork",
 				)!.setAttribute("disabled", "true");
 			}
+			// Enable indexer citation lookup when appropriate identifiers are present
+			const enableCrossref = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return sourceItem.doi;
+			});
+			const enableSemantic = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return new Semantic().extractSupportedPID(sourceItem);
+			});
+			const enableOpenAlex = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return new OpenAlex().extractSupportedPID(sourceItem);
+			});
+			const enableOpenCitations = items.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return new OpenCitations().extractSupportedPID(sourceItem);
+			});
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.Crossref",
+			)!.setAttribute("disabled", enableCrossref ? "false" : "true");
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.Semantic Scholar",
+			)!.setAttribute("disabled", enableSemantic ? "false" : "true");
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.OpenAlex",
+			)!.setAttribute("disabled", enableOpenAlex ? "false" : "true");
+			doc.getElementById(
+				"wikicite-itemsubmenu-getFromIndexer.OpenCitations",
+			)!.setAttribute("disabled", enableOpenCitations ? "false" : "true");
 		}
 
 		(
@@ -1162,8 +1286,16 @@ class ZoteroOverlay {
 		> = new Map([
 			["fetchQIDs", () => this.fetchQIDs(menuName)],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
-			["getFromCrossref", () => this.getFromCrossref(menuName)],
-			["getFromOCC", () => this.getFromOCC(menuName)],
+			["getFromIndexer.Crossref", () => this.getFromCrossref(menuName)],
+			[
+				"getFromIndexer.Semantic Scholar",
+				() => this.getFromSemantic(menuName),
+			],
+			["getFromIndexer.OpenAlex", () => this.getFromOpenAlex(menuName)],
+			[
+				"getFromIndexer.OpenCitations",
+				() => this.getFromOpenCitations(menuName),
+			],
 			["getFromAttachments", () => this.getFromAttachments(menuName)],
 			["addAsCitations", () => this.addAsCitations(menuName)],
 			["localCitationNetwork", () => this.localCitationNetwork(menuName)],
@@ -1206,7 +1338,6 @@ class ZoteroOverlay {
 				"wikicite.submenu.get-from-indexer",
 				indexerName,
 			);
-			Zotero.log(label);
 		} else label = Wikicite.getString(`wikicite.submenu.${functionName}`);
 		const menuOptions: MenuitemOptions = {
 			tag: "menuitem",

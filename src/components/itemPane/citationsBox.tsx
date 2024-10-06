@@ -8,6 +8,7 @@ import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import WikidataButton from "./wikidataButton";
 import ZoteroButton from "./zoteroButton";
+import ImportButton from "./importButton";
 import { config } from "../../../package.json";
 
 function CitationsBox(props: {
@@ -287,6 +288,7 @@ function CitationsBox(props: {
 					// https://github.com/babel/babel-sublime/issues/368
 					<>
 						<ZoteroButton citation={citation} />
+						<ImportButton citation={citation} />
 						<WikidataButton
 							citation={citation}
 							onClick={() => handleCitationSync(index)}
@@ -406,7 +408,7 @@ function CitationsBox(props: {
 				<ul id="citations-box-pids" className="pid-list">
 					{
 						// Fixme: to avoid parsing the extra field multiple times
-						// (once per non-natively supported pid; e.g., QID, OCC)
+						// (once per non-natively supported pid; e.g., QID, OMID)
 						// consider having a pidBox component and
 						// redefining Wikicite.getExtraField to allow multiple fieldnames as input
 						// and return a fieldName: [values]} object instead
