@@ -3,6 +3,7 @@ import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as PropTypes from "prop-types";
 import ItemWrapper from "../cita/itemWrapper";
+import Wikicite, { debug } from "../cita/wikicite";
 
 function PIDRow(props: {
 	autosave: boolean;
@@ -77,7 +78,10 @@ function PIDRow(props: {
 					}
 					title={
 						props.item.canFetchPid(props.type)
-							? `Fetch ${props.type}`
+							? Wikicite.formatString(
+									"wikicite.citations-pane.pid-row.fetch-pid",
+									props.type,
+								)
 							: ""
 					}
 					src={`chrome://zotero/skin/arrow_refresh.png`}
