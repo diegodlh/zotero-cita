@@ -54,7 +54,9 @@ export default class Crossref extends IndexerBase<Reference> {
 
 	supportedPIDs: PIDType[] = ["DOI"];
 
-	async fetchDOI(item: ItemWrapper): Promise<string | null> {
+	maxRPS: number = 50; // Requests per second
+
+	async fetchDOI(item: ItemWrapper): Promise<LookupIdentifier | null> {
 		const crossrefOpenURL =
 			"https://doi.crossref.org/openurl?pid=cita@duck.com&";
 		const ctx = Zotero.OpenURL.createContextObject(item, "1.0");
@@ -81,7 +83,8 @@ export default class Crossref extends IndexerBase<Reference> {
 						// We just take the first one
 						const doi =
 							xml.getElementsByTagName("doi")[0].textContent;
-						return doi;
+						if (doi) return { type: "DOI", id: doi };
+						break;
 					}
 					case "unresolved":
 						return null;

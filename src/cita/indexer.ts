@@ -4,12 +4,6 @@ import Citation from "./citation";
 import Wikicite from "./wikicite";
 import Bottleneck from "bottleneck";
 
-// TODO: limiter should debend on indexer
-// Initialize Bottleneck for rate limiting (max 50 requests per second)
-const limiter = new Bottleneck({
-	minTime: 20, // 50 requests per second
-});
-
 //export type OpenAlexID = `W${number}`;
 export type UID =
 	| { DOI: string }
@@ -33,6 +27,13 @@ export interface LookupIdentifier {
 }
 
 export abstract class IndexerBase<Ref> {
+	maxRPS: number = 1000; // Requests per second
+
+	// Initialize Bottleneck for rate limiting (max 50 requests per second)
+	limiter = new Bottleneck({
+		minTime: 1 / this.maxRPS,
+	});
+
 	/**
 	 * Name of the indexer to be displayed.
 	 */
@@ -144,7 +145,7 @@ export abstract class IndexerBase<Ref> {
 			),
 		);
 
-		const sourceItemReferences = await limiter
+		const sourceItemReferences = await this.limiter
 			.schedule(() => this.getReferences(identifiers))
 			.catch((error) => {
 				Zotero.log(`Error fetching references: ${error}`);

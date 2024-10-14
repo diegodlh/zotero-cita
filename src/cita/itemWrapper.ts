@@ -187,7 +187,7 @@ export default class ItemWrapper {
 			}
 			case "DOI": {
 				const doi = await new Crossref().fetchDOI(this);
-				if (doi) pids = [{ type: "DOI", id: doi }];
+				if (doi) pids = [doi];
 				break;
 			}
 			case "OpenAlex": {

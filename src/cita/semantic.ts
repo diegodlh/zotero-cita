@@ -46,6 +46,8 @@ export default class Semantic extends IndexerBase<Reference> {
 		"PMCID",
 	];
 
+	maxRPS: number = 1; // Request per second
+
 	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		let identifier: LookupIdentifier | null = null;
 		for (const pid of this.supportedPIDs) {
