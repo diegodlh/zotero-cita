@@ -2,9 +2,11 @@ import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
 //import Bottleneck from "bottleneck";
 import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
+import ItemWrapper from "./itemWrapper";
 
 interface SemanticPaper {
 	paperId: string;
+	externalIds: ExternalIDS | null;
 	title: string;
 	references: Reference[];
 }
@@ -38,10 +40,51 @@ export default class Semantic extends IndexerBase<Reference> {
 	supportedPIDs: PIDType[] = [
 		"arXiv",
 		"DOI",
-		/*"semantic",*/ "OpenAlex",
+		"CorpusID",
+		"OpenAlex",
 		"PMID",
 		"PMCID",
 	];
+
+	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
+		let identifier: LookupIdentifier | null = null;
+		for (const pid of this.supportedPIDs) {
+			const value = item.getPID(pid, true); // Already clean them up
+			if (value) identifier = { type: pid, id: value };
+		}
+
+		if (identifier) {
+			const url = `https://api.semanticscholar.org/graph/v1/paper/${this.mapLookupIDToString(identifier)}?fields=externalIds`;
+			const options = {
+				headers: {
+					// TODO: add auth depending on api key
+					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+				},
+				responseType: "json",
+			};
+			const response = await Zotero.HTTP.request("GET", url, options);
+			const externalIds = (response?.response as SemanticPaper)
+				.externalIds;
+			if (externalIds) {
+				const pids: LookupIdentifier[] = [
+					{ type: "CorpusID", id: `${externalIds.CorpusId}` },
+				];
+				if (externalIds.DOI)
+					pids.push({ type: "DOI", id: externalIds.DOI });
+				if (externalIds.ArXiv)
+					pids.push({ type: "arXiv", id: externalIds.ArXiv });
+				if (externalIds.PubMed)
+					pids.push({ type: "PMID", id: externalIds.PubMed });
+				if (externalIds.PubMedCentral)
+					pids.push({ type: "PMCID", id: externalIds.PubMedCentral });
+				if (externalIds.MAG)
+					pids.push({ type: "OpenAlex", id: "W" + externalIds.MAG });
+				return pids;
+			}
+		}
+
+		return null;
+	}
 
 	/**
 	 * Get a list of references from Semantic Scholar for multiple DOIs at once.
@@ -73,7 +116,6 @@ export default class Semantic extends IndexerBase<Reference> {
 	): Promise<IndexedWork<Reference>[]> {
 		// Semantic-specific logic for fetching references
 		const paperIdentifiers = identifiers.map(this.mapLookupIDToString);
-		//identifier = Zotero.Utilities.cleanDOI(identifier);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,title,references.externalIds,references.title`;
 		const options = {
 			headers: {
@@ -101,8 +143,8 @@ export default class Semantic extends IndexerBase<Reference> {
 				return `ARXIV:${uid.id}`;
 			case "OpenAlex":
 				return `MAG:${uid.id.substring(1)}`;
-			/*case "semantic":
-				return `CorpusId:${uid.id}`;*/
+			case "CorpusID":
+				return `CorpusId:${uid.id}`;
 			case "PMID":
 				return `PMID:${uid.id}`;
 			case "PMCID":

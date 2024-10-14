@@ -30,6 +30,7 @@ declare type PIDType =
 	| "OMID"
 	| "arXiv"
 	| "OpenAlex"
+	| "CorpusID"
 	| "PMID"
 	| "PMCID";
 declare type QID = `Q${number}`;

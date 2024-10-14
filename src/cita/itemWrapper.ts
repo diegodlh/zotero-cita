@@ -7,6 +7,7 @@ import { LookupIdentifier } from "./indexer";
 import OpenAlex from "./openalex";
 import OpenCitations from "./opencitations";
 import Progress from "./progress";
+import Semantic from "./semantic";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 
@@ -119,6 +120,7 @@ export default class ItemWrapper {
 			"OMID",
 			"arXiv",
 			"OpenAlex",
+			"CorpusID",
 			// Don't show PMID or PMCID because we can't fetch citations from them
 		];
 		const pidTypes: PIDType[] = [];
@@ -142,7 +144,7 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
-	fetchablePIDs: PIDType[] = ["QID", "OMID", "OpenAlex", "DOI"];
+	fetchablePIDs: PIDType[] = ["QID", "OMID", "OpenAlex", "DOI", "CorpusID"];
 
 	canFetchPid(type: PIDType) {
 		return this.fetchablePIDs.includes(type);
@@ -190,6 +192,11 @@ export default class ItemWrapper {
 			}
 			case "OpenAlex": {
 				const _pids = await new OpenAlex().fetchPIDs(this);
+				if (_pids) pids = _pids;
+				break;
+			}
+			case "CorpusID": {
+				const _pids = await new Semantic().fetchPIDs(this);
 				if (_pids) pids = _pids;
 				break;
 			}
