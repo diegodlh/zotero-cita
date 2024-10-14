@@ -36,8 +36,8 @@ export default class Semantic extends IndexerBase<Reference> {
 	indexerName = "Semantic Scholar";
 
 	supportedPIDs: PIDType[] = [
-		"DOI",
 		"arXiv",
+		"DOI",
 		/*"semantic",*/ "OpenAlex",
 		"PMID",
 		"PMCID",
