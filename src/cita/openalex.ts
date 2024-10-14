@@ -16,7 +16,7 @@ export default class OpenAlex extends IndexerBase<string> {
 
 	supportedPIDs: PIDType[] = ["DOI", "OpenAlex", "PMID", "PMCID"];
 
-	async fetchOpenAlex(item: ItemWrapper): Promise<string | null> {
+	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		// TODO: support getting for multiple items
 		const metatdataPIDs: PIDType[] = ["DOI", "PMID", "PMCID", "OpenAlex"];
 		let identifier: LookupIdentifier | null = null;
@@ -31,7 +31,13 @@ export default class OpenAlex extends IndexerBase<string> {
 				identifier.type.toLowerCase() as ExternalIdsWork,
 			);
 			const cleaned = work.id.replace(/https?:\/\/openalex.org\//, "");
-			return cleaned;
+			const pids: LookupIdentifier[] = [
+				{ type: "OpenAlex", id: cleaned },
+			];
+			// We don't add MAG because it's basically the same as OpenAlex
+			if (work.doi) pids.push({ type: "DOI", id: work.doi });
+			if (work.ids?.pmid) pids.push({ type: "PMID", id: work.ids.pmid });
+			return pids;
 		}
 
 		return null;

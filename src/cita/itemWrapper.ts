@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import Crossref from "./crossref";
+import { LookupIdentifier } from "./indexer";
 import OpenAlex from "./openalex";
 import OpenCitations from "./opencitations";
 import Progress from "./progress";
@@ -118,7 +119,7 @@ export default class ItemWrapper {
 			"OMID",
 			"arXiv",
 			"OpenAlex",
-			// Don't show PMID or PMCID because we can't fetch citaitons from them
+			// Don't show PMID or PMCID because we can't fetch citations from them
 		];
 		const pidTypes: PIDType[] = [];
 		for (const type of allTypesToShow) {
@@ -167,30 +168,33 @@ export default class ItemWrapper {
 				type,
 			),
 		);
-		let pid;
+		let pids: LookupIdentifier[] = [];
 		switch (type) {
 			case "QID": {
 				const qids = await Wikidata.reconcile([this]);
-				pid = qids?.get(this);
+				const qid = qids?.get(this);
+				if (qid) {
+					pids = [{ type: "QID", id: qid }];
+				}
 				break;
 			}
 			case "OMID": {
-				const omid = await new OpenCitations().fetchOMID(this);
-				pid = omid;
+				const _pids = await new OpenCitations().fetchPIDs(this);
+				if (_pids) pids = _pids;
 				break;
 			}
 			case "DOI": {
 				const doi = await new Crossref().fetchDOI(this);
-				pid = doi;
+				if (doi) pids = [{ type: "DOI", id: doi }];
 				break;
 			}
 			case "OpenAlex": {
-				const openAlex = await new OpenAlex().fetchOpenAlex(this);
-				pid = openAlex;
+				const _pids = await new OpenAlex().fetchPIDs(this);
+				if (_pids) pids = _pids;
 				break;
 			}
 		}
-		if (pid) {
+		if (pids && pids.length) {
 			progress.updateLine(
 				"done",
 				Wikicite.formatString(
@@ -199,7 +203,10 @@ export default class ItemWrapper {
 				),
 			);
 			progress.close();
-			this.setPID(type, pid, autosave);
+			pids.forEach((pid) => {
+				const cleanPID = Wikicite.cleanPID(pid.type, pid.id);
+				this.setPID(pid.type, cleanPID || pid.id, autosave);
+			});
 		} else {
 			progress.updateLine(
 				"error",

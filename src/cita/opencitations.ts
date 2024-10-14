@@ -47,7 +47,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 	 */
 	supportedPIDs: PIDType[] = ["DOI", "OMID", "PMID"];
 
-	async fetchOMID(item: ItemWrapper): Promise<string | null> {
+	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		// TODO: support getting for multiple items
 		const metatdataPIDs: PIDType[] = [
 			"DOI",
@@ -82,10 +82,17 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 
 			const foundWork = (response?.response as OCWork[])[0];
 			if (foundWork) {
-				for (const id of foundWork.id.split(" ")) {
-					const [type, value] = id.split(":");
-					if (type === "omid") return value;
-				}
+				return foundWork.id
+					.split(" ")
+					.map((id) => {
+						const components = id.split(":");
+						const type = metatdataPIDs.filter(
+							(pid) => pid.toLowerCase() === components[0],
+						)[0];
+						const value = components[1];
+						return type ? { type, id: value } : null;
+					})
+					.filter((e) => e !== null) as LookupIdentifier[];
 			}
 		}
 
