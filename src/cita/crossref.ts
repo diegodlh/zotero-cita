@@ -129,7 +129,7 @@ export default class Crossref extends IndexerBase<Reference> {
 					);
 
 					throw new Error(
-						"Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Rate limits in action: Limit: ${rateLimitLimit}, Interval: ${rateLimitInterval}",
+						`Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Current limit: ${rateLimitLimit} requests per ${rateLimitInterval}s`,
 					);
 				}
 			});

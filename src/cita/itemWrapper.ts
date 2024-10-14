@@ -239,7 +239,7 @@ export default class ItemWrapper {
 			case "arXiv": {
 				const field = this.item.getField("archiveID");
 				if (field && field.startsWith("arXiv:")) {
-					pid = field;
+					pid = field.replace("arXiv:", "");
 				} else {
 					pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
 				}
@@ -299,6 +299,13 @@ export default class ItemWrapper {
 					throw new Error(
 						`Unsupported PID ${type} for item type ${this.type}`,
 					);
+				}
+				break;
+			case "arXiv":
+				if (this.isValidField("archiveID")) {
+					this.item.setField("archiveID", "arXiv:" + value);
+				} else {
+					Wikicite.setExtraField(this.item, type, [value]);
 				}
 				break;
 			default:

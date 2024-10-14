@@ -127,7 +127,16 @@ export default class Semantic extends IndexerBase<Reference> {
 			responseType: "json",
 			body: JSON.stringify({ ids: paperIdentifiers }),
 		};
-		const response = await Zotero.HTTP.request("POST", url, options);
+		const response = await Zotero.HTTP.request("POST", url, options).catch(
+			(e) => {
+				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
+				if (e.status == 429) {
+					throw new Error(
+						`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time.`,
+					);
+				}
+			},
+		);
 		const semanticPaper = (response?.response as SemanticPaper[]) || [];
 		return semanticPaper.map((paper): IndexedWork<Reference> => {
 			return {
