@@ -3,18 +3,7 @@ import Progress from "./progress";
 import Citation from "./citation";
 import Wikicite from "./wikicite";
 import Bottleneck from "bottleneck";
-
-//export type OpenAlexID = `W${number}`;
-export type UID =
-	| { DOI: string }
-	| { ISBN: string }
-	| { arXiv: string }
-	| { openAlex: string }
-	| { semantic: string }
-	| { OMID: string }
-	| { adsBibcode: string }
-	| { PMID: string }
-	| { PMCID: string };
+import ItemWrapper from "./itemWrapper";
 
 export interface IndexedWork<Ref> {
 	referenceCount: number;
@@ -45,12 +34,16 @@ export abstract class IndexerBase<Ref> {
 	abstract supportedPIDs: PIDType[];
 
 	/**
-	 * Extract supported PID from the source item.
-	 * @param item Source item to extract the PID from.
-	 * @returns Supported PID or null if none
+	 * Return the first available PID from a list of PID types.
+	 * @param item Item wrapper to get the PID from.
+	 * @param pidTypes List of PID types to check for, by order of preference.
+	 * @returns PID or null if none available
 	 */
-	extractSupportedPID(item: SourceItemWrapper): LookupIdentifier | null {
-		for (const pid of this.supportedPIDs) {
+	getBestPID(
+		item: ItemWrapper,
+		pidTypes: PIDType[] = this.supportedPIDs,
+	): LookupIdentifier | null {
+		for (const pid of pidTypes) {
 			const value = item.getPID(pid, true); // Already clean them up
 			if (value) return { type: pid, id: value };
 		}
@@ -85,7 +78,7 @@ export abstract class IndexerBase<Ref> {
 		const filteredItems: SourceItemWrapper[] = [];
 
 		for (const item of sourceItems) {
-			const uid = this.extractSupportedPID(item);
+			const uid = this.getBestPID(item, this.supportedPIDs);
 			if (uid) {
 				identifiers.push(uid);
 				filteredItems.push(item);

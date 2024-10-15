@@ -49,11 +49,7 @@ export default class Semantic extends IndexerBase<Reference> {
 	maxRPS: number = 1; // Request per second
 
 	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
-		let identifier: LookupIdentifier | null = null;
-		for (const pid of this.supportedPIDs) {
-			const value = item.getPID(pid, true); // Already clean them up
-			if (value) identifier = { type: pid, id: value };
-		}
+		const identifier = this.getBestPID(item, this.supportedPIDs);
 
 		if (identifier) {
 			const url = `https://api.semanticscholar.org/graph/v1/paper/${this.mapLookupIDToString(identifier)}?fields=externalIds`;

@@ -19,11 +19,7 @@ export default class OpenAlex extends IndexerBase<string> {
 	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		// TODO: support getting for multiple items
 		const metatdataPIDs: PIDType[] = ["DOI", "PMID", "PMCID", "OpenAlex"];
-		let identifier: LookupIdentifier | null = null;
-		for (const pid of metatdataPIDs) {
-			const value = item.getPID(pid, true); // Already clean them up
-			if (value) identifier = { type: pid, id: value };
-		}
+		const identifier = this.getBestPID(item, metatdataPIDs);
 
 		if (identifier) {
 			const work = await this.openAlexSDK.work(

@@ -57,11 +57,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 			"PMCID",
 			"OpenAlex",
 		];
-		let identifier: LookupIdentifier | null = null;
-		for (const pid of metatdataPIDs) {
-			const value = item.getPID(pid, true); // Already clean them up
-			if (value) identifier = { type: pid, id: value };
-		}
+		const identifier = this.getBestPID(item, metatdataPIDs);
 
 		if (identifier) {
 			const param = `${identifier.type.toLowerCase()}:${identifier.id}`;

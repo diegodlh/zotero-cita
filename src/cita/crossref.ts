@@ -40,15 +40,6 @@ interface Reference {
 	"issn-type"?: string;
 }
 
-function mapCrossrefWorkToIndexedWork(
-	work: CrossrefWork,
-): IndexedWork<Reference> {
-	return {
-		referenceCount: work["reference-count"], // Map Crossref's `reference-count` to `IndexedWork`'s `referenceCount`
-		referencedWorks: work.reference, // Map `reference` to `referencedWorks`
-	};
-}
-
 export default class Crossref extends IndexerBase<Reference> {
 	indexerName = "Crossref";
 
@@ -136,9 +127,21 @@ export default class Crossref extends IndexerBase<Reference> {
 
 			const crossrefWork = (response?.response as CrossrefResponse)
 				.message;
-			return mapCrossrefWorkToIndexedWork(crossrefWork); // Map to IndexedWork<Reference>
+			return this.mapCrossrefWorkToIndexedWork(crossrefWork); // Map to IndexedWork<Reference>
 		});
 		return Promise.all(requests);
+	}
+
+	/**
+	 * Map a Crossref work to an IndexedWork.
+	 * @param {CrossrefWork} work - A work in JSON Crossref format.
+	 * @returns {IndexedWork<Reference>} IndexedWork with references.
+	 */
+	mapCrossrefWorkToIndexedWork(work: CrossrefWork): IndexedWork<Reference> {
+		return {
+			referenceCount: work["reference-count"], // Map Crossref's `reference-count` to `IndexedWork`'s `referenceCount`
+			referencedWorks: work.reference, // Map `reference` to `referencedWorks`
+		};
 	}
 
 	/**

@@ -1078,14 +1078,11 @@ class ZoteroOverlay {
 
 		// Indexers
 		itemCrossrefGet.disabled = !sourceDoi;
-		itemSemanticGet.disabled = !new Semantic().extractSupportedPID(
+		itemSemanticGet.disabled = !new Semantic().getBestPID(sourceItem!);
+		itemOpenAlexGet.disabled = !new OpenAlex().getBestPID(sourceItem!);
+		itemOpenCitationsGet.disabled = !new OpenCitations().getBestPID(
 			sourceItem!,
 		);
-		itemOpenAlexGet.disabled = !new OpenAlex().extractSupportedPID(
-			sourceItem!,
-		);
-		itemOpenCitationsGet.disabled =
-			!new OpenCitations().extractSupportedPID(sourceItem!);
 
 		itemPdfExtract.disabled = !hasAttachments;
 		itemCitationsImport.disabled = false;
@@ -1235,21 +1232,21 @@ class ZoteroOverlay {
 					item,
 					prefs.getStorage(),
 				);
-				return new Semantic().extractSupportedPID(sourceItem);
+				return new Semantic().getBestPID(sourceItem);
 			});
 			const enableOpenAlex = items.some((item) => {
 				const sourceItem = new SourceItemWrapper(
 					item,
 					prefs.getStorage(),
 				);
-				return new OpenAlex().extractSupportedPID(sourceItem);
+				return new OpenAlex().getBestPID(sourceItem);
 			});
 			const enableOpenCitations = items.some((item) => {
 				const sourceItem = new SourceItemWrapper(
 					item,
 					prefs.getStorage(),
 				);
-				return new OpenCitations().extractSupportedPID(sourceItem);
+				return new OpenCitations().getBestPID(sourceItem);
 			});
 			doc.getElementById(
 				"wikicite-itemsubmenu-getFromIndexer.Crossref",
