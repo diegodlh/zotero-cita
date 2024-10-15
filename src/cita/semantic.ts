@@ -42,7 +42,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		"DOI",
 		"arXiv",
 		"CorpusID",
-		"OpenAlex",
+		"MAG",
 		"PMID",
 		"PMCID",
 	];
@@ -94,7 +94,7 @@ export default class Semantic extends IndexerBase<Reference> {
 				if (externalIds.PubMedCentral)
 					pids.push({ type: "PMCID", id: externalIds.PubMedCentral });
 				if (externalIds.MAG)
-					pids.push({ type: "OpenAlex", id: "W" + externalIds.MAG });
+					pids.push({ type: "MAG", id: externalIds.MAG });
 				return pids;
 			}
 		}
@@ -114,7 +114,7 @@ export default class Semantic extends IndexerBase<Reference> {
 	 * - `CorpusId:<id>`* - a Semantic Scholar numerical ID, e.g. CorpusId:215416146
 	 * - `DOI:<doi>`* - a Digital Object Identifier, e.g. DOI:10.18653/v1/N18-3011
 	 * - `ARXIV:<id>`* - arXiv.rg, e.g. ARXIV:2106.15928
-	 * - `MAG:<id>`* - Microsoft Academic Graph, e.g. MAG:112218234 (OpenAlex without W)
+	 * - `MAG:<id>`* - Microsoft Academic Graph, e.g. MAG:112218234
 	 * - `ACL:<id>` - Association for Computational Linguistics, e.g. ACL:W12-3903
 	 * - `PMID:<id>`* - PubMed/Medline, e.g. PMID:19872477
 	 * - `PMCID:<id>`* - PubMed Central, e.g. PMCID:2323736
@@ -178,8 +178,8 @@ export default class Semantic extends IndexerBase<Reference> {
 				}
 			case "arXiv":
 				return `ARXIV:${uid.id}`;
-			case "OpenAlex":
-				return `MAG:${uid.id.substring(1)}`;
+			case "MAG":
+				return `MAG:${uid.id}`;
 			case "CorpusID":
 				return `CorpusId:${uid.id}`;
 			case "PMID":
@@ -223,6 +223,7 @@ export default class Semantic extends IndexerBase<Reference> {
 			(item) => !item.DOI && !item.ISBN,
 		);*/ // TODO: consider supporting, but those are usually some PDF text
 
+		// TODO: check when this works, because some items with MAG don't seem to match with OpenAlex
 		const openAlexIdentifiers = references
 			.filter(
 				(item) =>

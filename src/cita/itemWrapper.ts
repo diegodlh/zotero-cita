@@ -212,7 +212,9 @@ export default class ItemWrapper {
 			progress.close();
 			pids.forEach((pid) => {
 				const cleanPID = Wikicite.cleanPID(pid.type, pid.id);
-				this.setPID(pid.type, cleanPID || pid.id, autosave);
+				// Only set the PID if it's not already set or if it's the one we were actually fetching/refreshing
+				if (!this.getPID(pid.type) || type === pid.type)
+					this.setPID(pid.type, cleanPID || pid.id, autosave);
 			});
 		} else {
 			progress.updateLine(
@@ -282,6 +284,10 @@ export default class ItemWrapper {
 					break;
 				case "QID":
 					url = "https://www.wikidata.org/wiki/" + cleanPID;
+					break;
+				case "CorpusID":
+					url =
+						"https://api.semanticscholar.org/CorpusID:" + cleanPID;
 					break;
 				default:
 			}

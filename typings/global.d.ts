@@ -30,6 +30,7 @@ declare type PIDType =
 	| "OMID"
 	| "arXiv"
 	| "OpenAlex"
+	| "MAG"
 	| "CorpusID"
 	| "PMID"
 	| "PMCID";

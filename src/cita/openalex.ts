@@ -14,12 +14,11 @@ export default class OpenAlex extends IndexerBase<string> {
 
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
-	supportedPIDs: PIDType[] = ["DOI", "OpenAlex", "PMID", "PMCID"];
+	supportedPIDs: PIDType[] = ["DOI", "OpenAlex", "MAG", "PMID", "PMCID"];
 
 	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		// TODO: support getting for multiple items
-		const metatdataPIDs: PIDType[] = ["DOI", "PMID", "PMCID", "OpenAlex"];
-		const identifier = this.getBestPID(item, metatdataPIDs);
+		const identifier = this.getBestPID(item, this.supportedPIDs);
 
 		if (identifier) {
 			const work = await this.openAlexSDK.work(
@@ -30,9 +29,10 @@ export default class OpenAlex extends IndexerBase<string> {
 			const pids: LookupIdentifier[] = [
 				{ type: "OpenAlex", id: cleaned },
 			];
-			// We don't add MAG because it's basically the same as OpenAlex
 			if (work.doi) pids.push({ type: "DOI", id: work.doi });
 			if (work.ids?.pmid) pids.push({ type: "PMID", id: work.ids.pmid });
+			if (work.ids?.mag)
+				pids.push({ type: "MAG", id: `${work.ids.mag}` });
 			return pids;
 		}
 
