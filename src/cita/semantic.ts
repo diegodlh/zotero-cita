@@ -38,8 +38,8 @@ export default class Semantic extends IndexerBase<Reference> {
 	indexerName = "Semantic Scholar";
 
 	supportedPIDs: PIDType[] = [
-		"arXiv",
 		"DOI",
+		"arXiv",
 		"CorpusID",
 		"OpenAlex",
 		"PMID",
@@ -149,7 +149,13 @@ export default class Semantic extends IndexerBase<Reference> {
 	mapLookupIDToString(uid: LookupIdentifier): string {
 		switch (uid.type) {
 			case "DOI":
-				return `DOI:${uid.id}`;
+				if (uid.id.includes("arXiv.")) {
+					// Semantic Scholar doesn't like arXiv DOIs, so we extract the arXiv ID
+					const arXivID = uid.id.split("arXiv.")[1];
+					return `ARXIV:${arXivID}`;
+				} else {
+					return `DOI:${uid.id}`;
+				}
 			case "arXiv":
 				return `ARXIV:${uid.id}`;
 			case "OpenAlex":
