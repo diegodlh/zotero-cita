@@ -27,6 +27,14 @@ export function initialiseSortBy() {
 	initialiseDefaultPref(SORT_BY_PREF_KEY, "ordinal");
 }
 
+export const SEMANTIC_API_PREF_KEY = "semantickey";
+export function getSemanticAPIKey_() {
+	return getPref(SEMANTIC_API_PREF_KEY) as string;
+}
+export function initialiseSemanticAPIKey() {
+	initialiseDefaultPref(SEMANTIC_API_PREF_KEY, "");
+}
+
 // Functions
 export async function migrateStorageLocation(
 	from: StorageType,

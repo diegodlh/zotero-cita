@@ -1,8 +1,9 @@
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
-//import Bottleneck from "bottleneck";
 import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
 import ItemWrapper from "./itemWrapper";
+import * as prefs from "../cita/preferences";
+import { getPref } from "../utils/prefs";
 
 interface SemanticPaper {
 	paperId: string;
@@ -53,14 +54,31 @@ export default class Semantic extends IndexerBase<Reference> {
 
 		if (identifier) {
 			const url = `https://api.semanticscholar.org/graph/v1/paper/${this.mapLookupIDToString(identifier)}?fields=externalIds`;
+			// FIXME: for reasons beyond my comprehension, the plugin won't start if I use the prefs.getSemanticAPIKey() function (or any other function from preferences.ts)
+			const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
 			const options = {
 				headers: {
-					// TODO: add auth depending on api key
 					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+					"X-API-Key": apiKey,
 				},
 				responseType: "json",
 			};
-			const response = await Zotero.HTTP.request("GET", url, options);
+			const response = await Zotero.HTTP.request(
+				"GET",
+				url,
+				options,
+			).catch((e) => {
+				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
+				if (e.status == 429) {
+					throw new Error(
+						`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
+					);
+				} else if (e.status == 403) {
+					throw new Error(
+						`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,
+					);
+				}
+			});
 			const externalIds = (response?.response as SemanticPaper)
 				.externalIds;
 			if (externalIds) {
@@ -115,10 +133,12 @@ export default class Semantic extends IndexerBase<Reference> {
 		// Semantic-specific logic for fetching references
 		const paperIdentifiers = identifiers.map(this.mapLookupIDToString);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,title,references.externalIds,references.title`;
+		// FIXME: same as above
+		const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
 		const options = {
 			headers: {
-				// TODO: add auth depending on api key
 				"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+				"X-API-Key": apiKey,
 			},
 			responseType: "json",
 			body: JSON.stringify({ ids: paperIdentifiers }),
@@ -128,7 +148,11 @@ export default class Semantic extends IndexerBase<Reference> {
 				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
 				if (e.status == 429) {
 					throw new Error(
-						`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time.`,
+						`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
+					);
+				} else if (e.status == 403) {
+					throw new Error(
+						`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,
 					);
 				}
 			},

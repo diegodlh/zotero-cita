@@ -203,6 +203,7 @@ class ZoteroOverlay {
 	setDefaultPreferences() {
 		prefs.initialiseStorage();
 		prefs.initialiseSortBy();
+		prefs.initialiseSemanticAPIKey();
 	}
 
 	addPreferenceUpdateObservers() {
