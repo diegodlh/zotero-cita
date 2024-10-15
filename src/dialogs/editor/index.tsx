@@ -24,7 +24,7 @@ function onCancel() {
 function onSave() {
 	for (const pidType of newItem.getPIDTypes()) {
 		const pid = newItem.getPID(pidType);
-		if (pid !== undefined && !checkPID(pidType, pid)) {
+		if (pid !== null && !checkPID(pidType, pid.id)) {
 			return;
 		}
 	}

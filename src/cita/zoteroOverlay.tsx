@@ -247,7 +247,7 @@ class ZoteroOverlay {
 				return item.isRegularItem()
 					? new SourceItemWrapper(item, prefs.getStorage()).getPID(
 							"QID",
-						) || ""
+						)?.id || ""
 					: "";
 			},
 		});
@@ -1079,9 +1079,13 @@ class ZoteroOverlay {
 
 		// Indexers
 		itemCrossrefGet.disabled = !sourceDoi;
-		itemSemanticGet.disabled = !new Semantic().getBestPID(sourceItem!);
-		itemOpenAlexGet.disabled = !new OpenAlex().getBestPID(sourceItem!);
-		itemOpenCitationsGet.disabled = !new OpenCitations().getBestPID(
+		itemSemanticGet.disabled = !new Semantic().canFetchCitations(
+			sourceItem!,
+		);
+		itemOpenAlexGet.disabled = !new OpenAlex().canFetchCitations(
+			sourceItem!,
+		);
+		itemOpenCitationsGet.disabled = !new OpenCitations().canFetchCitations(
 			sourceItem!,
 		);
 
@@ -1233,21 +1237,21 @@ class ZoteroOverlay {
 					item,
 					prefs.getStorage(),
 				);
-				return new Semantic().getBestPID(sourceItem);
+				return new Semantic().canFetchCitations(sourceItem);
 			});
 			const enableOpenAlex = items.some((item) => {
 				const sourceItem = new SourceItemWrapper(
 					item,
 					prefs.getStorage(),
 				);
-				return new OpenAlex().getBestPID(sourceItem);
+				return new OpenAlex().canFetchCitations(sourceItem);
 			});
 			const enableOpenCitations = items.some((item) => {
 				const sourceItem = new SourceItemWrapper(
 					item,
 					prefs.getStorage(),
 				);
-				return new OpenCitations().getBestPID(sourceItem);
+				return new OpenCitations().canFetchCitations(sourceItem);
 			});
 			doc.getElementById(
 				"wikicite-itemsubmenu-getFromIndexer.Crossref",

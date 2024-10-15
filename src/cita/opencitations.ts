@@ -1,7 +1,8 @@
-import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
+import { IndexedWork, IndexerBase } from "./indexer";
 import Lookup from "./zotLookup";
 import Wikicite, { debug } from "./wikicite";
 import ItemWrapper from "./itemWrapper";
+import PID from "./PID";
 
 interface OCWork {
 	title: string;
@@ -47,7 +48,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 	 */
 	supportedPIDs: PIDType[] = ["DOI", "OMID", "PMID"];
 
-	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
+	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		// TODO: support getting for multiple items
 		const metatdataPIDs: PIDType[] = [
 			"OMID",
@@ -57,7 +58,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 			"PMCID",
 			"OpenAlex",
 		];
-		const identifier = this.getBestPID(item, metatdataPIDs);
+		const identifier = item.getBestPID(metatdataPIDs);
 
 		if (identifier) {
 			const param = `${identifier.type.toLowerCase()}:${identifier.id}`;
@@ -88,27 +89,25 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 						const value = components[1];
 						return type ? { type, id: value } : null;
 					})
-					.filter((e) => e !== null) as LookupIdentifier[];
+					.filter((e) => e !== null) as PID[];
 			}
 		}
 
 		return null;
 	}
 
-	getReferences(
-		identifiers: LookupIdentifier[],
-	): Promise<IndexedWork<OCCitation>[]> {
-		const requests = identifiers.map(async (uid) => {
+	getReferences(identifiers: PID[]): Promise<IndexedWork<OCCitation>[]> {
+		const requests = identifiers.map(async (pid) => {
 			let param = "";
-			switch (uid.type) {
+			switch (pid.type) {
 				case "DOI":
-					param = `doi:${uid.id}`;
+					param = `doi:${pid.id}`;
 					break;
 				case "OMID":
-					param = `omid:${uid.id}`;
+					param = `omid:${pid.id}`;
 					break;
 				case "PMID":
-					param = `pmid:${uid.id}`;
+					param = `pmid:${pid.id}`;
 					break;
 			}
 			const url = `https://opencitations.net/index/api/v2/references/${param}`;

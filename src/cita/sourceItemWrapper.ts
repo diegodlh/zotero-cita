@@ -14,6 +14,7 @@ import { config } from "../../package.json";
 import { StorageType } from "./preferences";
 import Lookup from "./zotLookup";
 import * as _ from "lodash";
+import PID from "./PID";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -401,8 +402,8 @@ class SourceItemWrapper extends ItemWrapper {
 					.filter((id): id is string => id !== undefined)
 					.flatMap((isbnList) => isbnList.split(" ")),
 			);
-			debug(`Old: ${this._citations}`);
 			// Filter out items whose DOI or ISBN are part of the existing citations
+			// TODO: expand exclusion to other identifiers and/or use matcher
 			citations = citations.filter((citation) => {
 				// Exclude if DOI already exists
 				if (
@@ -486,7 +487,7 @@ class SourceItemWrapper extends ItemWrapper {
 		options: { clean?: boolean; skipCitation?: Citation },
 	) {
 		const citedPIDs = this.citations.reduce(
-			(citedPIDs: string[], citation: Citation) => {
+			(citedPIDs: PID[], citation: Citation) => {
 				if (
 					options.skipCitation == undefined ||
 					citation !== options.skipCitation
@@ -514,7 +515,7 @@ class SourceItemWrapper extends ItemWrapper {
 			skipCitation?: Citation;
 		},
 	) {
-		const cleanPID = Wikicite.cleanPID(type, value);
+		const cleanPID = new PID(type, value).cleaned();
 		let conflict = "";
 		if (cleanPID) {
 			const cleanCitingPID = this.getPID(type, true);

@@ -33,7 +33,7 @@ export default class LCN {
 			journal: string;
 			references: (string | undefined)[];
 			abstract: string;
-			url: string | undefined;
+			url: string | null;
 		}
 	>;
 	inputKeys: string[];

@@ -4,15 +4,11 @@ import Citation from "./citation";
 import Wikicite from "./wikicite";
 import Bottleneck from "bottleneck";
 import ItemWrapper from "./itemWrapper";
+import PID from "./PID";
 
 export interface IndexedWork<Ref> {
 	referenceCount: number;
 	referencedWorks: Ref[];
-}
-
-export interface LookupIdentifier {
-	type: PIDType;
-	id: string;
 }
 
 export abstract class IndexerBase<Ref> {
@@ -34,31 +30,11 @@ export abstract class IndexerBase<Ref> {
 	abstract supportedPIDs: PIDType[];
 
 	/**
-	 * Return the first available PID from a list of PID types.
-	 * @param item Item wrapper to get the PID from.
-	 * @param pidTypes List of PID types to check for, by order of preference.
-	 * @returns PID or null if none available
-	 */
-	getBestPID(
-		item: ItemWrapper,
-		pidTypes: PIDType[] = this.supportedPIDs,
-	): LookupIdentifier | null {
-		for (const pid of pidTypes) {
-			const value = item.getPID(pid, true); // Already clean them up
-			if (value) return { type: pid, id: value };
-		}
-
-		return null;
-	}
-
-	/**
 	 * Abstract method to get references from the specific indexer.
-	 * @param {LookupIdentifier[]} identifiers - List of DOIs or other identifiers.
+	 * @param {PID[]} identifiers - List of DOIs or other identifiers.
 	 * @returns {Promise<IndexedWork[]>} Corresponding works.
 	 */
-	abstract getReferences(
-		identifiers: LookupIdentifier[],
-	): Promise<IndexedWork<Ref>[]>;
+	abstract getReferences(identifiers: PID[]): Promise<IndexedWork<Ref>[]>;
 
 	/**
 	 * Abstract method to parse a list of references into Zotero items.
@@ -73,19 +49,27 @@ export abstract class IndexerBase<Ref> {
 	 */
 	filterItemsWithSupportedIdentifiers(
 		sourceItems: SourceItemWrapper[],
-	): [sourceItems: SourceItemWrapper[], identifiers: LookupIdentifier[]] {
-		const identifiers: LookupIdentifier[] = [];
+	): [sourceItems: SourceItemWrapper[], identifiers: PID[]] {
+		const identifiers: PID[] = [];
 		const filteredItems: SourceItemWrapper[] = [];
 
 		for (const item of sourceItems) {
-			const uid = this.getBestPID(item, this.supportedPIDs);
-			if (uid) {
-				identifiers.push(uid);
+			const pid = item.getBestPID(this.supportedPIDs);
+			if (pid) {
+				identifiers.push(pid);
 				filteredItems.push(item);
 			}
 		}
 
 		return [filteredItems, identifiers];
+	}
+
+	/**
+	 * Check if the indexer can fetch citations for the item.
+	 * @param item Item to check for fetchability.
+	 */
+	canFetchCitations(item: ItemWrapper): boolean {
+		return item.getBestPID(this.supportedPIDs) !== null;
 	}
 
 	/**

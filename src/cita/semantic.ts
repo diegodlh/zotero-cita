@@ -1,9 +1,10 @@
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
-import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
+import { IndexedWork, IndexerBase } from "./indexer";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "../cita/preferences";
 import { getPref } from "../utils/prefs";
+import PID from "./PID";
 
 interface SemanticPaper {
 	paperId: string;
@@ -49,8 +50,8 @@ export default class Semantic extends IndexerBase<Reference> {
 
 	maxRPS: number = 1; // Request per second
 
-	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
-		const identifier = this.getBestPID(item, this.supportedPIDs);
+	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
+		const identifier = item.getBestPID(this.supportedPIDs);
 
 		if (identifier) {
 			const url = `https://api.semanticscholar.org/graph/v1/paper/${this.mapLookupIDToString(identifier)}?fields=externalIds`;
@@ -84,19 +85,17 @@ export default class Semantic extends IndexerBase<Reference> {
 				: null;
 			const externalIds = paper?.externalIds;
 			if (externalIds) {
-				const pids: LookupIdentifier[] = [
-					{ type: "CorpusID", id: `${externalIds.CorpusId}` },
+				const pids: PID[] = [
+					new PID("CorpusID", `${externalIds.CorpusId}`),
 				];
-				if (externalIds.DOI)
-					pids.push({ type: "DOI", id: externalIds.DOI });
+				if (externalIds.DOI) pids.push(new PID("DOI", externalIds.DOI));
 				if (externalIds.ArXiv)
-					pids.push({ type: "arXiv", id: externalIds.ArXiv });
+					pids.push(new PID("arXiv", externalIds.ArXiv));
 				if (externalIds.PubMed)
-					pids.push({ type: "PMID", id: externalIds.PubMed });
+					pids.push(new PID("PMID", externalIds.PubMed));
 				if (externalIds.PubMedCentral)
-					pids.push({ type: "PMCID", id: externalIds.PubMedCentral });
-				if (externalIds.MAG)
-					pids.push({ type: "MAG", id: externalIds.MAG });
+					pids.push(new PID("PMCID", externalIds.PubMedCentral));
+				if (externalIds.MAG) pids.push(new PID("MAG", externalIds.MAG));
 				return pids;
 			}
 		}
@@ -129,9 +128,7 @@ export default class Semantic extends IndexerBase<Reference> {
 	 * - acm.org
 	 * - biorxiv.org
 	 */
-	async getReferences(
-		identifiers: LookupIdentifier[],
-	): Promise<IndexedWork<Reference>[]> {
+	async getReferences(identifiers: PID[]): Promise<IndexedWork<Reference>[]> {
 		// Semantic-specific logic for fetching references
 		const paperIdentifiers = identifiers.map(this.mapLookupIDToString);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,title,references.externalIds,references.title`;
@@ -168,26 +165,26 @@ export default class Semantic extends IndexerBase<Reference> {
 		});
 	}
 
-	mapLookupIDToString(uid: LookupIdentifier): string {
-		switch (uid.type) {
+	mapLookupIDToString(pid: PID): string {
+		switch (pid.type) {
 			case "DOI":
-				if (uid.id.includes("arXiv.")) {
+				if (pid.id.includes("arXiv.")) {
 					// Semantic Scholar doesn't like arXiv DOIs, so we extract the arXiv ID
-					const arXivID = uid.id.split("arXiv.")[1];
+					const arXivID = pid.id.split("arXiv.")[1];
 					return `ARXIV:${arXivID}`;
 				} else {
-					return `DOI:${uid.id}`;
+					return `DOI:${pid.id}`;
 				}
 			case "arXiv":
-				return `ARXIV:${uid.id}`;
+				return `ARXIV:${pid.id}`;
 			case "MAG":
-				return `MAG:${uid.id}`;
+				return `MAG:${pid.id}`;
 			case "CorpusID":
-				return `CorpusId:${uid.id}`;
+				return `CorpusId:${pid.id}`;
 			case "PMID":
-				return `PMID:${uid.id}`;
+				return `PMID:${pid.id}`;
 			case "PMCID":
-				return `PMCID:${uid.id}`;
+				return `PMCID:${pid.id}`;
 			default:
 				throw new Error("Unsupported UID type");
 		}

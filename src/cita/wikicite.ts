@@ -133,7 +133,11 @@ export default {
 	 * @param {string} fieldName - The name of the extra field that wants to be set.
 	 * @param {String[]} values - An array of values for the field that wants to be set.
 	 */
-	setExtraField: function (item: any, fieldName: string, values: string[]) {
+	setExtraField: function (
+		item: Zotero.Item,
+		fieldName: string,
+		values: string[],
+	) {
 		let { newExtra } = this.getExtraField(item, fieldName);
 		for (const value of values) {
 			if (value) {

@@ -3,13 +3,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import Crossref from "./crossref";
-import { LookupIdentifier } from "./indexer";
 import OpenAlex from "./openalex";
 import OpenCitations from "./opencitations";
 import Progress from "./progress";
 import Semantic from "./semantic";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
+import PID from "./PID";
 
 // maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
@@ -70,7 +70,7 @@ export default class ItemWrapper {
 
 	// UUIDs
 	get doi(): DOI | undefined {
-		return this.getPID("DOI") as DOI;
+		return this.getPID("DOI")?.id as DOI;
 	}
 
 	set doi(doi: DOI) {
@@ -78,7 +78,7 @@ export default class ItemWrapper {
 	}
 
 	get isbn(): string | undefined {
-		return this.getPID("ISBN");
+		return this.getPID("ISBN")?.id;
 	}
 
 	set isbn(isbn: string) {
@@ -86,23 +86,22 @@ export default class ItemWrapper {
 	}
 
 	get qid(): QID | undefined {
-		return this.getPID("QID") as QID;
+		return this.getPID("QID")?.id as QID;
 	}
 
 	set qid(qid: QID) {
 		this.setPID("QID", qid);
 	}
 
-	// OpenCitations Corpus Internal Identifier
 	get omid(): OMID | undefined {
-		return this.getPID("OMID") as OMID;
+		return this.getPID("OMID")?.id as OMID;
 	}
 
 	set omid(omid: OMID) {
 		this.setPID("OMID", omid);
 	}
 
-	get url() {
+	get url(): string | null {
 		const url = this.item.getField("url");
 		return (
 			url ||
@@ -157,7 +156,7 @@ export default class ItemWrapper {
 				Wikicite.getString("wikicite.global.unsupported"),
 				Wikicite.formatString(
 					"wikicite.item-wrapper.fetch-pid.unsupported",
-					type.toUpperCase(),
+					type,
 				),
 			);
 			return;
@@ -170,13 +169,13 @@ export default class ItemWrapper {
 				type,
 			),
 		);
-		let pids: LookupIdentifier[] = [];
+		let pids: PID[] = [];
 		switch (type) {
 			case "QID": {
 				const qids = await Wikidata.reconcile([this]);
 				const qid = qids?.get(this);
 				if (qid) {
-					pids = [{ type: "QID", id: qid }];
+					pids.push(new PID("QID", qid));
 				}
 				break;
 			}
@@ -211,10 +210,9 @@ export default class ItemWrapper {
 			);
 			progress.close();
 			pids.forEach((pid) => {
-				const cleanPID = Wikicite.cleanPID(pid.type, pid.id);
 				// Only set the PID if it's not already set or if it's the one we were actually fetching/refreshing
 				if (!this.getPID(pid.type) || type === pid.type)
-					this.setPID(pid.type, cleanPID || pid.id, autosave);
+					this.setPID(pid.type, pid.cleanID || pid.id, autosave);
 			});
 		} else {
 			progress.updateLine(
@@ -231,68 +229,52 @@ export default class ItemWrapper {
 	/*
 	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return undefined
 	 */
-	getPID(type: PIDType, clean = false) {
-		let pid: string | undefined;
+	getPID(type: PIDType, clean = false): PID | null {
+		let _pid: string;
 		switch (type) {
 			case "DOI":
 			case "ISBN":
-				pid = this.item.getField(type);
+				_pid = this.item.getField(type);
 				break;
 			case "arXiv": {
 				const field = this.item.getField("archiveID");
 				if (field && field.startsWith("arXiv:")) {
-					pid = field.replace("arXiv:", "");
+					_pid = field.replace("arXiv:", "");
 				} else {
-					pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
+					_pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
 				}
 				break;
 			}
 			default:
-				pid = Wikicite.getExtraField(this.item, type).values[0]; // this could be undefined
+				_pid = Wikicite.getExtraField(this.item, type).values[0]; // this could be undefined
 		}
-		if (clean && pid !== undefined) {
-			pid = Wikicite.cleanPID(type, pid) || undefined;
+		if (_pid) {
+			const pid = new PID(type, _pid);
+			if (clean) return pid.cleaned();
+			return pid;
 		}
-		return pid;
+		return null;
+	}
+
+	/**
+	 * Return the first available PID from a list of PID types.
+	 * @param item Item wrapper to get the PID from.
+	 * @param pidTypes List of PID types to check for, by order of preference.
+	 * @returns PID or null if none available
+	 */
+	getBestPID(pidTypes: PIDType[]): PID | null {
+		for (const type of pidTypes) {
+			const pid = this.getPID(type, true); // Already clean them up
+			if (pid) return pid;
+		}
+
+		return null;
 	}
 
 	getPidUrl(type: PIDType) {
 		const cleanPID = this.getPID(type, true);
 		let url;
-		if (cleanPID) {
-			switch (type) {
-				case "DOI":
-					url =
-						"https://doi.org/" +
-						// From Zotero's itembox.xml:
-						// Encode some characters that are technically valid in DOIs,
-						// though generally not used. '/' doesn't need to be encoded.
-						cleanPID
-							.replace(/#/g, "%23")
-							.replace(/\?/g, "%3f")
-							.replace(/%/g, "%25")
-							.replace(/"/g, "%22");
-					break;
-				case "OMID":
-					url = "https://opencitations.net/meta/" + cleanPID;
-					break;
-				case "OpenAlex":
-					url = "https://openalex.org/works/" + cleanPID;
-					break;
-				case "arXiv":
-					url = "https://arxiv.org/abs/" + cleanPID;
-					break;
-				case "QID":
-					url = "https://www.wikidata.org/wiki/" + cleanPID;
-					break;
-				case "CorpusID":
-					url =
-						"https://api.semanticscholar.org/CorpusID:" + cleanPID;
-					break;
-				default:
-			}
-		}
-		return url;
+		return cleanPID ? cleanPID.url : null;
 	}
 
 	setPID(type: PIDType, value: string, save = true) {

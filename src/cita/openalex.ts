@@ -1,4 +1,4 @@
-import { IndexedWork, IndexerBase, LookupIdentifier } from "./indexer";
+import { IndexedWork, IndexerBase } from "./indexer";
 import Lookup from "./zotLookup";
 import OpenAlexSDK from "openalex-sdk";
 import Wikicite, { debug } from "./wikicite";
@@ -8,6 +8,7 @@ import {
 	Work,
 } from "openalex-sdk/dist/src/types/work";
 import ItemWrapper from "./itemWrapper";
+import PID from "./PID";
 
 export default class OpenAlex extends IndexerBase<string> {
 	indexerName = "Open Alex";
@@ -16,9 +17,9 @@ export default class OpenAlex extends IndexerBase<string> {
 
 	supportedPIDs: PIDType[] = ["OpenAlex", "DOI", "MAG", "PMID", "PMCID"];
 
-	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
+	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		// TODO: support getting for multiple items
-		const identifier = this.getBestPID(item, this.supportedPIDs);
+		const identifier = item.getBestPID(this.supportedPIDs);
 
 		if (identifier) {
 			const work = await this.openAlexSDK.work(
@@ -26,13 +27,10 @@ export default class OpenAlex extends IndexerBase<string> {
 				identifier.type.toLowerCase() as ExternalIdsWork,
 			);
 			const cleaned = work.id.replace(/https?:\/\/openalex.org\//, "");
-			const pids: LookupIdentifier[] = [
-				{ type: "OpenAlex", id: cleaned },
-			];
-			if (work.doi) pids.push({ type: "DOI", id: work.doi });
-			if (work.ids?.pmid) pids.push({ type: "PMID", id: work.ids.pmid });
-			if (work.ids?.mag)
-				pids.push({ type: "MAG", id: `${work.ids.mag}` });
+			const pids: PID[] = [new PID("OpenAlex", cleaned)];
+			if (work.doi) pids.push(new PID("DOI", work.doi));
+			if (work.ids?.pmid) pids.push(new PID("PMID", `${work.ids.pmid}`));
+			if (work.ids?.mag) pids.push(new PID("MAG", `${work.ids.mag}`));
 			return pids;
 		}
 
@@ -44,9 +42,7 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @param {SupportedUID[]} identifiers - Array of DOIs or other identifiers for which to get references.
 	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
 	 */
-	async getReferences(
-		identifiers: LookupIdentifier[],
-	): Promise<IndexedWork<string>[]> {
+	async getReferences(identifiers: PID[]): Promise<IndexedWork<string>[]> {
 		const dois = identifiers
 			.filter((id) => id.type === "DOI")
 			.map((id) => id.id);

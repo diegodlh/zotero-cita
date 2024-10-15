@@ -1,7 +1,8 @@
-import { IndexerBase, IndexedWork, LookupIdentifier } from "./indexer";
+import { IndexerBase, IndexedWork } from "./indexer";
 import ItemWrapper from "./itemWrapper";
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
+import PID from "./PID";
 
 interface CrossrefResponse {
 	status: string;
@@ -47,7 +48,7 @@ export default class Crossref extends IndexerBase<Reference> {
 
 	maxRPS: number = 50; // Requests per second
 
-	async fetchDOI(item: ItemWrapper): Promise<LookupIdentifier | null> {
+	async fetchDOI(item: ItemWrapper): Promise<PID | null> {
 		const crossrefOpenURL =
 			"https://doi.crossref.org/openurl?pid=cita@duck.com&";
 		const ctx = Zotero.OpenURL.createContextObject(item, "1.0");
@@ -74,7 +75,7 @@ export default class Crossref extends IndexerBase<Reference> {
 						// We just take the first one
 						const doi =
 							xml.getElementsByTagName("doi")[0].textContent;
-						if (doi) return { type: "DOI", id: doi };
+						if (doi) return new PID("DOI", doi);
 						break;
 					}
 					case "unresolved":
@@ -93,9 +94,7 @@ export default class Crossref extends IndexerBase<Reference> {
 	 * @param {string[]} identifiers - DOI for the item for which to get references.
 	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
 	 */
-	async getReferences(
-		identifiers: LookupIdentifier[],
-	): Promise<IndexedWork<Reference>[]> {
+	async getReferences(identifiers: PID[]): Promise<IndexedWork<Reference>[]> {
 		// Crossref-specific logic for fetching references
 		const requests = identifiers.map(async (doi) => {
 			const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(doi.id)}`;

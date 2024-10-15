@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as PropTypes from "prop-types";
 import ItemWrapper from "../cita/itemWrapper";
 import Wikicite, { debug } from "../cita/wikicite";
+import PID from "../cita/PID";
 
 function PIDRow(props: {
 	autosave: boolean;
@@ -26,11 +27,11 @@ function PIDRow(props: {
 			document.getElementById(
 				`pid-row-input-${props.item.key}-${props.type}`,
 			)! as HTMLInputElement
-		).value = props.item.getPID(props.type) || "";
+		).value = props.item.getPID(props.type)?.id || "";
 	}, [props.type, value]);
 
 	function handleCommit(newPid: string) {
-		if (newPid != value) {
+		if (newPid != value?.id) {
 			if (props.validate && !props.validate(props.type, newPid)) {
 				return;
 			}
@@ -62,7 +63,7 @@ function PIDRow(props: {
 					id={`pid-row-input-${props.item.key}-${props.type}`}
 					className={props.editable ? "zotero-clicky" : ""}
 					readOnly={!props.editable}
-					defaultValue={value || ""}
+					defaultValue={value?.id || ""}
 					// when the input loses focus, update the item's PID
 					onBlur={(event) => handleCommit(event.target.value)}
 				/>

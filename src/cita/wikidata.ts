@@ -106,14 +106,14 @@ export default class {
 				continue;
 			}
 			const queryProps: QueryProperties[] = [];
-			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi!);
+			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi || "");
 			if (cleanDOI) {
 				queryProps.push({
 					pid: properties.doi,
 					v: cleanDOI.toUpperCase(),
 				});
 			}
-			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn!);
+			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn || "");
 			if (cleanISBN) {
 				queryProps.push({
 					pid: [properties.isbn10, properties.isbn13].join("|"),

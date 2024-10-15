@@ -6,9 +6,8 @@ import Wikicite from "../../cita/wikicite";
 function ImportButton(props: any) {
 	const citation = props.citation as Citation;
 	const key = citation.target.key;
-	let identifier: { DOI?: string; ISBN?: string } | false = false;
-	if (citation.target.doi) identifier = { DOI: citation.target.doi };
-	else if (citation.target.isbn) identifier = { ISBN: citation.target.isbn };
+	const identifier = citation.target.getBestPID(["DOI", "arXiv", "ISBN"]);
+
 	async function handleClick() {
 		if (key) return; // Item was already linked and is therefore already present
 
@@ -37,10 +36,10 @@ function ImportButton(props: any) {
 			else return; // User cancelled the action
 		} else selectedCollectionID = NaN; // No collections to choose from
 
-		if (identifier) {
+		if (identifier && identifier.id) {
 			// Import from identifier
 			const translation = new Zotero.Translate.Search();
-			translation.setIdentifier(identifier);
+			translation.setIdentifier(identifier.id);
 
 			// be lenient about translators
 			const translators = await translation.getTranslators();
@@ -55,14 +54,28 @@ function ImportButton(props: any) {
 				switch (newItems.length) {
 					case 0:
 						break;
-					case 1:
-						if (citation.target.qid)
-							newItems[0].setField(
-								"extra",
-								`QID: ${citation.target.qid}`,
-							);
+					case 1: {
+						const allExtraPIDTypes: PIDType[] = [
+							"QID",
+							"OMID",
+							"OpenAlex",
+							"MAG",
+							"CorpusID",
+							"PMID",
+							"PMCID",
+						];
+						for (const pidType of allExtraPIDTypes) {
+							const pid = citation.target.getPID(pidType);
+							if (pid !== null) {
+								Wikicite.setExtraField(newItems[0], pidType, [
+									pid.id,
+								]);
+								break;
+							}
+						}
 						citation.linkToZoteroItem(newItems[0]);
 						break;
+					}
 					default:
 						await citation.autoLink();
 				}
