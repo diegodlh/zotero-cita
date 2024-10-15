@@ -50,9 +50,9 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		// TODO: support getting for multiple items
 		const metatdataPIDs: PIDType[] = [
+			"OMID",
 			"DOI",
 			"ISBN",
-			"OMID",
 			"PMID",
 			"PMCID",
 			"OpenAlex",

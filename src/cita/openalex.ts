@@ -14,7 +14,7 @@ export default class OpenAlex extends IndexerBase<string> {
 
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
-	supportedPIDs: PIDType[] = ["DOI", "OpenAlex", "MAG", "PMID", "PMCID"];
+	supportedPIDs: PIDType[] = ["OpenAlex", "DOI", "MAG", "PMID", "PMCID"];
 
 	async fetchPIDs(item: ItemWrapper): Promise<LookupIdentifier[] | null> {
 		// TODO: support getting for multiple items

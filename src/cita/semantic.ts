@@ -39,9 +39,9 @@ export default class Semantic extends IndexerBase<Reference> {
 	indexerName = "Semantic Scholar";
 
 	supportedPIDs: PIDType[] = [
+		"CorpusID",
 		"DOI",
 		"arXiv",
-		"CorpusID",
 		"MAG",
 		"PMID",
 		"PMCID",
@@ -79,8 +79,10 @@ export default class Semantic extends IndexerBase<Reference> {
 					);
 				}
 			});
-			const externalIds = (response?.response as SemanticPaper)
-				.externalIds;
+			const paper = response?.response
+				? (response?.response as SemanticPaper)
+				: null;
+			const externalIds = paper?.externalIds;
 			if (externalIds) {
 				const pids: LookupIdentifier[] = [
 					{ type: "CorpusID", id: `${externalIds.CorpusId}` },
