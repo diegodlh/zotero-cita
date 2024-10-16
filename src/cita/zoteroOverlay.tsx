@@ -573,6 +573,7 @@ class ZoteroOverlay {
 		const mainWindow = doc.getElementById("main-window");
 		this.itemPopupMenu(doc, mainWindow!);
 		this.citationPopupMenu(doc, mainWindow!);
+		this.pidRowPopupMenu(doc, mainWindow!);
 	}
 
 	removeOverlay() {
@@ -975,6 +976,20 @@ class ZoteroOverlay {
 		WikiciteChrome.registerXUL(citationMenuID, doc);
 	}
 
+	pidRowPopupMenu(doc: Document, mainWindow: Element) {
+		const ns =
+			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+		const pidRowMenu = doc.createElementNS(ns, "menupopup");
+		const pidRowMenuID = "pid-row-add-menu";
+		pidRowMenu.setAttribute("id", pidRowMenuID);
+		pidRowMenu.addEventListener("popupshowing", () =>
+			this.handlePidRowPopupShowing(doc),
+		);
+
+		mainWindow.appendChild(pidRowMenu);
+		WikiciteChrome.registerXUL(pidRowMenuID, doc);
+	}
+
 	// refreshCitationsPane (document: Document, target: any) {
 	//     let item: any, zoteroViewTabbox: HTMLSelectElement, editPaneTabs: HTMLElement;
 	//     // different ways of getting the selected item if we're in the library or PDF reader
@@ -1133,6 +1148,42 @@ class ZoteroOverlay {
 				"citation-menu-oci-wikidata",
 			) as HTMLButtonElement
 		).disabled = !ociSuppliers?.includes("wikidata");
+	}
+
+	handlePidRowPopupShowing(doc: Document) {
+		const ns =
+			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+		const sourceItem = this._sourceItem;
+
+		const menu = doc.getElementById("pid-row-add-menu") as XUL.MenuPopup;
+		while (menu.childNodes.length > 0) {
+			menu.removeChild(menu.childNodes[0]);
+		}
+
+		sourceItem?.getPIDTypes().forEach((pidType) => {
+			if (
+				sourceItem.getPID(pidType) == null &&
+				document.getElementById(`pid-row-${pidType}`)?.className ==
+					"hidden"
+			) {
+				const pidRowMenuAdd = doc.createElementNS(ns, "menuitem");
+				pidRowMenuAdd.setAttribute("id", `pid-row-add-${pidType}`);
+				pidRowMenuAdd.setAttribute("label", pidType);
+				pidRowMenuAdd.addEventListener("command", (event: Event) => {
+					event.preventDefault();
+					document.getElementById(`pid-row-${pidType}`)!.className =
+						"";
+					if (menu.childNodes.length == 1) {
+						(
+							document.getElementById(
+								"pid-row-add-btn",
+							) as HTMLDivElement
+						).hidden = true;
+					}
+				});
+				menu.appendChild(pidRowMenuAdd);
+			}
+		});
 	}
 
 	// /**

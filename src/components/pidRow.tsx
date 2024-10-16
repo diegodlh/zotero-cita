@@ -50,7 +50,14 @@ function PIDRow(props: {
 	}
 
 	return (
-		<li>
+		<li
+			className={
+				value == null && !["QID", "DOI"].includes(props.type)
+					? "hidden"
+					: ""
+			}
+			id={`pid-row-${props.type}`}
+		>
 			<label
 				className={"pid-label" + (url ? " pointer" : "")}
 				onClick={url ? () => Zotero.launchURL(url) : undefined}

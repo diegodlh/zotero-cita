@@ -90,6 +90,10 @@ ul.pid-list > li {
 	display: flex;
 }
 
+ul.pid-list > li.hidden {
+	display: none;
+}
+
 ul.pid-list > li > label {
 	width: 58px;
 }

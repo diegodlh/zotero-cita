@@ -429,6 +429,32 @@ function CitationsBox(props: {
 							/>
 						))
 					}
+					{pidTypes.some(
+						(pidType: PIDType) =>
+							props.sourceItem.getPID(pidType) == null &&
+							!["QID", "DOI"].includes(pidType),
+					) ? (
+						<div id="pid-row-add-btn">
+							<button
+								onClick={(event: React.MouseEvent) => {
+									event.preventDefault();
+									(
+										document.getElementById(
+											"pid-row-add-menu",
+										) as any
+									)?.openPopupAtScreen(
+										window.screenX + event.clientX,
+										window.screenY + event.clientY,
+										true,
+									);
+								}}
+							>
+								+
+							</button>
+						</div>
+					) : (
+						""
+					)}
 				</ul>
 			</div>
 		</div>
