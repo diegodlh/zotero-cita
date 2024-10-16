@@ -804,15 +804,7 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	async parseCitationIdentifiers(
-		identifiers: (
-			| { DOI: string }
-			| { ISBN: string }
-			| { arXiv: string }
-			| { adsBibcode: string }
-			| { PMID: string }
-		)[],
-	) {
+	async parseCitationIdentifiers(identifiers: PID[]) {
 		await Zotero.Schema.schemaUpdatePromise;
 		// look up each identifier asynchronously in parallel - multiple web requests
 		// can run at the same time, so this speeds things up a lot #141
@@ -826,39 +818,6 @@ class SourceItemWrapper extends ItemWrapper {
 			: [];
 
 		return citations;
-
-		// const citations = await Promise.all(
-		// 	identifiers.map(async (identifier) => {
-		// 		const translation = new Zotero.Translate.Search();
-		// 		translation.setIdentifier(identifier);
-
-		// 		let jsonItems;
-		// 		try {
-		// 			// set libraryID to false so we don't save this item in the Zotero library
-		// 			jsonItems = await translation.translate({
-		// 				libraryID: false,
-		// 			});
-		// 		} catch {
-		// 			// `translation.translate` throws an error if no item was found for an identifier.
-		// 			// Catch these errors so we don't abort the `Promise.all`.
-		// 			debug(
-		// 				`No items returned for identifier: ${identifier}`,
-		// 			);
-		// 		}
-		// 		if (jsonItems && jsonItems.length > 0) {
-		// 			const jsonItem = jsonItems[0];
-		// 			const newItem = new Zotero.Item(
-		// 				jsonItem.itemType,
-		// 			);
-		// 			newItem.fromJSON(jsonItem);
-		// 			return new Citation(
-		// 				{ item: newItem, ocis: [] },
-		// 				this,
-		// 			);
-		// 		} else return false; // no item added
-		// 	}),
-		// );
-		// return citations.filter(Boolean); // filter out if no item found
 	}
 
 	// import citation by identifier (DOI/ISBN/ArXiV/PMID...)
@@ -878,9 +837,23 @@ class SourceItemWrapper extends ItemWrapper {
 		);
 
 		if (retVals.text !== undefined) {
-			const identifiers = Zotero.Utilities.extractIdentifiers(
+			const _identifiers = Zotero.Utilities.extractIdentifiers(
 				retVals.text,
 			);
+
+			const identifiers = _identifiers
+				.map((identifier) => {
+					if ("DOI" in identifier)
+						return new PID("DOI", identifier.DOI);
+					if ("ISBN" in identifier)
+						return new PID("ISBN", identifier.ISBN);
+					if ("PMID" in identifier)
+						return new PID("PMID", identifier.PMID);
+					if ("arXiv" in identifier)
+						return new PID("arXiv", identifier.arXiv);
+					else return null;
+				})
+				.filter((identifier): identifier is PID => identifier !== null);
 
 			const progress = new Progress(
 				"loading",

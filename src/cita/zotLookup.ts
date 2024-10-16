@@ -1,6 +1,7 @@
 import Bottleneck from "bottleneck";
 import OpenAlex from "openalex-sdk";
 import { SearchParameters } from "openalex-sdk/dist/src/types/work";
+import PID from "./PID";
 
 const limiter = new Bottleneck({
 	minTime: 100, // Max 10 requests per second to avoid overloading translators
@@ -9,13 +10,7 @@ const limiter = new Bottleneck({
 export default class Lookup {
 	// This code is adapted from Zotero's chrome/content/zotero/lookup.js
 	static async lookupItemsByIdentifiers(
-		identifiers: (
-			| { DOI: string }
-			| { ISBN: string }
-			| { arXiv: string }
-			| { adsBibcode: string }
-			| { PMID: string }
-		)[],
+		identifiers: PID[],
 		addToZotero: boolean = false,
 	): Promise<false | Zotero.Item[]> {
 		if (!identifiers.length) {
@@ -40,33 +35,20 @@ export default class Lookup {
 			}
 		}
 
-		//toggleProgress(true);
-
-		// Group PubMed IDs into batches of 200
-		//
-		// Up to 10,000 ids can apparently be passed in a single request, but 200 is the recommended
-		// limit for GET, which we currently use, and passing batches of 200 seems...fine.
-		//
-		// https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.id
-		// TODO: this code was taken from chrome/content/zotero/lookup.js, which assumes that all identifiers are of the same type, yet we don't make that assumption and we also don't do batch requests
-		/*if (identifiers.length && 'PMID' in identifiers[0]) {
-			const chunkSize = 200;
-			const newIdentifiers = [];
-			for (let i = 0; i < identifiers.length; i += chunkSize) {
-				newIdentifiers.push({
-					PMID: identifiers
-						.slice(i, i + chunkSize)
-						.map((x) => x.PMID),
-				});
-			}
-			identifiers = newIdentifiers;
-		}*/
-
-		const promises = [];
+		const promises: Promise<ZoteroTranslators.Item[]>[] = [];
 
 		for (const identifier of identifiers) {
+			if (
+				!["DOI", "PMID", "arXiv", "ISBN"].includes(identifier.type) ||
+				!identifier.zoteroIdentifier
+			) {
+				// Skip unsupported identifiers
+				promises.push(Promise.resolve([]));
+				continue;
+			}
+
 			const translate = new Zotero.Translate.Search();
-			translate.setIdentifier(identifier);
+			translate.setIdentifier(identifier.zoteroIdentifier!);
 
 			// be lenient about translators
 			const translators = await translate.getTranslators();
@@ -163,8 +145,6 @@ export default class Lookup {
 			}
 		}
 
-		//const promises = [];
-
 		// Taken from the OpenAlex search translator
 		//const apiURL = `https://api.openalex.org/works?filter=openalex:${identifiers.join("|")}&mailto=cita@duck.com`;
 		// Z.debug(apiURL);
@@ -184,7 +164,7 @@ export default class Lookup {
 		const dois = works.results
 			.map((work) => work.doi ?? null)
 			.filter((e) => e !== null)
-			.flatMap((e) => Zotero.Utilities.extractIdentifiers(e!));
+			.flatMap((e) => new PID("DOI", e!));
 		const newItems =
 			(await this.lookupItemsByIdentifiers(dois, addToZotero)) || [];
 

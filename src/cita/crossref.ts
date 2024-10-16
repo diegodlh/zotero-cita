@@ -3,6 +3,7 @@ import ItemWrapper from "./itemWrapper";
 import Wikicite, { debug } from "./wikicite";
 import Lookup from "./zotLookup";
 import PID from "./PID";
+import { isEqual, uniqWith } from "lodash";
 
 interface CrossrefResponse {
 	status: string;
@@ -152,12 +153,14 @@ export default class Crossref extends IndexerBase<Reference> {
 		// Crossref-specific parsing logic
 		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
 		const _identifiers = references
-			.map((ref) => ref.DOI ?? ref.ISBN ?? null)
+			.map((ref) => {
+				if (ref.DOI) return new PID("DOI", ref.DOI);
+				if (ref.ISBN) return new PID("ISBN", ref.ISBN);
+				return null;
+			})
 			.filter((e) => e !== null);
 		// Remove duplicates and extract identifiers
-		const identifiers = [...new Set(_identifiers)].flatMap((e) =>
-			Zotero.Utilities.extractIdentifiers(e!),
-		);
+		const identifiers = uniqWith(_identifiers, isEqual).map((pid) => pid!);
 		const crossrefReferencesWithoutIdentifier = references.filter(
 			(item) => !item.DOI && !item.ISBN,
 		);

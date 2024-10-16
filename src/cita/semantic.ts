@@ -5,6 +5,7 @@ import ItemWrapper from "./itemWrapper";
 import * as prefs from "../cita/preferences";
 import { getPref } from "../utils/prefs";
 import PID from "./PID";
+import { isEqual, uniqWith } from "lodash";
 
 interface SemanticPaper {
 	paperId: string;
@@ -206,18 +207,18 @@ export default class Semantic extends IndexerBase<Reference> {
 
 		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
 		const _identifiers = references
-			.map(
-				(item) =>
-					item.externalIds?.DOI ??
-					item.externalIds?.ArXiv ??
-					item.externalIds?.PubMed ??
-					null,
-			)
+			.map((item) => {
+				if (item.externalIds?.DOI)
+					return new PID("DOI", item.externalIds?.DOI);
+				if (item.externalIds?.ArXiv)
+					return new PID("arXiv", item.externalIds?.ArXiv);
+				if (item.externalIds?.PubMed)
+					return new PID("PMID", item.externalIds?.PubMed);
+				return null;
+			})
 			.filter((e) => e !== null);
 		// Remove duplicates and extract identifiers
-		const identifiers = [...new Set(_identifiers)].flatMap((e) =>
-			Zotero.Utilities.extractIdentifiers(e!),
-		);
+		const identifiers = uniqWith(_identifiers, isEqual).map((pid) => pid!);
 		/*const semanticReferencesWithoutIdentifier = semanticReferences.filter(
 			(item) => !item.DOI && !item.ISBN,
 		);*/ // TODO: consider supporting, but those are usually some PDF text

@@ -28,17 +28,6 @@ interface OCCitation {
 	citing: string;
 }
 
-// Based on API documentation, should support (doi|issn|isbn|omid|openalex|pmid|pmcid)
-// Only for fecthing OMID from OpenCitation Meta
-/*type SupportedUID =
-	| { DOI: string }
-	| { ISSN: string }
-	| { ISBN: string }
-	| { OMID: string } // OpenCitations Metadata Identifier
-	| { openAlex: string }
-	| { PMID: string }
-	| { PMCID: string };*/
-
 export default class OpenCitations extends IndexerBase<OCCitation> {
 	indexerName = "Open Citations";
 
@@ -50,6 +39,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		// TODO: support getting for multiple items
+		// Based on API documentation, should support (doi|issn|isbn|omid|openalex|pmid|pmcid)
 		const metatdataPIDs: PIDType[] = [
 			"OMID",
 			"DOI",
@@ -149,35 +139,42 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 				.split(" ")
 				.map((e) => e.split(":", 2))
 				.map((e) => {
-					return { type: e[0], value: e[1] };
+					switch (e[0]) {
+						case "doi":
+							return new PID("DOI", e[1]);
+						case "isbn":
+							return new PID("ISBN", e[1]);
+						//case "omid":
+						//	return new PID("OMID", e[1]);
+						case "openalex":
+							return new PID("OpenAlex", e[1]);
+						case "pmid":
+							return new PID("PMID", e[1]);
+						default:
+							return null;
+					}
 				})
-				.filter((e) =>
-					["doi", "pmid", "pmcid", "openalex"].includes(e.type),
-				)
+				.filter((e) => e !== null)
 				.sort((a, b) => {
 					// Select best DOI > PMID > ISBN > openAlex
-					if (a.type === "doi") return -1;
-					if (b.type === "doi") return 1;
-					if (a.type === "pmid") return -1;
-					if (b.type === "pmid") return 1;
-					if (a.type === "isbn") return -1;
-					if (b.type === "isbn") return 1;
-					if (a.type === "openalex") return -1;
-					if (b.type === "openalex") return 1;
+					if (a!.type === "DOI") return -1;
+					if (b!.type === "DOI") return 1;
+					if (a!.type === "PMID") return -1;
+					if (b!.type === "PMID") return 1;
+					if (a!.type === "ISBN") return -1;
+					if (b!.type === "ISBN") return 1;
+					if (a!.type === "OpenAlex") return -1;
+					if (b!.type === "OpenAlex") return 1;
 					return 0;
 				})[0]; // return the first one
 		});
 		// Extract identifiers
 		const identifiers = _identifiers
-			.filter(
-				(e) =>
-					e.type === "doi" || e.type === "pmid" || e.type === "pmcid",
-			)
-			.map((e) => e.value)
-			.flatMap(Zotero.Utilities.extractIdentifiers);
+			.filter((e) => e && e.type !== "OpenAlex")
+			.map((e) => e!);
 		const openAlexIdentifiers = _identifiers
-			.filter((e) => e.type === "openalex")
-			.map((e) => e.value);
+			.filter((e) => e && e.type === "OpenAlex")
+			.map((e) => e!.id);
 
 		// Use Lookup to get items for all identifiers
 		const result = await Lookup.lookupItemsByIdentifiers(identifiers);

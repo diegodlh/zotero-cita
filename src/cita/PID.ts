@@ -94,4 +94,14 @@ export default class PID {
 			return null;
 		}
 	}
+
+	get zoteroIdentifier():
+		| { DOI: string }
+		| { ISBN: string }
+		| { arXiv: string }
+		| { adsBibcode: string }
+		| { PMID: string }
+		| null {
+		return Zotero.Utilities.extractIdentifiers(this.id)[0] ?? null;
+	}
 }

@@ -36,10 +36,10 @@ function ImportButton(props: any) {
 			else return; // User cancelled the action
 		} else selectedCollectionID = NaN; // No collections to choose from
 
-		if (identifier && identifier.id) {
+		if (identifier && identifier.zoteroIdentifier) {
 			// Import from identifier
 			const translation = new Zotero.Translate.Search();
-			translation.setIdentifier(identifier.id);
+			translation.setIdentifier(identifier.zoteroIdentifier);
 
 			// be lenient about translators
 			const translators = await translation.getTranslators();
