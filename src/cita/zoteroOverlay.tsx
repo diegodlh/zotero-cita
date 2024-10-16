@@ -25,6 +25,7 @@ const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
 	"Wikidata API",
 	"Wikidata JSON",
+	"OpenAlex JSON",
 	"zotkat/Wikidata QuickStatements",
 ];
 

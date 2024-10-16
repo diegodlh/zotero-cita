@@ -83,7 +83,9 @@ export default class OpenAlex extends IndexerBase<string> {
 		}
 
 		// Use Lookup to get items from OpenAlex
-		const uniqueWorks = [...new Set(works)];
+		const uniqueWorks = [...new Set(works)].map(
+			(id) => new PID("OpenAlex", id),
+		);
 		const result = await Lookup.lookupItemsOpenAlex(uniqueWorks);
 		const parsedReferences = result ? result : [];
 		return parsedReferences;

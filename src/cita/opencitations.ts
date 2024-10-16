@@ -174,7 +174,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 			.map((e) => e!);
 		const openAlexIdentifiers = _identifiers
 			.filter((e) => e && e.type === "OpenAlex")
-			.map((e) => e!.id);
+			.map((e) => e!);
 
 		// Use Lookup to get items for all identifiers
 		const result = await Lookup.lookupItemsByIdentifiers(identifiers);

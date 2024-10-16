@@ -223,8 +223,7 @@ export default class Semantic extends IndexerBase<Reference> {
 			(item) => !item.DOI && !item.ISBN,
 		);*/ // TODO: consider supporting, but those are usually some PDF text
 
-		// TODO: check when this works, because some items with MAG don't seem to match with OpenAlex
-		const openAlexIdentifiers = references
+		const magIdentifiers = references
 			.filter(
 				(item) =>
 					!item.externalIds?.DOI &&
@@ -232,15 +231,17 @@ export default class Semantic extends IndexerBase<Reference> {
 					!item.externalIds?.PubMed &&
 					item.externalIds?.MAG,
 			)
-			.map((ref) => "W" + ref.externalIds!.MAG!);
+			.map((ref) => new PID("MAG", ref.externalIds!.MAG!));
+		Zotero.log(`MAG ids ${JSON.stringify(magIdentifiers)}`);
 
-		Zotero.log(`Pure OA ids ${openAlexIdentifiers}`);
 		// Use Lookup to get items for all identifiers
 		const result = await Lookup.lookupItemsByIdentifiers(identifiers);
 		const parsedReferences = result ? result : [];
 
-		const openAlexResult =
-			await Lookup.lookupItemsOpenAlex(openAlexIdentifiers);
+		const openAlexResult = await Lookup.lookupItemsOpenAlex(
+			magIdentifiers,
+			"MAG",
+		);
 		if (openAlexResult) parsedReferences.push(...openAlexResult);
 
 		return parsedReferences;

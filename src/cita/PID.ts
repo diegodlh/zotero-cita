@@ -56,6 +56,8 @@ export default class PID {
 			}
 			case "OMID": {
 				let omid = this.id.toLowerCase().trim();
+				if (/^https?:/.test(omid))
+					omid = omid.match(/br\/\d+/)?.[0] ?? "";
 				if (omid.substring(0, 3) !== "br/") omid = "br/" + omid;
 				if (!omid.match(/^br\/\d+$/)) omid = "";
 				return omid;
@@ -72,7 +74,10 @@ export default class PID {
 				return "";
 			}
 			case "OpenAlex": {
-				let openAlex = this.id.toUpperCase().trim();
+				let openAlex = this.id.trim();
+				if (/^https?:/.test(openAlex))
+					openAlex = openAlex.match(/[Ww]\d+/)?.[0] ?? "";
+				openAlex = openAlex.toUpperCase();
 				if (openAlex[0] !== "W") openAlex = "W" + openAlex;
 				if (!openAlex.match(/^W\d+$/)) openAlex = "";
 				return openAlex;

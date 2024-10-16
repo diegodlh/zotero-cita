@@ -2,13 +2,20 @@ import Bottleneck from "bottleneck";
 import OpenAlex from "openalex-sdk";
 import { SearchParameters } from "openalex-sdk/dist/src/types/work";
 import PID from "./PID";
+import Wikicite from "./wikicite";
+import ItemWrapper from "./itemWrapper";
 
 const limiter = new Bottleneck({
 	minTime: 100, // Max 10 requests per second to avoid overloading translators
 });
 
 export default class Lookup {
-	// This code is adapted from Zotero's chrome/content/zotero/lookup.js
+	/**
+	 * Look up items by identifiers. This code is adapted from Zotero's chrome/content/zotero/lookup.js.
+	 * @param identifiers An array of PIDs. Supported types are DOI, PMID, arXiv, ISBN.
+	 * @param addToZotero Whether to add the found items to Zotero.
+	 * @returns The found items, or false if none were found.
+	 */
 	static async lookupItemsByIdentifiers(
 		identifiers: PID[],
 		addToZotero: boolean = false,
@@ -119,14 +126,39 @@ export default class Lookup {
 		return newItems;
 	}
 
+	/**
+	 * Look up items by OpenAlex identifiers.
+	 * @param identifiers An array of OpenAlex or MAG identifiers. Thes must all be of the same type.
+	 * @param addToZotero Whether to add the found items to Zotero.
+	 * @returns The found items, or false if none were found.
+	 */
 	static async lookupItemsOpenAlex(
-		identifiers: string[],
+		identifiers: PID[],
+		type: PIDType = "OpenAlex",
 		addToZotero: boolean = false,
 	): Promise<false | Zotero.Item[]> {
 		if (!identifiers.length) {
 			Zotero.logError(
 				new Error(
-					`Lookup input did not contain any identifiers ${JSON.stringify(identifiers)}`,
+					`OpenAlex lookup input did not contain any identifiers ${JSON.stringify(identifiers)}`,
+				),
+			);
+			return false;
+		}
+
+		if (type !== "OpenAlex" && type !== "MAG") {
+			Zotero.logError(
+				new Error(
+					`Unsupported identifier type ${type} for OpenAlex lookup`,
+				),
+			);
+			return false;
+		}
+
+		if (identifiers.some((id) => id.type !== type)) {
+			Zotero.logError(
+				new Error(
+					`Mismatched identifier types for OpenAlex lookup ${JSON.stringify(identifiers)}`,
 				),
 			);
 			return false;
@@ -150,12 +182,16 @@ export default class Lookup {
 		// Z.debug(apiURL);
 		//const apiJSON = (await Zotero.HTTP.request("GET", apiURL)).responseText;
 		const sdk = new OpenAlex("cita@duck.com");
-		const oaIds: { openalex: string }[] = identifiers.map((id) => {
-			return { openalex: id };
-		});
+		const ids: ({ openalex: string } | { mag: string })[] = identifiers.map(
+			(pid) => {
+				return type === "OpenAlex"
+					? { openalex: pid.id }
+					: { mag: pid.id };
+			},
+		);
 		const params: SearchParameters = {
 			filter: {
-				ids: oaIds,
+				ids: ids,
 			},
 		};
 		const works = await sdk.works(params);
@@ -165,8 +201,9 @@ export default class Lookup {
 			.map((work) => work.doi ?? null)
 			.filter((e) => e !== null)
 			.flatMap((e) => new PID("DOI", e!));
-		const newItems =
-			(await this.lookupItemsByIdentifiers(dois, addToZotero)) || [];
+		const newItems = dois.length
+			? (await this.lookupItemsByIdentifiers(dois, addToZotero)) || []
+			: [];
 
 		// Filter out
 		works.results = works.results.filter((work) => !work.doi);
@@ -198,6 +235,11 @@ export default class Lookup {
 			}
 			const newItem = new Zotero.Item(result.itemType);
 			newItem.fromJSON(result);
+			// Cleanup OpenAlex identifier since the translator saves the url
+			const wrapper = new ItemWrapper(newItem);
+			const pid = wrapper.getPID("OpenAlex");
+			if (pid && pid.cleanID)
+				wrapper.setPID("OpenAlex", pid.cleanID, false);
 			return newItem;
 		});
 
