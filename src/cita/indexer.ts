@@ -87,12 +87,12 @@ export abstract class IndexerBase<Ref> {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				Wikicite.formatString(
-					"wikicite.indexer.get-citations.no-doi-title",
+					"wikicite.indexer.get-citations.no-pid-title",
 					this.indexerName,
 				),
 				Wikicite.formatString(
-					"wikicite.indexer.get-citations.no-doi-message",
-					this.indexerName,
+					"wikicite.indexer.get-citations.no-pid-message",
+					[this.indexerName, this.supportedPIDs.join(", ")],
 				),
 			);
 			return;
