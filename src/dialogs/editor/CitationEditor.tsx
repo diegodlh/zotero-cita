@@ -16,6 +16,7 @@ const CitationEditor = (props: {
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onSave: () => void;
+	onRefresh: () => void;
 }) => {
 	const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
 
@@ -118,6 +119,14 @@ const CitationEditor = (props: {
 				))}
 			</ul>
 			<div id="citation-editor-buttons">
+				<button
+					onClick={() => {
+						props.onRefresh();
+						onItemTypeChange();
+					}}
+				>
+					{props.getString("wikicite.editor.refresh")}
+				</button>
 				<button onClick={props.onCancel}>
 					{props.getString("wikicite.editor.cancel")}
 				</button>

@@ -86,7 +86,7 @@ export default class Lookup {
 					.catch((e): ZoteroTranslators.Item[] => {
 						Zotero.logError(e);
 						Zotero.log(
-							`While looking for identifiers: ${JSON.stringify(identifier)}`,
+							`While looking for identifier: ${JSON.stringify(identifier)}`,
 						);
 						return [];
 					});
