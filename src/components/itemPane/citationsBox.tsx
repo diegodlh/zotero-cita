@@ -348,24 +348,12 @@ function CitationsBox(props: {
 	return (
 		<div className="citations-box">
 			<div className="citations-box-header">
-				<div className="citations-box-count">
+				{/* <div className="citations-box-count">
 					{Wikicite.formatString(
 						"wikicite.citations-pane.citations.count",
 						citations.length,
 					)}
-				</div>
-				{props.editable && (
-					<div>
-						<button onClick={() => handleCitationAdd()}>
-							{Wikicite.getString("wikicite.citations-pane.add")}
-						</button>
-					</div>
-				)}
-				{
-					<button onClick={(event) => props.onItemPopup(event)}>
-						{Wikicite.getString("wikicite.citations-pane.more")}
-					</button>
-				}
+				</div> */}
 				{/* fix: button is broken */}
 				{/* <Button
 					icon={
@@ -405,7 +393,7 @@ function CitationsBox(props: {
                  */}
 			</div>
 			<div className="citations-box-footer">
-				<ul id="citations-box-pids" className="pid-list">
+				<div id="citations-box-pids" className="pid-list">
 					{
 						// Fixme: to avoid parsing the extra field multiple times
 						// (once per non-natively supported pid; e.g., QID, OMID)
@@ -455,7 +443,7 @@ function CitationsBox(props: {
 					) : (
 						""
 					)}
-				</ul>
+				</div>
 			</div>
 		</div>
 	);

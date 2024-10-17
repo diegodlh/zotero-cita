@@ -106,7 +106,7 @@ const CitationEditor = (props: {
 
 	return (
 		<div id="citation-editor-footer" box-orient="vertical">
-			<ul className="pid-list">
+			<div className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow
 						autosave={false}
@@ -117,7 +117,7 @@ const CitationEditor = (props: {
 						validate={props.checkCitationPID}
 					/>
 				))}
-			</ul>
+			</div>
 			<div id="citation-editor-buttons">
 				<button
 					onClick={() => {

@@ -80,7 +80,92 @@ img.light {
 	filter: opacity(50%);
 }
 
-ul.pid-list {
+div.pid-list {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	column-gap: 8px;
+	row-gap: 2px;
+	width: inherit;
+}
+
+div.pid-list .meta-row {
+	display: grid;
+	grid-template-columns: subgrid;
+	grid-column: span 2;
+}
+
+div.pid-list .meta-row.hidden {
+	display: none;
+}
+
+div.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover,
+div.pid-list .meta-row.noHover .show-on-hover {
+	clip-path: inset(50%);
+}
+
+div.pid-list .meta-row.noHover .show-on-hover.no-display {
+	width: 0;
+	height: 0;
+	padding: 0;
+	position: absolute;
+}
+
+div.pid-list .meta-row .meta-data {
+	width: 0;
+	min-width: 100%;
+	display: flex;
+}
+
+div.pid-list .meta-row .meta-data toolbarbutton {
+	margin-inline-start: 4px;
+}
+
+div.pid-list .meta-row editable-text {
+	flex: 1;
+	max-width: 100%;
+}
+
+div.pid-list .meta-row editable-text .input {
+	min-width: 0;
+}
+
+div.pid-list .meta-row .meta-label {
+	display: flex;
+	font-weight: normal;
+	text-align: end;
+	color: var(--fill-secondary);
+}
+
+div.pid-list .meta-row .meta-label[fieldname^="creator"] {
+	justify-content: space-between;
+	align-items: center;
+}
+
+div.pid-list .meta-row .meta-label > label {
+	margin-top: 2px;
+}
+
+[zoteroUIDensity="comfortable"] div.pid-list .meta-row .meta-label > label {
+	margin-top: 3px;
+}
+
+div.pid-list .meta-row .key {
+	width: 100%;
+}
+
+div.pid-list .meta-row toolbarbutton {
+	outline: var(--color-focus-outer-border) solid
+		var(--width-focus-outer-border); /* Equivalent to focus-ring */
+	appearance: none;
+	-moz-appearance: none;
+	align-self: center;
+	height: auto;
+	width: auto;
+	padding: 1px;
+	border-radius: 2px;
+}
+
+/*ul.pid-list {
 	list-style: none;
 	padding-left: 0;
 }
@@ -128,4 +213,4 @@ ul.pid-list .editable-content {
 .pid-label.pointer:hover,
 ul.pid-list .cita-icon.pointer:hover {
 	cursor: pointer !important;
-}
+}*/

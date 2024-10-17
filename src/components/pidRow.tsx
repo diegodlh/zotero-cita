@@ -50,52 +50,68 @@ function PIDRow(props: {
 	}
 
 	return (
-		<li
+		<div
 			className={
-				value == null && !["QID", "DOI"].includes(props.type)
+				"meta-row " +
+				(value == null && !["QID", "DOI"].includes(props.type)
 					? "hidden"
-					: ""
+					: "")
 			}
 			id={`pid-row-${props.type}`}
 		>
-			<label
-				className={"pid-label" + (url ? " pointer" : "")}
-				onClick={url ? () => Zotero.launchURL(url) : undefined}
-			>
-				{props.type}
-			</label>
-			<div className="editable-container">
-				<input
-					type="text"
-					id={`pid-row-input-${props.item.key}-${props.type}`}
-					className={props.editable ? "zotero-clicky" : ""}
-					readOnly={!props.editable}
-					defaultValue={value?.id || ""}
-					// when the input loses focus, update the item's PID
-					onBlur={(event) => handleCommit(event.target.value)}
-				/>
+			<div className="meta-label">
+				<label
+					className={"key pid-label" + (url ? " pointer" : "")}
+					onClick={url ? () => Zotero.launchURL(url) : undefined}
+				>
+					{props.type}
+				</label>
 			</div>
-			<button
-				onClick={() => onFetch()}
-				disabled={!props.item.canFetchPid(props.type)}
-			>
-				<img
-					className={
-						"cita-icon" +
-						(props.item.canFetchPid(props.type) ? " pointer" : "")
-					}
-					title={
-						props.item.canFetchPid(props.type)
+			<div className="meta-data">
+				{React.createElement(
+					"editable-text",
+					{
+						class: "value",
+						nowrap: "true",
+						tight: "true",
+						style: { textAlign: "left" },
+					},
+					<input
+						type="text"
+						id={`pid-row-input-${props.item.key}-${props.type}`}
+						className={props.editable ? "input" : ""}
+						readOnly={!props.editable}
+						defaultValue={value?.id || ""}
+						// when the input loses focus, update the item's PID
+						onBlur={(event) => handleCommit(event.target.value)}
+					/>,
+				)}
+				{React.createElement(
+					"toolbarbutton",
+					{
+						className: "zotero-clicky show-on-hover",
+						tabIndex: 0,
+						onClick: () => onFetch(),
+						disabled: !props.item.canFetchPid(props.type),
+						tooltiptext: props.item.canFetchPid(props.type)
 							? Wikicite.formatString(
 									"wikicite.citations-pane.pid-row.fetch-pid",
 									props.type,
 								)
-							: ""
-					}
-					src={`chrome://zotero/skin/arrow_refresh.png`}
-				/>
-			</button>
-		</li>
+							: "",
+					},
+					<img
+						className={
+							"toolbarbutton-icon" +
+							(props.item.canFetchPid(props.type)
+								? " pointer"
+								: "")
+						}
+						src={`chrome://zotero/skin/16/universal/sync.svg`}
+					/>,
+				)}
+			</div>
+		</div>
 	);
 }
 
