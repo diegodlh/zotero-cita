@@ -689,8 +689,8 @@ class ZoteroOverlay {
 					},
 				},
 				{
+					// TODO: add localizations to button labels
 					type: "import",
-					l10nID: "section-button-import",
 					icon: `chrome://${config.addonRef}/content/skin/default/import.svg`,
 					onClick: (props) => {
 						(sectionImportMenu as any).openPopup(

@@ -60,12 +60,7 @@ function PIDRow(props: {
 			id={`pid-row-${props.type}`}
 		>
 			<div className="meta-label">
-				<label
-					className={"key pid-label" + (url ? " pointer" : "")}
-					onClick={url ? () => Zotero.launchURL(url) : undefined}
-				>
-					{props.type}
-				</label>
+				<label className={"key pid-label"}>{props.type}</label>
 			</div>
 			<div className="meta-data">
 				{React.createElement(
@@ -86,31 +81,47 @@ function PIDRow(props: {
 						onBlur={(event) => handleCommit(event.target.value)}
 					/>,
 				)}
-				{React.createElement(
-					"toolbarbutton",
-					{
-						className: "zotero-clicky show-on-hover",
-						tabIndex: 0,
-						onClick: () => onFetch(),
-						disabled: !props.item.canFetchPid(props.type),
-						tooltiptext: props.item.canFetchPid(props.type)
-							? Wikicite.formatString(
-									"wikicite.citations-pane.pid-row.fetch-pid",
-									props.type,
-								)
-							: "",
-					},
-					<img
-						className={
-							"toolbarbutton-icon" +
-							(props.item.canFetchPid(props.type)
-								? " pointer"
-								: "")
-						}
-						style={{ fill: "currentColor" }}
-						src={`chrome://zotero/skin/16/universal/sync.svg`}
-					/>,
-				)}
+				{props.item.canFetchPid(props.type) &&
+					React.createElement(
+						"toolbarbutton",
+						{
+							className: "zotero-clicky show-on-hover",
+							tabIndex: 0,
+							onClick: () => onFetch(),
+							tooltiptext: Wikicite.formatString(
+								"wikicite.citations-pane.pid-row.fetch-pid",
+								props.type,
+							),
+						},
+						<img
+							className={
+								"toolbarbutton-icon" +
+								(props.item.canFetchPid(props.type)
+									? " pointer"
+									: "")
+							}
+							style={{ fill: "currentColor" }}
+							src={`chrome://zotero/skin/16/universal/sync.svg`}
+						/>,
+					)}
+				{url &&
+					React.createElement(
+						"toolbarbutton",
+						{
+							className:
+								"zotero-clicky zotero-clicky-open-link show-on-hover",
+							tabIndex: 0,
+							onClick: () => Zotero.launchURL(url),
+							tooltiptext: Wikicite.getString(
+								"wikicite.citations-pane.pid-row.view-online",
+							),
+						},
+						<img
+							className={"toolbarbutton-icon"}
+							style={{ fill: "currentColor" }}
+							src={`chrome://zotero/skin/16/universal/open-link.svg`}
+						/>,
+					)}
 			</div>
 		</div>
 	);
