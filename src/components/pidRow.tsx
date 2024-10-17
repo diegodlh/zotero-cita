@@ -107,6 +107,7 @@ function PIDRow(props: {
 								? " pointer"
 								: "")
 						}
+						style={{ fill: "currentColor" }}
 						src={`chrome://zotero/skin/16/universal/sync.svg`}
 					/>,
 				)}
