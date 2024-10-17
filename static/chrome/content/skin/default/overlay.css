@@ -163,6 +163,8 @@ div.pid-list .meta-row toolbarbutton {
 	width: auto;
 	padding: 1px;
 	border-radius: 2px;
+	display: flex;
+	box-sizing: border-box;
 }
 
 /*ul.pid-list {
