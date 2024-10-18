@@ -2,10 +2,12 @@ import * as React from "react";
 import * as PropTypes from "prop-types";
 import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
+import { link } from "fs";
 
 function ZoteroButton(props: any) {
 	const key = props.citation.target.key;
-	function handleClick() {
+
+	function goToLinkedItem() {
 		if (key) {
 			const libraryID = props.citation.source.item.libraryID;
 			const item = Zotero.Items.getByLibraryAndKey(
@@ -13,59 +15,59 @@ function ZoteroButton(props: any) {
 				key,
 			) as Zotero.Item;
 
-			const bttnFlags =
-				Services.prompt.BUTTON_POS_0 *
-					Services.prompt.BUTTON_TITLE_IS_STRING +
-				Services.prompt.BUTTON_POS_1 *
-					Services.prompt.BUTTON_TITLE_CANCEL +
-				Services.prompt.BUTTON_POS_2 *
-					Services.prompt.BUTTON_TITLE_IS_STRING;
-			const response = Services.prompt.confirmEx(
-				window as mozIDOMWindowProxy,
-				Wikicite.getString(
-					"wikicite.citations-pane.linked.confirm.title",
-				),
-				Wikicite.formatString(
-					"wikicite.citations-pane.linked.confirm.message",
-					item.getField("title"),
-				),
-				bttnFlags,
-				Wikicite.getString("wikicite.citations-pane.linked.confirm.go"),
-				"",
-				Wikicite.getString(
-					"wikicite.citations-pane.linked.confirm.unlink",
-				),
-				"",
-				{ value: false },
-			);
-			switch (response) {
-				case 0:
-					// go
-					ZoteroPane.selectItem(item.id);
-					break;
-				case 1:
-					// cancel
-					return;
-				case 2:
-					// unlink
-					props.citation.unlinkFromZoteroItem();
-					break;
-			}
+			ZoteroPane.selectItem(item.id);
+		}
+	}
+
+	function linkUnlinkItem() {
+		if (key) {
+			// Unlink
+			props.citation.unlinkFromZoteroItem();
 		} else {
+			// Link
 			props.citation.autoLink();
 		}
 	}
 
-	const title = key ? "Go to linked Zotero item" : "Link to Zotero item";
-
+	// States:
+	// 1. Unlinked: auto link or manually link on click
+	// 2. Linked: go to Zotero item
 	return (
-		<button onClick={() => handleClick()}>
-			<img
-				title={title}
-				src={`chrome://zotero/skin/zotero-new-z-16px.png`}
-				className={"cita-icon" + (key ? "" : " light")}
-			/>
-		</button>
+		<>
+			{
+				// Goto
+				key &&
+					React.createElement(
+						"toolbarbutton",
+						{
+							className: "zotero-clicky",
+							//tabIndex: 0,
+							onClick: goToLinkedItem,
+						},
+						<img
+							className="toolbarbutton-icon"
+							src="chrome://zotero/skin/16/universal/show-item.svg"
+							title="Go to linked Zotero item"
+						></img>,
+					)
+			}
+			{
+				// Link/unlink
+				React.createElement(
+					"toolbarbutton",
+					{
+						className: "zotero-clicky show-on-hover no-display",
+						//tabIndex: 0,
+						onClick: linkUnlinkItem,
+					},
+					<img
+						className="toolbarbutton-icon"
+						src={`chrome://zotero/skin/16/universal/${key ? "unlink" : "link"}.svg`}
+						title={(key ? "Unlink" : "Link") + " Zotero item"}
+					></img>,
+				)
+			}
+		</>
 	);
 }
 

@@ -126,6 +126,12 @@ export default defineConfig({
 					from: /wikicite_citations-pane_tooltiptext\s*=/g,
 					to: "$&\n    .tooltiptext =",
 				});
+				// add .tooltiptext tag for citation pane import button tooltip
+				replaceInFileSync({
+					files: localePath + "/**/*.ftl",
+					from: /wikicite_citations-pane_import-button_tooltiptext\s*=/g,
+					to: "$&\n    .tooltiptext =",
+				});
 
 				// Copy local citations network
 				mkdirSync("build/addon/chrome/content/Local-Citation-Network/");

@@ -689,8 +689,10 @@ class ZoteroOverlay {
 					},
 				},
 				{
-					// TODO: add localizations to button labels
 					type: "import",
+					l10nID: getLocaleID(
+						"wikicite_citations-pane_import-button_tooltiptext",
+					),
 					icon: `chrome://${config.addonRef}/content/skin/default/import.svg`,
 					onClick: (props) => {
 						(sectionImportMenu as any).openPopup(
@@ -701,6 +703,7 @@ class ZoteroOverlay {
 				},
 				{
 					type: "options",
+					l10nID: "itembox-button-options",
 					icon: "chrome://zotero/skin/16/universal/options.svg",
 					onClick: (props) => {
 						(sectionMoreMenu as any).openPopup(

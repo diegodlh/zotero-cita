@@ -32,10 +32,18 @@ function WikidataButton(props: {
 	}
 	imgSrc += ".png";
 
-	return (
-		<button onClick={props.onClick}>
-			<img className="cita-icon" title={title} src={imgSrc} />
-		</button>
+	return React.createElement(
+		"toolbarbutton",
+		{
+			className: "zotero-clicky show-on-hover no-display",
+			//tabIndex: 0,
+			onClick: props.onClick,
+		},
+		<img
+			className="toolbarbutton-icon cita-icon"
+			src={imgSrc}
+			title={title}
+		></img>,
 	);
 }
 

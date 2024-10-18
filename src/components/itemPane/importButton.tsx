@@ -147,21 +147,26 @@ function ImportButton(props: any) {
 		}
 	}
 
-	const title = key
-		? "Already linked"
-		: identifier
-			? "Auto import with identifier"
-			: "Import data";
+	const title = identifier ? "Import with identifier" : "Import data";
 	const icon = identifier ? "magic-wand" : "add-item";
 
 	return (
-		<button onClick={() => handleClick()}>
+		!key &&
+		React.createElement(
+			"toolbarbutton",
+			{
+				className: "zotero-clicky show-on-hover no-display",
+				tabIndex: 0,
+				onClick: handleClick,
+			},
 			<img
-				title={title}
+				className="toolbarbutton-icon"
+				width={16}
+				height={16}
 				src={`chrome://zotero/skin/20/universal/${icon}.svg`}
-				className={"cita-icon" + (!key ? "" : " light")}
-			/>
-		</button>
+				title={title}
+			></img>,
+		)
 	);
 }
 

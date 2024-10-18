@@ -24,6 +24,7 @@ function CitationsBox(props: {
 	const [hasAttachments, setHasAttachments] = useState(false);
 
 	const removeStr = Zotero.getString("general.remove");
+	const optionsStr = "Open context menu";
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
@@ -268,8 +269,8 @@ function CitationsBox(props: {
 		const isLastCitation = index === citations.length - 1;
 		const label = citation.target.getLabel();
 		return (
-			<li className="citation" key={index}>
-				<img
+			<div className="row" key={index}>
+				{/*<img
 					className="cita-icon"
 					src={Zotero.ItemTypes.getImageSrc(item.itemType)}
 					title={Zotero.ItemTypes.getLocalizedString(item.itemType)}
@@ -283,16 +284,29 @@ function CitationsBox(props: {
 							{label}
 						</div>
 					</div>
+				</div>*/}
+				<div
+					className="box keyboard-clickable"
+					tabIndex={0}
+					role="button"
+					onClick={() => handleCitationEdit(index)}
+				>
+					<span
+						className="icon icon-css icon-item-type"
+						data-item-type={item.itemType}
+					></span>
+					<span className="label">{label}</span>
 				</div>
 				{props.editable && (
 					// https://github.com/babel/babel-sublime/issues/368
 					<>
-						<ZoteroButton citation={citation} />
 						<ImportButton citation={citation} />
+						<ZoteroButton citation={citation} />
 						<WikidataButton
 							citation={citation}
 							onClick={() => handleCitationSync(index)}
 						/>
+						{/*
 						<button
 							disabled={
 								isFirstCitation || props.sortBy !== "ordinal"
@@ -316,75 +330,59 @@ function CitationsBox(props: {
 								title="Move down"
 								src={`chrome://zotero/skin/citation-down.png`}
 							/>
-						</button>
-						<button
-							title={removeStr}
-							onClick={() => handleCitationDelete(index)}
-							tabIndex={-1}
-						>
-							<img
-								alt={removeStr}
-								className="cita-icon"
-								title={removeStr}
-								src="chrome://zotero/skin/16/universal/minus-circle.svg"
-							/>
-						</button>
-						<button
-							onClick={(event) =>
-								props.onCitationPopup(event, index)
-							}
-						>
-							<img
-								className="cita-icon"
-								src="chrome://zotero/skin/16/universal/options.svg"
-							/>
-						</button>
+						</button>*/}
+						{
+							// Remove button
+							React.createElement(
+								"toolbarbutton",
+								{
+									className:
+										"zotero-clicky zotero-clicky-minus show-on-hover no-display",
+									tabIndex: 0,
+									onClick: () => handleCitationDelete(index),
+								},
+								<img
+									className="toolbarbutton-icon"
+									src="chrome://zotero/skin/16/universal/minus-circle.svg"
+									title={removeStr}
+								></img>,
+							)
+						}
+						{
+							// Options button
+							React.createElement(
+								"toolbarbutton",
+								{
+									className:
+										"zotero-clicky zotero-clicky-options show-on-hover no-display",
+									tabIndex: 0,
+									onClick: (event) =>
+										props.onCitationPopup(event, index),
+								},
+								<img
+									className="toolbarbutton-icon"
+									src="chrome://zotero/skin/16/universal/options.svg"
+									title={optionsStr}
+								></img>,
+							)
+						}
 					</>
 				)}
-			</li>
+			</div>
 		);
 	}
 
 	return (
 		<div className="citations-box">
-			<div className="citations-box-header">
-				{/* <div className="citations-box-count">
-					{Wikicite.formatString(
-						"wikicite.citations-pane.citations.count",
-						citations.length,
-					)}
-				</div> */}
-				{/* fix: button is broken */}
-				{/* <Button
-					icon={
-						<span>
-							<img
-								height="16px"
-								src="chrome://cita/skin/wikicite.png"
-							/>
-						</span>
-					}
-					className="citations-box-actions"
-					isMenu={true}
-					onClick={props.onItemPopup}
-					// todo: localise
-					text="More"
-					// text="wikicite.citations-pane.more"
-					title=""
-					size="sm"
-				/> */}
-			</div>
 			<div className="citations-box-list-container">
-				<ul className="citations-box-list">
-					{/* Fixme: do not use index as React key - reorders will be slow!
+				{/* Fixme: do not use index as React key - reorders will be slow!
                     https://reactjs.org/docs/reconciliation.html#keys
                     What about using something like bibtex keys?*/}
-					{/* Maybe in the future the index of the Citation in the CitationList
+				{/* Maybe in the future the index of the Citation in the CitationList
                     will be a property of the Citation itself */}
-					{sortedIndices.map((index) =>
-						renderCitationRow(citations[index], index),
-					)}
-				</ul>
+				{sortedIndices.map((index) =>
+					renderCitationRow(citations[index], index),
+				)}
 				{/* I understand this bit here makes TAB create a new tag
                 { props.editable && <span
                     tabIndex="0"

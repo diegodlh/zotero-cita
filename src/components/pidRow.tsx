@@ -52,9 +52,9 @@ function PIDRow(props: {
 	return (
 		<div
 			className={
-				"meta-row " +
+				"meta-row" +
 				(value == null && !["QID", "DOI"].includes(props.type)
-					? "hidden"
+					? " hidden"
 					: "")
 			}
 			id={`pid-row-${props.type}`}
@@ -85,13 +85,9 @@ function PIDRow(props: {
 					React.createElement(
 						"toolbarbutton",
 						{
-							className: "zotero-clicky show-on-hover",
+							className: "zotero-clicky show-on-hover no-display",
 							tabIndex: 0,
 							onClick: () => onFetch(),
-							tooltiptext: Wikicite.formatString(
-								"wikicite.citations-pane.pid-row.fetch-pid",
-								props.type,
-							),
 						},
 						<img
 							className={
@@ -102,6 +98,10 @@ function PIDRow(props: {
 							}
 							style={{ fill: "currentColor" }}
 							src={`chrome://zotero/skin/16/universal/sync.svg`}
+							title={Wikicite.formatString(
+								"wikicite.citations-pane.pid-row.fetch-pid",
+								props.type,
+							)}
 						/>,
 					)}
 				{url &&
@@ -109,17 +109,15 @@ function PIDRow(props: {
 						"toolbarbutton",
 						{
 							className:
-								"zotero-clicky zotero-clicky-open-link show-on-hover",
+								"zotero-clicky zotero-clicky-open-link show-on-hover no-display",
 							tabIndex: 0,
 							onClick: () => Zotero.launchURL(url),
-							tooltiptext: Wikicite.getString(
-								"wikicite.citations-pane.pid-row.view-online",
-							),
 						},
 						<img
 							className={"toolbarbutton-icon"}
 							style={{ fill: "currentColor" }}
 							src={`chrome://zotero/skin/16/universal/open-link.svg`}
+							title={Zotero.getString("view-online")}
 						/>,
 					)}
 			</div>
