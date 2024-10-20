@@ -1282,37 +1282,37 @@ class ZoteroOverlay {
 
 		const itemWikidataSync = document.getElementById(
 			"item-menu-wikidata-sync",
-		) as HTMLButtonElement; //actually a menuitem, but Button is close
+		) as XUL.MenuItem;
 		const itemFetchCitationQIDs = document.getElementById(
 			"item-menu-fetch-citation-qids",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemCrossrefGet = document.getElementById(
 			"item-menu-crossref-get",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemSemanticGet = document.getElementById(
 			"item-menu-semantic-get",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemOpenAlexGet = document.getElementById(
 			"item-menu-openalex-get",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemOpenCitationsGet = document.getElementById(
 			"item-menu-opencitations-get",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemPdfExtract = document.getElementById(
 			"item-menu-pdf-extract",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemIdentifierImport = document.getElementById(
 			"item-menu-identifier-import",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemCitationsImport = document.getElementById(
 			"item-menu-citations-import",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemFileExport = document.getElementById(
 			"item-menu-file-export",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 		const itemCrociExport = document.getElementById(
 			"item-menu-croci-export",
-		) as HTMLButtonElement;
+		) as XUL.MenuItem;
 
 		itemWikidataSync.disabled = !sourceQid;
 		itemFetchCitationQIDs.disabled = !hasCitations;
@@ -1344,33 +1344,24 @@ class ZoteroOverlay {
 		const ociSuppliers = citation?.ocis.map((oci) => oci.supplierName);
 
 		(
-			doc.getElementById(
-				"citation-menu-wikidata-sync",
-			) as HTMLButtonElement
+			doc.getElementById("citation-menu-wikidata-sync") as XUL.MenuItem
 		).disabled = !sourceItem?.qid || !targetItem?.qid;
 		(
-			doc.getElementById("citation-menu-fetch-qid") as HTMLButtonElement
+			doc.getElementById("citation-menu-fetch-qid") as XUL.MenuItem
 		).disabled = false;
 		(
-			doc.getElementById("citation-menu-file-export") as HTMLButtonElement
+			doc.getElementById("citation-menu-file-export") as XUL.MenuItem
 		).disabled = false;
 		(
-			doc.getElementById(
-				"citation-menu-croci-export",
-			) as HTMLButtonElement
+			doc.getElementById("citation-menu-croci-export") as XUL.MenuItem
 		).disabled = !sourceItem?.doi || !targetItem?.doi;
 		(
-			doc.getElementById(
-				"citation-menu-oci-crossref",
-			) as HTMLButtonElement
+			doc.getElementById("citation-menu-oci-crossref") as XUL.MenuItem
 		).disabled = !ociSuppliers?.includes("crossref");
+		(doc.getElementById("citation-menu-oci-occ") as XUL.MenuItem).disabled =
+			!ociSuppliers?.includes("occ");
 		(
-			doc.getElementById("citation-menu-oci-occ") as HTMLButtonElement
-		).disabled = !ociSuppliers?.includes("occ");
-		(
-			doc.getElementById(
-				"citation-menu-oci-wikidata",
-			) as HTMLButtonElement
+			doc.getElementById("citation-menu-oci-wikidata") as XUL.MenuItem
 		).disabled = !ociSuppliers?.includes("wikidata");
 	}
 
@@ -1411,37 +1402,6 @@ class ZoteroOverlay {
 			}
 		});
 	}
-
-	// /**
-	//  * Set an explicit height on the citations list
-	//  *
-	//  * Revisit when Zotero is all HTML.
-	//  */
-	// updateCitationsBoxSize (document: Document) {
-	//     // Based on ZoteroPane.updateTagsBoxSize()
-	//     // check whether we're in the library or PDF Reader
-	//     let citationBoxParent;
-	//     const selectedTab = Zotero_Tabs._tabs[Zotero_Tabs.selectedIndex];
-	//     if (selectedTab.type == "library") {
-	//         citationBoxParent = document.getElementById('zotero-item-pane-content')
-	//     }
-	//     else if (selectedTab.type == "reader") {
-	//         citationBoxParent = document.getElementById(`${selectedTab.id}-context`)
-	//     }
-
-	//     var pane = document.querySelector('#zotero-item-pane');
-	//     var header = citationBoxParent.querySelector('.citations-box-header');
-	//     var list = citationBoxParent.querySelector('.citations-box-list') as HTMLUListElement;
-	//     var footer = citationBoxParent.querySelector('.citations-box-footer');
-	//     if (pane && header && list && footer) {
-	//         let height =
-	//             pane.getBoundingClientRect().height -
-	//             header.getBoundingClientRect().height -
-	//             footer.getBoundingClientRect().height -
-	//             50; // a little padding
-	//         list.style.height = height + 'px';
-	//     }
-	// },
 
 	// /******************************************/
 	// // Item menu functions
@@ -1548,10 +1508,10 @@ class ZoteroOverlay {
 		(
 			doc.getElementById(
 				`wikicite-${menuName}submenu-separator`,
-			)! as HTMLElement
+			)! as XUL.MenuSeparator
 		).hidden = !showSubmenu;
 		(
-			doc.getElementById(`wikicite-${menuName}submenu`)! as HTMLElement
+			doc.getElementById(`wikicite-${menuName}submenu`)! as XUL.Menu
 		).hidden = !showSubmenu;
 	}
 
