@@ -6,6 +6,7 @@ import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 import { getPrefGlobalName } from "../utils/prefs.js";
+import { ErrorBoundary } from "react-error-boundary";
 
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
@@ -193,13 +194,18 @@ function CitationsBoxContainer(props: {
 	}
 
 	return (
-		<CitationsBox
-			editable={props.editable}
-			sortBy={sortBy}
-			sourceItem={sourceItem}
-			onItemPopup={handleItemPopup}
-			onCitationPopup={handleCitationPopup}
-		/>
+		<ErrorBoundary
+			fallback={<div>Something went wrong</div>}
+			onError={logReactError}
+		>
+			<CitationsBox
+				editable={props.editable}
+				sortBy={sortBy}
+				sourceItem={sourceItem}
+				onItemPopup={handleItemPopup}
+				onCitationPopup={handleCitationPopup}
+			/>
+		</ErrorBoundary>
 	);
 }
 
@@ -207,5 +213,11 @@ CitationsBoxContainer.propTypes = {
 	item: PropTypes.instanceOf(Zotero.Item),
 	editable: PropTypes.bool,
 };
+
+function logReactError(error: Error, info: React.ErrorInfo) {
+	Zotero.debug(`React error: ${error}`);
+	Zotero.logError(error);
+	Zotero.debug(`React error info: ${info.componentStack}`);
+}
 
 export default CitationsBoxContainer;

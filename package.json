@@ -36,11 +36,13 @@
 	},
 	"homepage": "https://github.com/diegodlh/zotero-cita",
 	"dependencies": {
+		"object-hash": "^3.0.0",
 		"openalex-sdk": "^1.1.6",
 		"prop-types": "^15.7.2",
 		"quickstatements-to-wikibase-edit": "^1.2.1",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
+		"react-error-boundary": "^4.1.1",
 		"wikibase-edit": "^7.0.4",
 		"wikibase-sdk": "^10.0.2",
 		"zotero-plugin-toolkit": "^2.3.37"
@@ -49,6 +51,7 @@
 		"@types/language-tags": "^1.0.4",
 		"@types/lodash": "^4.17.9",
 		"@types/node": "^20.10.4",
+		"@types/object-hash": "^3.0.6",
 		"@types/react-dom": "^18.3.0",
 		"eslint": "^8.55.0",
 		"husky": "^9.1.6",

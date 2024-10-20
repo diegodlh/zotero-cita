@@ -7,6 +7,7 @@ import Matcher from "./matcher";
 import OCI from "../oci";
 import Progress from "./progress";
 import { EntityId } from "wikibase-sdk";
+import objectHash = require("object-hash");
 
 /** Class representing a citation */
 class Citation {
@@ -20,6 +21,12 @@ class Citation {
 		supplierName: string;
 		valid: boolean;
 	}[];
+
+	get hash(): string {
+		const json = this.toJSON();
+		const hash = objectHash(json);
+		return hash;
+	}
 
 	/**
 	 * Create a citation.

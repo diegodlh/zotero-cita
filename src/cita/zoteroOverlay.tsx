@@ -1068,6 +1068,7 @@ class ZoteroOverlay {
 		WikiciteChrome.registerXUL(itemMenuID, doc);
 	}
 
+	// FIXME: for all popups, eventListeners don't seem to work after extension reload
 	// Item-wide popup menu to add new citations
 	itemAddMenu(doc: Document, mainWindow: Element) {
 		const ns =

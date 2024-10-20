@@ -5,10 +5,12 @@
 #citations-pane {
 	display: flex;
 }
+
 #citations-box-container {
 	flex-grow: 1;
 	display: flex;
 }
+
 .citations-box {
 	flex-grow: 1;
 	width: 330px;
@@ -29,6 +31,10 @@
 }
 .citations-box .citations-box-count {
 	margin-right: 5px;
+}
+
+.citations-box-list-container .drag-hidden-citation {
+	opacity: 0;
 }
 
 /*.citations-box ul.citations-box-list {
@@ -71,6 +77,9 @@
 	gap: 4px;
 	align-items: flex-start;
 	padding-block: 2px; /* Comfortable style */
+	/* Extend clickable area for hover and drag */
+	margin-left: -20px;
+	padding-left: 20px;
 }
 
 [zoteroUIDensity="comfortable"] .citations-box-list-container .row {
@@ -122,12 +131,11 @@
 	fill: currentColor;
 }
 
-/*.citations-box-list-container
-	.row:is(:hover, :focus-within)
-	toolbarbutton
-	> img {
-	visibility: visible;
-}*/
+.citations-box-list-container toolbarbutton.zotero-clicky-grippy {
+	margin-left: -20px;
+	/* this makes the grippy hang on the left side of the row, but it does not extend the row's clickable area and therefore messes with drag */
+	position: absolute;
+}
 
 .citations-box-list-container
 	.row:not(:hover):not(:focus-within)
