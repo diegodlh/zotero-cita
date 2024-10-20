@@ -849,9 +849,7 @@ class ZoteroOverlay {
 
 	// Item-wide popup menu for importing citations
 	itemImportMenu(doc: Document, mainWindow: Element) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const itemMenu = doc.createElementNS(ns, "menupopup");
+		const itemMenu = doc.createXULElement("menupopup");
 		const itemMenuID = "citations-box-item-menu-import";
 		itemMenu.setAttribute("id", itemMenuID);
 		itemMenu.addEventListener("popupshowing", () =>
@@ -860,7 +858,7 @@ class ZoteroOverlay {
 
 		// Get Crossref citations menu item
 
-		const itemCrossrefGet = doc.createElementNS(ns, "menuitem");
+		const itemCrossrefGet = doc.createXULElement("menuitem");
 		itemCrossrefGet.setAttribute("id", "item-menu-crossref-get");
 		itemCrossrefGet.setAttribute(
 			"label",
@@ -872,7 +870,7 @@ class ZoteroOverlay {
 
 		// Get Semantic citations menu item
 
-		const itemSemanticGet = doc.createElementNS(ns, "menuitem");
+		const itemSemanticGet = doc.createXULElement("menuitem");
 		itemSemanticGet.setAttribute("id", "item-menu-semantic-get");
 		itemSemanticGet.setAttribute(
 			"label",
@@ -887,7 +885,7 @@ class ZoteroOverlay {
 
 		// Get OpenAlex citations menu item
 
-		const itemOpenAlexGet = doc.createElementNS(ns, "menuitem");
+		const itemOpenAlexGet = doc.createXULElement("menuitem");
 		itemOpenAlexGet.setAttribute("id", "item-menu-openalex-get");
 		itemOpenAlexGet.setAttribute(
 			"label",
@@ -899,7 +897,7 @@ class ZoteroOverlay {
 
 		// Get OpenCitations citations menu item
 
-		const itemOpenCitationsGet = doc.createElementNS(ns, "menuitem");
+		const itemOpenCitationsGet = doc.createXULElement("menuitem");
 		itemOpenCitationsGet.setAttribute("id", "item-menu-opencitations-get");
 		itemOpenCitationsGet.setAttribute(
 			"label",
@@ -914,7 +912,7 @@ class ZoteroOverlay {
 
 		// Extract citations menu item
 
-		const itemPdfExtract = doc.createElementNS(ns, "menuitem");
+		const itemPdfExtract = doc.createXULElement("menuitem");
 		itemPdfExtract.setAttribute("id", "item-menu-pdf-extract");
 		itemPdfExtract.setAttribute(
 			"label",
@@ -926,7 +924,7 @@ class ZoteroOverlay {
 
 		// Import citations menu item
 
-		const itemCitationsImport = doc.createElementNS(ns, "menuitem");
+		const itemCitationsImport = doc.createXULElement("menuitem");
 		itemCitationsImport.setAttribute("id", "item-menu-citations-import");
 		itemCitationsImport.setAttribute(
 			"label",
@@ -949,9 +947,7 @@ class ZoteroOverlay {
 
 	// Item-wide popup menu for extra functions
 	itemMoreMenu(doc: Document, mainWindow: Element) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const itemMenu = doc.createElementNS(ns, "menupopup");
+		const itemMenu = doc.createXULElement("menupopup");
 		const itemMenuID = "citations-box-item-menu-more";
 		itemMenu.setAttribute("id", itemMenuID);
 		itemMenu.addEventListener("popupshowing", () =>
@@ -960,7 +956,7 @@ class ZoteroOverlay {
 
 		// Sync with Wikidata menu item
 
-		const itemWikidataSync = doc.createElementNS(ns, "menuitem");
+		const itemWikidataSync = doc.createXULElement("menuitem");
 		itemWikidataSync.setAttribute("id", "item-menu-wikidata-sync");
 		itemWikidataSync.setAttribute(
 			"label",
@@ -972,7 +968,7 @@ class ZoteroOverlay {
 
 		// Fetch QIDs menu item
 
-		const itemFetchCitationQIDs = doc.createElementNS(ns, "menuitem");
+		const itemFetchCitationQIDs = doc.createXULElement("menuitem");
 		itemFetchCitationQIDs.setAttribute(
 			"id",
 			"item-menu-fetch-citation-qids",
@@ -987,7 +983,7 @@ class ZoteroOverlay {
 
 		// Export to file menu item
 
-		const itemFileExport = doc.createElementNS(ns, "menuitem");
+		const itemFileExport = doc.createXULElement("menuitem");
 		itemFileExport.setAttribute("id", "item-menu-file-export");
 		itemFileExport.setAttribute(
 			"label",
@@ -999,7 +995,7 @@ class ZoteroOverlay {
 
 		// Export to CROCI menu item
 
-		const itemCrociExport = doc.createElementNS(ns, "menuitem");
+		const itemCrociExport = doc.createXULElement("menuitem");
 		itemCrociExport.setAttribute("id", "item-menu-croci-export");
 		itemCrociExport.setAttribute(
 			"label",
@@ -1011,14 +1007,14 @@ class ZoteroOverlay {
 
 		// Sort-by submenu
 
-		const menuSort = doc.createElementNS(ns, "menu");
+		const menuSort = doc.createXULElement("menu");
 		menuSort.setAttribute("id", "item-menu-sort-submenu");
 		menuSort.setAttribute(
 			"label",
 			Wikicite.getString("wikicite.item-menu.sort"),
 		);
 
-		const sortPopup = doc.createElementNS(ns, "menupopup");
+		const sortPopup = doc.createXULElement("menupopup");
 		sortPopup.setAttribute("id", "item-menu-sort-submenu-popup");
 
 		menuSort.appendChild(sortPopup);
@@ -1031,7 +1027,7 @@ class ZoteroOverlay {
 		];
 		const sortByValue = prefs.getSortBy();
 		for (const value of sortValues) {
-			const itemSort = doc.createElementNS(ns, "menuitem");
+			const itemSort = doc.createXULElement("menuitem");
 			itemSort.setAttribute("id", "item-menu-sort-" + value);
 			itemSort.setAttribute(
 				"label",
@@ -1047,7 +1043,7 @@ class ZoteroOverlay {
 
 		// Auto-link citations menu item
 
-		const autoLinkCitations = doc.createElementNS(ns, "menuitem");
+		const autoLinkCitations = doc.createXULElement("menuitem");
 		autoLinkCitations.setAttribute("id", "item-menu-autolink-citations");
 		autoLinkCitations.setAttribute(
 			"label",
@@ -1071,9 +1067,7 @@ class ZoteroOverlay {
 	// FIXME: for all popups, eventListeners don't seem to work after extension reload
 	// Item-wide popup menu to add new citations
 	itemAddMenu(doc: Document, mainWindow: Element) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const itemMenu = doc.createElementNS(ns, "menupopup");
+		const itemMenu = doc.createXULElement("menupopup");
 		const itemMenuID = "citations-box-item-menu-add";
 		itemMenu.setAttribute("id", itemMenuID);
 		itemMenu.addEventListener("popupshowing", () =>
@@ -1082,7 +1076,7 @@ class ZoteroOverlay {
 
 		// Add citations by identifier menu item
 
-		const itemIdentifierImport = doc.createElementNS(ns, "menuitem");
+		const itemIdentifierImport = doc.createXULElement("menuitem");
 		itemIdentifierImport.setAttribute("id", "item-menu-identifier-import");
 		itemIdentifierImport.setAttribute(
 			"label",
@@ -1093,7 +1087,7 @@ class ZoteroOverlay {
 		);
 
 		// Add item manually menu item
-		const itemAddManually = doc.createElementNS(ns, "menuitem");
+		const itemAddManually = doc.createXULElement("menuitem");
 		itemAddManually.setAttribute("id", "item-menu-add-manually");
 		itemAddManually.setAttribute(
 			"label",
@@ -1112,16 +1106,14 @@ class ZoteroOverlay {
 
 	// Citation-specific popup menu
 	citationPopupMenu(doc: Document, mainWindow: Element) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const citationMenu = doc.createElementNS(ns, "menupopup");
+		const citationMenu = doc.createXULElement("menupopup");
 		const citationMenuID = "citations-box-citation-menu";
 		citationMenu.setAttribute("id", citationMenuID);
 		citationMenu.addEventListener("popupshowing", () =>
 			this.handleCitationPopupShowing(doc),
 		);
 
-		const citationWikidataSync = doc.createElementNS(ns, "menuitem");
+		const citationWikidataSync = doc.createXULElement("menuitem");
 		citationWikidataSync.setAttribute("id", "citation-menu-wikidata-sync");
 		citationWikidataSync.setAttribute(
 			"label",
@@ -1131,7 +1123,7 @@ class ZoteroOverlay {
 			this._sourceItem!.syncWithWikidata(this._citationIndex),
 		);
 
-		const citationFetchQID = doc.createElementNS(ns, "menuitem");
+		const citationFetchQID = doc.createXULElement("menuitem");
 		citationFetchQID.setAttribute("id", "citation-menu-fetch-qid");
 		citationFetchQID.setAttribute(
 			"label",
@@ -1141,7 +1133,7 @@ class ZoteroOverlay {
 			this._sourceItem!.fetchCitationQIDs(this._citationIndex),
 		);
 
-		const itemFileExport = doc.createElementNS(ns, "menuitem");
+		const itemFileExport = doc.createXULElement("menuitem");
 		itemFileExport.setAttribute("id", "citation-menu-file-export");
 		itemFileExport.setAttribute(
 			"label",
@@ -1151,7 +1143,7 @@ class ZoteroOverlay {
 			this._sourceItem!.exportToFile(this._citationIndex),
 		);
 
-		const itemCrociExport = doc.createElementNS(ns, "menuitem");
+		const itemCrociExport = doc.createXULElement("menuitem");
 		itemCrociExport.setAttribute("id", "citation-menu-croci-export");
 		itemCrociExport.setAttribute(
 			"label",
@@ -1164,19 +1156,19 @@ class ZoteroOverlay {
 		// Fixme: but OCI has two more suppliers: Dryad and CROCI
 		// Maybe I should have all of them, and show only the available ones
 		// for any one citation?
-		const ociMenu = doc.createElementNS(ns, "menu");
+		const ociMenu = doc.createXULElement("menu");
 		ociMenu.setAttribute("id", "citation-menu-oci-submenu");
 		ociMenu.setAttribute(
 			"label",
 			Wikicite.getString("wikicite.citation-menu.oci"),
 		);
 
-		const ociPopup = doc.createElementNS(ns, "menupopup");
+		const ociPopup = doc.createXULElement("menupopup");
 		ociPopup.setAttribute("id", "citation-menu-oci-submenu-popup");
 		ociMenu.appendChild(ociPopup);
 
 		for (const supplier of ["crossref", "occ", "wikidata"]) {
-			const ociItem = doc.createElementNS(ns, "menuitem");
+			const ociItem = doc.createXULElement("menuitem");
 			ociItem.setAttribute("id", "citation-menu-oci-" + supplier);
 			ociItem.setAttribute(
 				"label",
@@ -1201,9 +1193,7 @@ class ZoteroOverlay {
 	}
 
 	pidRowPopupMenu(doc: Document, mainWindow: Element) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		const pidRowMenu = doc.createElementNS(ns, "menupopup");
+		const pidRowMenu = doc.createXULElement("menupopup");
 		const pidRowMenuID = "pid-row-add-menu";
 		pidRowMenu.setAttribute("id", pidRowMenuID);
 		pidRowMenu.addEventListener("popupshowing", () =>
@@ -1366,8 +1356,6 @@ class ZoteroOverlay {
 	}
 
 	handlePidRowPopupShowing(doc: Document) {
-		const ns =
-			"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 		const sourceItem = this._sourceItem;
 
 		const menu = doc.getElementById("pid-row-add-menu") as XUL.MenuPopup;
@@ -1382,7 +1370,7 @@ class ZoteroOverlay {
 					.getElementById(`pid-row-${pidType}`)
 					?.classList.contains("hidden")
 			) {
-				const pidRowMenuAdd = doc.createElementNS(ns, "menuitem");
+				const pidRowMenuAdd = doc.createXULElement("menuitem");
 				pidRowMenuAdd.setAttribute("id", `pid-row-add-${pidType}`);
 				pidRowMenuAdd.setAttribute("label", pidType);
 				pidRowMenuAdd.addEventListener("command", (event: Event) => {
