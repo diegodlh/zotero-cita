@@ -13,7 +13,7 @@ export default defineConfig({
 	name: pkg.config.addonName,
 	id: pkg.config.addonID,
 	namespace: pkg.config.addonRef,
-	updateURL: `https://github.com/{{owner}}/{{repo}}/releases/download/update/${
+	updateURL: `https://github.com/{{owner}}/{{repo}}/releases/download/release/${
 		pkg.version.includes("-") ? "update-beta.json" : "update.json"
 	}`,
 	xpiDownloadLink:
@@ -155,11 +155,11 @@ export default defineConfig({
 		//   },
 		// },
 	},
-	// release: {
-	//   bumpp: {
-	//     execute: "npm run build",
-	//   },
-	// },
+	release: {
+		bumpp: {
+			execute: "npm run build",
+		},
+	},
 
 	// If you need to see a more detailed build log, uncomment the following line:
 	// logLevel: "trace",

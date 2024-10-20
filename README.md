@@ -67,9 +67,20 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
 
 ## Publishing
 
-1. Decide a new version number vX.Y.Z using [Semantic Versioning](https://semver.org/), and depending on whether it's a beta release or not.
-2. `npm run release` and choose this version number and the version will be automatically bumped in `package.json` and the release tagged. This will trigger github actions to build the code and make a new release at this version
-3. Until integration tests have been implemented (#30), install the new version on a fresh Zotero profile and run some manual tests.
+Until integration tests have been implemented (#30), install the new version on a fresh Zotero profile and run some
+manual tests before publishing a new release.
+
+1. Run `npm run release`. This will run `zotero-plugin release` (see https://github.com/windingwind/zotero-plugin-template/tree/main#repo-content-pjax-container):
+1. You will be prompted for the new version number.
+1. The version will be bumped locally.
+1. A new commit will be created and tagged with the version number.
+1. Both commit and tag will be pushed to GitHub.
+1. On Github, `npm run release` will be run again by GitHub actions. This time version won't be bumped again and no
+   new commits or tags will be created. Instead:
+1. `npm run build` will be run
+1. A new release will be published, including the xpi file built as asset.
+1. A separate "release" release will be created or updated, which includes the `update.json` and `update-beta.json`
+   update manifests as assets.
 
 ## Acknowledgements
 
