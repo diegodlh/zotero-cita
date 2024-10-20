@@ -615,6 +615,7 @@ class ZoteroOverlay {
 		const mainWindow = doc.getElementById("main-window");
 		this.itemAddMenu(doc, mainWindow!);
 		this.itemImportMenu(doc, mainWindow!);
+		this.itemExportMenu(doc, mainWindow!);
 		this.itemMoreMenu(doc, mainWindow!);
 		this.citationPopupMenu(doc, mainWindow!);
 		this.pidRowPopupMenu(doc, mainWindow!);
@@ -661,6 +662,9 @@ class ZoteroOverlay {
 		const sectionImportMenu = document.getElementById(
 			"citations-box-item-menu-import",
 		);
+		const sectionExportMenu = document.getElementById(
+			"citations-box-item-menu-export",
+		);
 		const sectionMoreMenu = document.getElementById(
 			"citations-box-item-menu-more",
 		);
@@ -696,6 +700,19 @@ class ZoteroOverlay {
 					icon: `chrome://${config.addonRef}/content/skin/default/import.svg`,
 					onClick: (props) => {
 						(sectionImportMenu as any).openPopup(
+							(props.event as any).detail.button,
+							"after_end",
+						);
+					},
+				},
+				{
+					type: "export",
+					l10nID: getLocaleID(
+						"wikicite_citations-pane_export-button_tooltiptext",
+					),
+					icon: "chrome://zotero/skin/16/universal/export.svg",
+					onClick: (props) => {
+						(sectionExportMenu as any).openPopup(
 							(props.event as any).detail.button,
 							"after_end",
 						);
@@ -945,6 +962,46 @@ class ZoteroOverlay {
 		WikiciteChrome.registerXUL(itemMenuID, doc);
 	}
 
+	// Item-wide popup menu for exporting citations
+	itemExportMenu(doc: Document, mainWindow: Element) {
+		const itemMenu = doc.createXULElement("menupopup");
+		const itemMenuID = "citations-box-item-menu-export";
+		itemMenu.setAttribute("id", itemMenuID);
+		itemMenu.addEventListener("popupshowing", () =>
+			this.handleItemPopupShowing(doc),
+		);
+
+		// Export to file menu item
+
+		const itemFileExport = doc.createXULElement("menuitem");
+		itemFileExport.setAttribute("id", "item-menu-file-export");
+		itemFileExport.setAttribute(
+			"label",
+			Wikicite.getString("wikicite.item-menu.export-file"),
+		);
+		itemFileExport.addEventListener("command", () =>
+			this._sourceItem!.exportToFile(),
+		);
+
+		// Export to CROCI menu item
+
+		const itemCrociExport = doc.createXULElement("menuitem");
+		itemCrociExport.setAttribute("id", "item-menu-croci-export");
+		itemCrociExport.setAttribute(
+			"label",
+			Wikicite.getString("wikicite.item-menu.export-croci"),
+		);
+		itemCrociExport.addEventListener("command", () =>
+			this._sourceItem!.exportToCroci(),
+		);
+
+		itemMenu.appendChild(itemFileExport);
+		itemMenu.appendChild(itemCrociExport);
+
+		mainWindow.appendChild(itemMenu);
+		WikiciteChrome.registerXUL(itemMenuID, doc);
+	}
+
 	// Item-wide popup menu for extra functions
 	itemMoreMenu(doc: Document, mainWindow: Element) {
 		const itemMenu = doc.createXULElement("menupopup");
@@ -979,30 +1036,6 @@ class ZoteroOverlay {
 		);
 		itemFetchCitationQIDs.addEventListener("command", () =>
 			this._sourceItem!.fetchCitationQIDs(),
-		);
-
-		// Export to file menu item
-
-		const itemFileExport = doc.createXULElement("menuitem");
-		itemFileExport.setAttribute("id", "item-menu-file-export");
-		itemFileExport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.export-file"),
-		);
-		itemFileExport.addEventListener("command", () =>
-			this._sourceItem!.exportToFile(),
-		);
-
-		// Export to CROCI menu item
-
-		const itemCrociExport = doc.createXULElement("menuitem");
-		itemCrociExport.setAttribute("id", "item-menu-croci-export");
-		itemCrociExport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.export-croci"),
-		);
-		itemCrociExport.addEventListener("command", () =>
-			this._sourceItem!.exportToCroci(),
 		);
 
 		// Sort-by submenu
@@ -1055,8 +1088,6 @@ class ZoteroOverlay {
 
 		itemMenu.appendChild(itemWikidataSync);
 		itemMenu.appendChild(itemFetchCitationQIDs);
-		itemMenu.appendChild(itemFileExport);
-		itemMenu.appendChild(itemCrociExport);
 		itemMenu.appendChild(menuSort);
 		itemMenu.appendChild(autoLinkCitations);
 
