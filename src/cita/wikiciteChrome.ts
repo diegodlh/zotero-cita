@@ -66,6 +66,46 @@ class WikiciteChrome {
 			}
 		}
 	};
+
+	static createXULMenuPopup = function (
+		doc: Document,
+		menuPopupID: string,
+		menuPopupAttributes?: { [id: string]: string },
+		menuPopupListeners?: { [id: string]: (event: Event) => any },
+		menuItems?: {
+			attributes?: { [id: string]: string };
+			listeners?: { [id: string]: (event: Event) => any };
+		}[],
+	) {
+		const menuPopup = doc.createXULElement("menupopup");
+		menuPopup.setAttribute("id", menuPopupID);
+		for (const attribute in menuPopupAttributes) {
+			menuPopup.setAttribute(attribute, menuPopupAttributes[attribute]);
+		}
+		for (const listener in menuPopupListeners) {
+			menuPopup.addEventListener(listener, menuPopupListeners[listener]);
+		}
+		if (menuItems) {
+			for (const menuItemDetails of menuItems) {
+				const menuItem = doc.createXULElement("menuitem");
+				for (const attribute in menuItemDetails["attributes"]) {
+					menuItem.setAttribute(
+						attribute,
+						menuItemDetails["attributes"][attribute],
+					);
+				}
+				for (const listener in menuItemDetails["listeners"]) {
+					menuItem.addEventListener(
+						listener,
+						menuItemDetails["listeners"][listener],
+					);
+				}
+				menuPopup.appendChild(menuItem);
+			}
+		}
+		WikiciteChrome.registerXUL(menuPopupID, doc);
+		return menuPopup;
+	};
 }
 
 export default WikiciteChrome;

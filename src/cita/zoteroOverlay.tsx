@@ -607,7 +607,7 @@ class ZoteroOverlay {
 		};
 		ztoolkit.PreferencePane.register(prefOptions);
 
-		// // add wikicite submenu to item and collection menus
+		// add wikicite submenu to item and collection menus
 		this.zoteroPopup("item", doc);
 		this.zoteroPopup("collection", doc);
 
@@ -864,178 +864,225 @@ class ZoteroOverlay {
 		// However, as props.item will not have changed, component will not update.
 	}
 
-	// Item-wide popup menu for importing citations
+	// FIXME: for all popups, eventListeners don't seem to work after extension reload
+	/** Item-wide popup menu to add new citations */
+	itemAddMenu(doc: Document, mainWindow: Element) {
+		const itemMenu = WikiciteChrome.createXULMenuPopup(
+			doc,
+			"citations-box-item-menu-add",
+			{},
+			{
+				popupshowing: () => this.handleItemPopupShowing(doc),
+			},
+			[
+				// Add citations by identifier menu item
+				{
+					attributes: {
+						id: "item-menu-identifier-import",
+						label: Wikicite.getString(
+							"wikicite.item-menu.import-identifier",
+						),
+					},
+					listeners: {
+						command: () =>
+							this._sourceItem!.addCitationsByIdentifier(),
+					},
+				},
+				// Add item manually menu item
+				{
+					attributes: {
+						id: "item-menu-add-manually",
+						label: Wikicite.getString(
+							"wikicite.item-menu.add-manually",
+						),
+					},
+					listeners: {
+						command: () => this.handleCitationAdd(),
+					},
+				},
+			],
+		);
+
+		mainWindow.appendChild(itemMenu);
+	}
+
+	/** Item-wide popup menu for importing citations */
 	itemImportMenu(doc: Document, mainWindow: Element) {
-		const itemMenu = doc.createXULElement("menupopup");
-		const itemMenuID = "citations-box-item-menu-import";
-		itemMenu.setAttribute("id", itemMenuID);
-		itemMenu.addEventListener("popupshowing", () =>
-			this.handleItemPopupShowing(doc),
+		const itemMenu = WikiciteChrome.createXULMenuPopup(
+			doc,
+			"citations-box-item-menu-import",
+			{},
+			{
+				popupshowing: () => this.handleItemPopupShowing(doc),
+			},
+			[
+				// Get Crossref citations menu item
+				{
+					attributes: {
+						id: "item-menu-crossref-get",
+						label: Wikicite.formatString(
+							"wikicite.item-menu.get-indexer",
+							"Crossref",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.getFromCrossref(),
+					},
+				},
+				// Get Semantic citations menu item
+				{
+					attributes: {
+						id: "item-menu-semantic-get",
+						label: Wikicite.formatString(
+							"wikicite.item-menu.get-indexer",
+							"Semantic Scholar",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.getFromSemantic(),
+					},
+				},
+				// Get OpenAlex citations menu item
+				{
+					attributes: {
+						id: "item-menu-openalex-get",
+						label: Wikicite.formatString(
+							"wikicite.item-menu.get-indexer",
+							"OpenAlex",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.getFromOpenAlex(),
+					},
+				},
+				// Get OpenCitations citations menu item
+				{
+					attributes: {
+						id: "item-menu-opencitations-get",
+						label: Wikicite.formatString(
+							"wikicite.item-menu.get-indexer",
+							"OpenCitations",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.getFromOpenCitations(),
+					},
+				},
+				// Get OpenCitations citations menu item
+				{
+					attributes: {
+						id: "item-menu-pdf-extract",
+						label: Wikicite.getString("wikicite.item-menu.get-pdf"),
+					},
+					listeners: {
+						command: () => this._sourceItem!.getFromPDF(),
+					},
+				},
+				// Import citations menu item
+				{
+					attributes: {
+						id: "item-menu-citations-import",
+						label: Wikicite.getString(
+							"wikicite.item-menu.import-citations",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.importCitations(),
+					},
+				},
+			],
 		);
-
-		// Get Crossref citations menu item
-
-		const itemCrossrefGet = doc.createXULElement("menuitem");
-		itemCrossrefGet.setAttribute("id", "item-menu-crossref-get");
-		itemCrossrefGet.setAttribute(
-			"label",
-			Wikicite.formatString("wikicite.item-menu.get-indexer", "Crossref"),
-		);
-		itemCrossrefGet.addEventListener("command", () =>
-			this._sourceItem!.getFromCrossref(),
-		);
-
-		// Get Semantic citations menu item
-
-		const itemSemanticGet = doc.createXULElement("menuitem");
-		itemSemanticGet.setAttribute("id", "item-menu-semantic-get");
-		itemSemanticGet.setAttribute(
-			"label",
-			Wikicite.formatString(
-				"wikicite.item-menu.get-indexer",
-				"Semantic Scholar",
-			),
-		);
-		itemSemanticGet.addEventListener("command", () =>
-			this._sourceItem!.getFromSemantic(),
-		);
-
-		// Get OpenAlex citations menu item
-
-		const itemOpenAlexGet = doc.createXULElement("menuitem");
-		itemOpenAlexGet.setAttribute("id", "item-menu-openalex-get");
-		itemOpenAlexGet.setAttribute(
-			"label",
-			Wikicite.formatString("wikicite.item-menu.get-indexer", "OpenAlex"),
-		);
-		itemOpenAlexGet.addEventListener("command", () =>
-			this._sourceItem!.getFromOpenAlex(),
-		);
-
-		// Get OpenCitations citations menu item
-
-		const itemOpenCitationsGet = doc.createXULElement("menuitem");
-		itemOpenCitationsGet.setAttribute("id", "item-menu-opencitations-get");
-		itemOpenCitationsGet.setAttribute(
-			"label",
-			Wikicite.formatString(
-				"wikicite.item-menu.get-indexer",
-				"OpenCitations",
-			),
-		);
-		itemOpenCitationsGet.addEventListener("command", () =>
-			this._sourceItem!.getFromOpenCitations(),
-		);
-
-		// Extract citations menu item
-
-		const itemPdfExtract = doc.createXULElement("menuitem");
-		itemPdfExtract.setAttribute("id", "item-menu-pdf-extract");
-		itemPdfExtract.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.get-pdf"),
-		);
-		itemPdfExtract.addEventListener("command", () =>
-			this._sourceItem!.getFromPDF(),
-		);
-
-		// Import citations menu item
-
-		const itemCitationsImport = doc.createXULElement("menuitem");
-		itemCitationsImport.setAttribute("id", "item-menu-citations-import");
-		itemCitationsImport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.import-citations"),
-		);
-		itemCitationsImport.addEventListener("command", () =>
-			this._sourceItem!.importCitations(),
-		);
-
-		itemMenu.appendChild(itemCrossrefGet);
-		itemMenu.appendChild(itemSemanticGet);
-		itemMenu.appendChild(itemOpenAlexGet);
-		itemMenu.appendChild(itemOpenCitationsGet);
-		itemMenu.appendChild(itemPdfExtract);
-		itemMenu.appendChild(itemCitationsImport);
 
 		mainWindow.appendChild(itemMenu);
-		WikiciteChrome.registerXUL(itemMenuID, doc);
 	}
 
-	// Item-wide popup menu for exporting citations
+	/** Item-wide popup menu for exporting citations */
 	itemExportMenu(doc: Document, mainWindow: Element) {
-		const itemMenu = doc.createXULElement("menupopup");
-		const itemMenuID = "citations-box-item-menu-export";
-		itemMenu.setAttribute("id", itemMenuID);
-		itemMenu.addEventListener("popupshowing", () =>
-			this.handleItemPopupShowing(doc),
+		const itemMenu = WikiciteChrome.createXULMenuPopup(
+			doc,
+			"citations-box-item-menu-export",
+			{},
+			{
+				popupshowing: () => this.handleItemPopupShowing(doc),
+			},
+			[
+				// Export to file menu item
+				{
+					attributes: {
+						id: "item-menu-file-export",
+						label: Wikicite.getString(
+							"wikicite.item-menu.export-file",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.exportToFile(),
+					},
+				},
+				// Export to CROCI menu item
+				{
+					attributes: {
+						id: "item-menu-croci-export",
+						label: Wikicite.getString(
+							"wikicite.item-menu.export-croci",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.exportToCroci(),
+					},
+				},
+			],
 		);
-
-		// Export to file menu item
-
-		const itemFileExport = doc.createXULElement("menuitem");
-		itemFileExport.setAttribute("id", "item-menu-file-export");
-		itemFileExport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.export-file"),
-		);
-		itemFileExport.addEventListener("command", () =>
-			this._sourceItem!.exportToFile(),
-		);
-
-		// Export to CROCI menu item
-
-		const itemCrociExport = doc.createXULElement("menuitem");
-		itemCrociExport.setAttribute("id", "item-menu-croci-export");
-		itemCrociExport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.export-croci"),
-		);
-		itemCrociExport.addEventListener("command", () =>
-			this._sourceItem!.exportToCroci(),
-		);
-
-		itemMenu.appendChild(itemFileExport);
-		itemMenu.appendChild(itemCrociExport);
 
 		mainWindow.appendChild(itemMenu);
-		WikiciteChrome.registerXUL(itemMenuID, doc);
 	}
 
-	// Item-wide popup menu for extra functions
+	/** Item-wide popup menu for extra functions */
 	itemMoreMenu(doc: Document, mainWindow: Element) {
-		const itemMenu = doc.createXULElement("menupopup");
-		const itemMenuID = "citations-box-item-menu-more";
-		itemMenu.setAttribute("id", itemMenuID);
-		itemMenu.addEventListener("popupshowing", () =>
-			this.handleItemPopupShowing(doc),
-		);
-
-		// Sync with Wikidata menu item
-
-		const itemWikidataSync = doc.createXULElement("menuitem");
-		itemWikidataSync.setAttribute("id", "item-menu-wikidata-sync");
-		itemWikidataSync.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.sync-wikidata"),
-		);
-		itemWikidataSync.addEventListener("command", () =>
-			this._sourceItem!.syncWithWikidata(),
-		);
-
-		// Fetch QIDs menu item
-
-		const itemFetchCitationQIDs = doc.createXULElement("menuitem");
-		itemFetchCitationQIDs.setAttribute(
-			"id",
-			"item-menu-fetch-citation-qids",
-		);
-		itemFetchCitationQIDs.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.fetch-citation-qids"),
-		);
-		itemFetchCitationQIDs.addEventListener("command", () =>
-			this._sourceItem!.fetchCitationQIDs(),
+		const itemMenu = WikiciteChrome.createXULMenuPopup(
+			doc,
+			"citations-box-item-menu-more",
+			{},
+			{
+				popupshowing: () => this.handleItemPopupShowing(doc),
+			},
+			[
+				// Sync with Wikidata menu item
+				{
+					attributes: {
+						id: "item-menu-wikidata-sync",
+						label: Wikicite.getString(
+							"wikicite.item-menu.sync-wikidata",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.syncWithWikidata(),
+					},
+				},
+				// Fetch QIDs menu item
+				{
+					attributes: {
+						id: "item-menu-fetch-citation-qids",
+						label: Wikicite.getString(
+							"wikicite.item-menu.fetch-citation-qids",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.fetchCitationQIDs(),
+					},
+				},
+				// Auto-link citations menu item
+				{
+					attributes: {
+						id: "item-menu-autolink-citations",
+						label: Wikicite.getString(
+							"wikicite.item-menu.autolink-citations",
+						),
+					},
+					listeners: {
+						command: () => this._sourceItem!.autoLinkCitations(),
+					},
+				},
+			],
 		);
 
 		// Sort-by submenu
@@ -1074,114 +1121,79 @@ class ZoteroOverlay {
 			sortPopup.appendChild(itemSort);
 		}
 
-		// Auto-link citations menu item
-
-		const autoLinkCitations = doc.createXULElement("menuitem");
-		autoLinkCitations.setAttribute("id", "item-menu-autolink-citations");
-		autoLinkCitations.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.autolink-citations"),
-		);
-		autoLinkCitations.addEventListener("command", () =>
-			this._sourceItem!.autoLinkCitations(),
-		);
-
-		itemMenu.appendChild(itemWikidataSync);
-		itemMenu.appendChild(itemFetchCitationQIDs);
-		itemMenu.appendChild(menuSort);
-		itemMenu.appendChild(autoLinkCitations);
-
+		itemMenu.insertBefore(menuSort, itemMenu.children[2]);
 		mainWindow.appendChild(itemMenu);
-		WikiciteChrome.registerXUL(itemMenuID, doc);
 	}
 
-	// FIXME: for all popups, eventListeners don't seem to work after extension reload
-	// Item-wide popup menu to add new citations
-	itemAddMenu(doc: Document, mainWindow: Element) {
-		const itemMenu = doc.createXULElement("menupopup");
-		const itemMenuID = "citations-box-item-menu-add";
-		itemMenu.setAttribute("id", itemMenuID);
-		itemMenu.addEventListener("popupshowing", () =>
-			this.handleItemPopupShowing(doc),
-		);
-
-		// Add citations by identifier menu item
-
-		const itemIdentifierImport = doc.createXULElement("menuitem");
-		itemIdentifierImport.setAttribute("id", "item-menu-identifier-import");
-		itemIdentifierImport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.import-identifier"),
-		);
-		itemIdentifierImport.addEventListener("command", () =>
-			this._sourceItem!.addCitationsByIdentifier(),
-		);
-
-		// Add item manually menu item
-		const itemAddManually = doc.createXULElement("menuitem");
-		itemAddManually.setAttribute("id", "item-menu-add-manually");
-		itemAddManually.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.item-menu.add-manually"),
-		);
-		itemAddManually.addEventListener("command", () =>
-			this.handleCitationAdd(),
-		);
-
-		itemMenu.appendChild(itemIdentifierImport);
-		itemMenu.appendChild(itemAddManually);
-
-		mainWindow.appendChild(itemMenu);
-		WikiciteChrome.registerXUL(itemMenuID, doc);
-	}
-
-	// Citation-specific popup menu
+	/** Citation-specific popup menu */
 	citationPopupMenu(doc: Document, mainWindow: Element) {
-		const citationMenu = doc.createXULElement("menupopup");
-		const citationMenuID = "citations-box-citation-menu";
-		citationMenu.setAttribute("id", citationMenuID);
-		citationMenu.addEventListener("popupshowing", () =>
-			this.handleCitationPopupShowing(doc),
-		);
-
-		const citationWikidataSync = doc.createXULElement("menuitem");
-		citationWikidataSync.setAttribute("id", "citation-menu-wikidata-sync");
-		citationWikidataSync.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.citation-menu.sync-wikidata"),
-		);
-		citationWikidataSync.addEventListener("command", () =>
-			this._sourceItem!.syncWithWikidata(this._citationIndex),
-		);
-
-		const citationFetchQID = doc.createXULElement("menuitem");
-		citationFetchQID.setAttribute("id", "citation-menu-fetch-qid");
-		citationFetchQID.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.citation-menu.fetch-qid"),
-		);
-		citationFetchQID.addEventListener("command", () =>
-			this._sourceItem!.fetchCitationQIDs(this._citationIndex),
-		);
-
-		const itemFileExport = doc.createXULElement("menuitem");
-		itemFileExport.setAttribute("id", "citation-menu-file-export");
-		itemFileExport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.citation-menu.export-file"),
-		);
-		itemFileExport.addEventListener("command", () =>
-			this._sourceItem!.exportToFile(this._citationIndex),
-		);
-
-		const itemCrociExport = doc.createXULElement("menuitem");
-		itemCrociExport.setAttribute("id", "citation-menu-croci-export");
-		itemCrociExport.setAttribute(
-			"label",
-			Wikicite.getString("wikicite.citation-menu.export-croci"),
-		);
-		itemCrociExport.addEventListener("command", () =>
-			this._sourceItem!.exportToCroci(this._citationIndex),
+		const citationMenu = WikiciteChrome.createXULMenuPopup(
+			doc,
+			"citations-box-citation-menu",
+			{},
+			{
+				popupshowing: () => this.handleCitationPopupShowing(doc),
+			},
+			[
+				// Sync citations with Wikidata
+				{
+					attributes: {
+						id: "citation-menu-wikidata-sync",
+						label: Wikicite.getString(
+							"wikicite.citation-menu.sync-wikidata",
+						),
+					},
+					listeners: {
+						command: () =>
+							this._sourceItem!.syncWithWikidata(
+								this._citationIndex,
+							),
+					},
+				},
+				// Fetch QIDs for citations
+				{
+					attributes: {
+						id: "citation-menu-fetch-qid",
+						label: Wikicite.getString(
+							"wikicite.citation-menu.fetch-qid",
+						),
+					},
+					listeners: {
+						command: () =>
+							this._sourceItem!.fetchCitationQIDs(
+								this._citationIndex,
+							),
+					},
+				},
+				// Export to file
+				{
+					attributes: {
+						id: "citation-menu-file-export",
+						label: Wikicite.getString(
+							"wikicite.citation-menu.export-file",
+						),
+					},
+					listeners: {
+						command: () =>
+							this._sourceItem!.exportToFile(this._citationIndex),
+					},
+				},
+				// Export to Croci
+				{
+					attributes: {
+						id: "citation-menu-croci-export",
+						label: Wikicite.getString(
+							"wikicite.citation-menu.export-croci",
+						),
+					},
+					listeners: {
+						command: () =>
+							this._sourceItem!.exportToCroci(
+								this._citationIndex,
+							),
+					},
+				},
+			],
 		);
 
 		// Fixme: but OCI has two more suppliers: Dryad and CROCI
@@ -1212,75 +1224,61 @@ class ZoteroOverlay {
 			);
 			ociPopup.appendChild(ociItem);
 		}
-
-		citationMenu.appendChild(citationWikidataSync);
-		citationMenu.appendChild(citationFetchQID);
-		citationMenu.appendChild(itemFileExport);
-		citationMenu.appendChild(itemCrociExport);
 		citationMenu.appendChild(ociMenu);
 
 		mainWindow.appendChild(citationMenu);
-		WikiciteChrome.registerXUL(citationMenuID, doc);
 	}
 
+	/** Popup meu for adding new PID rows */
 	pidRowPopupMenu(doc: Document, mainWindow: Element) {
-		const pidRowMenu = doc.createXULElement("menupopup");
-		const pidRowMenuID = "pid-row-add-menu";
-		pidRowMenu.setAttribute("id", pidRowMenuID);
-		pidRowMenu.addEventListener("popupshowing", () =>
-			this.handlePidRowPopupShowing(doc),
+		const pidRowMenu = WikiciteChrome.createXULMenuPopup(
+			doc,
+			"pid-row-add-menu",
+			{},
+			{
+				popupshowing: () => this.handlePidRowPopupShowing(doc),
+			},
+			ItemWrapper.allTypesToShow.map((pidType) => {
+				return {
+					attributes: {
+						id: `pid-row-add-${pidType}`,
+						label: pidType,
+					},
+					listeners: {
+						command: (event: Event) => {
+							event.preventDefault();
+							document
+								.getElementById(`pid-row-${pidType}`)!
+								.classList.remove("hidden");
+							(
+								document.getElementById(
+									`pid-row-add-${pidType}`,
+								) as XUL.MenuItem
+							).style.display = "none";
+							if (
+								Array.from(
+									document.getElementById("pid-row-add-menu")!
+										.children!,
+								).every(
+									(menuItem) =>
+										(menuItem as XUL.MenuItem).style
+											.display == "none",
+								)
+							) {
+								(
+									document.getElementById(
+										"pid-row-add-btn",
+									) as HTMLDivElement
+								).hidden = true;
+							}
+						},
+					},
+				};
+			}),
 		);
 
 		mainWindow.appendChild(pidRowMenu);
-		WikiciteChrome.registerXUL(pidRowMenuID, doc);
 	}
-
-	// refreshCitationsPane (document: Document, target: any) {
-	//     let item: any, zoteroViewTabbox: HTMLSelectElement, editPaneTabs: HTMLElement;
-	//     // different ways of getting the selected item if we're in the library or PDF reader
-	//     const selectedTab = Zotero_Tabs._tabs[Zotero_Tabs.selectedIndex];
-	//     if (selectedTab.type == "library") {
-	//         const selectedItems = ZoteroPane.getSelectedItems();
-	//         if (selectedItems.length == 1) {
-	//             item = selectedItems[0];
-	//         }
-	//         zoteroViewTabbox = document.getElementById('zotero-view-tabbox') as HTMLSelectElement; // chose this type for compatibility with .selectedIndex below
-	//         editPaneTabs = document.getElementById('zotero-editpane-tabs');
-	//     }
-	//     else if (selectedTab.type == "reader") {
-	//         item = Zotero.Items.get(selectedTab.data.itemID).parentItem;
-	//         zoteroViewTabbox = document.querySelector(`#${selectedTab.id}-context .zotero-view-tabbox`);
-	//         editPaneTabs = document.querySelector(`#${selectedTab.id}-context .zotero-editpane-tabs`);
-	//     }
-
-	//     if (item && item.isRegularItem() && !item.isFeedItem) {
-	//         const citationsTabIndex = Array.from(editPaneTabs.children).findIndex(child => child.id === 'zotero-editpane-citations-tab');
-	//         if (zoteroViewTabbox.selectedIndex === citationsTabIndex) {
-	//             // fix: runs twice when tab is changed to Citations
-	//             debug(`Refreshing citations pane... (${target.id})`);
-	//             const t0 = performance.now();
-	//             ReactDOM.render(
-	//                 <CitationsBoxContainer
-	//                     //Having the key change, makes the CitationsBoxContainer
-	//                     //component unmount when the item selected changes
-	//                     key={"citationsBox-" + item.id}
-	//                     item={item}
-	//                     editable={ZoteroPane.collectionsView.editable}
-	//                 // fix: had to comment out for TS
-	//                 // onSourceItem={this.handleSourceItem}
-	//                 // citationIndexRef={this._citationIndex}
-	//                 // In principle I don't need a ref; I may have to use it if I need to force blur
-	//                 // ref={_citationsBox}
-	//                 // onResetSelection={focusItemsList}
-	//                 />,
-	//                 zoteroViewTabbox.querySelector('#citations-box-container'), // only the active one appears
-	//                 () => this.updateCitationsBoxSize(document)
-	//             );
-	//             const t1 = performance.now();
-	//             debug(`Rendering CitationsBoxContainer took ${t1 - t0}ms.`);
-	//         }
-	//     }
-	// },
 
 	// Fixme: make zoteroOverlay a class and this a getter/setter property
 	setSourceItem(sourceItem: SourceItemWrapper) {
@@ -1387,45 +1385,27 @@ class ZoteroOverlay {
 	}
 
 	handlePidRowPopupShowing(doc: Document) {
-		const sourceItem = this._sourceItem;
+		const sourceItem = this._sourceItem!;
+		const sourceItemPIDTypes = sourceItem.getPIDTypes();
 
-		const menu = doc.getElementById("pid-row-add-menu") as XUL.MenuPopup;
-		while (menu.childNodes.length > 0) {
-			menu.removeChild(menu.childNodes[0]);
-		}
-
-		sourceItem?.getPIDTypes().forEach((pidType) => {
-			if (
-				sourceItem.getPID(pidType) == null &&
+		ItemWrapper.allTypesToShow.forEach((pidType) => {
+			// if item supports PID, but it is currently hidden, show menu item to add it
+			(
+				doc.getElementById(`pid-row-add-${pidType}`) as XUL.MenuItem
+			).style.display =
+				sourceItemPIDTypes.includes(pidType) &&
 				document
 					.getElementById(`pid-row-${pidType}`)
 					?.classList.contains("hidden")
-			) {
-				const pidRowMenuAdd = doc.createXULElement("menuitem");
-				pidRowMenuAdd.setAttribute("id", `pid-row-add-${pidType}`);
-				pidRowMenuAdd.setAttribute("label", pidType);
-				pidRowMenuAdd.addEventListener("command", (event: Event) => {
-					event.preventDefault();
-					document
-						.getElementById(`pid-row-${pidType}`)!
-						.classList.remove("hidden");
-					if (menu.childNodes.length == 1) {
-						(
-							document.getElementById(
-								"pid-row-add-btn",
-							) as HTMLDivElement
-						).hidden = true;
-					}
-				});
-				menu.appendChild(pidRowMenuAdd);
-			}
+					? "block"
+					: "none";
 		});
 	}
 
 	// /******************************************/
 	// // Item menu functions
 	// /******************************************/
-	// // Create XUL for Zotero menu elements
+	/** Create XUL for Zotero menu elements */
 	zoteroPopup(menuName: MenuSelectionType, doc: Document) {
 		// Wikicite submenu
 		ztoolkit.Menu.register(menuName, {
