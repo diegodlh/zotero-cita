@@ -150,12 +150,11 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows: { itemID: number; value: string }[] =
-			await Zotero.DB.queryAsync(sql, [
-				this._libraryID,
-				Zotero.ItemTypes.getID("book"),
-				Zotero.ItemFields.getID("ISBN"),
-			]);
+		const rows = (await Zotero.DB.queryAsync(sql, [
+			this._libraryID,
+			Zotero.ItemTypes.getID("book"),
+			Zotero.ItemFields.getID("ISBN"),
+		]))! as { itemID: number; value: string }[];
 		const isbnCache: { [itemID: number]: string } = {};
 		const isbnMap: { [isbn: string]: number[] } = {};
 		for (const row of rows) {
@@ -179,12 +178,11 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows: { itemID: number; value: string }[] =
-			await Zotero.DB.queryAsync(sql, [
-				this._libraryID,
-				Zotero.ItemFields.getID("DOI"),
-				"10.%",
-			]);
+		const rows = (await Zotero.DB.queryAsync(sql, [
+			this._libraryID,
+			Zotero.ItemFields.getID("DOI"),
+			"10.%",
+		]))! as { itemID: number; value: string }[];
 		const doiCache: { [itemID: number]: string } = {};
 		const doiMap: { [doi: string]: number[] } = {};
 		for (const row of rows) {
@@ -211,11 +209,10 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows: { itemID: number; value: string }[] =
-			await Zotero.DB.queryAsync(sql, [
-				this._libraryID,
-				Zotero.ItemFields.getID("extra"),
-			]);
+		const rows = (await Zotero.DB.queryAsync(sql, [
+			this._libraryID,
+			Zotero.ItemFields.getID("extra"),
+		]))! as { itemID: number; value: string }[];
 		const qidCache: { [itemID: number]: QID } = {};
 		const qidMap: { [qid: QID]: number[] } = {};
 		for (const row of rows) {
@@ -248,11 +245,10 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows: { itemID: number; year: number }[] =
-			await Zotero.DB.queryAsync(
-				sql,
-				[this._libraryID].concat(dateFields),
-			);
+		const rows = (await Zotero.DB.queryAsync(
+			sql,
+			[this._libraryID].concat(dateFields),
+		))! as { itemID: number; year: number }[];
 		const yearCache: { [itemID: number]: number } = {};
 		for (const row of rows) {
 			yearCache[row.itemID] = row.year;
@@ -279,8 +275,10 @@ export default class Matcher {
 		if (this._scopeIDs) {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
-		const rows: { itemID: number; value: string }[] =
-			await Zotero.DB.queryAsync(sql, [this._libraryID]);
+		const rows = (await Zotero.DB.queryAsync(sql, [this._libraryID]))! as {
+			itemID: number;
+			value: string;
+		}[];
 		const titleMap: { [title: string]: number[] } = {};
 		for (const row of rows) {
 			const newVal = normalizeString(row.value);
@@ -306,12 +304,12 @@ export default class Matcher {
 			sql += " AND itemID IN (" + this._scopeIDs.join(", ") + ")";
 		}
 		// sql += " ORDER BY itemID, orderIndex";
-		const rows: {
+		const rows = (await Zotero.DB.queryAsync(sql, this._libraryID))! as {
 			itemID: number;
 			lastName: string;
 			firstName: string;
 			fieldMode: number;
-		}[] = await Zotero.DB.queryAsync(sql, this._libraryID);
+		}[];
 
 		const creatorsCache: {
 			[itemID: number]: {

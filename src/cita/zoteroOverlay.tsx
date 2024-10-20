@@ -605,7 +605,7 @@ class ZoteroOverlay {
 			image: `chrome://${config.addonRef}/content/skin/default/cita.svg`,
 			defaultXUL: true,
 		};
-		ztoolkit.PreferencePane.register(prefOptions);
+		Zotero.PreferencePanes.register(prefOptions);
 
 		// add wikicite submenu to item and collection menus
 		this.zoteroPopup("item", doc);

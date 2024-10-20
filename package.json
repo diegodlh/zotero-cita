@@ -45,7 +45,7 @@
 		"react-error-boundary": "^4.1.1",
 		"wikibase-edit": "^7.0.4",
 		"wikibase-sdk": "^10.0.2",
-		"zotero-plugin-toolkit": "^2.3.37"
+		"zotero-plugin-toolkit": "^4.0.6"
 	},
 	"devDependencies": {
 		"@types/language-tags": "^1.0.4",
@@ -63,7 +63,7 @@
 		"typescript": "^5.3.3",
 		"typescript-eslint": "^7.14.1",
 		"zotero-plugin-scaffold": "^0.0.34",
-		"zotero-types": "^2.1.0"
+		"zotero-types": "^2.2.1"
 	},
 	"engines": {
 		"npm": ">=8.1"
