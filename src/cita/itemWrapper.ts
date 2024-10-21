@@ -219,7 +219,12 @@ export default class ItemWrapper {
 			pids.forEach((pid) => {
 				// Only set the PID if it's not already set or if it's the one we were actually fetching/refreshing
 				if (!this.getPID(pid.type) || type === pid.type)
-					this.setPID(pid.type, pid.cleanID || pid.id, autosave);
+					try {
+						this.setPID(pid.type, pid.cleanID || pid.id, autosave);
+					} catch (e) {
+						// To avoid breaking the loop in case one type is unsupported (ISBN in particular)
+						Zotero.logError(e as Error);
+					}
 			});
 		} else {
 			progress.updateLine(
@@ -239,9 +244,16 @@ export default class ItemWrapper {
 	getPID(type: PIDType, clean = false): PID | null {
 		let _pid: string;
 		switch (type) {
-			case "DOI":
 			case "ISBN":
 				_pid = this.item.getField(type);
+				break;
+			case "DOI":
+				if (this.isValidField(type)) {
+					_pid = this.item.getField(type);
+				} else {
+					// Also get DOI for unsupported types
+					_pid = Wikicite.getExtraField(this.item, type).values[0];
+				}
 				break;
 			case "arXiv": {
 				const field = this.item.getField("archiveID");
@@ -286,14 +298,18 @@ export default class ItemWrapper {
 
 	setPID(type: PIDType, value: string, save = true) {
 		switch (type) {
-			case "DOI":
 			case "ISBN":
 				if (this.isValidField(type)) {
 					this.item.setField(type, value);
 				} else {
-					throw new Error(
-						`Unsupported PID ${type} for item type ${this.type}`,
-					);
+					throw new Error("ISBN not supported for this item type");
+				}
+				break;
+			case "DOI":
+				if (this.isValidField(type)) {
+					this.item.setField(type, value);
+				} else {
+					Wikicite.setExtraField(this.item, type, [value]);
 				}
 				break;
 			case "arXiv":
