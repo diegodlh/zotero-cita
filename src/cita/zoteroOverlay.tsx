@@ -519,15 +519,8 @@ class ZoteroOverlay {
 		Extraction.extract();
 	}
 
-	async addAsCitations(menuName: MenuSelectionType) {
-		// Add items selected as citation target items of one or more source items
-		// 1. open selectItemsDialog.xul; allow one or more item selection
-		// 2. create citation objects for each of the target items selected
-		// 3. for each of the source items selected, wrap it into a SourceItemWrapper
-		// 4. run addCitations and pass it the citation objects created above
-		// 5. finally, link citations to the Zotero items
-		const targetItems = await this.getSelectedItems(menuName, true);
-		const libraryID = targetItems[0].item.libraryID;
+	async selectZoteroItems(libraryID: number): Promise<Zotero.Item[]> {
+		// Open Zotero item selection dialog
 		const io: {
 			dataIn: null;
 			dataOut: string[] | number[] | null;
@@ -550,12 +543,12 @@ class ZoteroOverlay {
 
 		await io.deferred.promise;
 		if (!io.dataOut || !io.dataOut.length) {
-			return;
+			return [];
 		}
 
 		const selectedItems = await Zotero.Items.getAsync(io.dataOut);
 		if (!selectedItems.length) {
-			return;
+			return [];
 		}
 		if (selectedItems[0].libraryID != libraryID) {
 			Services.prompt.alert(
@@ -563,21 +556,43 @@ class ZoteroOverlay {
 				"",
 				Wikicite.getString("wikicite.citation.link.error.library"),
 			);
-			return;
+			return [];
 		}
 
-		for (const item of selectedItems) {
-			const source = new SourceItemWrapper(item, prefs.getStorage());
-			const citations = targetItems.map((targetItem) => {
+		return selectedItems;
+	}
+
+	addTargetsToSources(
+		targets: SourceItemWrapper[],
+		sources: SourceItemWrapper[],
+	) {
+		for (const source of sources) {
+			const citations = targets.map((target) => {
 				const citation = new Citation(
-					{ item: targetItem.item, ocis: [] },
+					{ item: target.item, ocis: [] },
 					source,
 				);
-				citation.linkToZoteroItem(targetItem.item);
+				citation.linkToZoteroItem(target.item);
 				return citation;
 			});
 			source.addCitations(citations);
 		}
+	}
+
+	async addAsCitations(menuName: MenuSelectionType) {
+		// Add items selected as citation target items of one or more source items
+		// 1. open selectItemsDialog.xul; allow one or more item selection
+		// 2. create citation objects for each of the target items selected
+		// 3. for each of the source items selected, wrap it into a SourceItemWrapper
+		// 4. run addCitations and pass it the citation objects created above
+		// 5. finally, link citations to the Zotero items
+		const targetItems = await this.getSelectedItems(menuName, true);
+		const libraryID = targetItems[0].item.libraryID;
+		const selectedItems = await this.selectZoteroItems(libraryID);
+		const sources = selectedItems.map(
+			(item) => new SourceItemWrapper(item, prefs.getStorage()),
+		);
+		this.addTargetsToSources(targetItems, sources);
 	}
 
 	async localCitationNetwork(menuName: MenuSelectionType) {
@@ -875,6 +890,32 @@ class ZoteroOverlay {
 				popupshowing: () => this.handleItemPopupShowing(doc),
 			},
 			[
+				// Add existing Zotero item menu item
+				{
+					attributes: {
+						id: "item-menu-add-zotero",
+						label: Wikicite.getString(
+							"wikicite.item-menu.add-zotero",
+						),
+					},
+					listeners: {
+						command: async () => {
+							const selectedItems = await this.selectZoteroItems(
+								this._sourceItem!.item.libraryID,
+							);
+							const targets = selectedItems.map(
+								(item) =>
+									new SourceItemWrapper(
+										item,
+										prefs.getStorage(),
+									),
+							);
+							this.addTargetsToSources(targets, [
+								this._sourceItem!,
+							]);
+						},
+					},
+				},
 				// Add citations by identifier menu item
 				{
 					attributes: {
