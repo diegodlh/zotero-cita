@@ -1,6 +1,6 @@
 /* License */
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import * as PropTypes from "prop-types";
 import Wikicite, { debug } from "../../cita/wikicite";
 import PIDRow from "../pidRow";
@@ -22,6 +22,10 @@ function CitationsBox(props: {
 	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
+	const [clampedLines, setClampedLines] = useState<{
+		[index: number]: number;
+	}>({});
+	const labelRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
 	const removeStr = Zotero.getString("general.remove");
 	const optionsStr = "Open context menu";
@@ -81,6 +85,20 @@ function CitationsBox(props: {
 		items.sort((a, b) => (a.value! > b.value! ? 1 : -1));
 		setSortedIndices(items.map((item) => item.index));
 	}, [props.sortBy, props.sourceItem]);
+
+	useEffect(() => {
+		// Calculate initial line counts for each citation label
+		labelRefs.current.forEach((label, index) => {
+			if (label) {
+				const _lineHeight = window.getComputedStyle(label)?.lineHeight;
+				const lineHeight = _lineHeight ? parseFloat(_lineHeight) : null;
+				const lines = lineHeight
+					? Math.round(label.offsetHeight / lineHeight)
+					: 1;
+				setClampedLines((prev) => ({ ...prev, [index]: lines }));
+			}
+		});
+	}, [citations, props.sourceItem]);
 
 	/**
 	 * Opens the citation editor window.
@@ -308,6 +326,7 @@ function CitationsBox(props: {
 	function renderCitationRow(citation: Citation, index: number) {
 		const item = citation.target.item;
 		const label = citation.target.getLabel();
+		const clampedLine = clampedLines[index] || 10;
 
 		// Drag handlers
 		const handleDragStart: React.DragEventHandler<HTMLDivElement> = (e) => {
@@ -406,6 +425,18 @@ function CitationsBox(props: {
 			<div
 				className="row"
 				key={citation.hash}
+				onMouseEnter={(e) => {
+					labelRefs.current[index]?.style.setProperty(
+						"-webkit-line-clamp",
+						clampedLine.toString(),
+					);
+				}}
+				onMouseLeave={(e) => {
+					labelRefs.current[index]?.style.setProperty(
+						"-webkit-line-clamp",
+						"10",
+					);
+				}}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
@@ -422,7 +453,12 @@ function CitationsBox(props: {
 						className="icon icon-css icon-item-type"
 						data-item-type={item.itemType}
 					></span>
-					<span className="label">{label}</span>
+					<span
+						className="label"
+						ref={(el) => (labelRefs.current[index] = el)}
+					>
+						{label}
+					</span>
 				</div>
 				{props.editable && (
 					<>

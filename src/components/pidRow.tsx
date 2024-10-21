@@ -96,7 +96,6 @@ function PIDRow(props: {
 									? " pointer"
 									: "")
 							}
-							style={{ fill: "currentColor" }}
 							src={`chrome://zotero/skin/16/universal/sync.svg`}
 							title={Wikicite.formatString(
 								"wikicite.citations-pane.pid-row.fetch-pid",
@@ -115,7 +114,6 @@ function PIDRow(props: {
 						},
 						<img
 							className={"toolbarbutton-icon"}
-							style={{ fill: "currentColor" }}
 							src={`chrome://zotero/skin/16/universal/open-link.svg`}
 							title={Zotero.getString("view-online")}
 						/>,

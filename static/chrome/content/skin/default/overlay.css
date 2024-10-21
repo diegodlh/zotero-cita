@@ -37,35 +37,6 @@
 	opacity: 0;
 }
 
-/*.citations-box ul.citations-box-list {
-	list-style: none;
-	margin: 0;
-	padding: 2px 0 0;
-	overflow-y: clip;
-}
-.citations-box ul.citations-box-list > li {
-	display: flex;
-	margin: 3px 6px;
-	align-items: center;
-	height: 1.5em;
-}
-.citations-box ul.citations-box-list > li button {
-	border: 0;
-	background: none;
-	padding: 1px;
-	
-	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
-	fill: var(--fill-secondary);
-	height: 100%;
-}
-.citations-box ul.citations-box-list > li button :hover {
-	background-color: var(--fill-quinary);
-}
-.citations-box ul.citations-box-list > li button:disabled {
-	filter: grayscale(100%) opacity(50%);
-}
-*/
-
 .citations-box-list-container {
 	display: flex;
 	flex-direction: column;
@@ -126,14 +97,14 @@
 	box-sizing: border-box;
 }
 
-.citations-box-list-container .row toolbarbutton > img {
-	/*visibility: hidden;*/
+.citations-box-list-container .row .toolbarbutton-icon,
+.pid-list .meta-row .toolbarbutton-icon {
 	fill: currentColor;
 }
 
 .citations-box-list-container toolbarbutton.zotero-clicky-grippy {
+	/* hang grippy hang on the left side of the row, clickable area of row is extended with padding/margin combo */
 	margin-left: -20px;
-	/* this makes the grippy hang on the left side of the row, but it does not extend the row's clickable area and therefore messes with drag */
 	position: absolute;
 }
 
@@ -161,10 +132,6 @@
 	/* making this smaller makes things look good */
 	width: 100px;
 }
-
-/*.citations-box ul.citations-box-list > li .editable-container {
-	padding: 0 1px;
-}*/
 
 .citations-box input.editable-control {
 	width: 100px;
@@ -267,53 +234,3 @@ img.light {
 	display: flex;
 	box-sizing: border-box;
 }
-
-/*ul.pid-list {
-	list-style: none;
-	padding-left: 0;
-}
-
-ul.pid-list > li {
-	align-items: center;
-	display: flex;
-}
-
-ul.pid-list > li.hidden {
-	display: none;
-}
-
-ul.pid-list > li > label {
-	width: 58px;
-}
-
-ul.pid-list > li input {
-	width: 100%;
-}
-
-ul.pid-list > li * {
-	margin-left: 2px;
-	margin-right: 2px;
-}
-
-ul.pid-list > li button {
-	border: 0;
-	background: none;
-	padding: 1px;
-	margin-left: 15px;
-}
-ul.pid-list > li button:disabled {
-	filter: grayscale(100%) opacity(50%);
-}
-
-ul.pid-list > li .editable-container {
-	flex-grow: 1;
-}
-
-ul.pid-list .editable-content {
-	min-height: 1em;
-}
-
-.pid-label.pointer:hover,
-ul.pid-list .cita-icon.pointer:hover {
-	cursor: pointer !important;
-}*/

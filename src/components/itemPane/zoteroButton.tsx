@@ -1,8 +1,7 @@
 import * as React from "react";
 import * as PropTypes from "prop-types";
 import Citation from "../../cita/citation";
-import Wikicite from "../../cita/wikicite";
-import { link } from "fs";
+import { config } from "../../../package.json";
 
 function ZoteroButton(props: any) {
 	const key = props.citation.target.key;
@@ -62,7 +61,12 @@ function ZoteroButton(props: any) {
 					},
 					<img
 						className="toolbarbutton-icon"
-						src={`chrome://zotero/skin/16/universal/${key ? "unlink" : "link"}.svg`}
+						src={
+							key
+								? // We use a modified version of the unlink icon since the original has a fill color
+									`chrome://${config.addonRef}/content/skin/default/unlink.svg`
+								: "chrome://zotero/skin/16/universal/link.svg"
+						}
 						title={(key ? "Unlink" : "Link") + " Zotero item"}
 					></img>,
 				)
