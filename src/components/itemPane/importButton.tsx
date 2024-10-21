@@ -1,9 +1,13 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
 import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
+import ToolbarButton from "./toolbarButton";
 
-function ImportButton(props: any) {
+interface ImportButtonProps {
+	citation: Citation;
+}
+
+function ImportButton(props: ImportButtonProps) {
 	const citation = props.citation as Citation;
 	const key = citation.target.key;
 	const identifier = citation.target.getBestPID([
@@ -151,27 +155,16 @@ function ImportButton(props: any) {
 	const icon = identifier ? "magic-wand" : "add-item";
 
 	return (
-		!key &&
-		React.createElement(
-			"toolbarbutton",
-			{
-				className: "zotero-clicky show-on-hover no-display",
-				tabIndex: 0,
-				onClick: handleClick,
-			},
-			<img
-				className="toolbarbutton-icon"
-				width={16}
-				height={16}
-				src={`chrome://zotero/skin/20/universal/${icon}.svg`}
+		!key && (
+			<ToolbarButton
+				className="zotero-clicky show-on-hover no-display"
+				tabIndex={0}
+				onClick={handleClick}
 				title={title}
-			></img>,
+				imgSrc={`chrome://zotero/skin/20/universal/${icon}.svg`}
+			/>
 		)
 	);
 }
-
-ImportButton.propTypes = {
-	citation: PropTypes.instanceOf(Citation),
-};
 
 export default ImportButton;

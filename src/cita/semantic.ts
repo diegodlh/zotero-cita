@@ -232,7 +232,6 @@ export default class Semantic extends IndexerBase<Reference> {
 					item.externalIds?.MAG,
 			)
 			.map((ref) => new PID("MAG", ref.externalIds!.MAG!));
-		Zotero.log(`MAG ids ${JSON.stringify(magIdentifiers)}`);
 
 		// Use Lookup to get items for all identifiers
 		const result = await Lookup.lookupItemsByIdentifiers(identifiers);

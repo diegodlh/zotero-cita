@@ -1,12 +1,14 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
 import Citation from "../../cita/citation";
 import { config } from "../../../package.json";
+import ToolbarButton from "./toolbarButton";
 
-function WikidataButton(props: {
+interface WikidataButtonProps {
 	citation: Citation;
 	onClick: React.MouseEventHandler;
-}) {
+}
+
+function WikidataButton(props: WikidataButtonProps) {
 	const citation = props.citation;
 	const syncable = citation.source.qid && citation.target.qid;
 	const oci = citation.getOCI("wikidata");
@@ -32,24 +34,14 @@ function WikidataButton(props: {
 	}
 	imgSrc += ".png";
 
-	return React.createElement(
-		"toolbarbutton",
-		{
-			className: "zotero-clicky show-on-hover no-display",
-			//tabIndex: 0,
-			onClick: props.onClick,
-		},
-		<img
-			className="toolbarbutton-icon cita-icon"
-			src={imgSrc}
+	return (
+		<ToolbarButton
+			className="zotero-clicky show-on-hover no-display"
+			onClick={props.onClick}
+			imgSrc={imgSrc}
 			title={title}
-		></img>,
+		/>
 	);
 }
-
-WikidataButton.propTypes = {
-	citation: PropTypes.instanceOf(Citation),
-	onClick: PropTypes.func,
-};
 
 export default WikidataButton;

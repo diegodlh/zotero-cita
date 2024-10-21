@@ -1,13 +1,14 @@
 import * as React from "react";
 import { useState } from "react";
-import * as PropTypes from "prop-types";
 
-const CitationImporter = (props: {
+interface CitationImporterProps {
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onImportFile: () => void;
 	onImportText: (text: string) => void;
-}) => {
+}
+
+const CitationImporter = (props: CitationImporterProps) => {
 	const [text, setText] = useState("");
 
 	return (
@@ -43,13 +44,6 @@ const CitationImporter = (props: {
 			</div>
 		</div>
 	);
-};
-
-CitationImporter.propTypes = {
-	getString: PropTypes.func,
-	onCancel: PropTypes.func,
-	onImportFile: PropTypes.func,
-	onImportText: PropTypes.func,
 };
 
 export default CitationImporter;

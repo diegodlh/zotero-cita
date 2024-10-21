@@ -1,13 +1,14 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
 
-const Selector = (props: {
+interface SelectorProps {
 	choices: string[];
 	message: string;
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onConfirm: () => void;
-}) => (
+}
+
+const Selector = (props: SelectorProps) => (
 	<div>
 		<div id="selector-description">
 			<label>{props.message}</label>
@@ -32,13 +33,5 @@ const Selector = (props: {
 		</div>
 	</div>
 );
-
-Selector.propTypes = {
-	choices: PropTypes.arrayOf(PropTypes.string),
-	message: PropTypes.string,
-	getString: PropTypes.func,
-	onCancel: PropTypes.func,
-	onConfirm: PropTypes.func,
-};
 
 export default Selector;

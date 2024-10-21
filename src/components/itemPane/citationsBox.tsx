@@ -1,7 +1,6 @@
 /* License */
 import * as React from "react";
 import { useEffect, useState, useRef } from "react";
-import * as PropTypes from "prop-types";
 import Wikicite, { debug } from "../../cita/wikicite";
 import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
@@ -10,14 +9,17 @@ import WikidataButton from "./wikidataButton";
 import ZoteroButton from "./zoteroButton";
 import ImportButton from "./importButton";
 import { config } from "../../../package.json";
+import ToolbarButton from "./toolbarButton";
 
-function CitationsBox(props: {
+interface CitationsBoxProps {
 	editable: boolean;
 	sortBy: string;
 	sourceItem: SourceItemWrapper;
 	onItemPopup: (event: React.MouseEvent) => void;
 	onCitationPopup: (event: React.MouseEvent, index: number) => void;
-}) {
+}
+
+function CitationsBox(props: CitationsBoxProps) {
 	const [citations, setCitations] = useState([] as Citation[]);
 	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
@@ -307,19 +309,15 @@ function CitationsBox(props: {
 			e.currentTarget.closest(".row")?.setAttribute("draggable", "false");
 		};
 
-		return React.createElement(
-			"toolbarbutton",
-			{
-				className: "zotero-clicky zotero-clicky-grippy show-on-hover",
-				tabIndex: -1,
-				onMouseDown: handleMouseDown,
-				onMouseUp: handleMouseUp,
-			},
-			<img
-				className="toolbarbutton-icon"
-				src="chrome://zotero/skin/16/universal/grip.svg"
-				alt="Drag"
-			/>,
+		return (
+			<ToolbarButton
+				className="zotero-clicky zotero-clicky-grippy show-on-hover"
+				tabIndex={-1}
+				onMouseDown={handleMouseDown}
+				onMouseUp={handleMouseUp}
+				title="Drag"
+				imgSrc="chrome://zotero/skin/16/universal/grip.svg"
+			/>
 		);
 	}
 
@@ -416,8 +414,8 @@ function CitationsBox(props: {
 			// If the row is still hidden, no 'drop' event happened, meaning creator rows
 			// were not reordered. To make sure everything is in correct order, just refresh.
 			/*if (e.currentTarget.classList.contains("drag-hidden-citation")) {
-				this._forceRenderAll();
-			}*/
+                this._forceRenderAll();
+            }*/
 			//e.currentTarget.classList.remove("drag-hidden-citation");
 		};
 
@@ -455,7 +453,9 @@ function CitationsBox(props: {
 					></span>
 					<span
 						className="label"
-						ref={(el) => (labelRefs.current[index] = el)}
+						ref={(el) => {
+							labelRefs.current[index] = el;
+						}}
 					>
 						{label}
 					</span>
@@ -468,41 +468,24 @@ function CitationsBox(props: {
 							citation={citation}
 							onClick={() => handleCitationSync(index)}
 						/>
-						{
-							// Remove button
-							React.createElement(
-								"toolbarbutton",
-								{
-									className:
-										"zotero-clicky zotero-clicky-minus show-on-hover no-display",
-									tabIndex: 0,
-									onClick: () => handleCitationDelete(index),
-								},
-								<img
-									className="toolbarbutton-icon"
-									src="chrome://zotero/skin/16/universal/minus-circle.svg"
-									title={removeStr}
-								></img>,
-							)
-						}
-						{
-							// Options button
-							React.createElement(
-								"toolbarbutton",
-								{
-									className:
-										"zotero-clicky zotero-clicky-options show-on-hover no-display",
-									tabIndex: 0,
-									onClick: (event) =>
-										props.onCitationPopup(event, index),
-								},
-								<img
-									className="toolbarbutton-icon"
-									src="chrome://zotero/skin/16/universal/options.svg"
-									title={optionsStr}
-								></img>,
-							)
-						}
+						{/* Remove button */}
+						<ToolbarButton
+							className="zotero-clicky zotero-clicky-minus show-on-hover no-display"
+							tabIndex={0}
+							onClick={() => handleCitationDelete(index)}
+							title={removeStr}
+							imgSrc="chrome://zotero/skin/16/universal/minus-circle.svg"
+						/>
+						{/* Options button */}
+						<ToolbarButton
+							className="zotero-clicky zotero-clicky-options show-on-hover no-display"
+							tabIndex={0}
+							onClick={(event) =>
+								props.onCitationPopup(event, index)
+							}
+							title={optionsStr}
+							imgSrc="chrome://zotero/skin/16/universal/options.svg"
+						/>
 					</>
 				)}
 			</div>
@@ -579,13 +562,5 @@ function CitationsBox(props: {
 		</div>
 	);
 }
-
-CitationsBox.propTypes = {
-	editable: PropTypes.bool,
-	sortBy: PropTypes.string,
-	sourceItem: PropTypes.instanceOf(SourceItemWrapper),
-	onItemPopup: PropTypes.func,
-	onCitationPopup: PropTypes.func,
-};
 
 export default CitationsBox;

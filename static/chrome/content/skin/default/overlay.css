@@ -15,20 +15,13 @@
 	flex-grow: 1;
 	width: 330px;
 }
+
 .citations-box .citations-box-header {
 	display: flex;
 	padding-left: 10px;
 	align-items: center;
 }
-.citations-box .citations-box-header button {
-	min-width: 79px;
-	margin: 5px 6px 3px;
-	padding-top: 1px;
-	padding-bottom: 1px;
-	color: ButtonText;
-	text-shadow: none;
-	font-size: inherit;
-}
+
 .citations-box .citations-box-count {
 	margin-right: 5px;
 }
@@ -91,7 +84,8 @@
 	padding-block: 2px;
 }
 
-.citations-box-list-container .row toolbarbutton {
+.citations-box-list-container .row toolbarbutton,
+.citations-box-list-container .row .toolbarbutton {
 	margin-inline-start: auto;
 	display: flex;
 	box-sizing: border-box;
@@ -100,9 +94,12 @@
 .citations-box-list-container .row .toolbarbutton-icon,
 .pid-list .meta-row .toolbarbutton-icon {
 	fill: currentColor;
+	width: 16px;
+	height: 16px;
 }
 
-.citations-box-list-container toolbarbutton.zotero-clicky-grippy {
+.citations-box-list-container toolbarbutton.zotero-clicky-grippy,
+.citations-box-list-container .toolbarbutton.zotero-clicky-grippy {
 	/* hang grippy hang on the left side of the row, clickable area of row is extended with padding/margin combo */
 	margin-left: -20px;
 	position: absolute;
@@ -184,8 +181,18 @@ img.light {
 }
 
 .pid-list .meta-row .meta-data toolbarbutton,
-.pid-list .meta-row .meta-data button {
+.pid-list .meta-row .meta-data .toolbarbutton {
 	margin-inline-start: 4px;
+}
+
+.toolbarbutton {
+	border-radius: 5px;
+	appearance: none;
+	flex-shrink: 0;
+	margin: 0;
+	color: var(--fill-secondary);
+	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
+	background-color: rgba(0, 0, 0, 0);
 }
 
 .pid-list .meta-row editable-text {
@@ -221,7 +228,8 @@ img.light {
 	width: 100%;
 }
 
-.pid-list .meta-row toolbarbutton {
+.pid-list .meta-row toolbarbutton,
+.pid-list .meta-row .toolbarbutton {
 	outline: var(--color-focus-outer-border) solid
 		var(--width-focus-outer-border); /* Equivalent to focus-ring */
 	appearance: none;

@@ -1,18 +1,20 @@
 /* License */
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
-import * as PropTypes from "prop-types";
 import ItemWrapper from "../cita/itemWrapper";
 import Wikicite, { debug } from "../cita/wikicite";
 import PID from "../cita/PID";
+import ToolbarButton from "./itemPane/toolbarButton";
 
-function PIDRow(props: {
+interface PIDRowProps {
 	autosave: boolean;
 	editable: boolean;
 	item: ItemWrapper;
 	type: PIDType;
 	validate: (type: PIDType, value: string) => boolean;
-}) {
+}
+
+function PIDRow(props: PIDRowProps) {
 	const [value, setValue] = useState(props.item.getPID(props.type));
 	const [url, setUrl] = useState(props.item.getPidUrl(props.type));
 
@@ -81,54 +83,30 @@ function PIDRow(props: {
 						onBlur={(event) => handleCommit(event.target.value)}
 					/>,
 				)}
-				{props.item.canFetchPid(props.type) &&
-					React.createElement(
-						"toolbarbutton",
-						{
-							className: "zotero-clicky show-on-hover no-display",
-							tabIndex: 0,
-							onClick: () => onFetch(),
-						},
-						<img
-							className={
-								"toolbarbutton-icon" +
-								(props.item.canFetchPid(props.type)
-									? " pointer"
-									: "")
-							}
-							src={`chrome://zotero/skin/16/universal/sync.svg`}
-							title={Wikicite.formatString(
-								"wikicite.citations-pane.pid-row.fetch-pid",
-								props.type,
-							)}
-						/>,
-					)}
-				{url &&
-					React.createElement(
-						"toolbarbutton",
-						{
-							className:
-								"zotero-clicky zotero-clicky-open-link show-on-hover no-display",
-							tabIndex: 0,
-							onClick: () => Zotero.launchURL(url),
-						},
-						<img
-							className={"toolbarbutton-icon"}
-							src={`chrome://zotero/skin/16/universal/open-link.svg`}
-							title={Zotero.getString("view-online")}
-						/>,
-					)}
+				{props.item.canFetchPid(props.type) && (
+					<ToolbarButton
+						className="zotero-clicky show-on-hover no-display"
+						tabIndex={0}
+						onClick={onFetch}
+						title={Wikicite.formatString(
+							"wikicite.citations-pane.pid-row.fetch-pid",
+							props.type,
+						)}
+						imgSrc={`chrome://zotero/skin/16/universal/sync.svg`}
+					/>
+				)}
+				{url && (
+					<ToolbarButton
+						className="zotero-clicky zotero-clicky-open-link show-on-hover no-display"
+						tabIndex={0}
+						onClick={() => Zotero.launchURL(url)}
+						imgSrc="chrome://zotero/skin/16/universal/open-link.svg"
+						title={Zotero.getString("view-online")}
+					/>
+				)}
 			</div>
 		</div>
 	);
 }
-
-PIDRow.propTypes = {
-	autosave: PropTypes.bool,
-	editable: PropTypes.bool,
-	item: PropTypes.instanceOf(ItemWrapper),
-	type: PropTypes.string,
-	validate: PropTypes.func,
-};
 
 export default PIDRow;

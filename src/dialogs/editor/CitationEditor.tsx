@@ -1,15 +1,11 @@
 import PIDRow from "../../components/pidRow";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import * as PropTypes from "prop-types";
 import ItemWrapper from "../../cita/itemWrapper";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
-// Fixme: as a Citation Editor (not a target item editor)
-// consider providing at least some read only information about the citation
-// such as label of the source item, OCIs, and Zotero link status
-const CitationEditor = (props: {
+interface CitationEditorProps {
 	checkCitationPID: (type: PIDType, value: string) => boolean;
 	item: ItemWrapper;
 	itemBox: any;
@@ -17,7 +13,12 @@ const CitationEditor = (props: {
 	onCancel: () => void;
 	onSave: () => void;
 	onRefresh: () => void;
-}) => {
+}
+
+// Fixme: as a Citation Editor (not a target item editor)
+// consider providing at least some read only information about the citation
+// such as label of the source item, OCIs, and Zotero link status
+const CitationEditor = (props: CitationEditorProps) => {
 	const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
 
 	useEffect(() => {
@@ -136,15 +137,6 @@ const CitationEditor = (props: {
 			</div>
 		</div>
 	);
-};
-
-CitationEditor.propTypes = {
-	checkCitationPID: PropTypes.func,
-	item: PropTypes.instanceOf(ItemWrapper),
-	itemBox: PropTypes.object,
-	getString: PropTypes.func,
-	onCancel: PropTypes.func,
-	onSave: PropTypes.func,
 };
 
 export default CitationEditor;

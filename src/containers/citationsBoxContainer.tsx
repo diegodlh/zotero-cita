@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import * as PropTypes from "prop-types";
 import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import * as prefs from "../cita/preferences";
@@ -209,15 +208,10 @@ function CitationsBoxContainer(props: {
 	);
 }
 
-CitationsBoxContainer.propTypes = {
-	item: PropTypes.instanceOf(Zotero.Item),
-	editable: PropTypes.bool,
-};
-
 function logReactError(error: Error, info: React.ErrorInfo) {
-	Zotero.debug(`React error: ${error}`);
+	Zotero.log(`React error: ${error}`);
 	Zotero.logError(error);
-	Zotero.debug(`React error info: ${info.componentStack}`);
+	Zotero.log(`React error info: ${info.componentStack}`);
 }
 
 export default CitationsBoxContainer;
