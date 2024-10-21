@@ -16,16 +16,6 @@
 	width: 330px;
 }
 
-.citations-box .citations-box-header {
-	display: flex;
-	padding-left: 10px;
-	align-items: center;
-}
-
-.citations-box .citations-box-count {
-	margin-right: 5px;
-}
-
 .citations-box-list-container .drag-hidden-citation {
 	opacity: 0;
 }
@@ -137,10 +127,6 @@
 
 .citations-box-footer {
 	padding: 10px;
-}
-
-img.light {
-	filter: opacity(50%);
 }
 
 .pid-list {
