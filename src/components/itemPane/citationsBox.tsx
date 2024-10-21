@@ -119,56 +119,11 @@ function CitationsBox(props: CitationsBoxProps) {
 		window.openDialog(
 			`chrome://${config.addonRef}/content/citationEditor.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable,width=300,height=500",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=380,height=500",
 			args,
 			retVals,
 		);
 		return retVals.item;
-	}
-
-	function handleCitationAdd() {
-		const citation = new Citation(
-			{
-				item: {
-					itemType: "journalArticle", // Fixme: maybe replace with a const
-				},
-				ocis: [],
-			},
-			props.sourceItem,
-		);
-		const item = openEditor(citation);
-		if (!item) {
-			debug("Edit cancelled by user.");
-			return;
-		}
-		if (
-			props.sourceItem.getPID("QID") &&
-			Wikicite.getExtraField(item, "QID").values[0]
-		) {
-			debug(
-				"Source and target items have QIDs! Offer syncing to Wikidata.",
-			);
-		}
-		citation.target.item = item;
-
-		// Make sure the component updates even before changes are saved to the item
-		// setCitations(
-		//   // sourceItem.citations  // this doesn't work because sourceItem.citation object's reference hasn't changed
-		//   // () => sourceItem.citations  // works only one time per render - possibly because the function itself doesn't change
-		//   [...sourceItem.citations]  // works
-		// );
-		// Problem is if I do this [...citations], the citations passed down to CitationsBox
-		// are not the citations of the CitationsList here. Therefore, if I implement methods
-		// in the Citation class to modify themselves, they won't work.
-
-		// This will save changes to the item's extra field
-		// The modified item observer above will be triggered.
-		// This will update the sourceItem ref, and the component's state.
-		props.sourceItem.addCitations(citation);
-		// props.sourceItem.save();
-		// Unexpectedly, this also triggers the zotero-items-tree `select` event
-		// which in turn runs zoteroOverlay's refreshCitationsPaneMethod.
-		// However, as props.item will not have changed, component will not update.
 	}
 
 	function handleCitationEdit(index: number) {

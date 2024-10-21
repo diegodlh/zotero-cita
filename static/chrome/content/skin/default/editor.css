@@ -19,6 +19,10 @@ div#citation-editor-footer {
 	width: 100%;
 }
 
+div#citation-editor-footer > .pid-list {
+	margin-bottom: 10px;
+}
+
 div#citation-editor-buttons {
 	text-align: right;
 }

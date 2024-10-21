@@ -848,7 +848,7 @@ class ZoteroOverlay {
 		window.openDialog(
 			`chrome://${config.addonRef}/content/citationEditor.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable,width=300,height=500",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=380,height=500",
 			args,
 			retVals,
 		);
