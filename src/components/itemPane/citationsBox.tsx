@@ -10,6 +10,7 @@ import ZoteroButton from "./zoteroButton";
 import ImportButton from "./importButton";
 import { config } from "../../../package.json";
 import ToolbarButton from "./toolbarButton";
+import LinkButton from "./linkButton";
 
 interface CitationsBoxProps {
 	editable: boolean;
@@ -418,7 +419,7 @@ function CitationsBox(props: CitationsBoxProps) {
 				{props.editable && (
 					<>
 						<ImportButton citation={citation} />
-						<ZoteroButton citation={citation} />
+						<LinkButton citation={citation} />
 						<WikidataButton
 							citation={citation}
 							onClick={() => handleCitationSync(index)}
@@ -441,6 +442,7 @@ function CitationsBox(props: CitationsBoxProps) {
 							title={optionsStr}
 							imgSrc="chrome://zotero/skin/16/universal/options.svg"
 						/>
+						<ZoteroButton citation={citation} />
 					</>
 				)}
 			</div>
