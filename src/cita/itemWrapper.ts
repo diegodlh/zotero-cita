@@ -169,6 +169,17 @@ export default class ItemWrapper {
 			return;
 		}
 
+		// QID fetching has its own progress handling
+		if (type === "QID") {
+			const qids = await Wikidata.reconcile([this]);
+			const qid = qids?.get(this);
+			if (qid) {
+				const pid = new PID("QID", qid);
+				this.setPID(pid.type, pid.cleanID || pid.id, autosave);
+			}
+			return;
+		}
+
 		const progress = new Progress(
 			"loading",
 			Wikicite.formatString(
@@ -178,14 +189,6 @@ export default class ItemWrapper {
 		);
 		let pids: PID[] = [];
 		switch (type) {
-			case "QID": {
-				const qids = await Wikidata.reconcile([this]);
-				const qid = qids?.get(this);
-				if (qid) {
-					pids.push(new PID("QID", qid));
-				}
-				break;
-			}
 			case "OMID": {
 				const _pids = await new OpenCitations().fetchPIDs(this);
 				if (_pids) pids = _pids;
