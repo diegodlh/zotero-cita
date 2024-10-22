@@ -204,10 +204,7 @@ function CitationsBoxContainer(props: {
 	}
 
 	return (
-		<ErrorBoundary
-			fallback={<div>Something went wrong</div>}
-			onError={logReactError}
-		>
+		<ErrorBoundary fallback={<div>Something went wrong</div>}>
 			<CitationsBox
 				editable={props.editable}
 				sortBy={sortBy}
@@ -218,12 +215,6 @@ function CitationsBoxContainer(props: {
 			/>
 		</ErrorBoundary>
 	);
-}
-
-function logReactError(error: Error, info: React.ErrorInfo) {
-	Zotero.log(`React error: ${error}`);
-	Zotero.logError(error);
-	Zotero.log(`React error info: ${info.componentStack}`);
 }
 
 export default CitationsBoxContainer;

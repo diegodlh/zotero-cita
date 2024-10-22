@@ -757,29 +757,6 @@ class ZoteroOverlay {
 						.parentElement!.parentElement!.parentElement!.id;
 				citationBoxRoots[tab_id] = createRoot(
 					body.firstChild! as Element,
-					{
-						onRecoverableError(error, errorInfo) {
-							Zotero.log(
-								"Caught recoverable React error in citations pane",
-							);
-							if (error instanceof Error) {
-								Zotero.logError(error);
-								if (error.cause) {
-									Zotero.log(`Cause: ${error.cause}`);
-								}
-							} else {
-								Zotero.log(`Error: ${error}`);
-							}
-							if (errorInfo.digest) {
-								Zotero.log(`Error digest: ${errorInfo.digest}`);
-							}
-							if (errorInfo.componentStack) {
-								Zotero.log(
-									`Component stack: ${errorInfo.componentStack}`,
-								);
-							}
-						},
-					},
 				);
 			},
 			onRender: ({ body, item, setSectionButtonStatus, setL10nArgs }) => {

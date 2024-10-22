@@ -7,6 +7,7 @@ const basicTool = new BasicTool();
 if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
 	defineGlobal("window");
 	defineGlobal("document");
+	defineGlobal("console");
 	defineGlobal("ZoteroPane");
 	defineGlobal("Zotero_Tabs");
 	_globalThis.addon = new Addon();
