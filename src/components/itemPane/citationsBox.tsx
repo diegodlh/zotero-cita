@@ -1,6 +1,7 @@
 /* License */
 import * as React from "react";
 import { useEffect, useState, useRef } from "react";
+import useResizeObserver from "@react-hook/resize-observer";
 import Wikicite, { debug } from "../../cita/wikicite";
 import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
@@ -11,6 +12,7 @@ import ImportButton from "./importButton";
 import { config } from "../../../package.json";
 import ToolbarButton from "./toolbarButton";
 import LinkButton from "./linkButton";
+import { debounce } from "lodash";
 
 interface CitationsBoxProps {
 	editable: boolean;
@@ -25,10 +27,11 @@ function CitationsBox(props: CitationsBoxProps) {
 	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
-	const [clampedLines, setClampedLines] = useState<{
+	const [lineCounts, setLineCounts] = useState<{
 		[index: number]: number;
 	}>({});
 	const labelRefs = useRef<(HTMLSpanElement | null)[]>([]);
+	const containerRef = useRef<HTMLDivElement>(null);
 
 	const removeStr = Zotero.getString("general.remove");
 	const optionsStr = "Open context menu";
@@ -89,8 +92,15 @@ function CitationsBox(props: CitationsBoxProps) {
 		setSortedIndices(items.map((item) => item.index));
 	}, [props.sortBy, props.sourceItem]);
 
+	// Calculate initial line counts for each citation label
 	useEffect(() => {
-		// Calculate initial line counts for each citation label
+		calculateLineCounts();
+	}, [citations, props.sourceItem, props.sortBy]);
+
+	// Recalculate line counts on resize
+	useResizeObserver(containerRef, debounce(calculateLineCounts, 100));
+
+	function calculateLineCounts() {
 		labelRefs.current.forEach((label, index) => {
 			if (label) {
 				const _lineHeight = window.getComputedStyle(label)?.lineHeight;
@@ -98,10 +108,10 @@ function CitationsBox(props: CitationsBoxProps) {
 				const lines = lineHeight
 					? Math.round(label.offsetHeight / lineHeight)
 					: 1;
-				setClampedLines((prev) => ({ ...prev, [index]: lines }));
+				setLineCounts((prev) => ({ ...prev, [index]: lines }));
 			}
 		});
-	}, [citations, props.sourceItem]);
+	}
 
 	/**
 	 * Opens the citation editor window.
@@ -284,7 +294,7 @@ function CitationsBox(props: CitationsBoxProps) {
 	function renderCitationRow(citation: Citation, index: number) {
 		const item = citation.target.item;
 		const label = citation.target.getLabel();
-		const clampedLine = clampedLines[index] || 10;
+		const clampedLine = lineCounts[index] || 10;
 
 		// Drag handlers
 		const handleDragStart: React.DragEventHandler<HTMLDivElement> = (e) => {
@@ -383,13 +393,13 @@ function CitationsBox(props: CitationsBoxProps) {
 			<div
 				className="row"
 				key={citation.hash}
-				onMouseEnter={(e) => {
+				onMouseEnter={() => {
 					labelRefs.current[index]?.style.setProperty(
 						"-webkit-line-clamp",
 						clampedLine.toString(),
 					);
 				}}
-				onMouseLeave={(e) => {
+				onMouseLeave={() => {
 					labelRefs.current[index]?.style.setProperty(
 						"-webkit-line-clamp",
 						"10",
@@ -455,7 +465,7 @@ function CitationsBox(props: CitationsBoxProps) {
 
 	return (
 		<div className="citations-box">
-			<div className="citations-box-list-container">
+			<div className="citations-box-list-container" ref={containerRef}>
 				{/* Citations now have a hash based on their JSON object (not stringfy), which allows better identification of the rows by React */}
 				{sortedIndices.map((index) =>
 					renderCitationRow(citations[index], index),

@@ -36,6 +36,7 @@
 	},
 	"homepage": "https://github.com/diegodlh/zotero-cita",
 	"dependencies": {
+		"@react-hook/resize-observer": "^2.0.2",
 		"object-hash": "^3.0.0",
 		"openalex-sdk": "^1.1.6",
 		"prop-types": "^15.7.2",
