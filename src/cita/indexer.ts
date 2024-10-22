@@ -5,6 +5,7 @@ import Wikicite from "./wikicite";
 import Bottleneck from "bottleneck";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
+import Matcher from "./matcher";
 
 export interface IndexedWork<Ref> {
 	referenceCount: number;
@@ -13,10 +14,12 @@ export interface IndexedWork<Ref> {
 
 export abstract class IndexerBase<Ref> {
 	maxRPS: number = 1000; // Requests per second
+	maxConcurrent: number = 100; // Maximum concurrent requests
 
 	// Initialize Bottleneck for rate limiting (max 50 requests per second)
 	limiter = new Bottleneck({
 		minTime: 1 / this.maxRPS,
+		maxConcurrent: this.maxConcurrent,
 	});
 
 	/**
@@ -202,38 +205,40 @@ export abstract class IndexerBase<Ref> {
 				.map((ref) => ref.length)
 				.reduce((sum, n) => sum + n, 0);
 
-			await Zotero.DB.executeTransaction(async () => {
-				fetchableSourceItems.forEach((sourceItem, index) => {
-					const newCitedItems = parsedItemReferences[index];
-					if (newCitedItems.length > 0) {
-						const newCitations = newCitedItems.map(
-							(newItem) =>
-								new Citation(
-									{ item: newItem, ocis: [] },
-									sourceItem,
-								),
-						);
-						sourceItem.addCitations(newCitations);
-						if (autoLinkCitations) sourceItem.autoLinkCitations();
-					}
-				});
-			});
-
 			// Auto-linking
-			// FIXME: even though this is the same code as in localCitationNetwork, items are not updated. Workaround is to open the citation network
-			/*if (autoLinkCitations) {
-                Zotero.log("Auto-linking citations");
-                const libraryID = sourceItemsWithDOI[0].item.libraryID;
-                const matcher = new Matcher(libraryID);
-                progress.updateLine(
-                    'loading',
-                    Wikicite.getString('wikicite.source-item.auto-link.progress.loading')
-                    );
-                await matcher.init();
-                for (const wrappedItem of sourceItemsWithDOI) {
-                    wrappedItem.autoLinkCitations(matcher, true);
-                }
-            }*/
+			const autoLinkCallback = async () => {
+				if (autoLinkCitations) {
+					// We need to wait a bit after the transaction is done so that the citations are saved to storage
+					setTimeout(async () => {
+						const libraryID =
+							fetchableSourceItems[0].item.libraryID;
+						const matcher = new Matcher(libraryID);
+						await matcher.init();
+						for (const wrappedItem of fetchableSourceItems) {
+							wrappedItem.autoLinkCitations(matcher, true);
+						}
+					}, 100);
+				}
+			};
+
+			await Zotero.DB.executeTransaction(
+				async () => {
+					fetchableSourceItems.forEach((sourceItem, index) => {
+						const newCitedItems = parsedItemReferences[index];
+						if (newCitedItems.length > 0) {
+							const newCitations = newCitedItems.map(
+								(newItem) =>
+									new Citation(
+										{ item: newItem, ocis: [] },
+										sourceItem,
+									),
+							);
+							sourceItem.addCitations(newCitations);
+						}
+					});
+				},
+				{ onCommit: autoLinkCallback },
+			);
 
 			progress.updateLine(
 				"done",
