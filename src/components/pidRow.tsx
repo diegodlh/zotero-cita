@@ -51,14 +51,15 @@ function PIDRow(props: PIDRowProps) {
 		setValue(props.item.getPID(props.type));
 	}
 
+	// show the row if the PID has a value, the type is QID, or DOI is a valid field
+	const showRow =
+		value ||
+		props.type === "QID" ||
+		(props.type === "DOI" && props.item.isValidField(props.type));
+
 	return (
 		<div
-			className={
-				"meta-row" +
-				(value == null && !["QID", "DOI"].includes(props.type)
-					? " hidden"
-					: "")
-			}
+			className={"meta-row" + (showRow ? "" : " hidden")}
 			id={`pid-row-${props.type}`}
 		>
 			<div className="meta-label">

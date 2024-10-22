@@ -21,6 +21,7 @@ import { initLocale, getLocaleID } from "../utils/locale";
 import { getPrefGlobalName } from "../utils/prefs";
 import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
+import PID from "./PID";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -1302,7 +1303,7 @@ class ZoteroOverlay {
 			{
 				popupshowing: () => this.handlePidRowPopupShowing(doc),
 			},
-			ItemWrapper.allTypesToShow.map((pidType) => {
+			PID.showable.map((pidType) => {
 				return {
 					attributes: {
 						id: `pid-row-add-${pidType}`,
@@ -1450,19 +1451,18 @@ class ZoteroOverlay {
 
 	handlePidRowPopupShowing(doc: Document) {
 		const sourceItem = this._sourceItem!;
-		const sourceItemPIDTypes = sourceItem.getPIDTypes();
+		const sourceItemPIDTypes = sourceItem.validPIDTypes;
 
-		ItemWrapper.allTypesToShow.forEach((pidType) => {
+		PID.showable.forEach((pidType) => {
 			// if item supports PID, but it is currently hidden, show menu item to add it
 			(
 				doc.getElementById(`pid-row-add-${pidType}`) as XUL.MenuItem
-			).style.display =
+			).hidden = !(
 				sourceItemPIDTypes.includes(pidType) &&
 				document
 					.getElementById(`pid-row-${pidType}`)
 					?.classList.contains("hidden")
-					? "block"
-					: "none";
+			);
 		});
 	}
 

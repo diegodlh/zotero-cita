@@ -19,7 +19,7 @@ interface CitationEditorProps {
 // consider providing at least some read only information about the citation
 // such as label of the source item, OCIs, and Zotero link status
 const CitationEditor = (props: CitationEditorProps) => {
-	const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
+	const [pidTypes, setPidTypes] = useState(props.item.validPIDTypes);
 
 	useEffect(() => {
 		// const addCreatorRow = props.itemBox.addCreatorRow.bind(props.itemBox);
@@ -88,7 +88,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 	}, []);
 
 	function onItemTypeChange() {
-		setPidTypes(props.item.getPIDTypes());
+		setPidTypes(props.item.validPIDTypes);
 		setHiddenFields(props.item.item.itemTypeID);
 		props.itemBox._forceRenderAll(); // need to force a new render
 	}

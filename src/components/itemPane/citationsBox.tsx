@@ -35,7 +35,7 @@ function CitationsBox(props: CitationsBoxProps) {
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
-		setPidTypes(props.sourceItem.getPIDTypes());
+		setPidTypes(props.sourceItem.validPIDTypes);
 		setHasAttachments(
 			Boolean(props.sourceItem.item.getAttachments().length),
 		);
@@ -492,7 +492,7 @@ function CitationsBox(props: CitationsBoxProps) {
 						(pidType: PIDType) =>
 							props.sourceItem.getPID(pidType) == null &&
 							!["QID", "DOI"].includes(pidType),
-					) ? (
+					) && (
 						<div id="pid-row-add-btn">
 							<button
 								onClick={(event: React.MouseEvent) => {
@@ -511,8 +511,6 @@ function CitationsBox(props: CitationsBoxProps) {
 								+
 							</button>
 						</div>
-					) : (
-						""
 					)}
 				</div>
 			</div>

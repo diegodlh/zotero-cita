@@ -109,4 +109,36 @@ export default class PID {
 		| null {
 		return Zotero.Utilities.extractIdentifiers(this.id)[0] ?? null;
 	}
+
+	static readonly allTypes: PIDType[] = [
+		"DOI",
+		"ISBN",
+		"QID",
+		"OMID",
+		"arXiv",
+		"OpenAlex",
+		"MAG",
+		"CorpusID",
+		"PMID",
+		"PMCID",
+	];
+
+	static readonly showable: PIDType[] = [
+		"DOI",
+		"ISBN",
+		"QID",
+		"OMID",
+		"arXiv",
+		"OpenAlex",
+		"CorpusID",
+		// Don't show PMID or PMCID because we can't fetch citations from them
+	];
+
+	static readonly fetchable: PIDType[] = [
+		"QID",
+		"OMID",
+		"OpenAlex",
+		"DOI",
+		"CorpusID",
+	];
 }

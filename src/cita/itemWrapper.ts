@@ -111,22 +111,10 @@ export default class ItemWrapper {
 		);
 	}
 
-	static readonly allTypesToShow: PIDType[] = [
-		"DOI",
-		"ISBN",
-		"QID",
-		"OMID",
-		"arXiv",
-		"OpenAlex",
-		"CorpusID",
-		// Don't show PMID or PMCID because we can't fetch citations from them
-	];
-
-	getPIDTypes() {
+	get validPIDTypes(): PIDType[] {
 		const pidTypes: PIDType[] = [];
-		for (const type of ItemWrapper.allTypesToShow) {
+		for (const type of PID.showable) {
 			switch (type) {
-				case "DOI":
 				case "ISBN":
 					if (this.isValidField(type)) {
 						pidTypes.push(type);
@@ -144,16 +132,8 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
-	static readonly fetchablePIDs: PIDType[] = [
-		"QID",
-		"OMID",
-		"OpenAlex",
-		"DOI",
-		"CorpusID",
-	];
-
 	canFetchPid(type: PIDType) {
-		return ItemWrapper.fetchablePIDs.includes(type);
+		return PID.fetchable.includes(type);
 	}
 
 	async fetchPID(type: PIDType, autosave = true) {
