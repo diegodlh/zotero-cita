@@ -130,6 +130,10 @@ function CitationsBox(props: CitationsBoxProps) {
 	function handleCitationEdit(index: number) {
 		const citation = citations[index];
 		const item = openEditor(citation);
+
+		// Reset focus
+		(document.activeElement as HTMLElement).blur();
+
 		// Fixme: I don't like that I'm repeating code from addCitation
 		// tagsBox has a single updateTags method instead
 		if (!item) {
@@ -204,7 +208,7 @@ function CitationsBox(props: CitationsBoxProps) {
 		props.sourceItem.citations = newCitations;
 
 		// Reset hover effects
-		// Block hover effects on creators, enable them back on first mouse movement.
+		// Block hover effects on citations, enable them back on first mouse movement.
 		// See comment in creatorDragPlaceholder() for explanation
 		document
 			.querySelectorAll(".citations-box-list-container .row")
@@ -346,15 +350,15 @@ function CitationsBox(props: CitationsBoxProps) {
 			}
 
 			// Due to some kind of drag-drop API issue,
-			// after creator is dropped, the hover effect often stays at
+			// after citation is dropped, the hover effect often stays at
 			// the row's old location. To workaround that, set noHover class to block all
-			// hover effects on creator rows and then remove it on the first mouse movement in refresh().
+			// hover effects on citation rows and then remove it on the first mouse movement in refresh().
 			document
 				.querySelectorAll(".citations-box-list-container .row")
 				.forEach((row) => {
 					row.classList.add("noHover");
 				});
-			// Un-hide the moved creator row
+			// Un-hide the moved citation row
 			document
 				.querySelector(".drag-hidden-citation")
 				?.classList.remove("drag-hidden-citation");
@@ -367,7 +371,7 @@ function CitationsBox(props: CitationsBoxProps) {
 		};
 
 		const handleDragEnd: React.DragEventHandler<HTMLDivElement> = (e) => {
-			// If the row is still hidden, no 'drop' event happened, meaning creator rows
+			// If the row is still hidden, no 'drop' event happened, meaning citation rows
 			// were not reordered. To make sure everything is in correct order, just refresh.
 			/*if (e.currentTarget.classList.contains("drag-hidden-citation")) {
                 this._forceRenderAll();

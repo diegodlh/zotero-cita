@@ -26,6 +26,7 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
 			tabIndex={tabIndex}
 			onMouseDown={onMouseDown}
 			onMouseUp={onMouseUp}
+			role="button"
 		>
 			<img
 				className="toolbarbutton-icon cita-icon"

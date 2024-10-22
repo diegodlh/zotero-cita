@@ -17,6 +17,8 @@ interface PIDRowProps {
 function PIDRow(props: PIDRowProps) {
 	const [value, setValue] = useState(props.item.getPID(props.type));
 	const [url, setUrl] = useState(props.item.getPidUrl(props.type));
+	const inputRef = useRef<HTMLInputElement>(null);
+	const rowRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		setValue(props.item.getPID(props.type));
@@ -25,15 +27,13 @@ function PIDRow(props: PIDRowProps) {
 	useEffect(() => {
 		setUrl(props.item.getPidUrl(props.type));
 		// update the value of the input to match the new PID
-		(
-			document.getElementById(
-				`pid-row-input-${props.item.key}-${props.type}`,
-			)! as HTMLInputElement
-		).value = props.item.getPID(props.type)?.id || "";
+		if (inputRef.current) {
+			inputRef.current.value = props.item.getPID(props.type)?.id || "";
+		}
 	}, [props.type, value]);
 
 	function handleCommit(newPid: string) {
-		if (newPid != value?.id) {
+		if (newPid !== value?.id) {
 			if (props.validate && !props.validate(props.type, newPid)) {
 				return;
 			}
@@ -45,10 +45,24 @@ function PIDRow(props: PIDRowProps) {
 		}
 	}
 
-	async function onFetch() {
+	async function onFetch(e: React.MouseEvent) {
 		await props.item.fetchPID(props.type, props.autosave);
 		// set new value immediately (see note in handleCommit)
 		setValue(props.item.getPID(props.type));
+		blurButton(e);
+	}
+
+	async function onOpenLink(url: string, e: React.MouseEvent) {
+		Zotero.launchURL(url);
+		blurButton(e);
+	}
+
+	function blurButton(e: React.MouseEvent) {
+		// Reset focus
+		(document.activeElement as HTMLElement).blur();
+		// const target = e.target as HTMLElement;
+		// const button = target.closest(".toolbarbutton") as HTMLDivElement;
+		// button?.blur();
 	}
 
 	// show the row if the PID has a value, the type is QID, or DOI is a valid field
@@ -59,11 +73,12 @@ function PIDRow(props: PIDRowProps) {
 
 	return (
 		<div
-			className={"meta-row" + (showRow ? "" : " hidden")}
+			className={`meta-row${showRow ? "" : " hidden"}`}
 			id={`pid-row-${props.type}`}
+			ref={rowRef}
 		>
 			<div className="meta-label">
-				<label className={"key pid-label"}>{props.type}</label>
+				<label className="key pid-label">{props.type}</label>
 			</div>
 			<div className="meta-data">
 				{React.createElement(
@@ -75,6 +90,7 @@ function PIDRow(props: PIDRowProps) {
 						style: { textAlign: "left" },
 					},
 					<input
+						ref={inputRef}
 						type="text"
 						id={`pid-row-input-${props.item.key}-${props.type}`}
 						className={props.editable ? "input" : ""}
@@ -100,7 +116,7 @@ function PIDRow(props: PIDRowProps) {
 					<ToolbarButton
 						className="zotero-clicky zotero-clicky-open-link show-on-hover no-display"
 						tabIndex={0}
-						onClick={() => Zotero.launchURL(url)}
+						onClick={(e) => onOpenLink(url, e)}
 						imgSrc="chrome://zotero/skin/16/universal/open-link.svg"
 						title={Zotero.getString("view-online")}
 					/>

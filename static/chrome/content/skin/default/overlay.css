@@ -98,31 +98,22 @@
 .citations-box-list-container
 	.row:not(:hover):not(:focus-within)
 	.show-on-hover,
-.citations-box-list-container .row.noHover .show-on-hover {
+.citations-box-list-container .row.noHover .show-on-hover,
+.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover,
+.pid-list .meta-row.noHover .show-on-hover {
 	clip-path: inset(50%);
 }
 
 .citations-box-list-container
 	.row:not(:hover):not(:focus-within)
 	.show-on-hover.no-display,
-.citations-box-list-container .row.noHover .show-on-hover.no-display {
+.citations-box-list-container .row.noHover .show-on-hover.no-display,
+.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover.no-display,
+.pid-list .meta-row.noHover .show-on-hover.no-display {
 	width: 0;
 	height: 0;
 	padding: 0;
 	position: absolute;
-}
-
-.citations-box .editable-container {
-	flex-grow: 1;
-	margin: 0 2px;
-	/* width: 282px; */
-	/* making this smaller makes things look good */
-	width: 100px;
-}
-
-.citations-box input.editable-control {
-	width: 100px;
-	font-family: inherit;
 }
 
 .citations-box-footer {
@@ -145,19 +136,6 @@
 
 .pid-list .meta-row.hidden {
 	display: none;
-}
-
-.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover,
-.pid-list .meta-row.noHover .show-on-hover {
-	clip-path: inset(50%);
-}
-
-.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover.no-display,
-.pid-list .meta-row.noHover .show-on-hover.no-display {
-	width: 0;
-	height: 0;
-	padding: 0;
-	position: absolute;
 }
 
 .pid-list .meta-row .meta-data {
