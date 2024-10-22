@@ -41,7 +41,9 @@ export default class PID {
 		return null;
 	}
 
-	/** Get the cleaned ID or null */
+	/** Get the cleaned ID
+	 * @returns The cleaned ID or null if it couldn't be cleaned
+	 */
 	get cleanID(): string | null {
 		switch (this.type) {
 			case "DOI":
@@ -51,7 +53,7 @@ export default class PID {
 			case "QID": {
 				let qid = this.id.toUpperCase().trim();
 				if (qid[0] !== "Q") qid = "Q" + qid;
-				if (!qid.match(/^Q\d+$/)) qid = "";
+				if (!qid.match(/^Q\d+$/)) return null;
 				return qid;
 			}
 			case "OMID": {
@@ -59,7 +61,7 @@ export default class PID {
 				if (/^https?:/.test(omid))
 					omid = omid.match(/br\/\d+/)?.[0] ?? "";
 				if (omid.substring(0, 3) !== "br/") omid = "br/" + omid;
-				if (!omid.match(/^br\/\d+$/)) omid = "";
+				if (!omid.match(/^br\/\d+$/)) return null;
 				return omid;
 			}
 			case "arXiv": {
@@ -71,7 +73,7 @@ export default class PID {
 					return cleanArXiv;
 				}
 
-				return "";
+				return null;
 			}
 			case "OpenAlex": {
 				let openAlex = this.id.trim();
@@ -79,8 +81,14 @@ export default class PID {
 					openAlex = openAlex.match(/[Ww]\d+/)?.[0] ?? "";
 				openAlex = openAlex.toUpperCase();
 				if (openAlex[0] !== "W") openAlex = "W" + openAlex;
-				if (!openAlex.match(/^W\d+$/)) openAlex = "";
+				if (!openAlex.match(/^W\d+$/)) return null;
 				return openAlex;
+			}
+			case "CorpusID": {
+				const _semantic = parseInt(this.id.trim(), 10);
+				const semantic = `${_semantic}`;
+				if (!semantic) return null;
+				return semantic;
 			}
 			default:
 				return this.id;
@@ -141,4 +149,13 @@ export default class PID {
 		"DOI",
 		"CorpusID",
 	];
+
+	static equal(a: PID, b: PID): boolean {
+		if (a.type !== b.type) return false;
+		return (
+			a.cleanID !== null &&
+			b.cleanID !== null &&
+			a.cleanID.toLowerCase() === b.cleanID.toLowerCase()
+		);
+	}
 }

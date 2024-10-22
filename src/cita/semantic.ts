@@ -129,10 +129,12 @@ export default class Semantic extends IndexerBase<Reference> {
 	 * - acm.org
 	 * - biorxiv.org
 	 */
-	async getReferences(identifiers: PID[]): Promise<IndexedWork<Reference>[]> {
+	async getIndexedWorks(
+		identifiers: PID[],
+	): Promise<IndexedWork<Reference>[]> {
 		// Semantic-specific logic for fetching references
 		const paperIdentifiers = identifiers.map(this.mapLookupIDToString);
-		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,title,references.externalIds,references.title`;
+		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,externalIds,title,references.externalIds,references.title`;
 		// FIXME: same as above
 		const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
 		const options = {
@@ -162,8 +164,23 @@ export default class Semantic extends IndexerBase<Reference> {
 			return {
 				referenceCount: paper.references.length,
 				referencedWorks: paper.references,
+				identifiers: this.mapIdentifiers(paper.externalIds),
 			};
 		});
+	}
+
+	mapIdentifiers(externalIds: ExternalIDS | null): PID[] {
+		if (!externalIds) return [];
+		const pids: PID[] = [];
+		if (externalIds.DOI) pids.push(new PID("DOI", externalIds.DOI));
+		if (externalIds.ArXiv) pids.push(new PID("arXiv", externalIds.ArXiv));
+		if (externalIds.PubMed) pids.push(new PID("PMID", externalIds.PubMed));
+		if (externalIds.PubMedCentral)
+			pids.push(new PID("PMCID", externalIds.PubMedCentral));
+		if (externalIds.MAG) pids.push(new PID("MAG", externalIds.MAG));
+		if (externalIds.CorpusId)
+			pids.push(new PID("CorpusID", `${externalIds.CorpusId}`));
+		return pids;
 	}
 
 	mapLookupIDToString(pid: PID): string {

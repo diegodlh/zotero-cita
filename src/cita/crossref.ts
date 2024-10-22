@@ -116,7 +116,9 @@ export default class Crossref extends IndexerBase<Reference> {
 	 * @param {PID[]} identifiers - DOI for the item for which to get references.
 	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
 	 */
-	async getReferences(identifiers: PID[]): Promise<IndexedWork<Reference>[]> {
+	async getIndexedWorks(
+		identifiers: PID[],
+	): Promise<IndexedWork<Reference>[]> {
 		// TODO: set up batching and pagination
 		const filterQuery = identifiers
 			.filter((doi) => doi.type === "DOI") // Already filtered by supportedPIDs
@@ -180,8 +182,9 @@ export default class Crossref extends IndexerBase<Reference> {
 	): IndexedWork<Reference> | undefined {
 		return (
 			work.reference && {
-				referenceCount: work["references-count"], // Map Crossref's `reference-count` to `IndexedWork`'s `referenceCount`
-				referencedWorks: work.reference, // Map `reference` to `referencedWorks`
+				referenceCount: work["references-count"],
+				referencedWorks: work.reference,
+				identifiers: [new PID("DOI", work.DOI)],
 			}
 		);
 	}

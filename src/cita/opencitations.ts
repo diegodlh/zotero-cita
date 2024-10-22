@@ -86,7 +86,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 		return null;
 	}
 
-	getReferences(identifiers: PID[]): Promise<IndexedWork<OCCitation>[]> {
+	getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<OCCitation>[]> {
 		const requests = identifiers.map(async (pid) => {
 			let param = "";
 			switch (pid.type) {
@@ -119,6 +119,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 			return {
 				referenceCount: citedWorks.length,
 				referencedWorks: citedWorks,
+				identifiers: [pid],
 			};
 		});
 		return Promise.all(requests);

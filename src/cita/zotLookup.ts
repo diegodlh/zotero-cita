@@ -19,6 +19,7 @@ export default class Lookup {
 	static async lookupItemsByIdentifiers(
 		identifiers: PID[],
 		addToZotero: boolean = false,
+		failedIdentifiersFallback?: (pids: PID[]) => void,
 	): Promise<false | Zotero.Item[]> {
 		if (!identifiers.length) {
 			Zotero.logError(
@@ -43,6 +44,7 @@ export default class Lookup {
 		}
 
 		const promises: Promise<ZoteroTranslators.Item[]>[] = [];
+		const failedIdentifiers: PID[] = [];
 
 		for (const identifier of identifiers) {
 			if (
@@ -51,6 +53,7 @@ export default class Lookup {
 			) {
 				// Skip unsupported identifiers
 				promises.push(Promise.resolve([]));
+				failedIdentifiers.push(identifier);
 				continue;
 			}
 
@@ -88,6 +91,7 @@ export default class Lookup {
 						Zotero.log(
 							`While looking for identifier: ${JSON.stringify(identifier)}`,
 						);
+						failedIdentifiers.push(identifier);
 						return [];
 					});
 
@@ -122,6 +126,8 @@ export default class Lookup {
 			);
 		}
 		// TODO: Give indication if some, but not all failed
+
+		failedIdentifiersFallback?.(failedIdentifiers);
 
 		return newItems;
 	}
@@ -189,10 +195,12 @@ export default class Lookup {
 					: { mag: pid.id };
 			},
 		);
+		// FIXME: seems to max out at around 95 items because the request itself becomes too large
 		const params: SearchParameters = {
 			filter: {
 				ids: ids,
 			},
+			retriveAllPages: true,
 		};
 		const works = await sdk.works(params);
 
@@ -201,12 +209,18 @@ export default class Lookup {
 			.map((work) => work.doi ?? null)
 			.filter((e) => e !== null)
 			.flatMap((e) => new PID("DOI", e!));
+		const failedDOIs: PID[] = []; // We'll try those with the OpenAlex translator
 		const newItems = dois.length
-			? (await this.lookupItemsByIdentifiers(dois, addToZotero)) || []
+			? (await this.lookupItemsByIdentifiers(dois, addToZotero, (dois) =>
+					failedDOIs.push(...dois),
+				)) || []
 			: [];
 
 		// Filter out
-		works.results = works.results.filter((work) => !work.doi);
+		works.results = works.results.filter(
+			(work) =>
+				!work.doi || failedDOIs.some((pid) => pid.id === work.doi),
+		);
 		works.meta.count = works.results.length;
 		const apiJSON = JSON.stringify(works);
 		const translator = new Zotero.Translate.Import(); // as ZoteroTranslators.Translate<ZoteroTranslators.ImportTranslator>;

@@ -42,7 +42,7 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @param {SupportedUID[]} identifiers - Array of DOIs or other identifiers for which to get references.
 	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
 	 */
-	async getReferences(identifiers: PID[]): Promise<IndexedWork<string>[]> {
+	async getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<string>[]> {
 		const dois = identifiers
 			.filter((id) => id.type === "DOI")
 			.map((id) => id.id);
@@ -51,12 +51,15 @@ export default class OpenAlex extends IndexerBase<string> {
 			.map((id) => {
 				return { openalex: id.id };
 			});
+
 		// TODO: add PMID and PMCID support
 		const doiParams: SearchParameters = {
 			filter: { doi: dois },
+			retriveAllPages: true,
 		};
 		const oaParams: SearchParameters = {
 			filter: { ids: oaIds },
+			retriveAllPages: true,
 		};
 		const works: Work[] = [];
 		if (dois.length)
@@ -67,8 +70,24 @@ export default class OpenAlex extends IndexerBase<string> {
 			return {
 				referenceCount: work.referenced_works?.length ?? 0,
 				referencedWorks: work.referenced_works ?? [],
+				identifiers: this.mapIdentifiers(work),
 			};
 		});
+	}
+
+	/**
+	 * Map OpenAlex work to PIDs.
+	 * @param {Work} work - OpenAlex work to map.
+	 * @returns {PID[]} PIDs mapped from the work.
+	 */
+	mapIdentifiers(work: Work): PID[] {
+		const pids: PID[] = [];
+		if (work.doi) pids.push(new PID("DOI", work.doi));
+		if (work.ids?.pmid) pids.push(new PID("PMID", `${work.ids.pmid}`));
+		if (work.ids?.mag) pids.push(new PID("MAG", `${work.ids.mag}`));
+		if (work.ids?.openalex)
+			pids.push(new PID("OpenAlex", work.ids.openalex));
+		return pids;
 	}
 
 	/**
