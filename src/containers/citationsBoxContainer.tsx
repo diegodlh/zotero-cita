@@ -16,6 +16,9 @@ function CitationsBoxContainer(props: {
 	// this CitationsBox container knows about the current
 	// sortBy preference value
 	const [sortBy, setSortBy] = useState(() => prefs.getSortBy());
+	const [maxLineCount, setMaxLineCount] = useState(() =>
+		prefs.getLineCount(),
+	);
 
 	// fix: this one was being used
 	// Option 1, include sourceItem in component's internal state.
@@ -141,15 +144,23 @@ function CitationsBoxContainer(props: {
 
 	useEffect(() => {
 		// single-run effect to register listeners for preference-change topics
-		const id = Zotero.Prefs.registerObserver(
+		const sortByObserver = Zotero.Prefs.registerObserver(
 			getPrefGlobalName(prefs.SORT_BY_PREF_KEY),
 			(value: prefs.SortByType) => {
 				setSortBy(value);
 			},
 			true,
 		);
+		const lineCountObserver = Zotero.Prefs.registerObserver(
+			getPrefGlobalName(prefs.LINECOUNT_PREF_KEY),
+			(value: number) => {
+				setMaxLineCount(value);
+			},
+			true,
+		);
 		return () => {
-			Zotero.Prefs.unregisterObserver(id);
+			Zotero.Prefs.unregisterObserver(sortByObserver);
+			Zotero.Prefs.unregisterObserver(lineCountObserver);
 		};
 	}, []);
 
@@ -200,6 +211,7 @@ function CitationsBoxContainer(props: {
 			<CitationsBox
 				editable={props.editable}
 				sortBy={sortBy}
+				maxLineCount={maxLineCount}
 				sourceItem={sourceItem}
 				onItemPopup={handleItemPopup}
 				onCitationPopup={handleCitationPopup}

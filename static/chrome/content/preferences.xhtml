@@ -28,15 +28,34 @@
 		<groupbox>
 			<label>
 				<html:h2
+					data-l10n-id="zotero-wikicite-wikicite_prefs_citation-line-count"
+				></html:h2>
+				<html:p
+					data-l10n-id="zotero-wikicite-wikicite_prefs_citation-line-count-desc"
+				></html:p>
+			</label>
+			<label
+				data-l10n-id="zotero-wikicite-wikicite_prefs_citation-line-count-label"
+			/>
+			<html:input
+				preference="__prefsPrefix__.linecount"
+				type="number"
+				min="1"
+				max="10"
+			/>
+		</groupbox>
+		<groupbox>
+			<label>
+				<html:h2
 					data-l10n-id="zotero-wikicite-wikicite_prefs_semantic-api"
 				></html:h2>
 				<html:p
 					data-l10n-id="zotero-wikicite-wikicite_prefs_semantic-api-desc"
 				></html:p>
-				<!--html:a
+				<html:a
 					data-l10n-id="zotero-wikicite-wikicite_prefs_semantic-api-request"
 					href="https://www.semanticscholar.org/product/api#api-key"
-				></html:a-->
+				></html:a>
 			</label>
 			<label
 				data-l10n-id="zotero-wikicite-wikicite_prefs_semantic-api-label"

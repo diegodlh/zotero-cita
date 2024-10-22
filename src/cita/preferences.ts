@@ -35,6 +35,14 @@ export function initialiseSemanticAPIKey() {
 	initialiseDefaultPref(SEMANTIC_API_PREF_KEY, "");
 }
 
+export const LINECOUNT_PREF_KEY = "linecount";
+export function getLineCount() {
+	return getPref(LINECOUNT_PREF_KEY) as number;
+}
+export function initialiseLineCount() {
+	initialiseDefaultPref(LINECOUNT_PREF_KEY, 10);
+}
+
 // Functions
 export async function migrateStorageLocation(
 	from: StorageType,

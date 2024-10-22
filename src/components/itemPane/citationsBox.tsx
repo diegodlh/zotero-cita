@@ -18,6 +18,7 @@ interface CitationsBoxProps {
 	editable: boolean;
 	sortBy: string;
 	sourceItem: SourceItemWrapper;
+	maxLineCount: number;
 	onItemPopup: (event: React.MouseEvent) => void;
 	onCitationPopup: (event: React.MouseEvent, index: number) => void;
 }
@@ -91,6 +92,18 @@ function CitationsBox(props: CitationsBoxProps) {
 		items.sort((a, b) => (a.value! > b.value! ? 1 : -1));
 		setSortedIndices(items.map((item) => item.index));
 	}, [props.sortBy, props.sourceItem]);
+
+	// Clamp citation labels to maxLineCount lines initially
+	useEffect(() => {
+		labelRefs.current.forEach((label, _) => {
+			if (label) {
+				label.style.setProperty(
+					"-webkit-line-clamp",
+					props.maxLineCount.toString(),
+				);
+			}
+		});
+	}, [citations, props.maxLineCount]);
 
 	// Calculate initial line counts for each citation label
 	useEffect(() => {
@@ -294,7 +307,7 @@ function CitationsBox(props: CitationsBoxProps) {
 	function renderCitationRow(citation: Citation, index: number) {
 		const item = citation.target.item;
 		const label = citation.target.getLabel();
-		const clampedLine = lineCounts[index] || 10;
+		const clampedLine = lineCounts[index] || props.maxLineCount;
 
 		// Drag handlers
 		const handleDragStart: React.DragEventHandler<HTMLDivElement> = (e) => {
@@ -389,22 +402,26 @@ function CitationsBox(props: CitationsBoxProps) {
 			//e.currentTarget.classList.remove("drag-hidden-citation");
 		};
 
+		const freezeLineCount = () => {
+			labelRefs.current[index]?.style.setProperty(
+				"-webkit-line-clamp",
+				clampedLine.toString(),
+			);
+		};
+
+		const resetLineCount = () => {
+			labelRefs.current[index]?.style.setProperty(
+				"-webkit-line-clamp",
+				props.maxLineCount.toString(),
+			);
+		};
+
 		return (
 			<div
 				className="row"
 				key={citation.hash}
-				onMouseEnter={() => {
-					labelRefs.current[index]?.style.setProperty(
-						"-webkit-line-clamp",
-						clampedLine.toString(),
-					);
-				}}
-				onMouseLeave={() => {
-					labelRefs.current[index]?.style.setProperty(
-						"-webkit-line-clamp",
-						"10",
-					);
-				}}
+				onMouseEnter={freezeLineCount}
+				onMouseLeave={resetLineCount}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}

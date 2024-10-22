@@ -207,6 +207,7 @@ class ZoteroOverlay {
 		prefs.initialiseStorage();
 		prefs.initialiseSortBy();
 		prefs.initialiseSemanticAPIKey();
+		prefs.initialiseLineCount();
 	}
 
 	addPreferenceUpdateObservers() {
