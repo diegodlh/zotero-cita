@@ -83,6 +83,7 @@ export abstract class IndexerBase<Ref> {
 		sourceItems: SourceItemWrapper[],
 		autoLinkCitations = true,
 	) {
+		// TODO: There's a high risk of the citations gettng attributed to the wrong item for batch requests. Ensure that the citations are added to the correct items.
 		// Filter items with valid identifiers (DOI or other)
 		const [fetchableSourceItems, identifiers] =
 			this.filterItemsWithSupportedIdentifiers(sourceItems);
@@ -125,12 +126,12 @@ export abstract class IndexerBase<Ref> {
 			),
 		);
 
-		const sourceItemReferences = await this.limiter
-			.schedule(() => this.getReferences(identifiers))
-			.catch((error) => {
-				Zotero.log(`Error fetching references: ${error}`);
-				return [];
-			});
+		const sourceItemReferences = await this.getReferences(
+			identifiers,
+		).catch((error) => {
+			Zotero.log(`Error fetching references: ${error}`);
+			return [];
+		});
 
 		// Confirm with the user to add citations
 		const numberOfCitations: number[] = sourceItemReferences.map(

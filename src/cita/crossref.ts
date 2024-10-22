@@ -5,26 +5,38 @@ import Lookup from "./zotLookup";
 import PID from "./PID";
 import { isEqual, uniqWith } from "lodash";
 
-interface CrossrefResponse {
+interface CrossrefFilterResponse {
+	status: string;
+	"message-type": string;
+	"message-version": string;
+	message: FilterMessage;
+}
+
+interface CrossrefReferencesResponse {
 	status: string;
 	"message-type": string;
 	"message-version": string;
 	message: CrossrefWork;
 }
 
+interface FilterMessage {
+	"total-results": number;
+	items: CrossrefWork[];
+	"items-per-page": number;
+	query: Query;
+}
+
 interface CrossrefWork {
-	"reference-count": number;
-	reference: Reference[];
+	DOI: string;
+	title: string[];
+	reference?: Reference[];
 	"references-count": number;
 }
 
 interface Reference {
 	key: string;
 	issn?: string;
-	"standards-body"?: string;
-	"series-title"?: string;
-	"isbn-type"?: string;
-	"doi-asserted-by"?: string;
+	"doi-asserted-by"?: DoiAssertedBy;
 	DOI?: string;
 	ISBN?: string;
 	component?: string;
@@ -38,8 +50,16 @@ interface Reference {
 	volume?: string;
 	"journal-title"?: string;
 	edition?: string;
-	"standard-designator"?: string;
-	"issn-type"?: string;
+}
+
+enum DoiAssertedBy {
+	Crossref = "crossref",
+	Publisher = "publisher",
+}
+
+interface Query {
+	"start-index": number;
+	"search-terms": null;
 }
 
 export default class Crossref extends IndexerBase<Reference> {
@@ -48,6 +68,7 @@ export default class Crossref extends IndexerBase<Reference> {
 	supportedPIDs: PIDType[] = ["DOI"];
 
 	maxRPS: number = 50; // Requests per second
+	maxConcurrent: number = 5; // Maximum concurrent requests
 
 	async fetchDOI(item: ItemWrapper): Promise<PID | null> {
 		const crossrefOpenURL =
@@ -92,24 +113,33 @@ export default class Crossref extends IndexerBase<Reference> {
 	/**
 	 * Get a list of references from Crossref for an item with a certain DOI.
 	 * Returned in JSON Crossref format.
-	 * @param {string[]} identifiers - DOI for the item for which to get references.
+	 * @param {PID[]} identifiers - DOI for the item for which to get references.
 	 * @returns {Promise<IndexedWork<Reference>[]>} list of references, or [] if none.
 	 */
 	async getReferences(identifiers: PID[]): Promise<IndexedWork<Reference>[]> {
-		// Crossref-specific logic for fetching references
-		const requests = identifiers.map(async (doi) => {
-			const url = `https://api.crossref.org/works/${Zotero.Utilities.cleanDOI(doi.id)}`;
-			const options = {
-				headers: {
-					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
-				},
-				responseType: "json",
-			};
-			const response = await Zotero.HTTP.request(
-				"GET",
-				url,
-				options,
-			).catch((e) => {
+		// TODO: set up batching and pagination
+		const filterQuery = identifiers
+			.filter((doi) => doi.type === "DOI") // Already filtered by supportedPIDs
+			.map((doi) => {
+				const encodedDOI = encodeURIComponent(doi.cleanID || "");
+				return `doi:${encodedDOI}`;
+			})
+			.join(",");
+
+		const url =
+			identifiers.length === 1
+				? `https://api.crossref.org/works/${identifiers[0].cleanID || ""}`
+				: `https://api.crossref.org/works?filter=${filterQuery}&select=DOI,title,reference,references-count`;
+
+		const options = {
+			headers: {
+				"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+			},
+			responseType: "json",
+		};
+
+		const response = await Zotero.HTTP.request("GET", url, options).catch(
+			(e) => {
 				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
 				if (e.status == 429) {
 					// Extract rate limit headers
@@ -123,13 +153,21 @@ export default class Crossref extends IndexerBase<Reference> {
 						`Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Current limit: ${rateLimitLimit} requests per ${rateLimitInterval}s`,
 					);
 				}
-			});
+			},
+		);
 
-			const crossrefWork = (response?.response as CrossrefResponse)
-				.message;
-			return this.mapCrossrefWorkToIndexedWork(crossrefWork); // Map to IndexedWork<Reference>
-		});
-		return Promise.all(requests);
+		const works =
+			identifiers.length === 1
+				? [(response?.response as CrossrefReferencesResponse).message]
+				: (response?.response as CrossrefFilterResponse).message.items;
+
+		const references = works
+			.map((work) => this.mapCrossrefWorkToIndexedWork(work))
+			.filter(
+				(work): work is IndexedWork<Reference> => work !== undefined,
+			);
+
+		return references;
 	}
 
 	/**
@@ -137,11 +175,15 @@ export default class Crossref extends IndexerBase<Reference> {
 	 * @param {CrossrefWork} work - A work in JSON Crossref format.
 	 * @returns {IndexedWork<Reference>} IndexedWork with references.
 	 */
-	mapCrossrefWorkToIndexedWork(work: CrossrefWork): IndexedWork<Reference> {
-		return {
-			referenceCount: work["reference-count"], // Map Crossref's `reference-count` to `IndexedWork`'s `referenceCount`
-			referencedWorks: work.reference, // Map `reference` to `referencedWorks`
-		};
+	mapCrossrefWorkToIndexedWork(
+		work: CrossrefWork,
+	): IndexedWork<Reference> | undefined {
+		return (
+			work.reference && {
+				referenceCount: work["references-count"], // Map Crossref's `reference-count` to `IndexedWork`'s `referenceCount`
+				referencedWorks: work.reference, // Map `reference` to `referencedWorks`
+			}
+		);
 	}
 
 	/**
