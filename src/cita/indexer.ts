@@ -1,17 +1,42 @@
 import SourceItemWrapper from "./sourceItemWrapper";
 import Progress from "./progress";
 import Citation from "./citation";
-import Wikicite from "./wikicite";
+import Wikicite, { debug } from "./wikicite";
 import Bottleneck from "bottleneck";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
 import Matcher from "./matcher";
-import { it } from "node:test";
+import _ = require("lodash");
+import Lookup from "./zotLookup";
 
-export interface IndexedWork<Ref> {
-	referenceCount: number;
-	referencedWorks: Ref[];
+export interface IndexedWork<R> {
+	/**
+	 * References found for the work.
+	 */
+	references: ParsableItem<R>[];
+	/**
+	 * The work's identifiers, if any.
+	 */
 	identifiers: PID[];
+	/**
+	 * Indexer-specific unique identifier.
+	 * @remarks Do not make any assumptions about it except that it should be unique!
+	 */
+	key: string;
+}
+
+export interface ParsableItem<R> {
+	/**
+	 * Indexer-specific unique identifier.
+	 * @remarks Do not make any assumptions about it except that it should be unique!
+	 */
+	key: string;
+
+	/** The item's identifiers, if any. */
+	externalIds: PID[]; // External identifiers
+
+	/** The item's data */
+	rawObject?: R;
 }
 
 export abstract class IndexerBase<Ref> {
@@ -42,11 +67,11 @@ export abstract class IndexerBase<Ref> {
 	abstract getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<Ref>[]>;
 
 	/**
-	 * Abstract method to parse a list of references into Zotero items.
-	 * @param {Ref[]} references - References for a specific work.
-	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from the references.
+	 * Optional function to parse references manually.
+	 * @param {ParsableItem<Ref>[]} references - Reference
+	 * @returns {Zotero.Item[]} Zotero items parsed from the references.
 	 */
-	abstract parseReferences(references: Ref[]): Promise<Zotero.Item[]>;
+	parseReferencesManually?(references: ParsableItem<Ref>[]): Zotero.Item[];
 
 	/**
 	 * Filter source items with supported UIDs.
@@ -163,6 +188,8 @@ export abstract class IndexerBase<Ref> {
 			),
 		);
 
+		// Get results from indexer
+		// Note: for most indexers, this will be a single request. If needed, limiting is done in the indexer.
 		const identifiers = Array.from(pidToSourceItemMap.values()).map(
 			(item) => item.pid,
 		);
@@ -175,7 +202,7 @@ export abstract class IndexerBase<Ref> {
 
 		// Confirm with the user to add citations
 		const numberOfCitations = indexedWorks.map(
-			(item) => item.referenceCount,
+			(item) => item.references.length,
 		);
 		const itemsToBeUpdated = numberOfCitations.filter((n) => n > 0).length;
 		const citationsToBeAdded = numberOfCitations.reduce(
@@ -192,7 +219,6 @@ export abstract class IndexerBase<Ref> {
 			);
 			return;
 		}
-
 		const confirmed = Services.prompt.confirm(
 			window as mozIDOMWindowProxy,
 			Wikicite.formatString(
@@ -222,7 +248,6 @@ export abstract class IndexerBase<Ref> {
 				this.indexerName,
 			),
 		);
-
 		const pidToIndexedWorkMap = this.matchIdentifiers(
 			identifiers,
 			indexedWorks,
@@ -231,15 +256,16 @@ export abstract class IndexerBase<Ref> {
 		try {
 			let parsedItems = 0;
 			const _parsedReferences = await Promise.all(
+				// TODO: when fetching references for more than one source item, we should group all parsing together to avoid duplicate requests and then reattribute them to the source items
 				new Array(...pidToIndexedWorkMap.entries()).map(
 					async ([pid, work]): Promise<{
 						pid: string;
 						parsedReferences: Zotero.Item[];
 					}> => {
-						if (!work.referenceCount)
+						if (!work.references.length)
 							return { pid, parsedReferences: [] };
 						const parsedReferences = await this.parseReferences(
-							work.referencedWorks,
+							work.references,
 						).catch((error) => {
 							Zotero.log(
 								new Error(
@@ -336,5 +362,132 @@ export abstract class IndexerBase<Ref> {
 		} finally {
 			progress.close();
 		}
+	}
+
+	/**
+	 * Parse a list of references into Zotero items.
+	 * @param {ParsableItem<Ref>[]} references - References for a specific work.
+	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from the references.
+	 */
+	async parseReferences(
+		references: ParsableItem<Ref>[],
+	): Promise<Zotero.Item[]> {
+		if (!references.length) {
+			throw new Error("No references to parse");
+		}
+
+		// Separate references with compatible identifiers from those without
+		const [refsWithIds, refsWithoutIds] = _.partition(
+			references,
+			(ref) =>
+				ref.externalIds?.length &&
+				ref.externalIds.some((pid) =>
+					Lookup.pidsSupportedForLookup.includes(pid.type),
+				),
+		);
+		const refsWithRawData = refsWithoutIds.filter((ref) => ref.rawObject);
+		const rawDataCount = refsWithRawData.length;
+		const unparseableCount = refsWithoutIds.length - rawDataCount;
+
+		// Extract identifiers from references and group them by type
+		const allIdentifiers = refsWithIds.map((ref) => {
+			// Create a map of externalIds for quick lookup by type
+			const pidMap = new Map(
+				ref.externalIds.map((pid) => [pid.type, pid]),
+			);
+
+			// Iterate through pidsSupportedForLookup in order of priority and find the first match
+			for (const type of Lookup.pidsSupportedForLookup) {
+				const pid = pidMap.get(type);
+				if (pid) return pid;
+			}
+			// A match is guaranteed to be found since we filtered out references without identifiers supported for lookup
+			// So this should never happen:
+			throw new Error("No supported PID found");
+		});
+		const [lookupIdentifiers, otherIdentifiers] = _.partition(
+			allIdentifiers,
+			(pid) => ["DOI", "ISBN", "PMID", "arXiv"].includes(pid.type),
+		);
+		const [openAlexIdentifiers, magIdentifiers] = _.partition(
+			otherIdentifiers,
+			(pid) => pid.type === "OpenAlex",
+		);
+		// Unique identifiers
+		const uniqueLookupIdentifiers = _.uniqWith(
+			lookupIdentifiers,
+			PID.equal,
+		);
+		const uniqueOpenAlexIdentifiers = _.uniqWith(
+			openAlexIdentifiers,
+			PID.equal,
+		);
+		const uniqueMagIdentifiers = _.uniqWith(magIdentifiers, PID.equal);
+		// TODO: make sure we track the total count correctly
+
+		let failCount = 0;
+		const parsedReferences: Zotero.Item[] = [];
+		// Look up items with identifiers supported by Zotero
+		if (uniqueLookupIdentifiers.length) {
+			// TODO: implement fallback mechanism for failed identifiers
+			const lookupResult = await Lookup.lookupItemsByIdentifiers(
+				uniqueLookupIdentifiers,
+				false,
+				(failedPIDs) => (failCount += failedPIDs.length),
+			);
+			if (lookupResult) parsedReferences.push(...lookupResult);
+		}
+
+		// Look up items with OpenAlex identifiers
+		if (uniqueOpenAlexIdentifiers.length) {
+			const openAlexResult = await Lookup.lookupItemsOpenAlex(
+				uniqueOpenAlexIdentifiers,
+			);
+			if (openAlexResult) {
+				failCount +=
+					uniqueOpenAlexIdentifiers.length - openAlexResult.length;
+				parsedReferences.push(...openAlexResult);
+			}
+		}
+		// Look up items with MAG identifiers
+		if (uniqueMagIdentifiers.length) {
+			const magResult = await Lookup.lookupItemsOpenAlex(
+				uniqueMagIdentifiers,
+				"MAG",
+			);
+			if (magResult) {
+				failCount += uniqueMagIdentifiers.length - magResult.length;
+				parsedReferences.push(...magResult);
+			}
+		}
+
+		const successfulIdentifiers = parsedReferences.length;
+
+		// Optionally parse "unidentified" references manually
+		// TODO: for Semantic Scholar at least, there's a few references that have only a CorpusID, which we currently don't support lookup for. These are counted as "rawData" references, which could be parsed here.
+		let manuallyParsedCount = 0;
+		if (this.parseReferencesManually && refsWithRawData.length) {
+			const manuallyParsed =
+				this.parseReferencesManually(refsWithRawData);
+			manuallyParsedCount = manuallyParsed.length;
+			parsedReferences.push(...manuallyParsed);
+		}
+
+		// Report
+		const totalReferences = references.length;
+		const totalParsed = parsedReferences.length;
+		const duplicates =
+			lookupIdentifiers.length -
+			uniqueLookupIdentifiers.length +
+			(openAlexIdentifiers.length - uniqueOpenAlexIdentifiers.length) +
+			(magIdentifiers.length - uniqueMagIdentifiers.length);
+
+		Zotero.log(`Had ${totalReferences} references to parse. Split into ${lookupIdentifiers.length} lookup identifiers, ${openAlexIdentifiers.length} OpenAlex identifiers, ${magIdentifiers.length} MAG identifiers. ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${lookupIdentifiers.length + openAlexIdentifiers.length + magIdentifiers.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
+Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicates} duplicates. Tally: ${successfulIdentifiers + failCount + duplicates} out of ${allIdentifiers.length} identifiers.
+Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
+Grand total: ${totalParsed} out of ${totalReferences} references.`);
+
+		// Return parsed references
+		return parsedReferences;
 	}
 }

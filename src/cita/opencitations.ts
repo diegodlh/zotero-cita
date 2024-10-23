@@ -1,5 +1,4 @@
-import { IndexedWork, IndexerBase } from "./indexer";
-import Lookup from "./zotLookup";
+import { IndexedWork, IndexerBase, ParsableItem } from "./indexer";
 import Wikicite, { debug } from "./wikicite";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
@@ -86,7 +85,14 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 		return null;
 	}
 
-	getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<OCCitation>[]> {
+	/**
+	 * Get references from OpenCitations for items with identifiers.
+	 * @param {PID[]} identifiers - Array of DOIs or other identifiers for which to get references.
+	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
+	 */
+	async getIndexedWorks(
+		identifiers: PID[],
+	): Promise<IndexedWork<OCCitation>[]> {
 		const requests = identifiers.map(async (pid) => {
 			let param = "";
 			switch (pid.type) {
@@ -107,84 +113,72 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 				},
 				responseType: "json",
 			};
-			const response = await Zotero.HTTP.request(
-				"GET",
-				url,
-				options,
-			).catch((e) => {
-				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
-			});
 
+			const response = await this.limiter
+				.schedule(() => Zotero.HTTP.request("GET", url, options))
+				.catch((e) => {
+					debug(
+						`Couldn't access URL: ${url}. Got status ${e.status}.`,
+					);
+				});
 			const citedWorks = response?.response as OCCitation[];
-			return {
-				referenceCount: citedWorks.length,
-				referencedWorks: citedWorks,
-				identifiers: [pid],
-			};
+			if (citedWorks && citedWorks.length) {
+				const _omid = citedWorks[0].oci.split("-")[0];
+				// Sanity check
+				if (
+					citedWorks
+						.map((e) => e.oci.split("-")[0])
+						.some((e) => e !== _omid)
+				) {
+					debug(`Multiple OMIDs referenced for ${pid.id}`);
+				}
+				return {
+					references: citedWorks.map(OpenCitations.mapToParsableItem),
+					identifiers: [pid],
+					key: _omid,
+				};
+			} else {
+				return null;
+			}
 		});
-		return Promise.all(requests);
+		const results = (await Promise.all(requests)).filter((e) => e !== null);
+		return results as IndexedWork<OCCitation>[];
 	}
 
-	async parseReferences(references: OCCitation[]): Promise<Zotero.Item[]> {
-		if (!references.length) {
-			debug(
-				"Item found on OpenCitations but doesn't contain any references",
-			);
-			return [];
-		}
+	private static mapToParsableItem(
+		item: OCCitation,
+	): ParsableItem<OCCitation> {
+		return {
+			key: item.oci,
+			externalIds: OpenCitations.parseCitationString(item.cited),
+			rawObject: item,
+		};
+	}
 
-		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
-		const _identifiers = references.map((citation) => {
-			// Should be one of (doi|issn|isbn|omid|openalex|pmid|pmcid)
-			return citation.cited
-				.split(" ")
-				.map((e) => e.split(":", 2))
-				.map((e) => {
-					switch (e[0]) {
-						case "doi":
-							return new PID("DOI", e[1]);
-						case "isbn":
-							return new PID("ISBN", e[1]);
-						//case "omid":
-						//	return new PID("OMID", e[1]);
-						case "openalex":
-							return new PID("OpenAlex", e[1]);
-						case "pmid":
-							return new PID("PMID", e[1]);
-						default:
-							return null;
-					}
-				})
-				.filter((e) => e !== null)
-				.sort((a, b) => {
-					// Select best DOI > PMID > ISBN > openAlex
-					if (a!.type === "DOI") return -1;
-					if (b!.type === "DOI") return 1;
-					if (a!.type === "PMID") return -1;
-					if (b!.type === "PMID") return 1;
-					if (a!.type === "ISBN") return -1;
-					if (b!.type === "ISBN") return 1;
-					if (a!.type === "OpenAlex") return -1;
-					if (b!.type === "OpenAlex") return 1;
-					return 0;
-				})[0]; // return the first one
-		});
-		// Extract identifiers
-		const identifiers = _identifiers
-			.filter((e) => e && e.type !== "OpenAlex")
-			.map((e) => e!);
-		const openAlexIdentifiers = _identifiers
-			.filter((e) => e && e.type === "OpenAlex")
-			.map((e) => e!);
-
-		// Use Lookup to get items for all identifiers
-		const result = await Lookup.lookupItemsByIdentifiers(identifiers);
-		const parsedReferences = result ? result : [];
-
-		const openAlexResult =
-			await Lookup.lookupItemsOpenAlex(openAlexIdentifiers);
-		if (openAlexResult) parsedReferences.push(...openAlexResult);
-
-		return parsedReferences;
+	private static parseCitationString(cited: string): PID[] {
+		// String is in the format "type:identifier type:identifier ..." where identifier may contain colons
+		return cited
+			.split(" ")
+			.map((e) => {
+				const [type, ...identifier] = e.split(":");
+				return [type, identifier.join(":")];
+			})
+			.map(([type, identifier]) => {
+				switch (type) {
+					case "doi":
+						return new PID("DOI", identifier);
+					case "isbn":
+						return new PID("ISBN", identifier);
+					case "omid":
+						return new PID("OMID", identifier);
+					case "openalex":
+						return new PID("OpenAlex", identifier);
+					case "pmid":
+						return new PID("PMID", identifier);
+					default:
+						return null;
+				}
+			})
+			.filter((e) => e !== null) as PID[];
 	}
 }

@@ -10,6 +10,15 @@ const limiter = new Bottleneck({
 });
 
 export default class Lookup {
+	static readonly pidsSupportedForLookup: PIDType[] = [
+		"DOI",
+		"PMID",
+		"arXiv",
+		"ISBN",
+		"OpenAlex",
+		"MAG",
+	];
+
 	/**
 	 * Look up items by identifiers. This code is adapted from Zotero's chrome/content/zotero/lookup.js.
 	 * @param identifiers An array of PIDs. Supported types are DOI, PMID, arXiv, ISBN.
@@ -57,11 +66,13 @@ export default class Lookup {
 				continue;
 			}
 
-			const translate = new Zotero.Translate.Search();
-			translate.setIdentifier(identifier.zoteroIdentifier!);
+			const translate =
+				new Zotero.Translate.Search() as ZoteroTranslators.Translate<ZoteroTranslators.SearchTranslator>;
+			//translate.setIdentifier(identifier.zoteroIdentifier!);
+			translate.setSearch(identifier.zoteroIdentifier! as any);
 
 			// be lenient about translators
-			const translators = await translate.getTranslators();
+			const translators = await translate.getTranslators(false);
 			translate.setTranslator(translators);
 
 			// Schedule the translation request with the rate limiter
@@ -73,7 +84,7 @@ export default class Lookup {
 								libraryID: libraryID,
 								collections: collections,
 								saveAttachments: addToZotero,
-							}) as Promise<ZoteroTranslators.Item[]>, // Note that translate returns a serialized version of the item, not a Zotero.Item
+							} as any), // Note that translate returns a serialized version of the item, not a Zotero.Item
 					)
 					.then(
 						(
@@ -196,6 +207,7 @@ export default class Lookup {
 			},
 		);
 		// FIXME: seems to max out at around 95 items because the request itself becomes too large
+		// https://blog.ourresearch.org/fetch-multiple-dois-in-one-openalex-api-request/ says 50, but probably it's 100, with a limitation due to URL length (2048 chars)
 		const params: SearchParameters = {
 			filter: {
 				ids: ids,

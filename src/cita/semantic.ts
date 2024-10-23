@@ -1,11 +1,9 @@
 import Wikicite, { debug } from "./wikicite";
-import Lookup from "./zotLookup";
-import { IndexedWork, IndexerBase } from "./indexer";
+import { IndexedWork, IndexerBase, ParsableItem } from "./indexer";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "../cita/preferences";
 import { getPref } from "../utils/prefs";
 import PID from "./PID";
-import { isEqual, uniqWith } from "lodash";
 
 interface SemanticPaper {
 	paperId: string;
@@ -55,7 +53,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		const identifier = item.getBestPID(this.supportedPIDs);
 
 		if (identifier) {
-			const url = `https://api.semanticscholar.org/graph/v1/paper/${this.mapLookupIDToString(identifier)}?fields=externalIds`;
+			const url = `https://api.semanticscholar.org/graph/v1/paper/${Semantic.mapLookupIDToString(identifier)}?fields=externalIds`;
 			// FIXME: for reasons beyond my comprehension, the plugin won't start if I use the prefs.getSemanticAPIKey() function (or any other function from preferences.ts)
 			const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
 			const options = {
@@ -133,7 +131,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		identifiers: PID[],
 	): Promise<IndexedWork<Reference>[]> {
 		// Semantic-specific logic for fetching references
-		const paperIdentifiers = identifiers.map(this.mapLookupIDToString);
+		const paperIdentifiers = identifiers.map(Semantic.mapLookupIDToString);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,externalIds,title,references.externalIds,references.title`;
 		// FIXME: same as above
 		const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
@@ -160,16 +158,28 @@ export default class Semantic extends IndexerBase<Reference> {
 			},
 		);
 		const semanticPaper = (response?.response as SemanticPaper[]) || [];
-		return semanticPaper.map((paper): IndexedWork<Reference> => {
+		return semanticPaper.map((paper) => {
 			return {
-				referenceCount: paper.references.length,
-				referencedWorks: paper.references,
-				identifiers: this.mapIdentifiers(paper.externalIds),
+				references: paper.references.map(
+					Semantic.mapReferenceToParsableItem,
+				),
+				identifiers: Semantic.mapIdentifiers(paper.externalIds),
+				key: paper.paperId,
 			};
 		});
 	}
 
-	mapIdentifiers(externalIds: ExternalIDS | null): PID[] {
+	private static mapReferenceToParsableItem(
+		reference: Reference,
+	): ParsableItem<Reference> {
+		return {
+			key: reference.paperId || reference.title, // If there's no paper ID, it's basically a piece of the PDF that Semantic Scholar couldn't match to a reference
+			externalIds: Semantic.mapIdentifiers(reference.externalIds),
+			rawObject: reference,
+		};
+	}
+
+	private static mapIdentifiers(externalIds: ExternalIDS | null): PID[] {
 		if (!externalIds) return [];
 		const pids: PID[] = [];
 		if (externalIds.DOI) pids.push(new PID("DOI", externalIds.DOI));
@@ -183,7 +193,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		return pids;
 	}
 
-	mapLookupIDToString(pid: PID): string {
+	private static mapLookupIDToString(pid: PID): string {
 		switch (pid.type) {
 			case "DOI":
 				if (pid.id.includes("arXiv.")) {
@@ -206,60 +216,5 @@ export default class Semantic extends IndexerBase<Reference> {
 			default:
 				throw new Error("Unsupported UID type");
 		}
-	}
-
-	/**
-	 * Parse a list of references in JSON Crossref format.
-	 * @param {Reference[]} references - Array of Crossref references to parse to Zotero items.
-	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from references (where parsing is possible).
-	 */
-	async parseReferences(references: Reference[]): Promise<Zotero.Item[]> {
-		// Semantic-specific parsing logic
-		if (!references.length) {
-			debug(
-				"Item found in Semantic Scholar but doesn't contain any references",
-			);
-			return [];
-		}
-
-		// Extract one identifier per reference (prioritising DOI) and filter out those without identifiers
-		const _identifiers = references
-			.map((item) => {
-				if (item.externalIds?.DOI)
-					return new PID("DOI", item.externalIds?.DOI);
-				if (item.externalIds?.ArXiv)
-					return new PID("arXiv", item.externalIds?.ArXiv);
-				if (item.externalIds?.PubMed)
-					return new PID("PMID", item.externalIds?.PubMed);
-				return null;
-			})
-			.filter((e) => e !== null);
-		// Remove duplicates and extract identifiers
-		const identifiers = uniqWith(_identifiers, isEqual).map((pid) => pid!);
-		/*const semanticReferencesWithoutIdentifier = semanticReferences.filter(
-			(item) => !item.DOI && !item.ISBN,
-		);*/ // TODO: consider supporting, but those are usually some PDF text
-
-		const magIdentifiers = references
-			.filter(
-				(item) =>
-					!item.externalIds?.DOI &&
-					!item.externalIds?.ArXiv &&
-					!item.externalIds?.PubMed &&
-					item.externalIds?.MAG,
-			)
-			.map((ref) => new PID("MAG", ref.externalIds!.MAG!));
-
-		// Use Lookup to get items for all identifiers
-		const result = await Lookup.lookupItemsByIdentifiers(identifiers);
-		const parsedReferences = result ? result : [];
-
-		const openAlexResult = await Lookup.lookupItemsOpenAlex(
-			magIdentifiers,
-			"MAG",
-		);
-		if (openAlexResult) parsedReferences.push(...openAlexResult);
-
-		return parsedReferences;
 	}
 }

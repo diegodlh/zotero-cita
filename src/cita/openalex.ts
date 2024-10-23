@@ -1,7 +1,5 @@
-import { IndexedWork, IndexerBase } from "./indexer";
-import Lookup from "./zotLookup";
+import { IndexedWork, IndexerBase, ParsableItem } from "./indexer";
 import OpenAlexSDK from "openalex-sdk";
-import Wikicite, { debug } from "./wikicite";
 import {
 	ExternalIdsWork,
 	SearchParameters,
@@ -62,15 +60,29 @@ export default class OpenAlex extends IndexerBase<string> {
 			retriveAllPages: true,
 		};
 		const works: Work[] = [];
+		// TODO: limit number of works to fetch at once due to request string length
 		if (dois.length)
 			works.push(...(await this.openAlexSDK.works(doiParams)).results);
 		if (oaIds.length)
 			works.push(...(await this.openAlexSDK.works(oaParams)).results);
 		return works.map((work): IndexedWork<string> => {
 			return {
-				referenceCount: work.referenced_works?.length ?? 0,
-				referencedWorks: work.referenced_works ?? [],
-				identifiers: this.mapIdentifiers(work),
+				references: work.referenced_works
+					? OpenAlex.mapReferences(work.referenced_works)
+					: [],
+				identifiers: OpenAlex.mapIdentifiers(work),
+				key: work.id,
+			};
+		});
+	}
+
+	private static mapReferences(references: string[]): ParsableItem<string>[] {
+		// The references are just OpenAlex URLs
+		return references.map((ref) => {
+			return {
+				key: ref,
+				externalIds: [new PID("OpenAlex", ref)],
+				rawObject: ref,
 			};
 		});
 	}
@@ -80,7 +92,7 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @param {Work} work - OpenAlex work to map.
 	 * @returns {PID[]} PIDs mapped from the work.
 	 */
-	mapIdentifiers(work: Work): PID[] {
+	private static mapIdentifiers(work: Work): PID[] {
 		const pids: PID[] = [];
 		if (work.doi) pids.push(new PID("DOI", work.doi));
 		if (work.ids?.pmid) pids.push(new PID("PMID", `${work.ids.pmid}`));
@@ -88,25 +100,5 @@ export default class OpenAlex extends IndexerBase<string> {
 		if (work.ids?.openalex)
 			pids.push(new PID("OpenAlex", work.ids.openalex));
 		return pids;
-	}
-
-	/**
-	 * Parse a list of works from OpenAlex into Zotero items.
-	 * @param {string[]} works - Array of works from OpenAlex to parse.
-	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from the works.
-	 */
-	async parseReferences(works: string[]): Promise<Zotero.Item[]> {
-		if (!works.length) {
-			debug("Item found on OpenAlex but doesn't contain any references");
-			return [];
-		}
-
-		// Use Lookup to get items from OpenAlex
-		const uniqueWorks = [...new Set(works)].map(
-			(id) => new PID("OpenAlex", id),
-		);
-		const result = await Lookup.lookupItemsOpenAlex(uniqueWorks);
-		const parsedReferences = result ? result : [];
-		return parsedReferences;
 	}
 }
