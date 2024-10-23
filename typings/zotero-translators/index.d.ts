@@ -1328,8 +1328,12 @@ declare namespace ZoteroTranslators {
 	}
 
 	interface SearchTranslator extends Translator {
-		detectSearch(items: Zotero.Item[] | Zotero.Item): boolean;
-		doSearch(items: Zotero.Item[] | Zotero.Item): void;
+		detectSearch(
+			items: ZoteroTranslators.Item[] | ZoteroTranslators.Item,
+		): boolean;
+		doSearch(
+			items: ZoteroTranslators.Item[] | ZoteroTranslators.Item,
+		): void;
 	}
 
 	interface Translate<T extends Translator> {
@@ -1339,49 +1343,58 @@ declare namespace ZoteroTranslators {
 		setHandler(
 			type: "select",
 			handler: (
-				translate: Zotero.Translate<T>,
+				translate: ZoteroTranslators.Translate<T>,
 				items: { [id: string]: string },
 			) => string[],
 		): void;
 		setHandler(
 			type: "itemDone",
 			handler: (
-				translate: Zotero.Translate<T>,
-				item: Zotero.Item,
+				translate: ZoteroTranslators.Translate<T>,
+				item: ZoteroTranslators.Item,
 			) => void,
 		): void;
 		setHandler(
 			type: "collectionDone",
 			handler: (
-				translate: Zotero.Translate,
-				collection: Zotero.Collection,
+				translate: ZoteroTranslators.Translate,
+				collection: ZoteroTranslators.Collection,
 			) => void,
 		): void;
 		setHandler(
 			type: "done",
-			handler: (translate: Zotero.Translate<T>, success: boolean) => void,
+			handler: (
+				translate: ZoteroTranslators.Translate<T>,
+				success: boolean,
+			) => void,
 		): void;
 		setHandler(
 			type: "debug",
 			handler: (
-				translate: Zotero.Translate<T>,
+				translate: ZoteroTranslators.Translate<T>,
 				message: string,
 			) => boolean,
 		): void;
 		setHandler(
 			type: "error",
 			handler: (
-				translate: Zotero.Translate<T>,
+				translate: ZoteroTranslators.Translate<T>,
 				error: Error | string,
 			) => void,
 		): void;
 		setHandler(
 			type: "translators",
-			handler: (translate: Zotero.Translate<T>, translators: T[]) => void,
+			handler: (
+				translate: ZoteroTranslators.Translate<T>,
+				translators: T[],
+			) => void,
 		): void;
 		setHandler(
 			type: "pageModified",
-			handler: (translate: Zotero.Translate<T>, doc: Document) => void,
+			handler: (
+				translate: ZoteroTranslators.Translate<T>,
+				doc: Document,
+			) => void,
 		): void;
 		clearHandlers(
 			type:
@@ -1397,63 +1410,72 @@ declare namespace ZoteroTranslators {
 		removeHandler(
 			type: "select",
 			handler: (
-				translate: Zotero.Translate<T>,
+				translate: ZoteroTranslators.Translate<T>,
 				items: { [id: string]: string },
 			) => string[],
 		): void;
 		removeHandler(
 			type: "itemDone",
 			handler: (
-				translate: Zotero.Translate<T>,
-				item: Zotero.Item,
+				translate: ZoteroTranslators.Translate<T>,
+				item: ZoteroTranslators.Item,
 			) => void,
 		): void;
 		removeHandler(
 			type: "collectionDone",
 			handler: (
-				translate: Zotero.Translate<T>,
-				collection: Zotero.Collection,
+				translate: ZoteroTranslators.Translate<T>,
+				collection: ZoteroTranslators.Collection,
 			) => void,
 		): void;
 		removeHandler(
 			type: "done",
-			handler: (translate: Zotero.Translate<T>, success: boolean) => void,
+			handler: (
+				translate: ZoteroTranslators.Translate<T>,
+				success: boolean,
+			) => void,
 		): void;
 		removeHandler(
 			type: "debug",
 			handler: (
-				translate: Zotero.Translate<T>,
+				translate: ZoteroTranslators.Translate<T>,
 				message: string,
 			) => boolean,
 		): void;
 		removeHandler(
 			type: "error",
 			handler: (
-				translate: Zotero.Translate<T>,
+				translate: ZoteroTranslators.Translate<T>,
 				error: Error | string,
 			) => void,
 		): void;
 		removeHandler(
 			type: "translators",
-			handler: (translate: Zotero.Translate<T>, translators: T[]) => void,
+			handler: (
+				translate: ZoteroTranslators.Translate<T>,
+				translators: T[],
+			) => void,
 		): void;
 		removeHandler(
 			type: "pageModified",
-			handler: (translate: Zotero.Translate<T>, doc: Document) => void,
+			handler: (
+				translate: ZoteroTranslators.Translate<T>,
+				doc: Document,
+			) => void,
 		): void;
 		getTranslators(
 			getAllTranslators?: boolean,
 			checkSetTranslator?: boolean,
-		): Promise<Zotero.Translator<T>[]>;
+		): Promise<ZoteroTranslators.Translator<T>[]>;
 		translate(
 			libraryID?: number | false,
 			saveAttachments?: boolean,
 			linkFiles?: boolean,
-		): Promise<Zotero.Item[]>;
+		): Promise<ZoteroTranslators.Item[]>;
 		setDocument(doc: Document): void;
 		setString(s: string): void;
-		setItems(items: Zotero.Item[]): void;
-		setSearch(item: Zotero.Item): void;
+		setItems(items: ZoteroTranslators.Item[]): void;
+		setSearch(item: ZoteroTranslators.Item): void;
 	}
 
 	// common
@@ -1461,16 +1483,16 @@ declare namespace ZoteroTranslators {
 	function getHiddenPref(pref: string): any;
 	function loadTranslator(
 		translatorType: "web",
-	): Zotero.Translate<WebTranslator>;
+	): ZoteroTranslators.Translate<WebTranslator>;
 	function loadTranslator(
 		translatorType: "import",
-	): Zotero.Translate<ImportTranslator>;
+	): ZoteroTranslators.Translate<ImportTranslator>;
 	function loadTranslator(
 		translatorType: "export",
-	): Zotero.Translate<ExportTranslator>;
+	): ZoteroTranslators.Translate<ExportTranslator>;
 	function loadTranslator(
 		translatorType: "search",
-	): Zotero.Translate<SearchTranslator>;
+	): ZoteroTranslators.Translate<SearchTranslator>;
 	function done(returnValue: string | false): void;
 	function debug(str: string, level?: 1 | 2 | 3 | 4 | 5): void;
 	function read(length?: number): any;
@@ -1498,8 +1520,8 @@ declare namespace ZoteroTranslators {
 	function setProgress(value: number): void;
 
 	// export
-	function nextItem(): Zotero.Item?;
-	function nextCollection(): Zotero.Collection?;
+	function nextItem(): ZoteroTranslators.Item?;
+	function nextCollection(): ZoteroTranslators.Collection?;
 }
 
 declare function attr(
