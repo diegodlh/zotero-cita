@@ -2,6 +2,7 @@ import * as React from "react";
 import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
 import ToolbarButton from "./toolbarButton";
+import PID from "../../cita/PID";
 
 interface ImportButtonProps {
 	citation: Citation;
@@ -27,7 +28,10 @@ function ImportButton(props: ImportButtonProps) {
 		).map((c) => {
 			return { name: c.name, id: c.id };
 		});
-		collections.unshift({ name: "(None)", id: NaN });
+		collections.unshift({
+			name: Zotero.Libraries.getName(libraryID),
+			id: NaN,
+		});
 
 		// Select collection
 		const selected: { value: number } = { value: 0 };
@@ -46,10 +50,16 @@ function ImportButton(props: ImportButtonProps) {
 		} else selectedCollectionID = NaN; // No collections to choose from
 
 		// Import from with Zotero's lookup
-		if (identifier && identifier.zoteroIdentifier) {
+		if (
+			identifier &&
+			(identifier.zoteroIdentifier || identifier.type === "OpenAlex")
+		) {
 			// Import from identifier
 			const translation = new Zotero.Translate.Search();
-			translation.setIdentifier(identifier.zoteroIdentifier);
+			if (identifier.zoteroIdentifier)
+				translation.setSearch(identifier.zoteroIdentifier);
+			else if (identifier.type === "OpenAlex")
+				translation.setSearch({ openAlex: identifier.id });
 
 			// be lenient about translators
 			const translators = await translation.getTranslators();
@@ -58,69 +68,14 @@ function ImportButton(props: ImportButtonProps) {
 				const newItems: Zotero.Item[] = await translation.translate({
 					libraryID: libraryID,
 					collections: Number.isNaN(selectedCollectionID)
-						? false
+						? []
 						: [selectedCollectionID],
 				});
 				switch (newItems.length) {
 					case 0:
 						break;
 					case 1: {
-						const allExtraPIDTypes: PIDType[] = [
-							"QID",
-							"OMID",
-							"OpenAlex",
-							"MAG",
-							"CorpusID",
-							"PMID",
-							"PMCID",
-						];
-						for (const pidType of allExtraPIDTypes) {
-							const pid = citation.target.getPID(pidType);
-							if (pid !== null) {
-								Wikicite.setExtraField(newItems[0], pidType, [
-									pid.id,
-								]);
-								break;
-							}
-						}
-						citation.linkToZoteroItem(newItems[0]);
-						break;
-					}
-					default:
-						await citation.autoLink();
-				}
-			} catch (e: any) {
-				Zotero.logError(e);
-			}
-		}
-		// Import from OpenAlex
-		else if (identifier && identifier.type === "OpenAlex") {
-			const translation = new Zotero.Translate.Search();
-			translation.setSearch({ openAlex: identifier.id });
-
-			const translators = await translation.getTranslators();
-			translation.setTranslator(translators);
-			try {
-				const newItems: Zotero.Item[] = await translation.translate({
-					libraryID: libraryID,
-					collections: Number.isNaN(selectedCollectionID)
-						? false
-						: [selectedCollectionID],
-				});
-				switch (newItems.length) {
-					case 0:
-						break;
-					case 1: {
-						const allExtraPIDTypes: PIDType[] = [
-							"QID",
-							"OMID",
-							"OpenAlex",
-							"MAG",
-							"CorpusID",
-							"PMID",
-							"PMCID",
-						];
-						for (const pidType of allExtraPIDTypes) {
+						for (const pidType of PID.allTypes) {
 							const pid = citation.target.getPID(pidType);
 							if (pid !== null) {
 								Wikicite.setExtraField(newItems[0], pidType, [

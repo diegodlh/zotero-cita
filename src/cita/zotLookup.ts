@@ -40,13 +40,13 @@ export default class Lookup {
 		}
 
 		let libraryID: false | number = false;
-		let collections: false | number[] = false;
+		let collections: number[] = [];
 
 		if (addToZotero) {
 			try {
 				libraryID = ZoteroPane.getSelectedLibraryID();
 				const collection = ZoteroPane.getSelectedCollection();
-				collections = collection ? [collection.id] : false; // TODO: this should be selected by user
+				collections = collection ? [collection.id] : []; // TODO: this should be selected by user
 			} catch (e) {
 				/* TODO: handle this */
 			}
@@ -84,7 +84,7 @@ export default class Lookup {
 								libraryID: libraryID,
 								collections: collections,
 								saveAttachments: addToZotero,
-							} as any), // Note that translate returns a serialized version of the item, not a Zotero.Item
+							}), // Note that translate returns a serialized version of the item, not a Zotero.Item
 					)
 					.then(
 						(
@@ -182,13 +182,13 @@ export default class Lookup {
 		}
 
 		let libraryID: false | number = false;
-		let collections: false | number[] = false;
+		let collections: number[] = [];
 
 		if (addToZotero) {
 			try {
 				libraryID = ZoteroPane.getSelectedLibraryID();
 				const collection = ZoteroPane.getSelectedCollection();
-				collections = collection ? [collection.id] : false; // TODO: this should be selected by user
+				collections = collection ? [collection.id] : []; // TODO: this should be selected by user
 			} catch (e) {
 				/* TODO: handle this */
 			}
@@ -235,15 +235,16 @@ export default class Lookup {
 		);
 		works.meta.count = works.results.length;
 		const apiJSON = JSON.stringify(works);
-		const translator = new Zotero.Translate.Import(); // as ZoteroTranslators.Translate<ZoteroTranslators.ImportTranslator>;
+		const translator =
+			new Zotero.Translate.Import() as ZoteroTranslators.Translate<ZoteroTranslators.ImportTranslator>;
 		translator.setTranslator("faa53754-fb55-4658-9094-ae8a7e0409a2"); // OpenAlex JSON
 		translator.setString(apiJSON);
 		const promise = translator.translate({
 			libraryID: libraryID,
 			collections: collections,
 			saveAttachments: addToZotero,
-		}) as Promise<ZoteroTranslators.Item[]>;
-		const results = await promise.catch((e): ZoteroTranslators.Item[] => {
+		});
+		const results = await promise.catch((e) => {
 			Zotero.logError(e);
 			Zotero.log(
 				`While looking for OpenAlex items: ${JSON.stringify(identifiers)}`,

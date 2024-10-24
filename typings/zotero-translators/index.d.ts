@@ -1467,15 +1467,21 @@ declare namespace ZoteroTranslators {
 			getAllTranslators?: boolean,
 			checkSetTranslator?: boolean,
 		): Promise<ZoteroTranslators.Translator<T>[]>;
-		translate(
-			libraryID?: number | false,
-			saveAttachments?: boolean,
-			linkFiles?: boolean,
-		): Promise<ZoteroTranslators.Item[]>;
+		translate(options: TranslateOptions): Promise<ZoteroTranslators.Item[]>;
 		setDocument(doc: Document): void;
 		setString(s: string): void;
 		setItems(items: ZoteroTranslators.Item[]): void;
 		setSearch(item: ZoteroTranslators.Item): void;
+	}
+
+	interface TranslateOptions {
+		libraryID?: number | false;
+		//sessionID?: string;
+		//selectedItems?: any
+		saveAttachments?: boolean; // true by default
+		linkFiles?: boolean; // false by default
+		collections?: number[];
+		forceTagType?: boolean;
 	}
 
 	// common
