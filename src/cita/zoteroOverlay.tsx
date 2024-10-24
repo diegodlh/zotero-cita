@@ -22,6 +22,7 @@ import { getPrefGlobalName } from "../utils/prefs";
 import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
 import PID from "./PID";
+import { set } from "lodash";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -777,6 +778,9 @@ class ZoteroOverlay {
 					<CitationsBoxContainer
 						key={"citationsBox-" + item.id}
 						item={item}
+						onCountChange={(newCount: number) => {
+							setL10nArgs(`{"citationCount": "${newCount}"}`);
+						}}
 						editable={
 							ZoteroPane.collectionsView
 								? ZoteroPane.collectionsView.editable

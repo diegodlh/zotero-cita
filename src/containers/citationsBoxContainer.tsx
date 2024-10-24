@@ -10,6 +10,7 @@ import { ErrorBoundary } from "react-error-boundary";
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
+	onCountChange: (count: number) => void;
 }) {
 	// debug("CitationsBoxContainer will render...");
 
@@ -169,6 +170,11 @@ function CitationsBoxContainer(props: {
 			sourceItem,
 		);
 	}, [sourceItem]);
+
+	// Keep citation count up to date
+	useEffect(() => {
+		props.onCountChange(sourceItem.citations.length);
+	}, [sourceItem.citations.length]);
 
 	/**
 	 * Display citing-item actions pop-up menu at the event's coordinates
