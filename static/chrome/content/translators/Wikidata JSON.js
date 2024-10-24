@@ -325,7 +325,7 @@ function updateItems(items, claims, labels={}) {
 							value = datavalue.value.text;
 							break;
 						default:
-							console.error('Unknown datavalue type', valuetype);
+							Z.debug('Unknown datavalue type', valuetype);
 					}
 				}
 				if (value) {
@@ -381,7 +381,7 @@ function updateItems(items, claims, labels={}) {
 		if (Object.values(pendingClaims).some(
 			(pendingItemClaims) => pendingItemClaims.length > 0)
 		) {
-			console.error('Unexpected pending claims with empty wikibaseItems array!');
+			Z.debug('Unexpected pending claims with empty wikibaseItems array!');
 		}
 	}
 }

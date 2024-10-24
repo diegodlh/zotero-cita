@@ -4,9 +4,10 @@ import Wikidata, { CitesWorkClaim } from "./wikidata";
 import ItemWrapper from "./itemWrapper";
 import SourceItemWrapper from "./sourceItemWrapper";
 import Matcher from "./matcher";
-import OCI from "../oci";
+import OCI, { OCIPIDType } from "../oci";
 import Progress from "./progress";
 import { EntityId } from "wikibase-sdk";
+import objectHash = require("object-hash");
 
 /** Class representing a citation */
 class Citation {
@@ -15,11 +16,17 @@ class Citation {
 	ocis: {
 		citingId: string;
 		citedId: string;
-		idType: "qid" | "doi" | "occ";
+		idType: OCIPIDType;
 		oci: string;
 		supplierName: string;
 		valid: boolean;
 	}[];
+
+	get hash(): string {
+		const json = this.toJSON();
+		const hash = objectHash(json);
+		return hash;
+	}
 
 	/**
 	 * Create a citation.
@@ -114,8 +121,8 @@ class Citation {
 		try {
 			newOci = OCI.getOci(
 				supplier,
-				this.source[idType]!,
-				this.target[idType]!,
+				this.source.getPID(idType)!.id,
+				this.target.getPID(idType)!.id,
 			);
 		} catch {
 			//
@@ -330,7 +337,7 @@ class Citation {
 			return;
 		}
 
-		if (item.libraryID !== this.source.item.libraryID) {
+		if (item.libraryID && item.libraryID !== this.source.item.libraryID) {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				"",

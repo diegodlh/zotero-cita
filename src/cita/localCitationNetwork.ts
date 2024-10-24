@@ -6,6 +6,17 @@ import Wikicite from "./wikicite";
 import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 
+function replacer(_key: any, value: any) {
+	if (value instanceof Map) {
+		return {
+			dataType: "Map",
+			value: Array.from(value.entries()), // or with spread: value: [...value]
+		};
+	} else {
+		return value;
+	}
+}
+
 export default class LCN {
 	items: Zotero.Item[];
 	itemMap: Map<
@@ -22,7 +33,7 @@ export default class LCN {
 			journal: string;
 			references: (string | undefined)[];
 			abstract: string;
-			url: string | undefined;
+			url: string | null;
 		}
 	>;
 	inputKeys: string[];
@@ -138,7 +149,7 @@ export default class LCN {
 					const uids = {
 						doi: cleanDOI && cleanDOI.toUpperCase(),
 						isbn: cleanISBN,
-						occ: citation.target.occ, // Fixme: provide OCC cleaning function
+						occ: citation.target.omid, // Fixme: provide OMID cleaning function
 						qid: qid && qid.toUpperCase(),
 						// based on Zotero.Duplicates.prototype._findDuplicates'
 						// normalizeString function
@@ -175,10 +186,22 @@ export default class LCN {
 						// if one matching key found, use that one
 						tmpKey = [...tmpKeys][0];
 					} else {
+						// FIXME: when error is thrown here, progress does not disappear
+						// FIXME: should account for cases where there a DOI (section) + ISBN (book) or at least signal them
 						// finding more than one matching key should be unexpected
-						throw Error(
-							"UIDs of a citation target item should not refer to different temporary item keys",
+						Zotero.log(`Current item: ${wrappedItem.title}`);
+						Zotero.log(
+							`Current citation: ${citation.target.title}`,
 						);
+						Zotero.log(`UIDs: ${JSON.stringify(uids)}`);
+						Zotero.log(`tmpKeys: ${JSON.stringify([...tmpKeys])}`);
+						Zotero.log(
+							`Map: ${JSON.stringify(tmpKeyMap, replacer)}`,
+						);
+						/*throw Error(
+					"UIDs of a citation target item should not refer to different temporary item keys",
+					);*/
+						tmpKey = [...tmpKeys][0];
 					}
 
 					// save key to the map of temp keys

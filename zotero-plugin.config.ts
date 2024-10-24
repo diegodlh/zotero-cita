@@ -120,10 +120,10 @@ export default defineConfig({
 					from: /wikicite_citations-pane_label\s*=/g,
 					to: "$&\n    .label =",
 				});
-				// add .tooltiptext tag for citation pane tooltip
+				// add .tooltiptext tags for citation pane buttons
 				replaceInFileSync({
 					files: localePath + "/**/*.ftl",
-					from: /wikicite_citations-pane_tooltiptext\s*=/g,
+					from: /wikicite_citations-pane[a-zA-Z\-_]*_tooltiptext\s*=/g,
 					to: "$&\n    .tooltiptext =",
 				});
 

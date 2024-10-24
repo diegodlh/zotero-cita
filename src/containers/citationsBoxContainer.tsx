@@ -1,21 +1,25 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import * as PropTypes from "prop-types";
 import CitationsBox from "../components/itemPane/citationsBox.js";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 import { getPrefGlobalName } from "../utils/prefs.js";
+import { ErrorBoundary } from "react-error-boundary";
 
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
+	onCountChange: (count: number) => void;
 }) {
 	// debug("CitationsBoxContainer will render...");
 
 	// this CitationsBox container knows about the current
 	// sortBy preference value
 	const [sortBy, setSortBy] = useState(() => prefs.getSortBy());
+	const [maxLineCount, setMaxLineCount] = useState(() =>
+		prefs.getLineCount(),
+	);
 
 	// fix: this one was being used
 	// Option 1, include sourceItem in component's internal state.
@@ -61,7 +65,7 @@ function CitationsBoxContainer(props: {
 	// well, actually the forth of DOI may be export in CROCI format
 	// get citations from crossref for this DOI / export citations to CROCI for this DOI
 	// get citations from Wikidata for this QID / sync citations to Wikidata for this QID
-	// OCCID (OpenCitations Corpus ID) makes sense too, because OCI may relate two interanal OC corpus ids
+	// OMID (OpenCitations Metadata ID) makes sense too, because OCI may relate two interanal OC corpus ids
 
 	useEffect(() => {
 		// debug("First run, or props.item has changed");
@@ -141,15 +145,23 @@ function CitationsBoxContainer(props: {
 
 	useEffect(() => {
 		// single-run effect to register listeners for preference-change topics
-		const id = Zotero.Prefs.registerObserver(
+		const sortByObserver = Zotero.Prefs.registerObserver(
 			getPrefGlobalName(prefs.SORT_BY_PREF_KEY),
 			(value: prefs.SortByType) => {
 				setSortBy(value);
 			},
 			true,
 		);
+		const lineCountObserver = Zotero.Prefs.registerObserver(
+			getPrefGlobalName(prefs.LINECOUNT_PREF_KEY),
+			(value: number) => {
+				setMaxLineCount(value);
+			},
+			true,
+		);
 		return () => {
-			Zotero.Prefs.unregisterObserver(id);
+			Zotero.Prefs.unregisterObserver(sortByObserver);
+			Zotero.Prefs.unregisterObserver(lineCountObserver);
 		};
 	}, []);
 
@@ -158,6 +170,11 @@ function CitationsBoxContainer(props: {
 			sourceItem,
 		);
 	}, [sourceItem]);
+
+	// Keep citation count up to date
+	useEffect(() => {
+		props.onCountChange(sourceItem.citations.length);
+	}, [sourceItem.citations.length]);
 
 	/**
 	 * Display citing-item actions pop-up menu at the event's coordinates
@@ -193,19 +210,17 @@ function CitationsBoxContainer(props: {
 	}
 
 	return (
-		<CitationsBox
-			editable={props.editable}
-			sortBy={sortBy}
-			sourceItem={sourceItem}
-			onItemPopup={handleItemPopup}
-			onCitationPopup={handleCitationPopup}
-		/>
+		<ErrorBoundary fallback={<div>Something went wrong</div>}>
+			<CitationsBox
+				editable={props.editable}
+				sortBy={sortBy}
+				maxLineCount={maxLineCount}
+				sourceItem={sourceItem}
+				onItemPopup={handleItemPopup}
+				onCitationPopup={handleCitationPopup}
+			/>
+		</ErrorBoundary>
 	);
 }
-
-CitationsBoxContainer.propTypes = {
-	item: PropTypes.instanceOf(Zotero.Item),
-	editable: PropTypes.bool,
-};
 
 export default CitationsBoxContainer;

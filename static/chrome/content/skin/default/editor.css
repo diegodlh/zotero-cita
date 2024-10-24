@@ -2,6 +2,12 @@ window#citation-editor {
 	height: 100%;
 	width: 100%;
 	padding: 1em;
+	/* These values must be set before the item box is rendered */
+	/* taken from _editableText.scss */
+	--editable-text-padding-inline: 4px;
+	--editable-text-padding-block: 4px;
+	--editable-text-tight-padding-inline: 4px;
+	--editable-text-tight-padding-block: 2px;
 }
 
 div#citation-editor-container {
@@ -17,6 +23,10 @@ div#citation-editor-item-box-container {
 div#citation-editor-footer {
 	align-self: end;
 	width: 100%;
+}
+
+div#citation-editor-footer > .pid-list {
+	margin-bottom: 10px;
 }
 
 div#citation-editor-buttons {

@@ -2,6 +2,8 @@ import Wikicite, { debug } from "./wikicite";
 import Citation from "./citation";
 import Citations from "./citations";
 import Crossref from "./crossref";
+import Semantic from "./semantic";
+import OpenAlex from "./openalex";
 import Extraction from "./extract";
 import ItemWrapper from "./itemWrapper";
 import Matcher from "./matcher";
@@ -10,6 +12,9 @@ import Progress from "./progress";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
 import { StorageType } from "./preferences";
+import Lookup from "./zotLookup";
+import * as _ from "lodash";
+import PID from "./PID";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -374,7 +379,7 @@ class SourceItemWrapper extends ItemWrapper {
 	/*
 	 * @param {Boolean} batch - Do not update or save citations at the beginning and at the end.
 	 */
-	addCitations(citations: any) {
+	addCitations(citations: Citation[] | Citation) {
 		// Fixme: apart from one day implementing possible duplicates
 		// here I have to check other UUIDs too (not only QID)
 		// and if they overlap, add the new OCIs provided only
@@ -386,6 +391,42 @@ class SourceItemWrapper extends ItemWrapper {
 		if (!Array.isArray(citations)) citations = [citations];
 		if (citations.length) {
 			this.loadCitations();
+			const existingTargetDOIs = new Set(
+				this._citations
+					.map((citation) => citation.target.doi)
+					.filter((id): id is DOI => id !== undefined),
+			);
+			const existingTargetISBNs = new Set(
+				this._citations
+					.map((citation) => citation.target.isbn)
+					.filter((id): id is string => id !== undefined)
+					.flatMap((isbnList) => isbnList.split(" ")),
+			);
+			// Filter out items whose DOI or ISBN are part of the existing citations
+			// TODO: expand exclusion to other identifiers and/or use matcher
+			citations = citations.filter((citation) => {
+				// Exclude if DOI already exists
+				if (
+					citation.target.doi &&
+					existingTargetDOIs.has(citation.target.doi)
+				)
+					return false;
+				// Exclude if ISBN already exists
+				if (
+					citation.target.isbn &&
+					citation.target.isbn
+						.split(" ")
+						.some((item) => existingTargetISBNs.has(item))
+				)
+					return false;
+
+				return true;
+			});
+
+			// Filter out identical items (might be slow)
+			citations = _.differenceWith(citations, this._citations, (a, b) =>
+				_.isEqual(a.target.item.toJSON(), b.target.item.toJSON()),
+			);
 			this._citations = this._citations.concat(citations);
 			this.saveCitations();
 		}
@@ -446,7 +487,7 @@ class SourceItemWrapper extends ItemWrapper {
 		options: { clean?: boolean; skipCitation?: Citation },
 	) {
 		const citedPIDs = this.citations.reduce(
-			(citedPIDs: string[], citation: Citation) => {
+			(citedPIDs: PID[], citation: Citation) => {
 				if (
 					options.skipCitation == undefined ||
 					citation !== options.skipCitation
@@ -474,7 +515,7 @@ class SourceItemWrapper extends ItemWrapper {
 			skipCitation?: Citation;
 		},
 	) {
-		const cleanPID = Wikicite.cleanPID(type, value);
+		const cleanPID = new PID(type, value).cleaned();
 		let conflict = "";
 		if (cleanPID) {
 			const cleanCitingPID = this.getPID(type, true);
@@ -524,32 +565,24 @@ class SourceItemWrapper extends ItemWrapper {
 	// if provided, sync to wikidata, export to croci, etc, only for that citation
 	// if not, do it for all
 
+	/*getFrom<T extends IndexerBase>(indexer: T) {
+		(new indexer()).addCitationsToItems([this]);
+	}*/
+
 	getFromCrossref() {
-		Crossref.getCitations();
-		// fail if item doesn't have a DOI specified
-		// In general I would say to try and get DOI with another plugin if not available locally
-		// call the crossref api
-		// the zotero-citationcounts already calls crossref for citations. Check it
-		// call this.add multiple times, or provide an aray
-		// if citation retrieved has doi, check if citation already exists locally
-		// if yes, set providers.crossref to true
-		// decide whether to ignore citations retrieved without doi
-		// or if I will check if they exist already using other fields (title, etc)
-
-		// offer to automatically get QID from wikidata for target items
-		// using Wikidata.getQID(items)
-
-		// offer to automatically link to zotero items
+		new Crossref().addCitationsToItems([this]);
 	}
 
-	getFromOcc() {
-		// What does getting from OpenCitations mean anyway?
-		// Will it get it from all indices? Or only for items in OCC?
-		// What about CROCI? I need DOI to get it from them,
-		// But they may not be available from crossref
-		// Maybe add Get from CROCI? Should I add get from Dryad too?
-		OpenCitations.getCitations();
-		//
+	getFromSemantic() {
+		new Semantic().addCitationsToItems([this]);
+	}
+
+	getFromOpenAlex() {
+		new OpenAlex().addCitationsToItems([this]);
+	}
+
+	getFromOpenCitations() {
+		new OpenCitations().addCitationsToItems([this]);
 	}
 
 	syncWithWikidata(citationIndex?: number) {
@@ -771,6 +804,22 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
+	async parseCitationIdentifiers(identifiers: PID[]) {
+		await Zotero.Schema.schemaUpdatePromise;
+		// look up each identifier asynchronously in parallel - multiple web requests
+		// can run at the same time, so this speeds things up a lot #141
+
+		const items = await Lookup.lookupItemsByIdentifiers(identifiers);
+
+		const citations = items
+			? items.map((item) => {
+					return new Citation({ item: item, ocis: [] }, this);
+				})
+			: [];
+
+		return citations;
+	}
+
 	// import citation by identifier (DOI/ISBN/ArXiV/PMID...)
 	// - also supports multiple items (but only one type at once)
 	async addCitationsByIdentifier() {
@@ -788,9 +837,23 @@ class SourceItemWrapper extends ItemWrapper {
 		);
 
 		if (retVals.text !== undefined) {
-			const identifiers = Zotero.Utilities.extractIdentifiers(
+			const _identifiers = Zotero.Utilities.extractIdentifiers(
 				retVals.text,
 			);
+
+			const identifiers = _identifiers
+				.map((identifier) => {
+					if ("DOI" in identifier)
+						return new PID("DOI", identifier.DOI);
+					if ("ISBN" in identifier)
+						return new PID("ISBN", identifier.ISBN);
+					if ("PMID" in identifier)
+						return new PID("PMID", identifier.PMID);
+					if ("arXiv" in identifier)
+						return new PID("arXiv", identifier.arXiv);
+					else return null;
+				})
+				.filter((identifier): identifier is PID => identifier !== null);
 
 			const progress = new Progress(
 				"loading",
@@ -800,41 +863,8 @@ class SourceItemWrapper extends ItemWrapper {
 			);
 			try {
 				if (identifiers.length > 0) {
-					await Zotero.Schema.schemaUpdatePromise;
-					// look up each identifier asynchronously in parallel - multiple web requests
-					// can run at the same time, so this speeds things up a lot #141
-					let citations = await Promise.all(
-						identifiers.map(async (identifier) => {
-							const translation = new Zotero.Translate.Search();
-							translation.setIdentifier(identifier);
-
-							let jsonItems;
-							try {
-								// set libraryID to false so we don't save this item in the Zotero library
-								jsonItems = await translation.translate({
-									libraryID: false,
-								});
-							} catch {
-								// `translation.translate` throws an error if no item was found for an identifier.
-								// Catch these errors so we don't abort the `Promise.all`.
-								debug(
-									`No items returned for identifier: ${identifier}`,
-								);
-							}
-							if (jsonItems && jsonItems.length > 0) {
-								const jsonItem = jsonItems[0];
-								const newItem = new Zotero.Item(
-									jsonItem.itemType,
-								);
-								newItem.fromJSON(jsonItem);
-								return new Citation(
-									{ item: newItem, ocis: [] },
-									this,
-								);
-							} else return false; // no item added
-						}),
-					);
-					citations = citations.filter(Boolean); // filter out if no item found
+					const citations =
+						await this.parseCitationIdentifiers(identifiers);
 
 					if (citations.length) {
 						this.addCitations(citations);
@@ -874,7 +904,7 @@ class SourceItemWrapper extends ItemWrapper {
 	}
 
 	exportToCroci(citationIndex?: number) {
-		OpenCitations.exportCitations();
+		//OpenCitations.exportCitations();
 	}
 }
 

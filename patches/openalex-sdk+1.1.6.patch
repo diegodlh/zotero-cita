@@ -1,0 +1,91 @@
+diff --git a/node_modules/openalex-sdk/dist/src/index.js b/node_modules/openalex-sdk/dist/src/index.js
+index 70b2df5..518d455 100644
+--- a/node_modules/openalex-sdk/dist/src/index.js
++++ b/node_modules/openalex-sdk/dist/src/index.js
+@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+     return (mod && mod.__esModule) ? mod : { "default": mod };
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ const authors_1 = require("./utils/authors");
+ const exportCSV_1 = require("./utils/exportCSV");
+ const helpers_1 = require("./utils/helpers");
+diff --git a/node_modules/openalex-sdk/dist/src/utils/authors.js b/node_modules/openalex-sdk/dist/src/utils/authors.js
+index 0b1cbc5..f824766 100644
+--- a/node_modules/openalex-sdk/dist/src/utils/authors.js
++++ b/node_modules/openalex-sdk/dist/src/utils/authors.js
+@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.handleAllAuthorsPages = exports.handleMultipleAuthorsPages = exports.validateAuthorParameters = void 0;
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ const exportCSV_1 = require("./exportCSV");
+ const helpers_1 = require("./helpers");
+ const http_1 = require("./http");
+diff --git a/node_modules/openalex-sdk/dist/src/utils/exportCSV.js b/node_modules/openalex-sdk/dist/src/utils/exportCSV.js
+index 7f4d748..9c01df5 100644
+--- a/node_modules/openalex-sdk/dist/src/utils/exportCSV.js
++++ b/node_modules/openalex-sdk/dist/src/utils/exportCSV.js
+@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.convertToCSV = void 0;
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ function flattenObject(obj, parentKey = '', depth = 0) {
+     const flattened = {};
+     for (const [key, value] of Object.entries(obj)) {
+diff --git a/node_modules/openalex-sdk/dist/src/utils/institutions.js b/node_modules/openalex-sdk/dist/src/utils/institutions.js
+index 1082435..099275a 100644
+--- a/node_modules/openalex-sdk/dist/src/utils/institutions.js
++++ b/node_modules/openalex-sdk/dist/src/utils/institutions.js
+@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.handleAllInstitutionsPages = exports.handleMultipleInstitutionsPages = exports.validateInstitutionsParameters = void 0;
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ const exportCSV_1 = require("./exportCSV");
+ const helpers_1 = require("./helpers");
+ const http_1 = require("./http");
+diff --git a/node_modules/openalex-sdk/dist/src/utils/sources.js b/node_modules/openalex-sdk/dist/src/utils/sources.js
+index 699da8d..38c68b8 100644
+--- a/node_modules/openalex-sdk/dist/src/utils/sources.js
++++ b/node_modules/openalex-sdk/dist/src/utils/sources.js
+@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.handleAllSourcesPages = exports.handleMultipleSourcesPages = exports.validateSourcesParameters = void 0;
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ const exportCSV_1 = require("./exportCSV");
+ const helpers_1 = require("./helpers");
+ const http_1 = require("./http");
+diff --git a/node_modules/openalex-sdk/dist/src/utils/topics.js b/node_modules/openalex-sdk/dist/src/utils/topics.js
+index b2946cc..b9fd0ed 100644
+--- a/node_modules/openalex-sdk/dist/src/utils/topics.js
++++ b/node_modules/openalex-sdk/dist/src/utils/topics.js
+@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.handleAllTopicsPages = exports.handleMultipleTopicsPages = exports.validateTopicsParameters = void 0;
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ const exportCSV_1 = require("./exportCSV");
+ const helpers_1 = require("./helpers");
+ const http_1 = require("./http");
+diff --git a/node_modules/openalex-sdk/dist/src/utils/works.js b/node_modules/openalex-sdk/dist/src/utils/works.js
+index 46d5d38..2a5591c 100644
+--- a/node_modules/openalex-sdk/dist/src/utils/works.js
++++ b/node_modules/openalex-sdk/dist/src/utils/works.js
+@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.formatNumber = exports.handleAllPagesInChunks = exports.handleMultiplePages = exports.handleAllPages = exports.validateParameters = void 0;
+-const fs_1 = __importDefault(require("fs"));
++//const fs_1 = __importDefault(require("fs"));
+ const exportCSV_1 = require("./exportCSV");
+ const helpers_1 = require("./helpers");
+ const http_1 = require("./http");

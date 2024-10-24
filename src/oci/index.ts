@@ -1,19 +1,51 @@
+import PID from "../cita/PID";
 import lookup from "./lookup";
 
-const suppliers: { prefix: string; name: string; id: "qid" | "doi" | "occ" }[] =
-	[
-		// https://opencitations.net/oci
-		{ prefix: "010", name: "wikidata", id: "qid" },
-		{ prefix: "020", name: "crossref", id: "doi" },
-		{ prefix: "030", name: "occ", id: "occ" },
-		{ prefix: "040", name: "dryad", id: "doi" },
-		{ prefix: "050", name: "croci", id: "doi" },
-	];
+type Extends<T, U extends T> = U;
+export type OCIPIDType = Extends<PIDType, "DOI" | "QID" | "OMID">;
+
+const suppliers: {
+	prefix: string;
+	name: string;
+	id: OCIPIDType;
+}[] = [
+	// https://opencitations.net/oci
+	{ prefix: "01", name: "wikidata", id: "QID" },
+	{ prefix: "02", name: "crossref", id: "DOI" },
+	{ prefix: "03", name: "occ", id: "OMID" }, // Defunct
+	{ prefix: "04", name: "dryad", id: "DOI" },
+	{ prefix: "05", name: "croci", id: "DOI" }, // Defunct
+	{ prefix: "06", name: "oci", id: "OMID" },
+];
 
 const codes = new Map(lookup.map(({ c, code }) => [String(c), Number(code)]));
 
-export default class {
-	static getOci(supplierName: string, citingId: string, citedId: string) {
+export default class OCI {
+	static getOci(
+		supplierName: string,
+		citingId: PID | string,
+		citedId: PID | string,
+	): string {
+		if (typeof citingId === "string" && typeof citedId === "string") {
+			return this._getOci(supplierName, citingId, citedId);
+		} else if (
+			!(
+				citingId instanceof PID &&
+				citedId instanceof PID &&
+				citingId.type === citedId.type
+			)
+		) {
+			throw new Error("Citing and cited IDs must be of the same type");
+		}
+
+		return this._getOci(supplierName, citingId.id, citedId.id);
+	}
+
+	private static _getOci(
+		supplierName: string,
+		citingId: string,
+		citedId: string,
+	): string {
 		const supplier = suppliers.filter(
 			(supplier) => supplier.name === supplierName,
 		)[0];
@@ -21,7 +53,7 @@ export default class {
 			throw new Error("Unsupported OCI supplier");
 		}
 		const prefix = supplier.prefix;
-		if (supplier.id === "doi") {
+		if (supplier.id === "DOI") {
 			citingId = Zotero.Utilities.cleanDOI(citingId) ?? "";
 			citedId = Zotero.Utilities.cleanDOI(citedId) ?? "";
 			// drop leading "10."
@@ -30,10 +62,10 @@ export default class {
 		} else {
 			let pattern: RegExp;
 			switch (supplier.id) {
-				case "qid":
+				case "QID":
 					pattern = /^Q([0-9]+)$/;
 					break;
-				case "occ":
+				case "OMID":
 					pattern = /^([0-9])+$/;
 					break;
 			}
@@ -43,28 +75,33 @@ export default class {
 			citedId = citedIdMatch ? citedIdMatch[1] : "";
 		}
 		if (citingId && citedId) {
-			if (supplier.id === "doi") {
+			if (supplier.id === "DOI") {
 				// encode
 				citingId = this.encodeId(citingId);
 				citedId = this.encodeId(citedId);
+			} else if (supplier.id === "OMID") {
+				// the prefix is part of the ID: /06[1-9]*0/
+				return `${citingId}-${citedId}`;
 			}
 		} else {
 			throw new Error("Unexpected citing or cited ID format");
 		}
-		return `${prefix}${citingId}-${prefix}${citedId}`;
+		return `${prefix}0${citingId}-${prefix}0${citedId}`;
 	}
 
 	static parseOci(oci: string, supplierName?: string) {
-		const match = oci.match(/^([0-9]{3})([0-9]+)-([0-9]{3})([0-9]+)$/);
+		const match = oci.match(/^(0[1-9]+0)([0-9]+)-(0[1-9]+0)([0-9]+)$/);
 		if (!match) {
 			throw new Error("Wrong OCI format");
 		}
 		const [, citingPrefix, citing, citedPrefix, cited] = match;
-		if (citingPrefix !== citedPrefix) {
-			throw new Error("Citing and cited prefixes do not match");
+		if (citingPrefix.substring(0, 2) !== citedPrefix.substring(0, 2)) {
+			throw new Error(
+				"Citing and cited prefixes are from different suppliers",
+			);
 		}
 		const supplier = suppliers.filter(
-			(supplier) => supplier.prefix === citingPrefix,
+			(supplier) => supplier.prefix === citingPrefix.substring(0, 2),
 		)[0];
 		if (!supplier) {
 			throw new Error("No supplier found for prefix " + citingPrefix);
@@ -75,11 +112,11 @@ export default class {
 		let citingId;
 		let citedId;
 		switch (supplier.id) {
-			case "doi":
+			case "DOI":
 				citingId = "10." + this.decodeId(citing);
 				citedId = "10." + this.decodeId(cited);
 				break;
-			case "qid":
+			case "QID":
 				citingId = "Q" + citing;
 				citedId = "Q" + cited;
 				break;

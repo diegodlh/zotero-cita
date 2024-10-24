@@ -4,6 +4,7 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
+import Lookup from "../../cita/zotLookup";
 
 let citation: Citation;
 ({
@@ -22,14 +23,25 @@ function onCancel() {
 }
 
 function onSave() {
-	for (const pidType of newItem.getPIDTypes()) {
+	for (const pidType of newItem.validPIDTypes) {
 		const pid = newItem.getPID(pidType);
-		if (pid !== undefined && !checkPID(pidType, pid)) {
+		if (pid !== null && !checkPID(pidType, pid.id)) {
 			return;
 		}
 	}
 	retVals.item = newItem.item;
 	window.close();
+}
+
+async function onRefresh() {
+	const pid = newItem.getBestPID(["DOI", "arXiv", "PMID", "OpenAlex"]);
+	if (pid) {
+		const fetchedItem =
+			pid.type === "OpenAlex"
+				? await Lookup.lookupItemsOpenAlex([pid])
+				: await Lookup.lookupItemsByIdentifiers([pid]);
+		if (fetchedItem && fetchedItem.length) newItem.item = fetchedItem[0];
+	}
 }
 
 function checkPID(type: PIDType, value: string) {
@@ -51,6 +63,10 @@ window.addEventListener("load", () => {
 	// even if itemBox.saveOnEdit is set to false;
 	// overwrite saveTx as workaround
 	newItem.item.saveTx = () => (itemBox as any)._forceRenderAll();
+	//Zotero.log(`Custom element: ${window.customElements.get("toolbarbutton")}`);
+	/*window.customElements.define("toolbarbutton", ToolbarButton as any, {
+		extends: "button",
+	});*/
 	const root = createRoot(document.getElementById("root")!);
 	root.render(
 		<CitationEditor
@@ -60,6 +76,7 @@ window.addEventListener("load", () => {
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}
 			onSave={onSave}
+			onRefresh={onRefresh}
 		/>,
 	);
 });

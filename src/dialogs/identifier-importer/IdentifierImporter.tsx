@@ -1,11 +1,12 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
 
-const IdentifierImporter = (props: {
+interface IdentifierImporterProps {
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onImport: () => void;
-}) => (
+}
+
+const IdentifierImporter = (props: IdentifierImporterProps) => (
 	// TS gives an error about using orient here
 	// <div orient="vertical">
 	<div>
@@ -27,11 +28,5 @@ const IdentifierImporter = (props: {
 		</div>
 	</div>
 );
-
-IdentifierImporter.propTypes = {
-	getString: PropTypes.func,
-	onCancel: PropTypes.func,
-	onImport: PropTypes.func,
-};
 
 export default IdentifierImporter;
