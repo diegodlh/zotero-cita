@@ -805,7 +805,6 @@ class ZoteroOverlay {
 					});
 				}
 
-				// TODO: find the right hook so that the header updates when citations change
 				setL10nArgs(`{"citationCount": "${citationCount}"}`);
 			},
 			onItemChange: ({ item, setEnabled }) => {

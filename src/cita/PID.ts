@@ -61,7 +61,7 @@ export default class PID {
 				if (/^https?:/.test(omid))
 					omid = omid.match(/br\/\d+/)?.[0] ?? "";
 				if (omid.substring(0, 3) !== "br/") omid = "br/" + omid;
-				if (!omid.match(/^br\/\d+$/)) return null;
+				if (!omid.match(/^br\/06[1-9]*0\d+$/)) return null;
 				return omid;
 			}
 			case "arXiv": {

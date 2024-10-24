@@ -4,7 +4,7 @@ import Wikidata, { CitesWorkClaim } from "./wikidata";
 import ItemWrapper from "./itemWrapper";
 import SourceItemWrapper from "./sourceItemWrapper";
 import Matcher from "./matcher";
-import OCI from "../oci";
+import OCI, { OCIPIDType } from "../oci";
 import Progress from "./progress";
 import { EntityId } from "wikibase-sdk";
 import objectHash = require("object-hash");
@@ -16,7 +16,7 @@ class Citation {
 	ocis: {
 		citingId: string;
 		citedId: string;
-		idType: "qid" | "doi" | "omid";
+		idType: OCIPIDType;
 		oci: string;
 		supplierName: string;
 		valid: boolean;
@@ -121,8 +121,8 @@ class Citation {
 		try {
 			newOci = OCI.getOci(
 				supplier,
-				this.source[idType]!,
-				this.target[idType]!,
+				this.source.getPID(idType)!.id,
+				this.target.getPID(idType)!.id,
 			);
 		} catch {
 			//

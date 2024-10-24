@@ -123,6 +123,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 				});
 			const citedWorks = response?.response as OCCitation[];
 			if (citedWorks && citedWorks.length) {
+				// The omid (first half of oci) should be the same for all cited works
 				const _omid = citedWorks[0].oci.split("-")[0];
 				// Sanity check
 				if (
@@ -152,6 +153,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 			key: item.oci,
 			externalIds: OpenCitations.parseCitationString(item.cited),
 			rawObject: item,
+			oci: item.oci,
 		};
 	}
 

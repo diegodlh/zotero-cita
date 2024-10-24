@@ -37,6 +37,9 @@ export interface ParsableItem<R> {
 
 	/** The item's data */
 	rawObject?: R;
+
+	/** The item's OCI */
+	oci?: string;
 }
 
 export abstract class IndexerBase<Ref> {
@@ -285,10 +288,12 @@ export abstract class IndexerBase<Ref> {
 					},
 				),
 			);
-			const pidToParsedReferencesMap = new Map<string, Zotero.Item[]>();
-			_parsedReferences.forEach(({ pid, parsedReferences }) => {
-				pidToParsedReferencesMap.set(pid, parsedReferences);
-			});
+			const pidToParsedReferencesMap = new Map(
+				_parsedReferences.map(({ pid, parsedReferences }) => [
+					pid,
+					parsedReferences,
+				]),
+			);
 
 			const refsFound = _parsedReferences
 				.map((ref) => ref.parsedReferences.length)
@@ -366,7 +371,7 @@ export abstract class IndexerBase<Ref> {
 
 	/**
 	 * Parse a list of references into Zotero items.
-	 * @param {ParsableItem<Ref>[]} references - References for a specific work.
+	 * @param {ParsableItem<Ref>[]} references - An item references to parse.
 	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from the references.
 	 */
 	async parseReferences(

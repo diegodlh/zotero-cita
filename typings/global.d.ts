@@ -36,5 +36,5 @@ declare type PIDType =
 	| "PMCID";
 declare type QID = `Q${number}`;
 declare type DOI = `10.${string}/${string}`;
-declare type OMID = `br/${number}`;
+declare type OMID = `br/0${number}0${number}`; // Note that the first number should always start with 6
 declare type OpenAlexID = `W${number}`;
