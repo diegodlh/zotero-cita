@@ -1,7 +1,8 @@
-import { IndexerBase, IndexedWork, ParsableItem } from "./indexer";
+import { IndexerBase, IndexedWork, ParsableReference } from "./indexer";
 import ItemWrapper from "./itemWrapper";
 import Wikicite, { debug } from "./wikicite";
 import PID from "./PID";
+import { ParsedReference } from "./zotLookup";
 
 interface CrossrefFilterResponse {
 	status: string;
@@ -182,33 +183,40 @@ export default class Crossref extends IndexerBase<Reference> {
 			references:
 				work.reference?.map(this.mapReferenceToParsableItem) || [],
 			identifiers: [new PID("DOI", work.DOI)],
-			key: work.DOI,
+			primaryID: work.DOI,
 		};
 	}
 
 	/**
 	 * Map a Crossref reference to a ParsableItem.
 	 * @param {Reference} reference - A reference in JSON Crossref format.
-	 * @returns {ParsableItem<Reference>} ParsableItem with reference.
+	 * @returns {ParsableReference<Reference>} ParsableItem with reference.
 	 */
-	mapReferenceToParsableItem(reference: Reference): ParsableItem<Reference> {
+	mapReferenceToParsableItem(
+		reference: Reference,
+	): ParsableReference<Reference> {
 		const externalIds = [];
 		if (reference.DOI) externalIds.push(new PID("DOI", reference.DOI));
 		if (reference.ISBN) externalIds.push(new PID("ISBN", reference.ISBN));
 		return {
-			key: reference.key,
+			primaryID: reference.key,
 			externalIds: externalIds,
 			rawObject: reference,
 		};
 	}
 
 	parseReferencesManually(
-		references: ParsableItem<Reference>[],
-	): Zotero.Item[] {
+		references: ParsableReference<Reference>[],
+	): ParsedReference[] {
 		return references
-			.filter((ref) => ref.rawObject) // Is guaranteed by caler in principle
-			.map((ref) => this.parseItemFromCrossrefReference(ref.rawObject!))
-			.filter((item): item is Zotero.Item => item !== null);
+			.filter((ref) => ref.rawObject) // Is guaranteed by caller in principle
+			.map((ref) =>
+				this.parseItemFromCrossrefReference(
+					ref.primaryID,
+					ref.rawObject!,
+				),
+			)
+			.filter((item): item is ParsedReference => item !== null);
 	}
 
 	/**
@@ -217,8 +225,9 @@ export default class Crossref extends IndexerBase<Reference> {
 	 * @returns {Promise<Zotero.Item>} Zotero item parsed from the identifier, or null if parsing failed.
 	 */
 	parseItemFromCrossrefReference(
+		primaryID: string,
 		crossrefItem: Reference,
-	): Zotero.Item | null {
+	): ParsedReference | null {
 		//Zotero.log(`Parsing ${crossrefItem.unstructured}`);
 		const jsonItem: any = {};
 		if (crossrefItem["journal-title"]) {
@@ -263,6 +272,9 @@ export default class Crossref extends IndexerBase<Reference> {
 
 		const newItem = new Zotero.Item(jsonItem.itemType);
 		newItem.fromJSON(jsonItem);
-		return newItem;
+		return {
+			primaryID: primaryID,
+			item: newItem,
+		};
 	}
 }

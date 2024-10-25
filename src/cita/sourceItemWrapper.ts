@@ -15,6 +15,7 @@ import { StorageType } from "./preferences";
 import Lookup from "./zotLookup";
 import * as _ from "lodash";
 import PID from "./PID";
+import { IndexerBase } from "./indexer";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -565,24 +566,8 @@ class SourceItemWrapper extends ItemWrapper {
 	// if provided, sync to wikidata, export to croci, etc, only for that citation
 	// if not, do it for all
 
-	/*getFrom<T extends IndexerBase>(indexer: T) {
-		(new indexer()).addCitationsToItems([this]);
-	}*/
-
-	getFromCrossref() {
-		new Crossref().addCitationsToItems([this]);
-	}
-
-	getFromSemantic() {
-		new Semantic().addCitationsToItems([this]);
-	}
-
-	getFromOpenAlex() {
-		new OpenAlex().addCitationsToItems([this]);
-	}
-
-	getFromOpenCitations() {
-		new OpenCitations().addCitationsToItems([this]);
+	getFrom<T>(indexer: IndexerBase<T>) {
+		indexer.addCitationsToItems([this]);
 	}
 
 	syncWithWikidata(citationIndex?: number) {

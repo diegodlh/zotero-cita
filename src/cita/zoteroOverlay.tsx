@@ -23,12 +23,18 @@ import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
 import PID from "./PID";
 import { set } from "lodash";
+import { IndexerBase } from "./indexer";
+import { listeners } from "process";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
 	"Wikidata API",
 	"Wikidata JSON",
+	// TODO: Remove both OpenAlex translators once merged into zotero/translators
+	// See: https://github.com/zotero/translators/pull/3379
 	"OpenAlex JSON",
+	"OpenAlex",
+	// TODO: Consider removing as it has been merged into zotero/translators long ago
 	"zotkat/Wikidata QuickStatements",
 ];
 
@@ -468,47 +474,14 @@ class ZoteroOverlay {
 		}
 	}
 
-	async getFromCrossref(menuName: MenuSelectionType) {
-		// get items selected
-		// filter items with doi
-		// generate batch call to crossref
-		// only add items not available locally yet
+	async getMultipleFromIndexer<Ref>(
+		menuName: MenuSelectionType,
+		IndexerType: new () => IndexerBase<Ref>,
+	) {
 		const items = await this.getSelectedItems(menuName, true);
 		if (items.length) {
-			new Crossref().addCitationsToItems(items);
-		}
-	}
-
-	async getFromSemantic(menuName: MenuSelectionType) {
-		// get items selected
-		// filter items with doi
-		// generate batch call to crossref
-		// only add items not available locally yet
-		const items = await this.getSelectedItems(menuName, true);
-		if (items.length) {
-			new Semantic().addCitationsToItems(items);
-		}
-	}
-
-	async getFromOpenAlex(menuName: MenuSelectionType) {
-		// get items selected
-		// filter items with doi
-		// generate batch call to crossref
-		// only add items not available locally yet
-		const items = await this.getSelectedItems(menuName, true);
-		if (items.length) {
-			new OpenAlex().addCitationsToItems(items);
-		}
-	}
-
-	async getFromOpenCitations(menuName: MenuSelectionType) {
-		// get items selected
-		// filter items with doi
-		// generate batch call to crossref
-		// only add items not available locally yet
-		const items = await this.getSelectedItems(menuName, true);
-		if (items.length) {
-			new OpenCitations().addCitationsToItems(items);
+			const indexer = new IndexerType();
+			indexer.addCitationsToItems(items);
 		}
 	}
 
@@ -952,6 +925,25 @@ class ZoteroOverlay {
 		mainWindow.appendChild(itemMenu);
 	}
 
+	private indexerMenuAttributes<Ref>(
+		IndexerType: new () => IndexerBase<Ref>,
+	) {
+		const indexer = new IndexerType();
+		return {
+			// TODO: set an indexer id attribute
+			attributes: {
+				id: `item-menu-${indexer.indexerName.toLowerCase().replace(" ", "-")}-get`,
+				label: Wikicite.formatString(
+					"wikicite.item-menu.get-indexer",
+					indexer.indexerName,
+				),
+			},
+			listeners: {
+				command: () => this._sourceItem!.getFrom(indexer),
+			},
+		};
+	}
+
 	/** Item-wide popup menu for importing citations */
 	itemImportMenu(doc: Document, mainWindow: Element) {
 		const itemMenu = WikiciteChrome.createXULMenuPopup(
@@ -963,58 +955,14 @@ class ZoteroOverlay {
 			},
 			[
 				// Get Crossref citations menu item
-				{
-					attributes: {
-						id: "item-menu-crossref-get",
-						label: Wikicite.formatString(
-							"wikicite.item-menu.get-indexer",
-							"Crossref",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.getFromCrossref(),
-					},
-				},
+				this.indexerMenuAttributes(Crossref),
 				// Get Semantic citations menu item
-				{
-					attributes: {
-						id: "item-menu-semantic-get",
-						label: Wikicite.formatString(
-							"wikicite.item-menu.get-indexer",
-							"Semantic Scholar",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.getFromSemantic(),
-					},
-				},
+				this.indexerMenuAttributes(Semantic),
 				// Get OpenAlex citations menu item
-				{
-					attributes: {
-						id: "item-menu-openalex-get",
-						label: Wikicite.formatString(
-							"wikicite.item-menu.get-indexer",
-							"OpenAlex",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.getFromOpenAlex(),
-					},
-				},
+				this.indexerMenuAttributes(OpenAlex),
 				// Get OpenCitations citations menu item
-				{
-					attributes: {
-						id: "item-menu-opencitations-get",
-						label: Wikicite.formatString(
-							"wikicite.item-menu.get-indexer",
-							"OpenCitations",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.getFromOpenCitations(),
-					},
-				},
-				// Get OpenCitations citations menu item
+				this.indexerMenuAttributes(OpenCitations),
+				// Extract from PDF menu item
 				{
 					attributes: {
 						id: "item-menu-pdf-extract",
@@ -1357,13 +1305,13 @@ class ZoteroOverlay {
 			"item-menu-crossref-get",
 		) as unknown as XULMenuItemElement;
 		const itemSemanticGet = document.getElementById(
-			"item-menu-semantic-get",
+			"item-menu-semantic-scholar-get",
 		) as unknown as XULMenuItemElement;
 		const itemOpenAlexGet = document.getElementById(
 			"item-menu-openalex-get",
 		) as unknown as XULMenuItemElement;
 		const itemOpenCitationsGet = document.getElementById(
-			"item-menu-opencitations-get",
+			"item-menu-open-citations-get",
 		) as unknown as XULMenuItemElement;
 		const itemPdfExtract = document.getElementById(
 			"item-menu-pdf-extract",
@@ -1591,15 +1539,21 @@ class ZoteroOverlay {
 		> = new Map([
 			["fetchQIDs", () => this.fetchQIDs(menuName)],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
-			["getFromIndexer.Crossref", () => this.getFromCrossref(menuName)],
+			[
+				"getFromIndexer.Crossref",
+				() => this.getMultipleFromIndexer(menuName, Crossref),
+			],
 			[
 				"getFromIndexer.Semantic Scholar",
-				() => this.getFromSemantic(menuName),
+				() => this.getMultipleFromIndexer(menuName, Semantic),
 			],
-			["getFromIndexer.OpenAlex", () => this.getFromOpenAlex(menuName)],
+			[
+				"getFromIndexer.OpenAlex",
+				() => this.getMultipleFromIndexer(menuName, OpenAlex),
+			],
 			[
 				"getFromIndexer.OpenCitations",
-				() => this.getFromOpenCitations(menuName),
+				() => this.getMultipleFromIndexer(menuName, OpenCitations),
 			],
 			["getFromAttachments", () => this.getFromAttachments(menuName)],
 			["addAsCitations", () => this.addAsCitations(menuName)],

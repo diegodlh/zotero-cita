@@ -1466,7 +1466,7 @@ declare namespace ZoteroTranslators {
 		getTranslators(
 			getAllTranslators?: boolean,
 			checkSetTranslator?: boolean,
-		): Promise<ZoteroTranslators.Translator<T>[]>;
+		): Promise<T[]>;
 		translate(options: TranslateOptions): Promise<ZoteroTranslators.Item[]>;
 		setDocument(doc: Document): void;
 		setString(s: string): void;

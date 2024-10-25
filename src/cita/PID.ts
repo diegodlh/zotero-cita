@@ -118,6 +118,11 @@ export default class PID {
 		return Zotero.Utilities.extractIdentifiers(this.id)[0] ?? null;
 	}
 
+	get comparable(): string | undefined {
+		const rawID = this.cleanID?.toLowerCase();
+		return rawID ? `${this.type}:${rawID}` : undefined;
+	}
+
 	static readonly allTypes: PIDType[] = [
 		"DOI",
 		"ISBN",
@@ -150,12 +155,8 @@ export default class PID {
 		"CorpusID",
 	];
 
-	static equal(a: PID, b: PID): boolean {
+	static isEqual(a: PID, b: PID): boolean {
 		if (a.type !== b.type) return false;
-		return (
-			a.cleanID !== null &&
-			b.cleanID !== null &&
-			a.cleanID.toLowerCase() === b.cleanID.toLowerCase()
-		);
+		return a.comparable !== null && a.comparable === b.comparable;
 	}
 }

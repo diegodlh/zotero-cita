@@ -7,13 +7,14 @@ import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
 import Matcher from "./matcher";
 import _ = require("lodash");
-import Lookup from "./zotLookup";
+import Lookup, { ParsedReference } from "./zotLookup";
+import { pid } from "process";
 
 export interface IndexedWork<R> {
 	/**
 	 * References found for the work.
 	 */
-	references: ParsableItem<R>[];
+	references: ParsableReference<R>[];
 	/**
 	 * The work's identifiers, if any.
 	 */
@@ -22,15 +23,15 @@ export interface IndexedWork<R> {
 	 * Indexer-specific unique identifier.
 	 * @remarks Do not make any assumptions about it except that it should be unique!
 	 */
-	key: string;
+	primaryID: string;
 }
 
-export interface ParsableItem<R> {
+export interface ParsableReference<R> {
 	/**
 	 * Indexer-specific unique identifier.
 	 * @remarks Do not make any assumptions about it except that it should be unique!
 	 */
-	key: string;
+	primaryID: string;
 
 	/** The item's identifiers, if any. */
 	externalIds: PID[]; // External identifiers
@@ -71,10 +72,12 @@ export abstract class IndexerBase<Ref> {
 
 	/**
 	 * Optional function to parse references manually.
-	 * @param {ParsableItem<Ref>[]} references - Reference
+	 * @param {ParsableReference<Ref>[]} references - Reference
 	 * @returns {Zotero.Item[]} Zotero items parsed from the references.
 	 */
-	parseReferencesManually?(references: ParsableItem<Ref>[]): Zotero.Item[];
+	parseReferencesManually?(
+		references: ParsableReference<Ref>[],
+	): ParsedReference[];
 
 	/**
 	 * Filter source items with supported UIDs.
@@ -83,6 +86,7 @@ export abstract class IndexerBase<Ref> {
 	filterItemsWithSupportedIdentifiers(
 		sourceItems: SourceItemWrapper[],
 	): Map<string, { sourceItem: SourceItemWrapper; pid: PID }> {
+		// The key here is the item's Zotero key
 		const itemsMap = new Map<
 			string,
 			{ sourceItem: SourceItemWrapper; pid: PID }
@@ -91,41 +95,60 @@ export abstract class IndexerBase<Ref> {
 		for (const item of sourceItems) {
 			const pid = item.getBestPID(this.supportedPIDs);
 			if (pid) {
-				itemsMap.set(pid.id, { sourceItem: item, pid });
+				itemsMap.set(item.item.key, { sourceItem: item, pid });
 			}
 		}
 
 		return itemsMap;
 	}
 
+	/**
+	 * Match identifiers to indexed works.
+	 * @param pidToSourceItem Map of identifiers to source items.
+	 * @param indexedWorks List of indexed works.
+	 * @returns Map of Zotero key to IndexedWork.
+	 */
 	matchIdentifiers(
-		identifiers: PID[],
+		zotKeyToSourceItem: Map<
+			string,
+			{
+				sourceItem: SourceItemWrapper;
+				pid: PID;
+			}
+		>,
 		indexedWorks: IndexedWork<Ref>[],
 	): Map<string, IndexedWork<Ref>> {
-		const pidToIndexedWorkMap = new Map<string, IndexedWork<Ref>>();
-		for (const indexedWork of indexedWorks) {
-			const indexerIds = indexedWork.identifiers;
-			const pidValue = identifiers.find((pid) =>
-				indexerIds.some((_pid) => PID.equal(pid, _pid)),
-			)?.id;
-			if (pidValue) pidToIndexedWorkMap.set(pidValue, indexedWork);
+		// We want to match the identifiers to the indexed works and return a map of Zotero key to IndexedWork
+		const keyToIndexedWork = new Map<string, IndexedWork<Ref>>();
+		const indexedWorksMap = new Map(
+			indexedWorks.flatMap((work) => {
+				return work.identifiers
+					.filter((id) => id.comparable !== undefined)
+					.map((id) => {
+						return [id.comparable!, work];
+					});
+			}),
+		);
+		const lostSourceItems: SourceItemWrapper[] = [];
+		for (const [key, { sourceItem, pid }] of zotKeyToSourceItem.entries()) {
+			const comparable = pid.comparable;
+			if (comparable && indexedWorksMap.has(comparable)) {
+				keyToIndexedWork.set(key, indexedWorksMap.get(comparable)!);
+			} else {
+				Zotero.log(
+					`Could not find indexed work for ${sourceItem.title} (${pid.comparable})`,
+				);
+				lostSourceItems.push(sourceItem);
+			}
 		}
 
 		ztoolkit.log(
-			`Matched ${pidToIndexedWorkMap.size}/${indexedWorks.length} indexed works to identifiers. Had ${identifiers.length} identifiers.`,
+			`Matched ${keyToIndexedWork.size}/${indexedWorks.length} indexed works to identifiers. Had ${zotKeyToSourceItem.size} identifiers.`,
 		);
-		if (pidToIndexedWorkMap.size !== indexedWorks.length) {
-			const missingIdentifiers = identifiers.filter(
-				(pid) => !pidToIndexedWorkMap.has(pid.id),
-			);
-			Zotero.warn(
-				new Error(
-					`Missing identifiers: ${missingIdentifiers.map((pid) => `${pid.type}:${pid.id}`).join(", ")}`,
-				),
-			);
-		}
 
-		return pidToIndexedWorkMap;
+		// TODO: do something with the lost source items and find which indexed works were not matched
+
+		return keyToIndexedWork;
 	}
 
 	/**
@@ -137,19 +160,20 @@ export abstract class IndexerBase<Ref> {
 	}
 
 	/**
-	 * Get source item citations from the online database.
+	 * Fetch all references for a list of source items, parses them, and adds them to the source items.
 	 * @param {SourceItemWrapper[]} sourceItems - One or more source items to get citations for.
+	 * @param {boolean} autoLinkCitations - Whether to auto-link the citations.
 	 */
 	async addCitationsToItems(
 		sourceItems: SourceItemWrapper[],
-		autoLinkCitations = true,
+		autoLinkCitations: boolean = true,
 	) {
 		const libraryID = sourceItems[0].item.libraryID;
 
-		// Filter items with valid identifiers (DOI or other)
-		const pidToSourceItemMap =
+		// Filter items with fetchable identifiers
+		const zotKeyToSourceItemMap =
 			this.filterItemsWithSupportedIdentifiers(sourceItems);
-		if (pidToSourceItemMap.size === 0) {
+		if (zotKeyToSourceItemMap.size === 0) {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				Wikicite.formatString(
@@ -166,7 +190,7 @@ export abstract class IndexerBase<Ref> {
 
 		// Ask user confirmation in case some selected items already have citations
 		const citationsAlreadyExist = Array.from(
-			pidToSourceItemMap.values(),
+			zotKeyToSourceItemMap.values(),
 		).some((element) => element.sourceItem.citations.length);
 		if (citationsAlreadyExist) {
 			const confirmed = Services.prompt.confirm(
@@ -192,9 +216,8 @@ export abstract class IndexerBase<Ref> {
 		);
 
 		// Get results from indexer
-		// Note: for most indexers, this will be a single request. If needed, limiting is done in the indexer.
-		const identifiers = Array.from(pidToSourceItemMap.values()).map(
-			(item) => item.pid,
+		const identifiers = Array.from(zotKeyToSourceItemMap.values()).map(
+			({ pid }) => pid,
 		);
 		const indexedWorks = await this.getIndexedWorks(identifiers).catch(
 			(error) => {
@@ -203,7 +226,7 @@ export abstract class IndexerBase<Ref> {
 			},
 		);
 
-		// Confirm with the user to add citations
+		// Count the number of citations to be added and ask for confirmation
 		const numberOfCitations = indexedWorks.map(
 			(item) => item.references.length,
 		);
@@ -251,109 +274,56 @@ export abstract class IndexerBase<Ref> {
 				this.indexerName,
 			),
 		);
-		const pidToIndexedWorkMap = this.matchIdentifiers(
-			identifiers,
+		const keyToIndexedWorkMap = this.matchIdentifiers(
+			zotKeyToSourceItemMap,
 			indexedWorks,
 		);
 
-		try {
-			let parsedItems = 0;
-			const _parsedReferences = await Promise.all(
-				// TODO: when fetching references for more than one source item, we should group all parsing together to avoid duplicate requests and then reattribute them to the source items
-				new Array(...pidToIndexedWorkMap.entries()).map(
-					async ([pid, work]): Promise<{
-						pid: string;
-						parsedReferences: Zotero.Item[];
-					}> => {
-						if (!work.references.length)
-							return { pid, parsedReferences: [] };
-						const parsedReferences = await this.parseReferences(
-							work.references,
-						).catch((error) => {
-							Zotero.log(
-								new Error(
-									`Error parsing references for ${pid}: ${error}`,
-								),
-							);
-							return [];
-						});
-						progress.updateLine(
-							"loading",
-							Wikicite.formatString(
-								"wikicite.indexer.get-citations.parsing-progress",
-								[++parsedItems, itemsToBeUpdated],
-							),
-						);
-						return { pid, parsedReferences };
-					},
-				),
-			);
-			const pidToParsedReferencesMap = new Map(
-				_parsedReferences.map(({ pid, parsedReferences }) => [
-					pid,
-					parsedReferences,
-				]),
-			);
-
-			const refsFound = _parsedReferences
-				.map((ref) => ref.parsedReferences.length)
-				.reduce((sum, n) => sum + n, 0);
-
-			// Reconcialiation
-			const sourceItemToZotItemsMap = new Map<
-				SourceItemWrapper,
-				Zotero.Item[]
-			>(); // Map of source items to Zotero items
-			for (const [pid, { sourceItem }] of pidToSourceItemMap) {
-				const parsedReferences = pidToParsedReferencesMap.get(pid);
-				if (!parsedReferences || !parsedReferences.length) continue;
-
-				sourceItemToZotItemsMap.set(sourceItem, parsedReferences);
+		// Build a map of parsable references to source items
+		const parsableReferenceMap = new Map<
+			string,
+			{
+				parsableReference: ParsableReference<Ref>;
+				sourceItemKeys: Set<string>;
 			}
+		>();
 
-			// Auto-linking callback
-			const autoLinkCallback = async () => {
-				if (autoLinkCitations) {
-					// We need to wait a bit after the transaction is done so that the citations are saved to storage
-					setTimeout(async () => {
-						const matcher = new Matcher(libraryID);
-						await matcher.init();
-						for (const [
-							wrappedItem,
-							_,
-						] of sourceItemToZotItemsMap) {
-							wrappedItem.autoLinkCitations(matcher, true);
-						}
-					}, 100);
+		for (const [
+			sourceItemKey,
+			indexedWork,
+		] of keyToIndexedWorkMap.entries()) {
+			for (const ref of indexedWork.references) {
+				const refKey = ref.primaryID;
+				if (!parsableReferenceMap.has(refKey)) {
+					parsableReferenceMap.set(refKey, {
+						parsableReference: ref,
+						sourceItemKeys: new Set(),
+					});
 				}
-			};
+				parsableReferenceMap
+					.get(refKey)!
+					.sourceItemKeys.add(sourceItemKey);
+			}
+		}
 
-			await Zotero.DB.executeTransaction(
-				async () => {
-					for (const [
-						sourceItem,
-						parsedReferences,
-					] of sourceItemToZotItemsMap) {
-						const citations = parsedReferences.map(
-							(newItem) =>
-								new Citation(
-									{ item: newItem, ocis: [] },
-									sourceItem,
-								),
-						);
-						sourceItem.addCitations(citations);
-					}
-				},
-				{ onCommit: autoLinkCallback },
-			);
+		// Get the unique parsable references
+		const uniqueParsableReferences = Array.from(
+			parsableReferenceMap.values(),
+		).map((entry) => entry.parsableReference);
 
-			progress.updateLine(
-				"done",
-				Wikicite.formatString("wikicite.indexer.get-citations.done", [
-					refsFound,
-					citationsToBeAdded,
-					this.indexerName,
-				]),
+		// Parse all references at once
+		progress.updateLine(
+			"loading",
+			Wikicite.formatString(
+				"wikicite.indexer.get-citations.parsing",
+				this.indexerName,
+			),
+		);
+
+		let parsedReferences: ParsedReference[] = [];
+		try {
+			parsedReferences = await this.parseReferences(
+				uniqueParsableReferences,
 			);
 		} catch (error) {
 			progress.updateLine(
@@ -363,20 +333,110 @@ export abstract class IndexerBase<Ref> {
 					this.indexerName,
 				),
 			);
-			Zotero.log(`Adding citations failed due to error: ${error}`);
-		} finally {
-			progress.close();
+			Zotero.log(`Parsing references failed due to error: ${error}`);
+			return;
 		}
+
+		// Build a map from primaryID to parsed item
+		const parsedReferenceMap = new Map();
+		for (const parsedRef of parsedReferences) {
+			parsedReferenceMap.set(parsedRef.primaryID, parsedRef.item);
+		}
+
+		// Build finalPairings: map from sourceItemKey to parsed references
+		const finalPairings = new Map<
+			string,
+			{ primaryID: string; item: Zotero.Item }[]
+		>();
+
+		for (const [
+			refKey,
+			{ parsableReference, sourceItemKeys },
+		] of parsableReferenceMap.entries()) {
+			const parsedItem = parsedReferenceMap.get(refKey);
+			if (!parsedItem) {
+				// The reference could not be parsed
+				continue;
+			}
+			for (const sourceItemKey of sourceItemKeys) {
+				if (!finalPairings.has(sourceItemKey)) {
+					finalPairings.set(sourceItemKey, []);
+				}
+				finalPairings.get(sourceItemKey)!.push({
+					primaryID: refKey,
+					item: parsedItem,
+				});
+			}
+		}
+
+		// Convert finalPairings to array for processing
+		const finalPairingsArray = Array.from(finalPairings.entries())
+			.map(([sourceItemKey, itemsToAdd]) => {
+				const sourceItemEntry =
+					zotKeyToSourceItemMap.get(sourceItemKey);
+				if (!sourceItemEntry) return null;
+				const sourceItem = sourceItemEntry.sourceItem;
+				return {
+					sourceItem,
+					itemsToAdd,
+				};
+			})
+			.filter((entry) => entry !== null) as {
+			sourceItem: SourceItemWrapper;
+			itemsToAdd: { primaryID: string; item: Zotero.Item }[];
+		}[];
+
+		// Auto-linking callback
+		const autoLinkCallback = async () => {
+			if (autoLinkCitations) {
+				// We need to wait a bit after the transaction is done so that the citations are saved to storage
+				setTimeout(async () => {
+					const matcher = new Matcher(libraryID);
+					await matcher.init();
+					for (const { sourceItem } of finalPairingsArray) {
+						sourceItem.autoLinkCitations(matcher, true);
+					}
+				}, 100);
+			}
+		};
+
+		// Proceed to update the source items
+		await Zotero.DB.executeTransaction(
+			async () => {
+				for (const { sourceItem, itemsToAdd } of finalPairingsArray) {
+					const citations = itemsToAdd.map(
+						(parsedRef) =>
+							new Citation(
+								{ item: parsedRef.item, ocis: [] },
+								sourceItem,
+							),
+					);
+					sourceItem.addCitations(citations);
+				}
+			},
+			{ onCommit: autoLinkCallback },
+		);
+
+		progress.updateLine(
+			"done",
+			Wikicite.formatString("wikicite.indexer.get-citations.done", [
+				9999,
+				citationsToBeAdded,
+				this.indexerName,
+			]),
+		);
+
+		progress.close();
 	}
 
 	/**
 	 * Parse a list of references into Zotero items.
-	 * @param {ParsableItem<Ref>[]} references - An item references to parse.
+	 * @param {ParsableReference<Ref>[]} references - An item references to parse.
 	 * @returns {Promise<Zotero.Item[]>} Zotero items parsed from the references.
 	 */
 	async parseReferences(
-		references: ParsableItem<Ref>[],
-	): Promise<Zotero.Item[]> {
+		references: ParsableReference<Ref>[],
+	): Promise<ParsedReference[]> {
 		if (!references.length) {
 			throw new Error("No references to parse");
 		}
@@ -394,77 +454,16 @@ export abstract class IndexerBase<Ref> {
 		const rawDataCount = refsWithRawData.length;
 		const unparseableCount = refsWithoutIds.length - rawDataCount;
 
-		// Extract identifiers from references and group them by type
-		const allIdentifiers = refsWithIds.map((ref) => {
-			// Create a map of externalIds for quick lookup by type
-			const pidMap = new Map(
-				ref.externalIds.map((pid) => [pid.type, pid]),
-			);
-
-			// Iterate through pidsSupportedForLookup in order of priority and find the first match
-			for (const type of Lookup.pidsSupportedForLookup) {
-				const pid = pidMap.get(type);
-				if (pid) return pid;
-			}
-			// A match is guaranteed to be found since we filtered out references without identifiers supported for lookup
-			// So this should never happen:
-			throw new Error("No supported PID found");
-		});
-		const [lookupIdentifiers, otherIdentifiers] = _.partition(
-			allIdentifiers,
-			(pid) => ["DOI", "ISBN", "PMID", "arXiv"].includes(pid.type),
-		);
-		const [openAlexIdentifiers, magIdentifiers] = _.partition(
-			otherIdentifiers,
-			(pid) => pid.type === "OpenAlex",
-		);
-		// Unique identifiers
-		const uniqueLookupIdentifiers = _.uniqWith(
-			lookupIdentifiers,
-			PID.equal,
-		);
-		const uniqueOpenAlexIdentifiers = _.uniqWith(
-			openAlexIdentifiers,
-			PID.equal,
-		);
-		const uniqueMagIdentifiers = _.uniqWith(magIdentifiers, PID.equal);
-		// TODO: make sure we track the total count correctly
-
 		let failCount = 0;
-		const parsedReferences: Zotero.Item[] = [];
-		// Look up items with identifiers supported by Zotero
-		if (uniqueLookupIdentifiers.length) {
-			// TODO: implement fallback mechanism for failed identifiers
-			const lookupResult = await Lookup.lookupItemsByIdentifiers(
-				uniqueLookupIdentifiers,
-				false,
-				(failedPIDs) => (failCount += failedPIDs.length),
-			);
-			if (lookupResult) parsedReferences.push(...lookupResult);
-		}
-
-		// Look up items with OpenAlex identifiers
-		if (uniqueOpenAlexIdentifiers.length) {
-			const openAlexResult = await Lookup.lookupItemsOpenAlex(
-				uniqueOpenAlexIdentifiers,
-			);
-			if (openAlexResult) {
-				failCount +=
-					uniqueOpenAlexIdentifiers.length - openAlexResult.length;
-				parsedReferences.push(...openAlexResult);
-			}
-		}
-		// Look up items with MAG identifiers
-		if (uniqueMagIdentifiers.length) {
-			const magResult = await Lookup.lookupItemsOpenAlex(
-				uniqueMagIdentifiers,
-				"MAG",
-			);
-			if (magResult) {
-				failCount += uniqueMagIdentifiers.length - magResult.length;
-				parsedReferences.push(...magResult);
-			}
-		}
+		const parsedReferences: ParsedReference[] = [];
+		// Look up items with identifiers
+		// TODO: implement fallback mechanism for failed identifiers
+		const lookupResult = await Lookup.lookupItems(
+			refsWithIds,
+			false,
+			(failedPIDs) => (failCount += failedPIDs.length),
+		);
+		if (lookupResult) parsedReferences.push(...lookupResult);
 
 		const successfulIdentifiers = parsedReferences.length;
 
@@ -481,16 +480,15 @@ export abstract class IndexerBase<Ref> {
 		// Report
 		const totalReferences = references.length;
 		const totalParsed = parsedReferences.length;
-		const duplicates =
-			lookupIdentifiers.length -
-			uniqueLookupIdentifiers.length +
-			(openAlexIdentifiers.length - uniqueOpenAlexIdentifiers.length) +
-			(magIdentifiers.length - uniqueMagIdentifiers.length);
 
-		Zotero.log(`Had ${totalReferences} references to parse. Split into ${lookupIdentifiers.length} lookup identifiers, ${openAlexIdentifiers.length} OpenAlex identifiers, ${magIdentifiers.length} MAG identifiers. ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${lookupIdentifiers.length + openAlexIdentifiers.length + magIdentifiers.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
-Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicates} duplicates. Tally: ${successfulIdentifiers + failCount + duplicates} out of ${allIdentifiers.length} identifiers.
+		Zotero.log(`Had ${totalReferences} references to parse. Split into ${refsWithIds.length} lookup identifiers, ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${refsWithIds.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
+Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${NaN} duplicates. Tally: ${successfulIdentifiers + failCount} out of ${refsWithIds.length} identifiers.
 Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
 Grand total: ${totalParsed} out of ${totalReferences} references.`);
+		//Zotero.log(`Had ${totalReferences} references to parse. Split into ${allIdentifiers.length} lookup identifiers, ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${allIdentifiers.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
+		// Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicates} duplicates. Tally: ${successfulIdentifiers + failCount + duplicates} out of ${allIdentifiers.length} identifiers.
+		// Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
+		// Grand total: ${totalParsed} out of ${totalReferences} references.`);
 
 		// Return parsed references
 		return parsedReferences;

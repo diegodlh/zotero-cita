@@ -1,4 +1,4 @@
-import { IndexedWork, IndexerBase, ParsableItem } from "./indexer";
+import { IndexedWork, IndexerBase, ParsableReference } from "./indexer";
 import OpenAlexSDK from "openalex-sdk";
 import {
 	ExternalIdsWork,
@@ -9,7 +9,7 @@ import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
 
 export default class OpenAlex extends IndexerBase<string> {
-	indexerName = "Open Alex";
+	indexerName = "OpenAlex";
 
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
@@ -71,16 +71,18 @@ export default class OpenAlex extends IndexerBase<string> {
 					? OpenAlex.mapReferences(work.referenced_works)
 					: [],
 				identifiers: OpenAlex.mapIdentifiers(work),
-				key: work.id,
+				primaryID: work.id,
 			};
 		});
 	}
 
-	private static mapReferences(references: string[]): ParsableItem<string>[] {
+	private static mapReferences(
+		references: string[],
+	): ParsableReference<string>[] {
 		// The references are just OpenAlex URLs
 		return references.map((ref) => {
 			return {
-				key: ref,
+				primaryID: ref,
 				externalIds: [new PID("OpenAlex", ref)],
 				rawObject: ref,
 			};

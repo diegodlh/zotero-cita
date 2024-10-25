@@ -1,5 +1,5 @@
 import Wikicite, { debug } from "./wikicite";
-import { IndexedWork, IndexerBase, ParsableItem } from "./indexer";
+import { IndexedWork, IndexerBase, ParsableReference } from "./indexer";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "../cita/preferences";
 import { getPref } from "../utils/prefs";
@@ -164,16 +164,16 @@ export default class Semantic extends IndexerBase<Reference> {
 					Semantic.mapReferenceToParsableItem,
 				),
 				identifiers: Semantic.mapIdentifiers(paper.externalIds),
-				key: paper.paperId,
+				primaryID: paper.paperId,
 			};
 		});
 	}
 
 	private static mapReferenceToParsableItem(
 		reference: Reference,
-	): ParsableItem<Reference> {
+	): ParsableReference<Reference> {
 		return {
-			key: reference.paperId || reference.title, // If there's no paper ID, it's basically a piece of the PDF that Semantic Scholar couldn't match to a reference
+			primaryID: reference.paperId || reference.title, // If there's no paper ID, it's basically a piece of the PDF that Semantic Scholar couldn't match to a reference
 			externalIds: Semantic.mapIdentifiers(reference.externalIds),
 			rawObject: reference,
 		};

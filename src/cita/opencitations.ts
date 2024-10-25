@@ -1,4 +1,4 @@
-import { IndexedWork, IndexerBase, ParsableItem } from "./indexer";
+import { IndexedWork, IndexerBase, ParsableReference } from "./indexer";
 import Wikicite, { debug } from "./wikicite";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
@@ -136,7 +136,7 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 				return {
 					references: citedWorks.map(OpenCitations.mapToParsableItem),
 					identifiers: [pid],
-					key: _omid,
+					primaryID: _omid,
 				};
 			} else {
 				return null;
@@ -148,9 +148,9 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 
 	private static mapToParsableItem(
 		item: OCCitation,
-	): ParsableItem<OCCitation> {
+	): ParsableReference<OCCitation> {
 		return {
-			key: item.oci,
+			primaryID: item.oci,
 			externalIds: OpenCitations.parseCitationString(item.cited),
 			rawObject: item,
 			oci: item.oci,
