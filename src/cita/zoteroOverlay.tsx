@@ -1299,7 +1299,7 @@ class ZoteroOverlay {
 							(
 								document.getElementById(
 									`pid-row-add-${pidType}`,
-								) as XUL.MenuItem
+								) as unknown as XULMenuItemElement
 							).style.display = "none";
 							if (
 								Array.from(
@@ -1307,8 +1307,9 @@ class ZoteroOverlay {
 										.children!,
 								).every(
 									(menuItem) =>
-										(menuItem as XUL.MenuItem).style
-											.display == "none",
+										(
+											menuItem as unknown as XULMenuItemElement
+										).style.display == "none",
 								)
 							) {
 								(
@@ -1347,37 +1348,37 @@ class ZoteroOverlay {
 
 		const itemWikidataSync = document.getElementById(
 			"item-menu-wikidata-sync",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemFetchCitationQIDs = document.getElementById(
 			"item-menu-fetch-citation-qids",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemCrossrefGet = document.getElementById(
 			"item-menu-crossref-get",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemSemanticGet = document.getElementById(
 			"item-menu-semantic-get",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemOpenAlexGet = document.getElementById(
 			"item-menu-openalex-get",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemOpenCitationsGet = document.getElementById(
 			"item-menu-opencitations-get",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemPdfExtract = document.getElementById(
 			"item-menu-pdf-extract",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemIdentifierImport = document.getElementById(
 			"item-menu-identifier-import",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemCitationsImport = document.getElementById(
 			"item-menu-citations-import",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemFileExport = document.getElementById(
 			"item-menu-file-export",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 		const itemCrociExport = document.getElementById(
 			"item-menu-croci-export",
-		) as XUL.MenuItem;
+		) as unknown as XULMenuItemElement;
 
 		itemWikidataSync.disabled = !sourceQid;
 		itemFetchCitationQIDs.disabled = !hasCitations;
@@ -1409,24 +1410,39 @@ class ZoteroOverlay {
 		const ociSuppliers = citation?.ocis.map((oci) => oci.supplierName);
 
 		(
-			doc.getElementById("citation-menu-wikidata-sync") as XUL.MenuItem
+			doc.getElementById(
+				"citation-menu-wikidata-sync",
+			) as unknown as XULMenuItemElement
 		).disabled = !sourceItem?.qid || !targetItem?.qid;
 		(
-			doc.getElementById("citation-menu-fetch-qid") as XUL.MenuItem
+			doc.getElementById(
+				"citation-menu-fetch-qid",
+			) as unknown as XULMenuItemElement
 		).disabled = false;
 		(
-			doc.getElementById("citation-menu-file-export") as XUL.MenuItem
+			doc.getElementById(
+				"citation-menu-file-export",
+			) as unknown as XULMenuItemElement
 		).disabled = false;
 		(
-			doc.getElementById("citation-menu-croci-export") as XUL.MenuItem
+			doc.getElementById(
+				"citation-menu-croci-export",
+			) as unknown as XULMenuItemElement
 		).disabled = !sourceItem?.doi || !targetItem?.doi;
 		(
-			doc.getElementById("citation-menu-oci-crossref") as XUL.MenuItem
+			doc.getElementById(
+				"citation-menu-oci-crossref",
+			) as unknown as XULMenuItemElement
 		).disabled = !ociSuppliers?.includes("crossref");
-		(doc.getElementById("citation-menu-oci-occ") as XUL.MenuItem).disabled =
-			!ociSuppliers?.includes("occ");
 		(
-			doc.getElementById("citation-menu-oci-wikidata") as XUL.MenuItem
+			doc.getElementById(
+				"citation-menu-oci-occ",
+			) as unknown as XULMenuItemElement
+		).disabled = !ociSuppliers?.includes("occ");
+		(
+			doc.getElementById(
+				"citation-menu-oci-wikidata",
+			) as unknown as XULMenuItemElement
 		).disabled = !ociSuppliers?.includes("wikidata");
 	}
 
@@ -1437,7 +1453,9 @@ class ZoteroOverlay {
 		PID.showable.forEach((pidType) => {
 			// if item supports PID, but it is currently hidden, show menu item to add it
 			(
-				doc.getElementById(`pid-row-add-${pidType}`) as XUL.MenuItem
+				doc.getElementById(
+					`pid-row-add-${pidType}`,
+				) as unknown as XULMenuItemElement
 			).hidden = !(
 				sourceItemPIDTypes.includes(pidType) &&
 				document
@@ -1552,10 +1570,12 @@ class ZoteroOverlay {
 		(
 			doc.getElementById(
 				`wikicite-${menuName}submenu-separator`,
-			)! as XUL.MenuSeparator
+			)! as unknown as XULMenuSeparatorElement
 		).hidden = !showSubmenu;
 		(
-			doc.getElementById(`wikicite-${menuName}submenu`)! as XUL.Menu
+			doc.getElementById(
+				`wikicite-${menuName}submenu`,
+			)! as unknown as XULMenuElement
 		).hidden = !showSubmenu;
 	}
 
