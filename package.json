@@ -64,7 +64,7 @@
 		"typescript": "^5.3.3",
 		"typescript-eslint": "^7.14.1",
 		"zotero-plugin-scaffold": "^0.0.34",
-		"zotero-types": "^2.2.1"
+		"zotero-types": "^3.0.1"
 	},
 	"engines": {
 		"npm": ">=8.1"

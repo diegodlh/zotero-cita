@@ -531,7 +531,7 @@ function CitationsBox(props: CitationsBoxProps) {
 									(
 										document.getElementById(
 											"pid-row-add-menu",
-										) as any
+										) as unknown as XULMenuPopupElement
 									)?.openPopupAtScreen(
 										window.screenX + event.clientX,
 										window.screenY + event.clientY,

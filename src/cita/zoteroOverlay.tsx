@@ -676,16 +676,16 @@ class ZoteroOverlay {
 		} = {};
 		const sectionAddMenu = document.getElementById(
 			"citations-box-item-menu-add",
-		);
+		) as unknown as XULMenuPopupElement;
 		const sectionImportMenu = document.getElementById(
 			"citations-box-item-menu-import",
-		);
+		) as unknown as XULMenuPopupElement;
 		const sectionExportMenu = document.getElementById(
 			"citations-box-item-menu-export",
-		);
+		) as unknown as XULMenuPopupElement;
 		const sectionMoreMenu = document.getElementById(
 			"citations-box-item-menu-more",
-		);
+		) as unknown as XULMenuPopupElement;
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-citations-tab",
 			pluginID: config.addonID,
@@ -704,8 +704,8 @@ class ZoteroOverlay {
 					l10nID: "section-button-add",
 					icon: "chrome://zotero/skin/16/universal/plus.svg",
 					onClick: (props) => {
-						(sectionAddMenu as any).openPopup(
-							(props.event as any).detail.button,
+						sectionAddMenu.openPopup(
+							(props.event as MouseEvent).detail.button,
 							"after_end",
 						);
 					},
@@ -717,7 +717,7 @@ class ZoteroOverlay {
 					),
 					icon: `chrome://${config.addonRef}/content/skin/default/import.svg`,
 					onClick: (props) => {
-						(sectionImportMenu as any).openPopup(
+						sectionImportMenu.openPopup(
 							(props.event as any).detail.button,
 							"after_end",
 						);
@@ -730,7 +730,7 @@ class ZoteroOverlay {
 					),
 					icon: "chrome://zotero/skin/16/universal/export.svg",
 					onClick: (props) => {
-						(sectionExportMenu as any).openPopup(
+						sectionExportMenu.openPopup(
 							(props.event as any).detail.button,
 							"after_end",
 						);
@@ -741,7 +741,7 @@ class ZoteroOverlay {
 					l10nID: "itembox-button-options",
 					icon: "chrome://zotero/skin/16/universal/options.svg",
 					onClick: (props) => {
-						(sectionMoreMenu as any).openPopup(
+						sectionMoreMenu.openPopup(
 							(props.event as any).detail.button,
 							"after_end",
 						);

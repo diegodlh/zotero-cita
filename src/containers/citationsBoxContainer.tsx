@@ -182,7 +182,7 @@ function CitationsBoxContainer(props: {
 	function handleItemPopup(event: React.MouseEvent) {
 		const itemPopupMenu = document.getElementById(
 			"citations-box-item-menu",
-		) as any; // not sure what type this should be?
+		) as unknown as XULMenuPopupElement;
 		event.preventDefault();
 		itemPopupMenu.openPopupAtScreen(
 			window.screenX + event.clientX,
@@ -201,7 +201,7 @@ function CitationsBoxContainer(props: {
 		);
 		const citationPopupMenu = document.getElementById(
 			"citations-box-citation-menu",
-		) as any;
+		) as unknown as XULMenuPopupElement;
 		citationPopupMenu.openPopupAtScreen(
 			window.screenX + event.clientX,
 			window.screenY + event.clientY,
