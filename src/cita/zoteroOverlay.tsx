@@ -1300,8 +1300,9 @@ class ZoteroOverlay {
 								document.getElementById(
 									`pid-row-add-${pidType}`,
 								) as unknown as XULMenuItemElement
-							).style.display = "none";
+							).hidden = true;
 							if (
+								// if all the menu items are hidden (ie. all the rows are shown) - hide the + button
 								Array.from(
 									document.getElementById("pid-row-add-menu")!
 										.children!,
@@ -1309,7 +1310,7 @@ class ZoteroOverlay {
 									(menuItem) =>
 										(
 											menuItem as unknown as XULMenuItemElement
-										).style.display == "none",
+										).hidden,
 								)
 							) {
 								(
