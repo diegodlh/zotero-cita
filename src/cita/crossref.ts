@@ -68,6 +68,8 @@ export default class Crossref extends IndexerBase<Reference> {
 
 	maxRPS: number = 50; // Requests per second
 	maxConcurrent: number = 5; // Maximum concurrent requests
+	preferredChunkSize: number = 50;
+	requiresGroupedIdentifiers: boolean = false; // Will only be DOI anyway
 
 	async fetchDOI(item: ItemWrapper): Promise<PID | null> {
 		const crossrefOpenURL =

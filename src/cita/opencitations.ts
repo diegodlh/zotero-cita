@@ -36,6 +36,9 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 	 */
 	supportedPIDs: PIDType[] = ["DOI", "OMID", "PMID"];
 
+	requiresGroupedIdentifiers: boolean = false; // They're all independent
+	preferredChunkSize: number = 100; // We don't even need chunking
+
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		// TODO: support getting for multiple items
 		// Based on API documentation, should support (doi|issn|isbn|omid|openalex|pmid|pmcid)

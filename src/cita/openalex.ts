@@ -7,6 +7,7 @@ import {
 } from "openalex-sdk/dist/src/types/work";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
+import _ = require("lodash");
 
 export default class OpenAlex extends IndexerBase<string> {
 	indexerName = "OpenAlex";
@@ -14,6 +15,11 @@ export default class OpenAlex extends IndexerBase<string> {
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
 	supportedPIDs: PIDType[] = ["OpenAlex", "DOI", "MAG", "PMID", "PMCID"];
+
+	maxConcurrent: number = 1;
+	maxRPS: number = 10;
+	requiresGroupedIdentifiers: boolean = true;
+	preferredChunkSize: number = 90;
 
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		// TODO: support getting for multiple items
@@ -41,30 +47,29 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
 	 */
 	async getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<string>[]> {
-		const dois = identifiers
-			.filter((id) => id.type === "DOI")
-			.map((id) => id.id);
-		const oaIds = identifiers
-			.filter((id) => id.type === "OpenAlex")
-			.map((id) => {
-				return { openalex: id.id };
+		const pidType = identifiers[0].type; // Should all be the same per chunk
+		let searchParams: SearchParameters;
+		if (pidType === "DOI") {
+			const dois = identifiers.map((id) => id.id);
+			searchParams = {
+				filter: { doi: dois },
+				retriveAllPages: true,
+			};
+		} else {
+			const otherIDs = identifiers.map((id) => {
+				return { [id.type.toLowerCase()]: id.id };
 			});
+			searchParams = {
+				filter: { ids: otherIDs },
+				retriveAllPages: true,
+			};
+		}
 
-		// TODO: add PMID and PMCID support
-		const doiParams: SearchParameters = {
-			filter: { doi: dois },
-			retriveAllPages: true,
-		};
-		const oaParams: SearchParameters = {
-			filter: { ids: oaIds },
-			retriveAllPages: true,
-		};
-		const works: Work[] = [];
-		// TODO: limit number of works to fetch at once due to request string length
-		if (dois.length)
-			works.push(...(await this.openAlexSDK.works(doiParams)).results);
-		if (oaIds.length)
-			works.push(...(await this.openAlexSDK.works(oaParams)).results);
+		const works = (
+			await this.limiter.schedule(() =>
+				this.openAlexSDK.works(searchParams),
+			)
+		).results;
 		return works.map((work): IndexedWork<string> => {
 			return {
 				references: work.referenced_works

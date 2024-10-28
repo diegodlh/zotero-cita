@@ -62,6 +62,9 @@ export abstract class IndexerBase<Ref> {
 	 */
 	abstract supportedPIDs: PIDType[];
 
+	abstract preferredChunkSize: number;
+	abstract requiresGroupedIdentifiers: boolean;
+
 	/**
 	 * Abstract method to get references from the specific indexer.
 	 * @param {PID[]} identifiers - List of DOIs or other identifiers.
@@ -214,16 +217,35 @@ export abstract class IndexerBase<Ref> {
 			),
 		);
 
-		// Get results from indexer
+		// Group and chunk identifiers
 		const identifiers = Array.from(zotKeyToSourceItemMap.values()).map(
 			({ pid }) => pid,
 		);
-		const indexedWorks = await this.getIndexedWorks(identifiers).catch(
-			(error) => {
-				Zotero.log(`Error fetching indexedWorks: ${error}`, "error");
-				return [];
-			},
-		);
+
+		let groupedIdentifiers: { [key: string]: PID[] };
+		if (this.requiresGroupedIdentifiers) {
+			groupedIdentifiers = _.groupBy(identifiers, (pid) => pid.type);
+		} else {
+			groupedIdentifiers = { mixed: identifiers };
+		}
+
+		// Get results from indexer
+		const indexedWorks: IndexedWork<Ref>[] = [];
+		for (const [pidType, pids] of Object.entries(groupedIdentifiers)) {
+			const chunkedPids = _.chunk(pids, this.preferredChunkSize);
+			for (const chunk of chunkedPids) {
+				const chunkedWorks = await this.limiter.schedule(() =>
+					this.getIndexedWorks(chunk).catch((error) => {
+						Zotero.log(
+							`Error fetching indexedWorks with ${this.indexerName} and id type ${pidType}: ${error}`,
+							"error",
+						);
+						return [] as IndexedWork<Ref>[];
+					}),
+				);
+				indexedWorks.push(...chunkedWorks);
+			}
+		}
 
 		// Count the number of citations to be added and ask for confirmation
 		const numberOfCitations = indexedWorks.map(
@@ -419,7 +441,7 @@ export abstract class IndexerBase<Ref> {
 		progress.updateLine(
 			"done",
 			Wikicite.formatString("wikicite.indexer.get-citations.done", [
-				finalPairingsArray.length,
+				parsedReferences.length,
 				citationsToBeAdded,
 				this.indexerName,
 			]),

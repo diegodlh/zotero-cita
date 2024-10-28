@@ -48,6 +48,9 @@ export default class Semantic extends IndexerBase<Reference> {
 	];
 
 	maxRPS: number = 1; // Request per second
+	maxConcurrent: number = 1; // Maximum concurrent requests
+	preferredChunkSize: number = 100; // Could support up to 500 items, but only 9999 citations per request
+	requiresGroupedIdentifiers: boolean = false;
 
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		const identifier = item.getBestPID(this.supportedPIDs);
