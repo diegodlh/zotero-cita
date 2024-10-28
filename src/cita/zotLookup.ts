@@ -63,7 +63,13 @@ export default class Lookup {
 		const parsedItems: Zotero.Item[] = [];
 		for (const pid of pids) {
 			const item = await Lookup.translateIdentifier(pid, options);
-			parsedItems.push(item[0] as unknown as Zotero.Item);
+			if (item[0] && item[0].key) {
+				// Was added to Zotero, so it's already a Zotero.Item
+				parsedItems.push(item[0] as unknown as Zotero.Item);
+			} else {
+				// Not added to Zotero, so we need to convert it
+				parsedItems.push(Lookup.createZoteroItem(item[0]));
+			}
 		}
 
 		if (parsedItems) {

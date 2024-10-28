@@ -2,6 +2,8 @@ import PIDRow from "../../components/pidRow";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import ItemWrapper from "../../cita/itemWrapper";
+import Lookup from "../../cita/zotLookup";
+import { debug } from "../../cita/wikicite";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
@@ -12,7 +14,6 @@ interface CitationEditorProps {
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onSave: () => void;
-	onRefresh: () => void;
 }
 
 // Fixme: as a Citation Editor (not a target item editor)
@@ -20,6 +21,18 @@ interface CitationEditorProps {
 // such as label of the source item, OCIs, and Zotero link status
 const CitationEditor = (props: CitationEditorProps) => {
 	const [pidTypes, setPidTypes] = useState(props.item.validPIDTypes);
+
+	async function onRefresh() {
+		const pid = props.item.getBestPID(Lookup.pidsSupportedForImport);
+		if (pid) {
+			const fetchedItem = await Lookup.lookupIdentifiers([pid]);
+			if (fetchedItem && fetchedItem.length) {
+				props.item.item = fetchedItem[0];
+				// FIXME: this still doesn't work
+				props.itemBox._forceRenderAll();
+			}
+		}
+	}
 
 	useEffect(() => {
 		// const addCreatorRow = props.itemBox.addCreatorRow.bind(props.itemBox);
@@ -85,7 +98,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 		} catch (error: any) {
 			alert(error);
 		}
-	}, []);
+	}, [props.item]);
 
 	function onItemTypeChange() {
 		setPidTypes(props.item.validPIDTypes);
@@ -122,8 +135,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 			<div id="citation-editor-buttons">
 				<button
 					onClick={() => {
-						props.onRefresh();
-						onItemTypeChange();
+						onRefresh();
 					}}
 				>
 					{props.getString("wikicite.editor.refresh")}

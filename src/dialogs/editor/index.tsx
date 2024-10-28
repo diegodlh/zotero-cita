@@ -4,7 +4,6 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
-import Lookup from "../../cita/zotLookup";
 
 let citation: Citation;
 ({
@@ -31,14 +30,6 @@ function onSave() {
 	}
 	retVals.item = newItem.item;
 	window.close();
-}
-
-async function onRefresh() {
-	const pid = newItem.getBestPID(Lookup.pidsSupportedForLookup);
-	if (pid) {
-		const fetchedItem = await Lookup.lookupIdentifiers([pid]);
-		if (fetchedItem && fetchedItem.length) newItem.item = fetchedItem[0];
-	}
 }
 
 function checkPID(type: PIDType, value: string) {
@@ -73,7 +64,6 @@ window.addEventListener("load", () => {
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}
 			onSave={onSave}
-			onRefresh={onRefresh}
 		/>,
 	);
 });
