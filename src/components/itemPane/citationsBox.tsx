@@ -1,18 +1,12 @@
 /* License */
 import * as React from "react";
 import { useEffect, useState, useRef } from "react";
-import useResizeObserver from "@react-hook/resize-observer";
 import Wikicite, { debug } from "../../cita/wikicite";
 import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
-import WikidataButton from "./wikidataButton";
-import ZoteroButton from "./zoteroButton";
-import ImportButton from "./importButton";
 import { config } from "../../../package.json";
-import ToolbarButton from "./toolbarButton";
-import LinkButton from "./linkButton";
-import { debounce } from "lodash";
+import CitationRow from "./citationRow";
 
 interface CitationsBoxProps {
 	editable: boolean;
@@ -28,14 +22,7 @@ function CitationsBox(props: CitationsBoxProps) {
 	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
-	const [lineCounts, setLineCounts] = useState<{
-		[index: number]: number;
-	}>({});
-	const labelRefs = useRef<(HTMLSpanElement | null)[]>([]);
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	const removeStr = Zotero.getString("general.remove");
-	const optionsStr = "Open context menu";
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
@@ -92,39 +79,6 @@ function CitationsBox(props: CitationsBoxProps) {
 		items.sort((a, b) => (a.value! > b.value! ? 1 : -1));
 		setSortedIndices(items.map((item) => item.index));
 	}, [props.sortBy, props.sourceItem]);
-
-	// Clamp citation labels to maxLineCount lines initially
-	useEffect(() => {
-		labelRefs.current.forEach((label, _) => {
-			if (label) {
-				label.style.setProperty(
-					"-webkit-line-clamp",
-					props.maxLineCount.toString(),
-				);
-			}
-		});
-	}, [citations, props.maxLineCount]);
-
-	// Calculate initial line counts for each citation label
-	useEffect(() => {
-		calculateLineCounts();
-	}, [citations, props.sourceItem, props.sortBy]);
-
-	// Recalculate line counts on resize
-	useResizeObserver(containerRef, debounce(calculateLineCounts, 100));
-
-	function calculateLineCounts() {
-		labelRefs.current.forEach((label, index) => {
-			if (label) {
-				const _lineHeight = window.getComputedStyle(label)?.lineHeight;
-				const lineHeight = _lineHeight ? parseFloat(_lineHeight) : null;
-				const lines = lineHeight
-					? Math.round(label.offsetHeight / lineHeight)
-					: 1;
-				setLineCounts((prev) => ({ ...prev, [index]: lines }));
-			}
-		});
-	}
 
 	/**
 	 * Opens the citation editor window.
@@ -224,10 +178,11 @@ function CitationsBox(props: CitationsBoxProps) {
 		await props.sourceItem.deleteCitation(index, sync);
 	}
 
-	function handleCitationMove(index: number, newIndex: number) {
-		const newCitations = props.sourceItem.citations;
-		const [movedCitation] = newCitations.splice(index, 1);
-		newCitations.splice(newIndex, 0, movedCitation);
+	function handleCitationMove(dragIndex: number, dropIndex: number) {
+		const newCitations = Array.from(citations);
+		const [movedCitation] = newCitations.splice(dragIndex, 1);
+		newCitations.splice(dropIndex, 0, movedCitation);
+		setCitations(newCitations);
 		props.sourceItem.citations = newCitations;
 
 		// Reset hover effects
@@ -281,212 +236,26 @@ function CitationsBox(props: CitationsBoxProps) {
 		}
 	}
 
-	function renderGrippy() {
-		if (props.sortBy !== "ordinal") return;
-
-		const handleMouseDown = (e: React.MouseEvent) => {
-			e.currentTarget.closest(".row")?.setAttribute("draggable", "true");
-		};
-
-		const handleMouseUp = (e: React.MouseEvent) => {
-			e.currentTarget.closest(".row")?.setAttribute("draggable", "false");
-		};
-
-		return (
-			<ToolbarButton
-				className="zotero-clicky zotero-clicky-grippy show-on-hover"
-				tabIndex={-1}
-				onMouseDown={handleMouseDown}
-				onMouseUp={handleMouseUp}
-				title="Drag"
-				imgSrc="chrome://zotero/skin/16/universal/grip.svg"
-			/>
-		);
-	}
-
-	function renderCitationRow(citation: Citation, index: number) {
-		const item = citation.target.item;
-		const label = citation.target.getLabel();
-		const clampedLine = lineCounts[index] || props.maxLineCount;
-
-		// Drag handlers
-		const handleDragStart: React.DragEventHandler<HTMLDivElement> = (e) => {
-			const row = e.currentTarget;
-
-			if (row.getAttribute("draggable") !== "true") {
-				e.preventDefault();
-				e.stopPropagation();
-				return;
-			}
-
-			e.dataTransfer.setData(
-				"application/zotero-citation-index",
-				index.toString(),
-			);
-			e.dataTransfer.setDragImage(row, 15, 15);
-
-			setTimeout(() => {
-				row.classList.add("drag-hidden-citation");
-				row.classList.add("noHover");
-			});
-		};
-
-		const handleDragOver: React.DragEventHandler<HTMLDivElement> = (e) => {
-			e.preventDefault();
-			const draggedIndex = parseInt(
-				e.dataTransfer.getData("application/zotero-citation-index"),
-				10,
-			);
-			if (isNaN(draggedIndex)) {
-				return;
-			}
-
-			const placeholder = document.querySelector(".drag-hidden-citation");
-			const currentRow = e.currentTarget;
-
-			// Ensure the placeholder isn't in the wrong place
-			if (currentRow.previousSibling === placeholder) {
-				currentRow.parentNode?.insertBefore(currentRow, placeholder);
-			} else if (draggedIndex !== index && placeholder) {
-				currentRow.parentNode?.insertBefore(placeholder, currentRow);
-			}
-		};
-
-		const handleDrop = (e: React.DragEvent<Element>) => {
-			e.preventDefault();
-
-			// Get the index of the citation being dragged
-			const draggedIndex = parseInt(
-				e.dataTransfer.getData("application/zotero-citation-index"),
-				10,
-			);
-
-			const row = e.currentTarget.closest(".row");
-
-			const destinationIndex = row
-				? Array.from(row.parentNode!.children).indexOf(row)
-				: citations.length;
-
-			// No change in order - do nothing
-			if (draggedIndex === destinationIndex) {
-				return;
-			}
-
-			// Due to some kind of drag-drop API issue,
-			// after citation is dropped, the hover effect often stays at
-			// the row's old location. To workaround that, set noHover class to block all
-			// hover effects on citation rows and then remove it on the first mouse movement in refresh().
-			document
-				.querySelectorAll(".citations-box-list-container .row")
-				.forEach((row) => {
-					row.classList.add("noHover");
-				});
-			// Un-hide the moved citation row
-			document
-				.querySelector(".drag-hidden-citation")
-				?.classList.remove("drag-hidden-citation");
-			// Update the item after small delay to avoid blinking
-
-			// Update the item after a small delay to avoid blinking
-			setTimeout(() => {
-				handleCitationMove(draggedIndex, destinationIndex);
-			}, 250);
-		};
-
-		const handleDragEnd: React.DragEventHandler<HTMLDivElement> = (e) => {
-			// If the row is still hidden, no 'drop' event happened, meaning citation rows
-			// were not reordered. To make sure everything is in correct order, just refresh.
-			/*if (e.currentTarget.classList.contains("drag-hidden-citation")) {
-                this._forceRenderAll();
-            }*/
-			//e.currentTarget.classList.remove("drag-hidden-citation");
-		};
-
-		const freezeLineCount = () => {
-			labelRefs.current[index]?.style.setProperty(
-				"-webkit-line-clamp",
-				clampedLine.toString(),
-			);
-		};
-
-		const resetLineCount = () => {
-			labelRefs.current[index]?.style.setProperty(
-				"-webkit-line-clamp",
-				props.maxLineCount.toString(),
-			);
-		};
-
-		return (
-			<div
-				className="row"
-				key={citation.hash}
-				onMouseEnter={freezeLineCount}
-				onMouseLeave={resetLineCount}
-				onDragStart={handleDragStart}
-				onDragOver={handleDragOver}
-				onDrop={handleDrop}
-				onDragEnd={handleDragEnd}
-			>
-				{renderGrippy()}
-				<div
-					className="box keyboard-clickable"
-					tabIndex={0}
-					role="button"
-					onClick={() => handleCitationEdit(index)}
-				>
-					<span
-						className="icon icon-css icon-item-type"
-						data-item-type={item.itemType}
-					></span>
-					<span
-						className="label"
-						ref={(el) => {
-							labelRefs.current[index] = el;
-						}}
-					>
-						{label}
-					</span>
-				</div>
-				{props.editable && (
-					<>
-						<ImportButton citation={citation} />
-						<LinkButton citation={citation} />
-						<WikidataButton
-							citation={citation}
-							onClick={() => handleCitationSync(index)}
-						/>
-						{/* Remove button */}
-						<ToolbarButton
-							className="zotero-clicky zotero-clicky-minus show-on-hover no-display"
-							tabIndex={0}
-							onClick={() => handleCitationDelete(index)}
-							title={removeStr}
-							imgSrc="chrome://zotero/skin/16/universal/minus-circle.svg"
-						/>
-						{/* Options button */}
-						<ToolbarButton
-							className="zotero-clicky zotero-clicky-options show-on-hover no-display"
-							tabIndex={0}
-							onClick={(event) =>
-								props.onCitationPopup(event, index)
-							}
-							title={optionsStr}
-							imgSrc="chrome://zotero/skin/16/universal/options.svg"
-						/>
-						<ZoteroButton citation={citation} />
-					</>
-				)}
-			</div>
-		);
-	}
-
 	return (
 		<div className="citations-box">
 			<div className="citations-box-list-container" ref={containerRef}>
 				{/* Citations now have a hash based on their JSON object (not stringfy), which allows better identification of the rows by React */}
-				{sortedIndices.map((index) =>
-					renderCitationRow(citations[index], index),
-				)}
+				{sortedIndices.map((index) => (
+					<CitationRow
+						key={citations[index].hash}
+						citation={citations[index]}
+						citationsLength={citations.length}
+						index={index}
+						editable={props.editable}
+						sortBy={props.sortBy}
+						maxLineCount={props.maxLineCount}
+						containerRef={containerRef}
+						handleCitationEdit={handleCitationEdit}
+						handleCitationDelete={handleCitationDelete}
+						handleCitationSync={handleCitationSync}
+						handleCitationMove={handleCitationMove}
+					/>
+				))}
 				{/* I understand this bit here makes TAB create a new tag
                 { props.editable && <span
                     tabIndex="0"
