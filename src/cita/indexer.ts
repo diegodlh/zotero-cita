@@ -419,7 +419,7 @@ export abstract class IndexerBase<Ref> {
 		progress.updateLine(
 			"done",
 			Wikicite.formatString("wikicite.indexer.get-citations.done", [
-				9999,
+				finalPairingsArray.length,
 				citationsToBeAdded,
 				this.indexerName,
 			]),
@@ -454,6 +454,7 @@ export abstract class IndexerBase<Ref> {
 		const unparseableCount = refsWithoutIds.length - rawDataCount;
 
 		let failCount = 0;
+		let duplicateCount = 0;
 		const parsedReferences: ParsedReference[] = [];
 		// Look up items with identifiers
 		// TODO: implement fallback mechanism for failed identifiers
@@ -461,7 +462,10 @@ export abstract class IndexerBase<Ref> {
 			refsWithIds,
 			(failedPIDs) => (failCount += failedPIDs.length),
 		);
-		if (lookupResult) parsedReferences.push(...lookupResult);
+		if (lookupResult) {
+			duplicateCount = lookupResult.duplicateCount;
+			parsedReferences.push(...lookupResult.parsedReferences);
+		}
 
 		const successfulIdentifiers = parsedReferences.length;
 
@@ -480,7 +484,7 @@ export abstract class IndexerBase<Ref> {
 		const totalParsed = parsedReferences.length;
 
 		Zotero.log(`Had ${totalReferences} references to parse. Split into ${refsWithIds.length} lookup identifiers, ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${refsWithIds.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
-Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${NaN} duplicates. Tally: ${successfulIdentifiers + failCount} out of ${refsWithIds.length} identifiers.
+Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicateCount} duplicates. Tally: ${successfulIdentifiers + failCount} out of ${refsWithIds.length} identifiers.
 Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
 Grand total: ${totalParsed} out of ${totalReferences} references.`);
 

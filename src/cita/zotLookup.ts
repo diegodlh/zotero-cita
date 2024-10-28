@@ -83,7 +83,9 @@ export default class Lookup {
 	static async lookupItems(
 		parsableItemsWithIDs: ParsableReference<any>[],
 		failedIdentifiersFallback?: (pids: PID[]) => void,
-	): Promise<false | ParsedReference[]> {
+	): Promise<
+		false | { parsedReferences: ParsedReference[]; duplicateCount: number }
+	> {
 		if (!parsableItemsWithIDs.length) {
 			Zotero.logError(
 				new Error(`Lookup input did not contain any items to look up.`),
@@ -214,7 +216,7 @@ export default class Lookup {
 			return false;
 		}
 
-		return parsedReferences;
+		return { parsedReferences, duplicateCount };
 	}
 
 	/**

@@ -202,8 +202,8 @@ export default class Crossref extends IndexerBase<Reference> {
 		if (reference.DOI) externalIds.push(new PID("DOI", reference.DOI));
 		if (reference.ISBN) externalIds.push(new PID("ISBN", reference.ISBN));
 		return {
-			// We add the main work DOI to the reference key to ensure uniqueness
-			primaryID: mainWorkDOI + reference.key,
+			// We add the main work DOI to the reference key to ensure uniqueness among manual references
+			primaryID: reference.DOI ?? mainWorkDOI + reference.key,
 			externalIds: externalIds,
 			rawObject: reference,
 		};
