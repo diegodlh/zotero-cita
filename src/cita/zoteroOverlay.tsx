@@ -34,6 +34,7 @@ const TRANSLATOR_LABELS = [
 	// See: https://github.com/zotero/translators/pull/3379
 	"OpenAlex JSON",
 	"OpenAlex",
+	"Crossref REST",
 	// TODO: Consider removing as it has been merged into zotero/translators long ago
 	"zotkat/Wikidata QuickStatements",
 ];

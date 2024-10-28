@@ -34,9 +34,9 @@ function onSave() {
 }
 
 async function onRefresh() {
-	const pid = newItem.getBestPID(["DOI", "arXiv", "PMID", "OpenAlex"]);
+	const pid = newItem.getBestPID(Lookup.pidsSupportedForLookup);
 	if (pid) {
-		const fetchedItem = await Lookup.lookupItemsByIdentifiers([pid]);
+		const fetchedItem = await Lookup.lookupIdentifiers([pid]);
 		if (fetchedItem && fetchedItem.length) newItem.item = fetchedItem[0];
 	}
 }

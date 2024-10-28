@@ -3,9 +3,9 @@ import OpenAlex from "openalex-sdk";
 import { SearchParameters } from "openalex-sdk/dist/src/types/work";
 import PID from "./PID";
 import Wikicite from "./wikicite";
-import ItemWrapper from "./itemWrapper";
 import _ = require("lodash");
 import { ParsableReference } from "./indexer";
+import ItemWrapper from "./itemWrapper";
 
 interface TranslatedReference {
 	/**
@@ -33,44 +33,55 @@ export default class Lookup {
 		// TODO: maybe have a setting for "quality over quantity" once the fallback mechanism is in place?
 		"DOI",
 		"PMID",
+		"PMCID",
 		"arXiv",
 		"ISBN",
 	];
 
-	/**
-	 * Look up items by identifiers. This code is adapted from Zotero's chrome/content/zotero/lookup.js.
-	 * @param identifiers An array of PIDs. Supported types are DOI, PMID, arXiv, ISBN.
-	 * @param addToZotero Whether to add the found items to Zotero.
-	 * @returns The found items, or false if none were found.
-	 */
-	static async lookupItemsByIdentifiers(
-		identifiers: PID[],
-		addToZotero: boolean = false,
-		failedIdentifiersFallback?: (pids: PID[]) => void,
-	): Promise<false | Zotero.Item[]> {
-		const dummyItems = identifiers.map((pid) => {
-			return {
-				primaryID: pid.id,
-				externalIds: [pid],
-			};
-		});
+	// For import, we favour the regular identifiers
+	static readonly pidsSupportedForImport: PIDType[] = [
+		"DOI",
+		"PMID",
+		"PMCID",
+		"arXiv",
+		"ISBN",
+		"OpenAlex",
+		"MAG",
+	];
 
-		// TODO: here, DOI and co should be privileged, Reset.
+	static async lookupIdentifiers(
+		pids: PID[],
+		libraryID: number | false = false,
+		collections: number[] = [],
+	): Promise<Zotero.Item[]> {
+		const options: ZoteroTranslators.TranslateOptions = {
+			libraryID,
+			collections,
+			saveAttachments: true,
+		};
 
-		const result = await Lookup.lookupItems(
-			dummyItems,
-			addToZotero,
-			failedIdentifiersFallback,
-		);
+		const parsedItems: Zotero.Item[] = [];
+		for (const pid of pids) {
+			const item = await Lookup.translateIdentifier(pid, options);
+			parsedItems.push(item[0] as unknown as Zotero.Item);
+		}
 
-		if (!result) return false;
+		if (parsedItems) {
+			return parsedItems.map((parsedItem) => parsedItem);
+		}
 
-		return result.map((item) => item.item);
+		return [];
 	}
 
+	/**
+	 * Look up items by identifiers.
+	 * @param parsableItemsWithIDs Array of ParsableReferences with external IDs.
+	 * @param addToZotero Whether to add the found items to Zotero.
+	 * @param failedIdentifiersFallback Callback for failed identifiers.
+	 * @returns Array of ParsedReferences or false if none were found.
+	 */
 	static async lookupItems(
 		parsableItemsWithIDs: ParsableReference<any>[],
-		addToZotero: boolean = false,
 		failedIdentifiersFallback?: (pids: PID[]) => void,
 	): Promise<false | ParsedReference[]> {
 		if (!parsableItemsWithIDs.length) {
@@ -80,333 +91,469 @@ export default class Lookup {
 			return false;
 		}
 
-		// Extract identifiers from references and group them by type
-		const bestIdentifiers = parsableItemsWithIDs
-			.map((item) => {
-				// Create a map of externalIds for quick lookup by type
-				const pidMap = new Map(
-					item.externalIds.map((pid) => [pid.type, pid]),
-				);
+		// Extract the best identifiers for lookup
+		const bestIdentifiers = Lookup.getBestIdentifiers(parsableItemsWithIDs);
 
-				// Iterate through pidsSupportedForLookup in order of priority and find the first match
-				for (const type of Lookup.pidsSupportedForLookup) {
-					const pid = pidMap.get(type);
-					if (pid?.cleanID)
-						return {
-							primaryID: item.primaryID,
-							pid: pid,
-						};
-				}
-				// Caller must guarantee that all items have at least one supported identifier so a match is guaranteed to be found here.
-				// So this should never happen:
-				//throw new Error("No supported PID found");
-				return null;
-			})
-			.filter((item) => item !== null) as {
-			primaryID: string;
-			pid: PID;
-		}[];
-		// We group the best identifiers by rawPID to avoid duplicate lookups and to allow for easy filtering of failed lookups
-		const bestIdentifiersMap = _.groupBy(
-			bestIdentifiers,
-			(item) => item.pid.comparable,
-		);
-
+		// Deduplicate identifiers (should be unique already, but just in case)
 		const uniqueIdentifiers = _.uniqWith(bestIdentifiers, (a, b) =>
 			PID.isEqual(a.pid, b.pid),
 		);
+		const duplicateCount =
+			bestIdentifiers.length - uniqueIdentifiers.length;
 
-		// Group identifiers by type
+		// Group identifiers by type for batch processing
 		const groupedIdentifiers = _.groupBy(
 			uniqueIdentifiers,
-			(id) => id.pid.type,
+			(entry) => entry.pid.type,
 		);
-
 		const counts = Object.entries(groupedIdentifiers)
 			.map(([type, pids]) => `${pids.length} ${type} identifiers`)
 			.join(", ");
 		ztoolkit.log(`Looking up ${counts}`);
 
-		let libraryID: false | number = false;
-		let collections: number[] = [];
-
-		if (addToZotero) {
-			try {
-				libraryID = ZoteroPane.getSelectedLibraryID();
-				const collection = ZoteroPane.getSelectedCollection();
-				collections = collection ? [collection.id] : []; // TODO: this should be selected by user
-			} catch (e) {
-				Zotero.logError(e as Error);
-			}
-		}
-
-		const translationPromises: Promise<TranslatedReference[]>[] = [];
-		const failedIdentifiers: PID[] = [];
-
-		// Set up limiter to avoid rate limiting
-		// TODO: adapt as best as possible to the type's expected translator
-		// Crossref supports 50 RPS, max 5 concurrent
-		// DataCite (vie DOI Content Negotiation) supports 1000 requests in a 5 minute window
+		// Initialize rate limiter
 		const limiter = new Bottleneck({
-			maxConcurrent: 3,
-			minTime: 300, //1000 * (1 / 40), // Max 50 requests per second
+			maxConcurrent: 5,
+			minTime: 200, // Adjust as needed based on API rate limits
 		});
 
-		for (const [_type, pidsMap] of Object.entries(groupedIdentifiers)) {
-			ztoolkit.log(`Looking up ${pidsMap.length} items of type ${_type}`);
-			const type = _type as PIDType;
-			const options: ZoteroTranslators.TranslateOptions = {
-				libraryID: libraryID,
-				collections: collections,
-				saveAttachments: addToZotero,
-			};
-			switch (type) {
+		const options: ZoteroTranslators.TranslateOptions = {
+			libraryID: false,
+			collections: [],
+			saveAttachments: false,
+		};
+
+		// Array to hold promises for each group of identifiers
+		const translationPromises: Promise<{
+			translated: TranslatedReference[];
+			failed: PID[];
+		}>[] = [];
+
+		// Process identifiers by type
+		for (const [type, entries] of Object.entries(groupedIdentifiers)) {
+			const pidType = type as PIDType;
+
+			switch (pidType) {
+				// We can theoretically fetch thousands of items at once, but we can have at most 100 filters in a single request. In addition, the URL length is limited, so considering that the filter includes the entire OpenAlex URL, we can fetch around 90 items at once.
+				// We heavily favor the OpenAlex API for its speed.
 				case "OpenAlex":
 				case "MAG":
+				case "DOI":
+				case "PMID":
+				case "PMCID":
 					translationPromises.push(
-						Lookup.createOpenAlexPromise(type, pidsMap, options),
+						Lookup.processBatchIdentifiers(
+							pidType,
+							90,
+							entries,
+							options,
+							limiter,
+							Lookup.fetchOpenAlexBatch,
+						),
 					);
 					break;
-				default: {
-					const promises = await Lookup.wrapSequentialTranslator(
-						limiter,
-						type,
-						pidsMap,
-						options,
+
+				// We can lookup DOIs in batches with Crossref, but the requests are slow
+				/*case "DOI":
+					// Batch processing for DOIs
+					translationPromises.push(
+						Lookup.processBatchIdentifiers(
+							pidType,
+							50,
+							entries,
+							options,
+							limiter,
+							Lookup.fetchCrossrefBatch,
+						),
 					);
-					translationPromises.push(...promises);
+					break;*/
+
+				default:
+					// Regular processing for other types
+					translationPromises.push(
+						Lookup.processStandardIdentifiers(
+							pidType,
+							entries,
+							options,
+							limiter,
+						),
+					);
 					break;
-				}
 			}
 		}
 
 		// Wait for all translations to complete
-		const results = await Promise.allSettled(translationPromises);
-		const [successfulResults, failedResults] = _.partition(
-			results,
-			(result) => result.status === "fulfilled",
-		);
+		const allResults = await Promise.all(translationPromises);
 
-		// Flatten the results, cleaning them up if needed
-		const newItems = (
-			successfulResults as PromiseFulfilledResult<TranslatedReference[]>[]
-		).flatMap((result) => {
-			return result.value.map((parsedItem) => {
-				if (!addToZotero) {
-					// delete irrelevant fields to avoid warnings in Item#fromJSON
-					delete parsedItem.item!.notes;
-					delete parsedItem.item!.seeAlso;
-					delete parsedItem.item!.attachments;
-				}
-				const newItem = new Zotero.Item(parsedItem.item!.itemType);
-				newItem.fromJSON(parsedItem.item!);
-				return {
-					primaryID: parsedItem.primaryID,
-					item: newItem,
-				};
-			});
-		});
+		// Collect translated references and failed PIDs
+		const parsedReferences: ParsedReference[] = [];
+		const failedIdentifiers: PID[] = [];
 
-		// Log failed identifiers
-		if (failedResults.length) {
-			Zotero.log(
-				`Failed to fetch items for ${failedResults.length} identifiers`,
+		for (const result of allResults) {
+			const { translated, failed } = result;
+			parsedReferences.push(
+				...translated.map((ref) => ({
+					primaryID: ref.primaryID,
+					item: Lookup.createZoteroItem(ref.item),
+				})),
 			);
-			for (const result of failedResults as PromiseRejectedResult[]) {
-				Zotero.log(`Reason: ${result.reason}`);
-			}
-		}
-		for (const result of failedResults as PromiseRejectedResult[]) {
-			Zotero.log(`Reason: ${result.reason}`);
+			failedIdentifiers.push(...failed);
 		}
 
-		if (!newItems.length) {
+		// Handle failed identifiers
+		if (failedIdentifiers.length && failedIdentifiersFallback) {
+			failedIdentifiersFallback(failedIdentifiers);
+		}
+
+		if (!parsedReferences.length) {
 			Zotero.alert(
 				window,
 				Zotero.getString("lookup.failure.title"),
 				Zotero.getString("lookup.failure.description"),
 			);
+			return false;
 		}
 
-		// TODO: Give indication if some, but not all failed
-
-		failedIdentifiersFallback?.(failedIdentifiers);
-
-		return newItems;
+		return parsedReferences;
 	}
 
-	private static async wrapSequentialTranslator(
-		limiter: Bottleneck,
-		type: PIDType,
-		pidsMap: { primaryID: string; pid: PID }[],
-		options: ZoteroTranslators.TranslateOptions,
-	): Promise<Promise<TranslatedReference[]>[]> {
-		if (!pidsMap.length) {
-			throw new Error("No PIDs provided");
+	/**
+	 * Extracts the best identifiers from ParsableReferences.
+	 */
+	private static getBestIdentifiers(
+		parsableItems: ParsableReference<any>[],
+	): { primaryID: string; pid: PID }[] {
+		const bestIdentifiers: { primaryID: string; pid: PID }[] = [];
+
+		for (const item of parsableItems) {
+			// Map external IDs by type
+			const pidMap = new Map(
+				item.externalIds.map((pid) => [pid.type, pid]),
+			);
+
+			// Select the best (valid) PID based on priority
+			for (const type of Lookup.pidsSupportedForLookup) {
+				const pid = pidMap.get(type);
+				if (pid?.cleanID) {
+					bestIdentifiers.push({ primaryID: item.primaryID, pid });
+					break;
+				}
+			}
 		}
+
+		return bestIdentifiers;
+	}
+
+	/**
+	 * Processes identifiers using standard translators (DOI, PMID, etc.).
+	 */
+	private static async processStandardIdentifiers(
+		type: PIDType,
+		entries: { primaryID: string; pid: PID }[],
+		options: ZoteroTranslators.TranslateOptions,
+		limiter: Bottleneck,
+	): Promise<{ translated: TranslatedReference[]; failed: PID[] }> {
+		const translatedReferences: TranslatedReference[] = [];
+		const failedPIDs: PID[] = [];
+
+		// Batch identifiers if possibles
+		const identifiers = entries.map((entry) => entry.pid.cleanID!);
 
 		// We the matching translators once and then use them for all PIDs, since they're guaranteed to be of the same type
 		const dummyTranslator =
 			new Zotero.Translate.Search() as ZoteroTranslators.Translate<ZoteroTranslators.SearchTranslator>;
-		const firstPID = pidsMap[0].pid;
+		const firstPID = entries[0].pid;
 		const searchObject = { [firstPID.type]: firstPID.id };
 		dummyTranslator.setSearch(searchObject as any);
 		const searchTranslators = await dummyTranslator.getTranslators(); // Always returns all possible translators, regardless of arguments
 
-		const promises = pidsMap.map(({ primaryID, pid }) =>
-			limiter
-				.schedule(() =>
-					Lookup.createSearchPromise(pid, searchTranslators, options),
-				)
-				.then((items) => {
-					return items.map((item) => {
-						return { primaryID: primaryID, item };
-					});
-				}),
+		// TODO: consider fecthing the translators parsing method's directly and call the API ourselves (such as Crossref's API)
+		// Assuming the translators support batch processing (if not, process individually)
+		// Here, we assume batch processing is not supported, so we process individually
+		await Promise.all(
+			entries.map(async (entry) => {
+				try {
+					const items = await limiter.schedule(() =>
+						Lookup.translateIdentifier(entry.pid, options),
+					);
+					if (items.length) {
+						translatedReferences.push({
+							primaryID: entry.primaryID,
+							item: items[0],
+						});
+					} else {
+						failedPIDs.push(entry.pid);
+					}
+				} catch (error) {
+					failedPIDs.push(entry.pid);
+					Zotero.logError(
+						new Error(
+							`Failed to translate ${entry.pid.type}:${entry.pid.id} - ${error}`,
+						),
+					);
+				}
+			}),
 		);
 
-		return promises;
+		return { translated: translatedReferences, failed: failedPIDs };
 	}
 
-	private static createSearchPromise(
+	/**
+	 * Processes identifiers in batches.
+	 */
+	private static async processBatchIdentifiers(
+		type: PIDType,
+		batchSize: number,
+		entries: { primaryID: string; pid: PID }[],
+		options: ZoteroTranslators.TranslateOptions,
+		limiter: Bottleneck,
+		batchFetcher: (
+			type: PIDType,
+			entries: { primaryID: string; pid: PID }[],
+			options: ZoteroTranslators.TranslateOptions,
+		) => Promise<{ translated: TranslatedReference[]; failed: PID[] }>,
+	): Promise<{ translated: TranslatedReference[]; failed: PID[] }> {
+		const translatedReferences: TranslatedReference[] = [];
+		const failedPIDs: PID[] = [];
+
+		const batches = _.chunk(entries, batchSize);
+
+		// TODO: shouldn't this use Promise.all?
+		for (const batch of batches) {
+			try {
+				const { translated: items, failed } = await limiter.schedule(
+					() => batchFetcher(type, batch, options),
+				);
+				translatedReferences.push(...items);
+				failedPIDs.push(...failed);
+			} catch (error) {
+				// If the entire batch fails, consider all entries as failed
+				failedPIDs.push(...batch.map((entry) => entry.pid));
+				Zotero.logError(
+					new Error(`Failed to process batch - ${error}`),
+				);
+			}
+		}
+
+		return { translated: translatedReferences, failed: failedPIDs };
+	}
+
+	/**
+	 * Translates a single identifier using the appropriate translator.
+	 */
+	private static async translateIdentifier(
 		pid: PID,
-		translators: ZoteroTranslators.SearchTranslator[],
 		options: ZoteroTranslators.TranslateOptions,
 	): Promise<ZoteroTranslators.Item[]> {
-		const translator =
-			new Zotero.Translate.Search() as ZoteroTranslators.Translate<ZoteroTranslators.SearchTranslator>;
+		const translator = new Zotero.Translate.Search();
+		translator.setSearch({ [pid.type]: pid.id } as any);
+		const translators = await translator.getTranslators();
+
+		if (!translators.length) {
+			throw new Error(`No translators found for ${pid.type}`);
+		}
+
 		translator.setTranslator(translators);
-		const searchObject = { [pid.type]: pid.id };
-		translator.setSearch(searchObject as any);
 
-		// Errors caught with the error handler will still fail the promise
-		translator.setHandler("error", (obj, error) => {
-			Zotero.log(
-				`Error during translation of single identifier: ${error}. Was looking for ${JSON.stringify(searchObject)}`,
-			);
-		});
-
-		// Note that the itemDone handler should do something with the item, otherwise it will be silently ignored
-		/*translator.setHandler("itemDone", (obj, item) => {
-			Zotero.log(`Found item ${item.title}`);
-		});*/
-		/*translator.setHandler("debug", (obj, message) => {
-			Zotero.log(`${JSON.stringify(searchObject)} onDebug: ${message}`);
-			return true;
-		});*/
-
-		// Note that translate returns a serialized version of the item, not a Zotero.Item
-		return translator.translate(options).catch((e) => {
-			//Zotero.log(e);
-			//Zotero.log(`While looking for identifier: ${JSON.stringify(pid)}`);
-			// We should return or store the PID here so we know which item(s) failed
-			return [];
-		});
+		return translator.translate(options);
 	}
 
-	private static createOpenAlexPromise(
+	/**
+	 * Fetches a batch of works on OpenAlex by identifier.
+	 * Supports DOI, PMID, PMCID, OpenAlex, MAG.
+	 */
+	private static async fetchCrossrefBatch(
 		type: PIDType,
-		pidsMap: { primaryID: string; pid: PID }[],
+		entries: { primaryID: string; pid: PID }[],
 		options: ZoteroTranslators.TranslateOptions,
 	): Promise<TranslatedReference[]> {
-		// We fetch the JSON ourselves instead of via the OpenAlex search translator (432d79fe-79e1-4791-b3e1-baf700710163) to better handle massive bulk requests
-		const sdk = new OpenAlex("cita@duck.com");
-		const ids: ({ openalex: string } | { mag: string })[] = pidsMap.map(
-			(mapItem) => {
-				return type === "OpenAlex"
-					? { openalex: mapItem.pid.id }
-					: { mag: mapItem.pid.id };
+		const filter = entries
+			.map((entry) => `${type.toLowerCase()}:${entry.pid.id}`)
+			.join(",");
+
+		const url = `https://api.crossref.org/works?filter=${filter}&rows=${entries.length}`;
+
+		const requestOptions = {
+			headers: {
+				"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
 			},
-		);
-		// FIXME: seems to max out at around 95 items because the request itself becomes too large
-		// TODO: implement chunking
-		// We can theoretically fetch thousands of items at once, but we can have at most 100 filters in a single request. In addition, the URL length is limited, so considering that the filter includes the entire OpenAlex URL, we can fetch around 90 items at once.
-		const params: SearchParameters = {
-			filter: {
-				ids: ids,
-			},
-			retriveAllPages: true,
+			responseType: "json",
 		};
-		const translationPromise = sdk.works(params).then((works) => {
-			const apiJSON = JSON.stringify(works);
-			const translator =
-				new Zotero.Translate.Import() as ZoteroTranslators.Translate<ZoteroTranslators.ImportTranslator>;
-			translator.setTranslator("faa53754-fb55-4658-9094-ae8a7e0409a2"); // OpenAlex JSON
-			translator.setString(apiJSON);
-			translator.setHandler("error", (obj, error) => {
-				Zotero.log(error);
-				Zotero.log(
-					`While looking for ${type} items: ${JSON.stringify(pidsMap)}`,
-				);
-			});
 
-			// Note that the itemDone handler should do something with the item, otherwise it will be silently ignored
-			/*translator.setHandler("itemDone", (obj, item) => {
-				Zotero.log(`Found item ${item.title}`);
-			});
-			translator.setHandler("debug", (obj, message) => {
-				Zotero.log(message);
-				return true;
-			});*/
-
-			return translator.translate(options);
+		const response = await Zotero.HTTP.request(
+			"GET",
+			url,
+			requestOptions,
+		).catch((e) => {
+			Zotero.logError(
+				new Error(
+					`Couldn't access URL: ${url}. Got status ${e.status}.`,
+				),
+			);
 		});
 
-		return translationPromise.then((items) => {
-			// FIXME: this is hacky
-			const fieldName = "OpenAlex"; //type === "OpenAlex" ? "openalex" : "mag";
-			const regex = new RegExp(`${fieldName}:\\s+(.+)`, "i");
-			return items.map((item) => {
-				// Get the new item's OpenAlex ID
-				const _extraPID = item.extra?.match(regex)?.[1];
-				// We pop the leading W in hopes that this is a valid MAG ID
-				const extraPID = new PID(
-					type,
-					type === "MAG" ? _extraPID!.substring(1) : _extraPID!,
-				);
-				const matchingPrimaryID: string =
-					pidsMap.find((mapItem) =>
-						PID.isEqual(mapItem.pid, extraPID),
-					)?.primaryID || "sorry"; // IDs get lost here when using MAG identifiers
-				return { primaryID: matchingPrimaryID, item };
-			});
-		});
+		if (!response || !response.response) {
+			throw new Error(`No response from ${url}`);
+		}
 
-		// TODO: use OpenAlex as primary, DOI as fallback
-		// We have to tweak the JSON a bit to favor DOI imports and reserve the (potentially failing) OpenAlex JSON translator to whatever remains
-		/*const dois = works.results
-			.map((work) => work.doi ?? null)
-			.filter((e) => e !== null)
-			.flatMap((e) => new PID("DOI", e!));
-		const failedDOIs: PID[] = []; // We'll try those with the OpenAlex translator
-		const newItems = dois.length
-			? (await this.lookupItemsByIdentifiers(dois, addToZotero, (dois) =>
-					failedDOIs.push(...dois),
-				)) || []
-			: [];*/
-
-		// Filter out
-		/*works.results = works.results.filter(
-			(work) =>
-				!work.doi || failedDOIs.some((pid) => pid.id === work.doi),
-		);
-		works.meta.count = works.results.length;*/
-		/*const apiJSON = JSON.stringify(works);
 		const translator =
 			new Zotero.Translate.Import() as ZoteroTranslators.Translate<ZoteroTranslators.ImportTranslator>;
-		translator.setTranslator("faa53754-fb55-4658-9094-ae8a7e0409a2"); // OpenAlex JSON
-		translator.setString(apiJSON);
-		const promise = translator.translate({
-			libraryID: libraryID,
-			collections: collections,
-			saveAttachments: addToZotero,
-		});
-		const results = await promise.catch((e) => {
-			Zotero.logError(e);
-			Zotero.log(
-				`While looking for OpenAlex items: ${JSON.stringify(identifiers)}`,
+		translator.setTranslator("0a61e167-de9a-4f93-a68a-628b48855909"); // CrossRef REST
+		translator.setString(JSON.stringify(response.response));
+		// translator.setHandler("debug", (obj, text) => {
+		//     Zotero.log(`[CrossRef] ${text}`);
+		//     return true;
+		// });
+
+		const items = await translator.translate(options);
+
+		// Map items back to primary IDs
+		const translatedReferences: TranslatedReference[] = [];
+
+		for (const item of items) {
+			const pidValue = Lookup.getIdentifierFromItem(item, type);
+			const matchingEntry = entries.find(
+				(entry) =>
+					entry.pid.id.toLowerCase() === pidValue?.toLowerCase(),
 			);
-			return [];
-		});*/
+			if (matchingEntry) {
+				translatedReferences.push({
+					primaryID: matchingEntry.primaryID,
+					item,
+				});
+			} else {
+				Zotero.logError(
+					new Error(
+						`Failed to match item ${item.title} to primary ID. Expected DOI: ${pidValue}`,
+					),
+				);
+			}
+		}
+
+		return translatedReferences;
+	}
+
+	/**
+	 * Fetches a batch of works on OpenAlex by identifier.
+	 * Supports DOI, PMID, PMCID, OpenAlex, MAG.
+	 */
+	private static async fetchOpenAlexBatch(
+		type: PIDType,
+		entries: { primaryID: string; pid: PID }[],
+		options: ZoteroTranslators.TranslateOptions,
+	): Promise<{ translated: TranslatedReference[]; failed: PID[] }> {
+		const translatedReferences: TranslatedReference[] = [];
+		const failedPIDs: PID[] = [];
+
+		try {
+			// Build the request parameters
+			const ids = entries.map((entry) => ({
+				[type.toLowerCase()]: entry.pid.id,
+			}));
+
+			const doi = entries.map((entry) => entry.pid.id);
+
+			const params: SearchParameters = {
+				filter: type === "DOI" ? { doi } : { ids },
+				retriveAllPages: true,
+			};
+
+			// Fetch works from OpenAlex
+			const sdk = new OpenAlex("cita@duck.com");
+			const works = await sdk.works(params);
+
+			// Convert the works to Zotero items
+			const apiJSON = JSON.stringify(works);
+			const translator = new Zotero.Translate.Import();
+			translator.setTranslator("faa53754-fb55-4658-9094-ae8a7e0409a2"); // OpenAlex JSON
+			translator.setString(apiJSON);
+
+			const items = await translator.translate(options);
+
+			// Map items back to primary IDs
+			for (const item of items) {
+				// FIXME: this is hacky
+				let pidValue = Lookup.getIdentifierFromItem(
+					item,
+					type === "MAG" ? "OpenAlex" : type,
+				);
+				if (type === "MAG") {
+					// We pop the leading W of the OpenAlex ID hoping that this is a valid MAG ID
+					pidValue = pidValue?.substring(1);
+				}
+				const matchingEntry = entries.find(
+					(entry) =>
+						entry.pid.cleanID?.toLowerCase() ===
+						pidValue?.toLowerCase(),
+				);
+				if (matchingEntry) {
+					translatedReferences.push({
+						primaryID: matchingEntry.primaryID,
+						item,
+					});
+				}
+			}
+
+			// Collect failed PIDs
+			for (const entry of entries) {
+				if (
+					!translatedReferences.find(
+						(ref) => ref.primaryID === entry.primaryID,
+					)
+				) {
+					failedPIDs.push(entry.pid);
+				}
+			}
+		} catch (error) {
+			// If the batch request fails, consider all entries as failed
+			failedPIDs.push(...entries.map((entry) => entry.pid));
+			Zotero.logError(
+				new Error(`Failed to fetch OpenAlex batch - ${error}`),
+			);
+		}
+
+		return { translated: translatedReferences, failed: failedPIDs };
+	}
+
+	private static getIdentifierFromItem(
+		item: ZoteroTranslators.Item,
+		type: PIDType,
+	): string | undefined {
+		switch (type) {
+			case "DOI":
+				return item.DOI || item.extra?.match(/DOI:\s*(\S+)/)?.[1];
+			case "PMID":
+				return item.PMID;
+			case "PMCID":
+				return item.PMCID;
+			case "OpenAlex":
+				return item.extra?.match(/OpenAlex:\s*(\S+)/)?.[1];
+			case "MAG":
+				return item.extra?.match(/MAG:\s*(\S+)/)?.[1];
+			case "arXiv":
+				return item.extra?.match(/arXiv:\s*(\S+)/)?.[1];
+			case "ISBN":
+				return item.ISBN;
+			default:
+				return "";
+		}
+	}
+
+	/**
+	 * Creates a Zotero.Item from a ZoteroTranslators.Item.
+	 */
+	private static createZoteroItem(
+		translatorItem: ZoteroTranslators.Item,
+		addToZotero: boolean = false,
+	): Zotero.Item {
+		if (!addToZotero) {
+			// delete irrelevant fields to avoid warnings in Item#fromJSON
+			delete translatorItem.notes;
+			delete translatorItem.seeAlso;
+			delete translatorItem.attachments;
+		}
+		const newItem = new Zotero.Item(translatorItem.itemType);
+		newItem.fromJSON(translatorItem);
+		return newItem;
 	}
 }

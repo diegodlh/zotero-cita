@@ -8,7 +8,6 @@ import PID from "./PID";
 import Matcher from "./matcher";
 import _ = require("lodash");
 import Lookup, { ParsedReference } from "./zotLookup";
-import { pid } from "process";
 
 export interface IndexedWork<R> {
 	/**
@@ -460,7 +459,6 @@ export abstract class IndexerBase<Ref> {
 		// TODO: implement fallback mechanism for failed identifiers
 		const lookupResult = await Lookup.lookupItems(
 			refsWithIds,
-			false,
 			(failedPIDs) => (failCount += failedPIDs.length),
 		);
 		if (lookupResult) parsedReferences.push(...lookupResult);
@@ -485,10 +483,6 @@ export abstract class IndexerBase<Ref> {
 Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${NaN} duplicates. Tally: ${successfulIdentifiers + failCount} out of ${refsWithIds.length} identifiers.
 Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
 Grand total: ${totalParsed} out of ${totalReferences} references.`);
-		//Zotero.log(`Had ${totalReferences} references to parse. Split into ${allIdentifiers.length} lookup identifiers, ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${allIdentifiers.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
-		// Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicates} duplicates. Tally: ${successfulIdentifiers + failCount + duplicates} out of ${allIdentifiers.length} identifiers.
-		// Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
-		// Grand total: ${totalParsed} out of ${totalReferences} references.`);
 
 		// Return parsed references
 		return parsedReferences;

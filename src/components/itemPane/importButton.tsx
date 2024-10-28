@@ -3,6 +3,7 @@ import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
 import ToolbarButton from "./toolbarButton";
 import PID from "../../cita/PID";
+import Lookup from "../../cita/zotLookup";
 
 interface ImportButtonProps {
 	citation: Citation;
@@ -11,12 +12,9 @@ interface ImportButtonProps {
 function ImportButton(props: ImportButtonProps) {
 	const citation = props.citation as Citation;
 	const key = citation.target.key;
-	const identifier = citation.target.getBestPID([
-		"DOI",
-		"arXiv",
-		"ISBN",
-		"OpenAlex",
-	]);
+	const hasIdentifier = !!citation.target.getBestPID(
+		Lookup.pidsSupportedForImport,
+	);
 
 	async function handleClick() {
 		if (key) return; // Item was already linked and is therefore already present
@@ -49,49 +47,26 @@ function ImportButton(props: ImportButtonProps) {
 			else return; // User cancelled the action
 		} else selectedCollectionID = NaN; // No collections to choose from
 
-		// Import from with Zotero's lookup
-		if (
-			identifier &&
-			(identifier.zoteroIdentifier || identifier.type === "OpenAlex")
-		) {
+		// Import with Zotero's lookup
+		const identifier = citation.target.getBestPID(
+			Lookup.pidsSupportedForImport,
+		);
+		if (identifier) {
 			// Import from identifier
-			const translation = new Zotero.Translate.Search();
-			if (identifier.zoteroIdentifier)
-				translation.setSearch(identifier.zoteroIdentifier);
-			else if (identifier.type === "OpenAlex")
-				translation.setSearch({ openAlex: identifier.id });
-
-			// be lenient about translators
-			const translators = await translation.getTranslators();
-			translation.setTranslator(translators);
-			try {
-				const newItems: Zotero.Item[] = await translation.translate({
-					libraryID: libraryID,
-					collections: Number.isNaN(selectedCollectionID)
-						? []
-						: [selectedCollectionID],
-				});
-				switch (newItems.length) {
-					case 0:
-						break;
-					case 1: {
-						for (const pidType of PID.allTypes) {
-							const pid = citation.target.getPID(pidType);
-							if (pid !== null) {
-								Wikicite.setExtraField(newItems[0], pidType, [
-									pid.id,
-								]);
-								break;
-							}
-						}
-						citation.linkToZoteroItem(newItems[0]);
-						break;
-					}
-					default:
-						await citation.autoLink();
+			const newItem = (
+				await Lookup.lookupIdentifiers(
+					[identifier],
+					libraryID,
+					selectedCollectionID ? [selectedCollectionID] : [],
+				)
+			)[0];
+			if (newItem) {
+				for (const pid of citation.target.getAllPIDs()) {
+					Wikicite.setExtraField(newItem, pid.type, [pid.id]);
 				}
-			} catch (e: any) {
-				Zotero.logError(e);
+				citation.linkToZoteroItem(newItem);
+			} else {
+				await citation.autoLink();
 			}
 		} else {
 			// There is no identifier but we do have a JSON item
@@ -106,8 +81,8 @@ function ImportButton(props: ImportButtonProps) {
 		}
 	}
 
-	const title = identifier ? "Import with identifier" : "Import data";
-	const icon = identifier ? "magic-wand" : "add-item";
+	const title = hasIdentifier ? "Import with identifier" : "Import data";
+	const icon = hasIdentifier ? "magic-wand" : "add-item";
 
 	return (
 		!key && (

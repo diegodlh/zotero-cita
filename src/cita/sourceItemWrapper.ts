@@ -1,13 +1,9 @@
 import Wikicite, { debug } from "./wikicite";
 import Citation from "./citation";
 import Citations from "./citations";
-import Crossref from "./crossref";
-import Semantic from "./semantic";
-import OpenAlex from "./openalex";
 import Extraction from "./extract";
 import ItemWrapper from "./itemWrapper";
 import Matcher from "./matcher";
-import OpenCitations from "./opencitations";
 import Progress from "./progress";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
@@ -789,12 +785,12 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
-	async parseCitationIdentifiers(identifiers: PID[]) {
+	async parseCitationIdentifiers(identifiers: PID[]): Promise<Citation[]> {
 		await Zotero.Schema.schemaUpdatePromise;
 		// look up each identifier asynchronously in parallel - multiple web requests
 		// can run at the same time, so this speeds things up a lot #141
 
-		const items = await Lookup.lookupItemsByIdentifiers(identifiers);
+		const items = await Lookup.lookupIdentifiers(identifiers);
 
 		const citations = items
 			? items.map((item) => {

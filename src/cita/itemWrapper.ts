@@ -273,6 +273,15 @@ export default class ItemWrapper {
 		return null;
 	}
 
+	getAllPIDs(): PID[] {
+		const pids: PID[] = [];
+		for (const type of PID.allTypes) {
+			const pid = this.getPID(type, true);
+			if (pid) pids.push(pid);
+		}
+		return pids;
+	}
+
 	getPidUrl(type: PIDType) {
 		const cleanPID = this.getPID(type, true);
 		let url;

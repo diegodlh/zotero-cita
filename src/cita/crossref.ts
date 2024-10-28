@@ -181,7 +181,9 @@ export default class Crossref extends IndexerBase<Reference> {
 	): IndexedWork<Reference> | undefined {
 		return {
 			references:
-				work.reference?.map(this.mapReferenceToParsableItem) || [],
+				work.reference?.map((ref) =>
+					this.mapReferenceToParsableItem(ref, work.DOI),
+				) || [],
 			identifiers: [new PID("DOI", work.DOI)],
 			primaryID: work.DOI,
 		};
@@ -194,12 +196,14 @@ export default class Crossref extends IndexerBase<Reference> {
 	 */
 	mapReferenceToParsableItem(
 		reference: Reference,
+		mainWorkDOI: string,
 	): ParsableReference<Reference> {
 		const externalIds = [];
 		if (reference.DOI) externalIds.push(new PID("DOI", reference.DOI));
 		if (reference.ISBN) externalIds.push(new PID("ISBN", reference.ISBN));
 		return {
-			primaryID: reference.key,
+			// We add the main work DOI to the reference key to ensure uniqueness
+			primaryID: mainWorkDOI + reference.key,
 			externalIds: externalIds,
 			rawObject: reference,
 		};
@@ -260,8 +264,19 @@ export default class Crossref extends IndexerBase<Reference> {
 		jsonItem.pages = crossrefItem["first-page"];
 		jsonItem.volume = crossrefItem.volume;
 		jsonItem.issue = crossrefItem.issue;
-		jsonItem.creators = crossrefItem.author
-			? [Zotero.Utilities.cleanAuthor(crossrefItem.author, "author")]
+		let author = crossrefItem.author;
+		const regex = /^([A-Z][^.]+)((?:\s[A-Z]\.)+)$/; // Matches "Lastname F. M."
+		if (author && regex.test(author)) {
+			author = author.replace(regex, "$1,$2");
+		}
+		jsonItem.creators = author
+			? [
+					Zotero.Utilities.cleanAuthor(
+						author,
+						"author",
+						author.includes(","),
+					),
+				]
 			: [];
 		// remove undefined properties
 		for (const key in jsonItem) {
