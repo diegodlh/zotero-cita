@@ -45,6 +45,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		"MAG",
 		"PMID",
 		"PMCID",
+		"OpenAlex", // Use as a last resort, they should be backwards compatible to MAG if the work existed in MAG
 	];
 
 	maxRPS: number = 1; // Request per second
@@ -160,16 +161,20 @@ export default class Semantic extends IndexerBase<Reference> {
 				}
 			},
 		);
-		const semanticPaper = (response?.response as SemanticPaper[]) || [];
-		return semanticPaper.map((paper) => {
-			return {
-				references: paper.references.map(
-					Semantic.mapReferenceToParsableItem,
-				),
-				identifiers: Semantic.mapIdentifiers(paper.externalIds),
-				primaryID: paper.paperId,
-			};
-		});
+		const semanticPaper = Array.isArray(response?.response)
+			? (response.response as (SemanticPaper | null)[])
+			: [];
+		return semanticPaper
+			.filter((paper): paper is SemanticPaper => paper !== null)
+			.map((paper) => {
+				return {
+					references: paper.references.map(
+						Semantic.mapReferenceToParsableItem,
+					),
+					identifiers: Semantic.mapIdentifiers(paper.externalIds),
+					primaryID: paper.paperId,
+				};
+			});
 	}
 
 	private static mapReferenceToParsableItem(
@@ -216,6 +221,9 @@ export default class Semantic extends IndexerBase<Reference> {
 				return `PMID:${pid.id}`;
 			case "PMCID":
 				return `PMCID:${pid.id}`;
+			case "OpenAlex":
+				// As per the docs (https://docs.openalex.org/how-to-use-the-api/get-single-entities#the-openalex-key), if a MAG key exists, it's just the OpenAlex key without the leading W.
+				return `MAG:${pid.id.substring(1)}`;
 			default:
 				throw new Error("Unsupported UID type");
 		}

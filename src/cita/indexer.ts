@@ -132,13 +132,37 @@ export abstract class IndexerBase<Ref> {
 			}),
 		);
 		const lostSourceItems: SourceItemWrapper[] = [];
-		for (const [key, { sourceItem, pid }] of zotKeyToSourceItem.entries()) {
-			const comparable = pid.comparable;
+		for (const [
+			zoteroKey,
+			{ sourceItem, pid: sourcePID },
+		] of zotKeyToSourceItem.entries()) {
+			const comparable = sourcePID.comparable;
 			if (comparable && indexedWorksMap.has(comparable)) {
-				keyToIndexedWork.set(key, indexedWorksMap.get(comparable)!);
+				keyToIndexedWork.set(
+					zoteroKey,
+					indexedWorksMap.get(comparable)!,
+				);
+			} else if (comparable && sourcePID.type === "OpenAlex") {
+				// We try to match items that supplied an OpenAlex key with indexed works that have a MAG key
+				// This is mostly done for Semantic Scholar, which doesn't directly support OpenAlex keys
+				const comparableMAGKey = new PID(
+					"MAG",
+					sourcePID.cleanID!.substring(1),
+				).comparable;
+				if (comparableMAGKey && indexedWorksMap.has(comparableMAGKey)) {
+					keyToIndexedWork.set(
+						zoteroKey,
+						indexedWorksMap.get(comparableMAGKey)!,
+					);
+				} else {
+					Zotero.log(
+						`Could not find indexed work for ${sourceItem.title} (${sourcePID.comparable})`,
+					);
+					lostSourceItems.push(sourceItem);
+				}
 			} else {
 				Zotero.log(
-					`Could not find indexed work for ${sourceItem.title} (${pid.comparable})`,
+					`Could not find indexed work for ${sourceItem.title} (${sourcePID.comparable})`,
 				);
 				lostSourceItems.push(sourceItem);
 			}
@@ -247,6 +271,12 @@ export abstract class IndexerBase<Ref> {
 			}
 		}
 
+		// Map results
+		const keyToIndexedWorkMap = this.matchIdentifiers(
+			zotKeyToSourceItemMap,
+			indexedWorks,
+		);
+
 		// Count the number of citations to be added and ask for confirmation
 		const numberOfCitations = indexedWorks.map(
 			(item) => item.references.length,
@@ -266,6 +296,13 @@ export abstract class IndexerBase<Ref> {
 			);
 			return;
 		}
+
+		// Report
+		ztoolkit.log(
+			`Of ${sourceItems.length} source items, ${zotKeyToSourceItemMap.size} had identifiers compatible with ${this.indexerName}. Found ${indexedWorks.length} items on ${this.indexerName} (${itemsToBeUpdated} with references) and matched ${keyToIndexedWorkMap.size} of them to source items. Found ${citationsToBeAdded} citations in total.`,
+		);
+
+		// Ask for confirmation
 		const confirmed = Services.prompt.confirm(
 			window as mozIDOMWindowProxy,
 			Wikicite.formatString(
@@ -294,10 +331,6 @@ export abstract class IndexerBase<Ref> {
 				"wikicite.indexer.get-citations.parsing",
 				this.indexerName,
 			),
-		);
-		const keyToIndexedWorkMap = this.matchIdentifiers(
-			zotKeyToSourceItemMap,
-			indexedWorks,
 		);
 
 		// Build a map of parsable references to source items
