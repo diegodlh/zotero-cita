@@ -132,6 +132,10 @@ class SourceItemWrapper extends ItemWrapper {
 		this._citations = citations;
 	}
 
+	deleteCitations() {
+		this.citations = [];
+	}
+
 	get corruptCitations() {
 		// const t0 = performance.now();
 		const corruptCitations = Wikicite.getExtraField(

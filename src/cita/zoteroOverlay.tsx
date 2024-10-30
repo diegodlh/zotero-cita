@@ -50,7 +50,8 @@ declare type MenuFunction =
 	| "getFromIndexer.OpenCitations"
 	| "getFromAttachments"
 	| "addAsCitations"
-	| "localCitationNetwork";
+	| "localCitationNetwork"
+	| "deleteCitations";
 
 declare type MenuSelectionType = "item" | "collection";
 // declare const Components: any;
@@ -480,6 +481,31 @@ class ZoteroOverlay {
 		if (items.length) {
 			const indexer = new IndexerType();
 			indexer.addCitationsToItems(items);
+		}
+	}
+
+	async deleteCitations(menuName: MenuSelectionType) {
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			const totalCitationsCount =
+				menuName === "item"
+					? items.reduce(
+							(acc, item) => acc + item.citations.length,
+							0,
+						)
+					: null;
+			const confirmed = Services.prompt.confirm(
+				window as mozIDOMWindowProxy,
+				Wikicite.getString(
+					"wikicite.source-item.delete-citations.confirm.title",
+				),
+				Wikicite.formatString(
+					"wikicite.source-item.delete-citations.confirm.message",
+					totalCitationsCount ?? "All",
+				),
+			);
+			if (!confirmed) return;
+			items.forEach((item) => item.deleteCitations());
 		}
 	}
 
@@ -1480,6 +1506,23 @@ class ZoteroOverlay {
 			);
 			options.push(menuFunc);
 		}
+
+		options.push({
+			tag: "menuseparator",
+			id: IDPrefix + "separator",
+		});
+
+		options.push(
+			this.zoteroMenuItem(
+				menuName,
+				"deleteCitations",
+				() => {
+					this.deleteCitations(menuName);
+				},
+				IDPrefix,
+			),
+		);
+
 		return options;
 	}
 
