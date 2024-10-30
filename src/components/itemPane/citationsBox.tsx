@@ -100,7 +100,7 @@ function CitationsBox(props: CitationsBoxProps) {
 		const item = openEditor(citation);
 
 		// Reset focus
-		(document.activeElement as HTMLElement).blur();
+		(document.activeElement as HTMLElement | XULElement).blur();
 
 		// Fixme: I don't like that I'm repeating code from addCitation
 		// tagsBox has a single updateTags method instead

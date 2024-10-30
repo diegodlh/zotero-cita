@@ -1195,6 +1195,18 @@ class ZoteroOverlay {
 			],
 		);
 
+		// Blur (unfocus) the button when the menu disappears
+		citationMenu.addEventListener("popuphiding", () => {
+			// Reset focus after clicking to remove hover effect
+			if (
+				document.activeElement &&
+				typeof (document.activeElement as HTMLElement | XULElement)
+					.blur === "function"
+			) {
+				(document.activeElement as HTMLElement | XULElement).blur();
+			}
+		});
+
 		// Fixme: but OCI has two more suppliers: Dryad and CROCI
 		// Maybe I should have all of them, and show only the available ones
 		// for any one citation?

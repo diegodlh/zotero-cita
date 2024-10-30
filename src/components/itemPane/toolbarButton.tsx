@@ -5,6 +5,7 @@ interface ToolbarButtonProps {
 	imgSrc?: string;
 	title?: string;
 	tabIndex?: number;
+	blurAfterClick?: boolean;
 	onClick?: (event: React.MouseEvent) => void;
 	onMouseDown?: (event: React.MouseEvent) => void;
 	onMouseUp?: (event: React.MouseEvent) => void;
@@ -15,14 +16,35 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
 	imgSrc,
 	title,
 	tabIndex,
+	blurAfterClick = true,
 	onClick,
 	onMouseDown,
 	onMouseUp,
 }) => {
+	function blurButton() {
+		// Reset focus after clicking to remove hover effect
+		if (
+			document.activeElement &&
+			typeof (document.activeElement as HTMLElement | XULElement).blur ===
+				"function"
+		) {
+			(document.activeElement as HTMLElement | XULElement).blur();
+		}
+	}
+
+	function handleClick(event: React.MouseEvent) {
+		if (onClick) {
+			onClick(event);
+		}
+		if (blurAfterClick) {
+			blurButton();
+		}
+	}
+
 	return (
 		<div
 			className={"toolbarbutton " + className}
-			onClick={onClick}
+			onClick={handleClick}
 			tabIndex={tabIndex}
 			onMouseDown={onMouseDown}
 			onMouseUp={onMouseUp}

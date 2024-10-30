@@ -250,6 +250,7 @@ function CitationRow(props: CitationRowProps) {
 						tabIndex={0}
 						title={optionsStr}
 						onClick={(e) => onCitationPopup(e, index)}
+						blurAfterClick={false} // Keep focus on the button when menu opens, but remember to blur it when the menu closes
 						imgSrc="chrome://zotero/skin/16/universal/options.svg"
 					/>
 					<ZoteroButton citation={citation} />
