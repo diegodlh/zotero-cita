@@ -33,15 +33,6 @@ function CitationsBox(props: CitationsBoxProps) {
 	}, [props.sourceItem]);
 
 	useEffect(() => {
-		// update citations box height when pid types are updated
-		// and pid rows are rendered below
-		// todo: do we still need to do this?
-		// window.WikiciteChrome.zoteroOverlay.updateCitationsBoxSize(
-		// 	window.document,
-		// );
-	}, [pidTypes]);
-
-	useEffect(() => {
 		const items: {
 			index: number;
 			value: string | number | Date | undefined;
