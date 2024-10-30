@@ -425,13 +425,25 @@ export abstract class IndexerBase<Ref> {
 		await Zotero.DB.executeTransaction(
 			async () => {
 				for (const { sourceItem, itemsToAdd } of finalPairingsArray) {
-					const citations = itemsToAdd.map(
-						(parsedRef) =>
-							new Citation(
-								{ item: parsedRef.item, ocis: [] },
-								sourceItem,
-							),
-					);
+					const citations = itemsToAdd.map((parsedRef) => {
+						const newCitation = new Citation(
+							{ item: parsedRef.item, ocis: [] },
+							sourceItem,
+						);
+						// Add known PIDs to the citation
+						if (parsableReferenceMap.has(parsedRef.primaryID)) {
+							const { parsableReference } =
+								parsableReferenceMap.get(parsedRef.primaryID)!;
+							for (const pid of parsableReference.externalIds) {
+								newCitation.target.setPID(
+									pid.type,
+									pid.id,
+									false,
+								);
+							}
+						}
+						return newCitation;
+					});
 					sourceItem.addCitations(citations);
 				}
 			},
