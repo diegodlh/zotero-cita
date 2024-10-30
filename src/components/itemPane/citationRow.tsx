@@ -154,25 +154,23 @@ function CitationRow(props: CitationRowProps) {
 			? Array.from(row.parentNode!.children).indexOf(row)
 			: citationsLength;
 
+		// Un-hide the moved citation row
+		document
+			.querySelector(".drag-hidden-citation")
+			?.classList.remove("drag-hidden-citation", "noHover");
+
+		if (
+			document.activeElement &&
+			typeof (document.activeElement as HTMLElement | XULElement).blur ===
+				"function"
+		) {
+			(document.activeElement as HTMLElement | XULElement).blur();
+		}
+
 		// No change in order - do nothing
 		if (draggedIndex === destinationIndex) {
 			return;
 		}
-
-		// Due to some kind of drag-drop API issue,
-		// after citation is dropped, the hover effect often stays at
-		// the row's old location. To workaround that, set noHover class to block all
-		// hover effects on citation rows and then remove it on the first mouse movement in refresh().
-		document
-			.querySelectorAll(".citations-box-list-container .row")
-			.forEach((row) => {
-				row.classList.add("noHover");
-			});
-		// Un-hide the moved citation row
-		document
-			.querySelector(".drag-hidden-citation")
-			?.classList.remove("drag-hidden-citation");
-		// Update the item after small delay to avoid blinking
 
 		// Update the item after a small delay to avoid blinking
 		setTimeout(() => {

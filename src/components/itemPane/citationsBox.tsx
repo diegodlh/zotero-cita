@@ -186,16 +186,17 @@ function CitationsBox(props: CitationsBoxProps) {
 		props.sourceItem.citations = newCitations;
 
 		// Reset hover effects
-		// Block hover effects on citations, enable them back on first mouse movement.
-		// See comment in creatorDragPlaceholder() for explanation
+		// Block and reset hover effects on the rows by adding and then removing the noHover class
 		document
 			.querySelectorAll(".citations-box-list-container .row")
 			.forEach((row) => {
-				row.classList.add("noHover");
+				(row as HTMLElement).classList.add("noHover");
 			});
 
 		const removeHoverBlock = () => {
-			const noHoverRows = document.querySelectorAll(".noHover");
+			const noHoverRows = document.querySelectorAll(
+				".citations-box-list-container .row.noHover",
+			);
 			noHoverRows.forEach((el) => el.classList.remove("noHover"));
 			document.removeEventListener("mousemove", removeHoverBlock);
 		};

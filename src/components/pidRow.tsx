@@ -49,20 +49,23 @@ function PIDRow(props: PIDRowProps) {
 		await props.item.fetchPID(props.type, props.autosave);
 		// set new value immediately (see note in handleCommit)
 		setValue(props.item.getPID(props.type));
-		blurButton(e);
+		blurButton();
 	}
 
 	async function onOpenLink(url: string, e: React.MouseEvent) {
 		Zotero.launchURL(url);
-		blurButton(e);
+		blurButton();
 	}
 
-	function blurButton(e: React.MouseEvent) {
+	function blurButton() {
 		// Reset focus
-		(document.activeElement as HTMLElement).blur();
-		// const target = e.target as HTMLElement;
-		// const button = target.closest(".toolbarbutton") as HTMLDivElement;
-		// button?.blur();
+		if (
+			document.activeElement &&
+			typeof (document.activeElement as HTMLElement | XULElement).blur ===
+				"function"
+		) {
+			(document.activeElement as HTMLElement | XULElement).blur();
+		}
 	}
 
 	// show the row if the PID has a value, the type is QID, or DOI is a valid field
