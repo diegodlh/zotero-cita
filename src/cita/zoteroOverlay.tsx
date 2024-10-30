@@ -16,15 +16,12 @@ import { config } from "../../package.json";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "./preferences";
 import { Root, createRoot } from "react-dom/client";
-
 import { initLocale, getLocaleID } from "../utils/locale";
 import { getPrefGlobalName } from "../utils/prefs";
 import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
 import PID from "./PID";
-import { set } from "lodash";
 import { IndexerBase } from "./indexer";
-import { listeners } from "process";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -620,6 +617,12 @@ class ZoteroOverlay {
 
 	removeOverlay() {
 		this.removeOverlayStyleSheet();
+
+		// Unmount React roots
+		for (const rootID in this.citationBoxRoots) {
+			this.citationBoxRoots[rootID].unmount();
+			window.document.getElementById(rootID)?.remove();
+		}
 	}
 
 	addOverlayStyleSheet() {
@@ -639,15 +642,15 @@ class ZoteroOverlay {
 			?.remove();
 	}
 
+	citationBoxRoots: {
+		[id: string]: Root;
+	} = {};
+
 	/******************************************/
 	// Item pane functions
 	/******************************************/
 	// Create XUL for Zotero item pane
 	async citationsPane() {
-		// todo: remove when unloading
-		const citationBoxRoots: {
-			[id: string]: Root;
-		} = {};
 		const sectionAddMenu = document.getElementById(
 			"citations-box-item-menu-add",
 		) as unknown as XULMenuPopupElement;
@@ -730,7 +733,7 @@ class ZoteroOverlay {
 				const tab_id: string =
 					body.parentElement!.parentElement!.parentElement!
 						.parentElement!.parentElement!.parentElement!.id;
-				citationBoxRoots[tab_id] = createRoot(
+				this.citationBoxRoots[tab_id] = createRoot(
 					body.firstChild! as Element,
 				);
 			},
@@ -748,7 +751,7 @@ class ZoteroOverlay {
 				const tab_id: string =
 					body.parentElement!.parentElement!.parentElement!
 						.parentElement!.parentElement!.parentElement!.id;
-				citationBoxRoots[tab_id].render(
+				this.citationBoxRoots[tab_id].render(
 					<CitationsBoxContainer
 						key={"citationsBox-" + item.id}
 						item={item}
