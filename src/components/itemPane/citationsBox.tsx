@@ -246,6 +246,7 @@ function CitationsBox(props: CitationsBoxProps) {
 						handleCitationDelete={handleCitationDelete}
 						handleCitationSync={handleCitationSync}
 						handleCitationMove={handleCitationMove}
+						onCitationPopup={props.onCitationPopup}
 					/>
 				))}
 				{/* I understand this bit here makes TAB create a new tag

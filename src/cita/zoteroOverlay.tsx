@@ -682,7 +682,7 @@ class ZoteroOverlay {
 					icon: "chrome://zotero/skin/16/universal/plus.svg",
 					onClick: (props) => {
 						sectionAddMenu.openPopup(
-							(props.event as MouseEvent).detail.button,
+							(props.event as CustomEvent).detail.button,
 							"after_end",
 						);
 					},
@@ -867,10 +867,6 @@ class ZoteroOverlay {
 		const itemMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"citations-box-item-menu-add",
-			{},
-			{
-				popupshowing: () => this.handleItemPopupShowing(doc),
-			},
 			[
 				// Add existing Zotero item menu item
 				{
@@ -945,6 +941,7 @@ class ZoteroOverlay {
 			listeners: {
 				command: () => this._sourceItem!.getFrom(indexer),
 			},
+			isDisabled: () => !indexer.canFetchCitations(this._sourceItem!),
 		};
 	}
 
@@ -953,10 +950,6 @@ class ZoteroOverlay {
 		const itemMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"citations-box-item-menu-import",
-			{},
-			{
-				popupshowing: () => this.handleItemPopupShowing(doc),
-			},
 			[
 				// Get Crossref citations menu item
 				this.indexerMenuAttributes(Crossref),
@@ -975,6 +968,8 @@ class ZoteroOverlay {
 					listeners: {
 						command: () => this._sourceItem!.getFromPDF(),
 					},
+					isDisabled: () =>
+						!this._sourceItem!.item.getAttachments().length,
 				},
 				// Import citations menu item
 				{
@@ -999,10 +994,6 @@ class ZoteroOverlay {
 		const itemMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"citations-box-item-menu-export",
-			{},
-			{
-				popupshowing: () => this.handleItemPopupShowing(doc),
-			},
 			[
 				// Export to file menu item
 				{
@@ -1015,6 +1006,7 @@ class ZoteroOverlay {
 					listeners: {
 						command: () => this._sourceItem!.exportToFile(),
 					},
+					isDisabled: () => !this._sourceItem!.citations.length,
 				},
 				// Export to CROCI menu item
 				{
@@ -1027,6 +1019,7 @@ class ZoteroOverlay {
 					listeners: {
 						command: () => this._sourceItem!.exportToCroci(),
 					},
+					isDisabled: () => !this._sourceItem!.citations.length,
 				},
 			],
 		);
@@ -1039,10 +1032,6 @@ class ZoteroOverlay {
 		const itemMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"citations-box-item-menu-more",
-			{},
-			{
-				popupshowing: () => this.handleItemPopupShowing(doc),
-			},
 			[
 				// Sync with Wikidata menu item
 				{
@@ -1055,6 +1044,7 @@ class ZoteroOverlay {
 					listeners: {
 						command: () => this._sourceItem!.syncWithWikidata(),
 					},
+					isDisabled: () => !this._sourceItem!.qid,
 				},
 				// Fetch QIDs menu item
 				{
@@ -1067,6 +1057,7 @@ class ZoteroOverlay {
 					listeners: {
 						command: () => this._sourceItem!.fetchCitationQIDs(),
 					},
+					isDisabled: () => !this._sourceItem!.citations.length,
 				},
 				// Auto-link citations menu item
 				{
@@ -1128,10 +1119,6 @@ class ZoteroOverlay {
 		const citationMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"citations-box-citation-menu",
-			{},
-			{
-				popupshowing: () => this.handleCitationPopupShowing(doc),
-			},
 			[
 				// Sync citations with Wikidata
 				{
@@ -1146,6 +1133,13 @@ class ZoteroOverlay {
 							this._sourceItem!.syncWithWikidata(
 								this._citationIndex,
 							),
+					},
+					isDisabled: () => {
+						const sourceItem = this._sourceItem;
+						const citation =
+							sourceItem?.citations[this._citationIndex!];
+						const targetItem = citation?.target;
+						return !sourceItem?.qid || !targetItem?.qid;
 					},
 				},
 				// Fetch QIDs for citations
@@ -1190,6 +1184,13 @@ class ZoteroOverlay {
 								this._citationIndex,
 							),
 					},
+					isDisabled: () => {
+						const sourceItem = this._sourceItem;
+						const citation =
+							sourceItem?.citations[this._citationIndex!];
+						const targetItem = citation?.target;
+						return !sourceItem?.doi || !targetItem?.doi;
+					},
 				},
 			],
 		);
@@ -1204,12 +1205,16 @@ class ZoteroOverlay {
 			Wikicite.getString("wikicite.citation-menu.oci"),
 		);
 
-		const ociPopup = doc.createXULElement("menupopup");
+		const ociPopup = doc.createXULElement(
+			"menupopup",
+		) as XULMenuPopupElement;
 		ociPopup.setAttribute("id", "citation-menu-oci-submenu-popup");
 		ociMenu.appendChild(ociPopup);
 
 		for (const supplier of ["crossref", "occ", "wikidata"]) {
-			const ociItem = doc.createXULElement("menuitem");
+			const ociItem = doc.createXULElement(
+				"menuitem",
+			) as XULMenuItemElement;
 			ociItem.setAttribute("id", "citation-menu-oci-" + supplier);
 			ociItem.setAttribute(
 				"label",
@@ -1220,6 +1225,14 @@ class ZoteroOverlay {
 					supplier,
 				),
 			);
+			ociPopup.addEventListener("popupshowing", () => {
+				const sourceItem = this._sourceItem;
+				const citation = sourceItem?.citations[this._citationIndex!];
+				const ociSuppliers = citation?.ocis.map(
+					(oci) => oci.supplierName,
+				);
+				ociItem.disabled = !ociSuppliers?.includes(supplier);
+			});
 			ociPopup.appendChild(ociItem);
 		}
 		citationMenu.appendChild(ociMenu);
@@ -1232,10 +1245,6 @@ class ZoteroOverlay {
 		const pidRowMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"pid-row-add-menu",
-			{},
-			{
-				popupshowing: () => this.handlePidRowPopupShowing(doc),
-			},
 			PID.showable.map((pidType) => {
 				return {
 					attributes: {
@@ -1273,6 +1282,16 @@ class ZoteroOverlay {
 							}
 						},
 					},
+					isHidden: () => {
+						return (
+							!this._sourceItem!.validPIDTypes.includes(
+								pidType,
+							) ||
+							!document
+								.getElementById(`pid-row-${pidType}`)
+								?.classList.contains("hidden")
+						);
+					},
 				};
 			}),
 		);
@@ -1287,135 +1306,6 @@ class ZoteroOverlay {
 
 	setCitationIndex(citationIndex: number) {
 		this._citationIndex = citationIndex;
-	}
-
-	handleItemPopupShowing(document: Document) {
-		const sourceItem = this._sourceItem;
-
-		const hasAttachments = Boolean(
-			sourceItem!.item.getAttachments().length,
-		);
-		const hasCitations = Boolean(sourceItem!.citations.length);
-		const sourceDoi = sourceItem!.doi;
-		const sourceQid = sourceItem!.qid;
-
-		const itemWikidataSync = document.getElementById(
-			"item-menu-wikidata-sync",
-		) as unknown as XULMenuItemElement;
-		const itemFetchCitationQIDs = document.getElementById(
-			"item-menu-fetch-citation-qids",
-		) as unknown as XULMenuItemElement;
-		const itemCrossrefGet = document.getElementById(
-			"item-menu-crossref-get",
-		) as unknown as XULMenuItemElement;
-		const itemSemanticGet = document.getElementById(
-			"item-menu-semantic-scholar-get",
-		) as unknown as XULMenuItemElement;
-		const itemOpenAlexGet = document.getElementById(
-			"item-menu-openalex-get",
-		) as unknown as XULMenuItemElement;
-		const itemOpenCitationsGet = document.getElementById(
-			"item-menu-open-citations-get",
-		) as unknown as XULMenuItemElement;
-		const itemPdfExtract = document.getElementById(
-			"item-menu-pdf-extract",
-		) as unknown as XULMenuItemElement;
-		const itemIdentifierImport = document.getElementById(
-			"item-menu-identifier-import",
-		) as unknown as XULMenuItemElement;
-		const itemCitationsImport = document.getElementById(
-			"item-menu-citations-import",
-		) as unknown as XULMenuItemElement;
-		const itemFileExport = document.getElementById(
-			"item-menu-file-export",
-		) as unknown as XULMenuItemElement;
-		const itemCrociExport = document.getElementById(
-			"item-menu-croci-export",
-		) as unknown as XULMenuItemElement;
-
-		itemWikidataSync.disabled = !sourceQid;
-		itemFetchCitationQIDs.disabled = !hasCitations;
-
-		// Indexers
-		itemCrossrefGet.disabled = !sourceDoi;
-		itemSemanticGet.disabled = !new Semantic().canFetchCitations(
-			sourceItem!,
-		);
-		itemOpenAlexGet.disabled = !new OpenAlex().canFetchCitations(
-			sourceItem!,
-		);
-		itemOpenCitationsGet.disabled = !new OpenCitations().canFetchCitations(
-			sourceItem!,
-		);
-
-		itemPdfExtract.disabled = !hasAttachments;
-		itemCitationsImport.disabled = false;
-		itemFileExport.disabled = !hasCitations;
-		itemIdentifierImport.disabled = false;
-		itemCrociExport.disabled = !hasCitations;
-	}
-
-	handleCitationPopupShowing(doc: Document) {
-		const sourceItem = this._sourceItem;
-		const citation = sourceItem?.citations[this._citationIndex!];
-		const targetItem = citation?.target;
-
-		const ociSuppliers = citation?.ocis.map((oci) => oci.supplierName);
-
-		(
-			doc.getElementById(
-				"citation-menu-wikidata-sync",
-			) as unknown as XULMenuItemElement
-		).disabled = !sourceItem?.qid || !targetItem?.qid;
-		(
-			doc.getElementById(
-				"citation-menu-fetch-qid",
-			) as unknown as XULMenuItemElement
-		).disabled = false;
-		(
-			doc.getElementById(
-				"citation-menu-file-export",
-			) as unknown as XULMenuItemElement
-		).disabled = false;
-		(
-			doc.getElementById(
-				"citation-menu-croci-export",
-			) as unknown as XULMenuItemElement
-		).disabled = !sourceItem?.doi || !targetItem?.doi;
-		(
-			doc.getElementById(
-				"citation-menu-oci-crossref",
-			) as unknown as XULMenuItemElement
-		).disabled = !ociSuppliers?.includes("crossref");
-		(
-			doc.getElementById(
-				"citation-menu-oci-occ",
-			) as unknown as XULMenuItemElement
-		).disabled = !ociSuppliers?.includes("occ");
-		(
-			doc.getElementById(
-				"citation-menu-oci-wikidata",
-			) as unknown as XULMenuItemElement
-		).disabled = !ociSuppliers?.includes("wikidata");
-	}
-
-	handlePidRowPopupShowing(doc: Document) {
-		const sourceItem = this._sourceItem!;
-		const sourceItemPIDTypes = sourceItem.validPIDTypes;
-
-		PID.showable.forEach((pidType) => {
-			// if item supports PID, but it is currently hidden, show menu item to add it
-			(
-				doc.getElementById(
-					`pid-row-add-${pidType}`,
-				) as unknown as XULMenuItemElement
-			).hidden = !(
-				sourceItemPIDTypes.includes(pidType) &&
-				document
-					.getElementById(`pid-row-${pidType}`)
-					?.classList.contains("hidden")
-			);
-		});
 	}
 
 	// /******************************************/
@@ -1442,6 +1332,17 @@ class ZoteroOverlay {
 		});
 
 		this.refreshZoteroPopup(menuName, doc);
+	}
+
+	private enableIndexer<Ref>(
+		IndexerType: new () => IndexerBase<Ref>,
+		items: Zotero.Item[],
+	): boolean {
+		const indexer = new IndexerType();
+		return items.some((item) => {
+			const sourceItem = new SourceItemWrapper(item, prefs.getStorage());
+			return indexer.canFetchCitations(sourceItem);
+		});
 	}
 
 	refreshZoteroPopup(menuName: MenuSelectionType, doc: Document) {
@@ -1478,46 +1379,30 @@ class ZoteroOverlay {
 				)!.setAttribute("disabled", "true");
 			}
 			// Enable indexer citation lookup when appropriate identifiers are present
-			const enableCrossref = items.some((item) => {
-				const sourceItem = new SourceItemWrapper(
-					item,
-					prefs.getStorage(),
-				);
-				return sourceItem.doi;
-			});
-			const enableSemantic = items.some((item) => {
-				const sourceItem = new SourceItemWrapper(
-					item,
-					prefs.getStorage(),
-				);
-				return new Semantic().canFetchCitations(sourceItem);
-			});
-			const enableOpenAlex = items.some((item) => {
-				const sourceItem = new SourceItemWrapper(
-					item,
-					prefs.getStorage(),
-				);
-				return new OpenAlex().canFetchCitations(sourceItem);
-			});
-			const enableOpenCitations = items.some((item) => {
-				const sourceItem = new SourceItemWrapper(
-					item,
-					prefs.getStorage(),
-				);
-				return new OpenCitations().canFetchCitations(sourceItem);
-			});
 			doc.getElementById(
 				"wikicite-itemsubmenu-getFromIndexer.Crossref",
-			)!.setAttribute("disabled", enableCrossref ? "false" : "true");
+			)!.setAttribute(
+				"disabled",
+				this.enableIndexer(Crossref, items) ? "false" : "true",
+			);
 			doc.getElementById(
 				"wikicite-itemsubmenu-getFromIndexer.Semantic Scholar",
-			)!.setAttribute("disabled", enableSemantic ? "false" : "true");
+			)!.setAttribute(
+				"disabled",
+				this.enableIndexer(Semantic, items) ? "false" : "true",
+			);
 			doc.getElementById(
 				"wikicite-itemsubmenu-getFromIndexer.OpenAlex",
-			)!.setAttribute("disabled", enableOpenAlex ? "false" : "true");
+			)!.setAttribute(
+				"disabled",
+				this.enableIndexer(OpenAlex, items) ? "false" : "true",
+			);
 			doc.getElementById(
 				"wikicite-itemsubmenu-getFromIndexer.OpenCitations",
-			)!.setAttribute("disabled", enableOpenCitations ? "false" : "true");
+			)!.setAttribute(
+				"disabled",
+				this.enableIndexer(OpenCitations, items) ? "false" : "true",
+			);
 		}
 
 		(

@@ -202,11 +202,7 @@ function CitationsBoxContainer(props: {
 		const citationPopupMenu = document.getElementById(
 			"citations-box-citation-menu",
 		) as unknown as XULMenuPopupElement;
-		citationPopupMenu.openPopupAtScreen(
-			window.screenX + event.clientX,
-			window.screenY + event.clientY,
-			true,
-		);
+		citationPopupMenu.openPopup(event.target as Element);
 	}
 
 	return (

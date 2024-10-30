@@ -24,6 +24,7 @@ interface CitationRowProps {
 		draggedIndex: number,
 		destinationIndex: number,
 	) => void;
+	onCitationPopup: (event: React.MouseEvent, index: number) => void;
 }
 
 function CitationRow(props: CitationRowProps) {
@@ -39,6 +40,7 @@ function CitationRow(props: CitationRowProps) {
 		handleCitationDelete,
 		handleCitationSync,
 		handleCitationMove,
+		onCitationPopup,
 	} = props;
 
 	const removeStr = Zotero.getString("general.remove");
@@ -247,6 +249,7 @@ function CitationRow(props: CitationRowProps) {
 						className="zotero-clicky zotero-clicky-options show-on-hover no-display"
 						tabIndex={0}
 						title={optionsStr}
+						onClick={(e) => onCitationPopup(e, index)}
 						imgSrc="chrome://zotero/skin/16/universal/options.svg"
 					/>
 					<ZoteroButton citation={citation} />
