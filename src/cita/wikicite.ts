@@ -157,6 +157,11 @@ export default {
 			(note: any) => note.getNoteTitle() === "Citations",
 		);
 		if (notes.length > 1) {
+			Zotero.logError(
+				new Error(
+					`Multiple citations notes found for item ${item.key}`,
+				),
+			);
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				this.getString("wikicite.global.name"),

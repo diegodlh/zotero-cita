@@ -440,48 +440,44 @@ export abstract class IndexerBase<Ref> {
 			itemsToAdd: { primaryID: string; item: Zotero.Item }[];
 		}[];
 
-		// Auto-linking callback
-		const autoLinkCallback = async () => {
-			if (autoLinkCitations) {
-				// We need to wait a bit after the transaction is done so that the citations are saved to storage
-				setTimeout(async () => {
-					const matcher = new Matcher(libraryID);
-					await matcher.init();
-					for (const { sourceItem } of finalPairingsArray) {
-						sourceItem.autoLinkCitations(matcher, true);
-					}
-				}, 100);
-			}
-		};
-
 		// Proceed to update the source items
-		await Zotero.DB.executeTransaction(
-			async () => {
-				for (const { sourceItem, itemsToAdd } of finalPairingsArray) {
-					const citations = itemsToAdd.map((parsedRef) => {
-						const newCitation = new Citation(
-							{ item: parsedRef.item, ocis: [] },
-							sourceItem,
-						);
-						// Add known PIDs to the citation
-						if (parsableReferenceMap.has(parsedRef.primaryID)) {
-							const { parsableReference } =
-								parsableReferenceMap.get(parsedRef.primaryID)!;
-							for (const pid of parsableReference.externalIds) {
-								newCitation.target.setPID(
-									pid.type,
-									pid.id,
-									false,
-								);
-							}
-						}
-						return newCitation;
-					});
-					sourceItem.addCitations(citations);
+		// Note: inspired by the syncItemCitationsWithWikidata method in citations.ts
+		let matcher: Matcher;
+		if (autoLinkCitations) {
+			matcher = new Matcher(libraryID);
+			await matcher.init();
+		}
+		for (const { sourceItem, itemsToAdd } of finalPairingsArray) {
+			sourceItem.startBatch();
+			const citations: Citation[] = [];
+			for (const parsedRef of itemsToAdd) {
+				const newCitation = new Citation(
+					{ item: parsedRef.item, ocis: [] },
+					sourceItem,
+				);
+
+				// Add known PIDs to the citation
+				if (parsableReferenceMap.has(parsedRef.primaryID)) {
+					const { parsableReference } = parsableReferenceMap.get(
+						parsedRef.primaryID,
+					)!;
+					for (const pid of parsableReference.externalIds) {
+						newCitation.target.setPID(pid.type, pid.id, false);
+					}
 				}
-			},
-			{ onCommit: autoLinkCallback },
-		);
+
+				// Auto-link the citation
+				if (autoLinkCitations) {
+					await newCitation.autoLink(matcher!);
+				}
+
+				// TODO: add OCIs
+
+				citations.push(newCitation);
+			}
+			sourceItem.addCitations(citations);
+			sourceItem.endBatch();
+		}
 
 		progress.updateLine(
 			"done",
