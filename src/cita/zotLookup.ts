@@ -100,6 +100,7 @@ export default class Lookup {
 		}
 
 		// Extract the best identifiers for lookup
+		performance.mark("start-identifier-extraction");
 		const bestIdentifiers = Lookup.getBestIdentifiers(parsableItemsWithIDs);
 
 		// Deduplicate identifiers (should be unique already, but just in case)
@@ -118,6 +119,12 @@ export default class Lookup {
 			.map(([type, pids]) => `${pids.length} ${type} identifiers`)
 			.join(", ");
 		ztoolkit.log(`Looking up ${counts}`);
+		performance.mark("end-identifier-extraction");
+		performance.measure(
+			"identifier-extraction",
+			"start-identifier-extraction",
+			"end-identifier-extraction",
+		);
 
 		// Initialize rate limiter
 		const limiter = new Bottleneck({
@@ -138,6 +145,7 @@ export default class Lookup {
 		}>[] = [];
 
 		// Process identifiers by type
+		performance.mark("start-translation");
 		for (const [type, entries] of Object.entries(groupedIdentifiers)) {
 			const pidType = type as PIDType;
 
@@ -189,11 +197,24 @@ export default class Lookup {
 					break;
 			}
 		}
+		performance.mark("end-translation-build");
+		performance.measure(
+			"translation-build",
+			"start-translation",
+			"end-translation-build",
+		);
 
 		// Wait for all translations to complete
 		const allResults = await Promise.all(translationPromises);
+		performance.mark("end-translation");
+		performance.measure(
+			"translation",
+			"start-translation",
+			"end-translation",
+		);
 
 		// Collect translated references and failed PIDs
+		performance.mark("start-translation-processing");
 		const parsedReferences: ParsedReference[] = [];
 		const failedIdentifiers: PID[] = [];
 
@@ -221,6 +242,12 @@ export default class Lookup {
 			);
 			return false;
 		}
+		performance.mark("end-translation-processing");
+		performance.measure(
+			"translation-processing",
+			"start-translation-processing",
+			"end-translation-processing",
+		);
 
 		return { parsedReferences, duplicateCount };
 	}
@@ -280,10 +307,12 @@ export default class Lookup {
 		// Here, we assume batch processing is not supported, so we process individually
 		await Promise.all(
 			entries.map(async (entry) => {
+				performance.mark("start-translation-pid-" + entry.pid.id);
 				try {
 					const items = await limiter.schedule(() =>
 						Lookup.translateIdentifier(entry.pid, options),
 					);
+					performance.mark("start-translation-pid-" + entry.pid.id);
 					if (items.length) {
 						translatedReferences.push({
 							primaryID: entry.primaryID,
@@ -300,6 +329,12 @@ export default class Lookup {
 						),
 					);
 				}
+				performance.mark("end-translation-pid-" + entry.pid.id);
+				performance.measure(
+					"translation-pid-" + entry.pid.id,
+					"start-translation-pid-" + entry.pid.id,
+					"end-translation-pid-" + entry.pid.id,
+				);
 			}),
 		);
 
@@ -326,8 +361,9 @@ export default class Lookup {
 
 		const batches = _.chunk(entries, batchSize);
 
-		// TODO: shouldn't this use Promise.all?
-		for (const batch of batches) {
+		// Process all batches in parallel
+		const batchPromises = batches.map(async (batch, index) => {
+			performance.mark(`start-translation-batch-${type}-${index}`);
 			try {
 				const { translated: items, failed } = await limiter.schedule(
 					() => batchFetcher(type, batch, options),
@@ -341,7 +377,16 @@ export default class Lookup {
 					new Error(`Failed to process batch - ${error}`),
 				);
 			}
-		}
+			performance.mark(`end-translation-batch-${type}-${index}`);
+			performance.measure(
+				`translation-batch-${type}-${index}`,
+				`start-translation-batch-${type}-${index}`,
+				`end-translation-batch-${type}-${index}`,
+			);
+		});
+
+		// Wait for all batch promises to resolve
+		await Promise.all(batchPromises);
 
 		return { translated: translatedReferences, failed: failedPIDs };
 	}
@@ -353,7 +398,8 @@ export default class Lookup {
 		pid: PID,
 		options: ZoteroTranslators.TranslateOptions,
 	): Promise<ZoteroTranslators.Item[]> {
-		const translator = new Zotero.Translate.Search();
+		const translator =
+			new Zotero.Translate.Search() as ZoteroTranslators.Translate<ZoteroTranslators.SearchTranslator>;
 		translator.setSearch({ [pid.type]: pid.id } as any);
 		const translators = await translator.getTranslators();
 

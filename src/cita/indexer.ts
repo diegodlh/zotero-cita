@@ -194,11 +194,18 @@ export abstract class IndexerBase<Ref> {
 		sourceItems: SourceItemWrapper[],
 		autoLinkCitations: boolean = true,
 	) {
+		performance.mark("start-fetch-citations");
 		const libraryID = sourceItems[0].item.libraryID;
 
 		// Filter items with fetchable identifiers
 		const zotKeyToSourceItemMap =
 			this.filterItemsWithSupportedIdentifiers(sourceItems);
+		performance.mark("end-filter-items");
+		performance.measure(
+			"filter-items",
+			"start-fetch-citations",
+			"end-filter-items",
+		);
 		if (zotKeyToSourceItemMap.size === 0) {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
@@ -254,6 +261,7 @@ export abstract class IndexerBase<Ref> {
 		}
 
 		// Get results from indexer
+		performance.mark("start-get-indexed-works");
 		const indexedWorks: IndexedWork<Ref>[] = [];
 		for (const [pidType, pids] of Object.entries(groupedIdentifiers)) {
 			const chunkedPids = _.chunk(pids, this.preferredChunkSize);
@@ -270,11 +278,24 @@ export abstract class IndexerBase<Ref> {
 				indexedWorks.push(...chunkedWorks);
 			}
 		}
+		performance.mark("end-get-indexed-works");
+		performance.measure(
+			"get-indexed-works",
+			"start-get-indexed-works",
+			"end-get-indexed-works",
+		);
 
 		// Map results
+		performance.mark("start-matching-identifiers");
 		const keyToIndexedWorkMap = this.matchIdentifiers(
 			zotKeyToSourceItemMap,
 			indexedWorks,
+		);
+		performance.mark("end-matching-identifiers");
+		performance.measure(
+			"match-identifiers",
+			"start-matching-identifiers",
+			"end-matching-identifiers",
 		);
 
 		// Count the number of citations to be added and ask for confirmation
@@ -342,6 +363,7 @@ export abstract class IndexerBase<Ref> {
 			}
 		>();
 
+		performance.mark("start-building-parsable-reference-map");
 		for (const [
 			sourceItemKey,
 			indexedWork,
@@ -359,6 +381,12 @@ export abstract class IndexerBase<Ref> {
 					.sourceItemKeys.add(sourceItemKey);
 			}
 		}
+		performance.mark("end-building-parsable-reference-map");
+		performance.measure(
+			"build-parsable-reference-map",
+			"start-building-parsable-reference-map",
+			"end-building-parsable-reference-map",
+		);
 
 		// Get the unique parsable references
 		const uniqueParsableReferences = Array.from(
@@ -374,6 +402,7 @@ export abstract class IndexerBase<Ref> {
 			),
 		);
 
+		performance.mark("start-parsing-references");
 		let parsedReferences: ParsedReference[] = [];
 		try {
 			parsedReferences = await this.parseReferences(
@@ -390,8 +419,15 @@ export abstract class IndexerBase<Ref> {
 			Zotero.log(`Parsing references failed due to error: ${error}`);
 			return;
 		}
+		performance.mark("end-parsing-references");
+		performance.measure(
+			"parse-references",
+			"start-parsing-references",
+			"end-parsing-references",
+		);
 
 		// Build a map from primaryID to parsed item
+		performance.mark("start-building-final-map");
 		const parsedReferenceMap = new Map();
 		for (const parsedRef of parsedReferences) {
 			parsedReferenceMap.set(parsedRef.primaryID, parsedRef.item);
@@ -439,9 +475,16 @@ export abstract class IndexerBase<Ref> {
 			sourceItem: SourceItemWrapper;
 			itemsToAdd: { primaryID: string; item: Zotero.Item }[];
 		}[];
+		performance.mark("end-building-final-map");
+		performance.measure(
+			"build-final-map",
+			"start-building-final-map",
+			"end-building-final-map",
+		);
 
 		// Proceed to update the source items
 		// Note: inspired by the syncItemCitationsWithWikidata method in citations.ts
+		performance.mark("start-updating-items");
 		let matcher: Matcher;
 		if (autoLinkCitations) {
 			matcher = new Matcher(libraryID);
@@ -478,6 +521,17 @@ export abstract class IndexerBase<Ref> {
 			sourceItem.addCitations(citations);
 			sourceItem.endBatch();
 		}
+		performance.mark("end-updating-items");
+		performance.measure(
+			"updating-items",
+			"start-updating-items",
+			"end-updating-items",
+		);
+		performance.measure(
+			"fetch-citations-total",
+			"start-fetch-citations",
+			"end-updating-items",
+		);
 
 		progress.updateLine(
 			"done",
@@ -504,6 +558,7 @@ export abstract class IndexerBase<Ref> {
 		}
 
 		// Separate references with compatible identifiers from those without
+		performance.mark("start-triaging-references");
 		const [refsWithIds, refsWithoutIds] = _.partition(
 			references,
 			(ref) =>
@@ -515,10 +570,17 @@ export abstract class IndexerBase<Ref> {
 		const refsWithRawData = refsWithoutIds.filter((ref) => ref.rawObject);
 		const rawDataCount = refsWithRawData.length;
 		const unparseableCount = refsWithoutIds.length - rawDataCount;
+		performance.mark("end-triaging-references");
+		performance.measure(
+			"triage-references",
+			"start-triaging-references",
+			"end-triaging-references",
+		);
 
 		let failCount = 0;
 		let duplicateCount = 0;
 		const parsedReferences: ParsedReference[] = [];
+		performance.mark("start-lookup-items");
 		// Look up items with identifiers
 		// TODO: implement fallback mechanism for failed identifiers
 		const lookupResult = await Lookup.lookupItems(
@@ -529,6 +591,12 @@ export abstract class IndexerBase<Ref> {
 			duplicateCount = lookupResult.duplicateCount;
 			parsedReferences.push(...lookupResult.parsedReferences);
 		}
+		performance.mark("end-lookup-items");
+		performance.measure(
+			"lookup-items",
+			"start-lookup-items",
+			"end-lookup-items",
+		);
 
 		const successfulIdentifiers = parsedReferences.length;
 
