@@ -156,6 +156,19 @@ function CitationRow(props: CitationRowProps) {
 			? Array.from(row.parentNode!.children).indexOf(row)
 			: citationsLength;
 
+		// No change in order - do nothing
+		if (draggedIndex === destinationIndex) {
+			return;
+		}
+
+		// Update the item after a small delay to avoid blinking
+		setTimeout(() => {
+			handleCitationMove(draggedIndex, destinationIndex);
+		}, 250);
+	};
+
+	const handleDragEnd = (e: React.DragEvent<Element>) => {
+		e.preventDefault();
 		// Un-hide the moved citation row
 		document
 			.querySelector(".drag-hidden-citation")
@@ -168,16 +181,6 @@ function CitationRow(props: CitationRowProps) {
 		) {
 			(document.activeElement as HTMLElement | XULElement).blur();
 		}
-
-		// No change in order - do nothing
-		if (draggedIndex === destinationIndex) {
-			return;
-		}
-
-		// Update the item after a small delay to avoid blinking
-		setTimeout(() => {
-			handleCitationMove(draggedIndex, destinationIndex);
-		}, 250);
 	};
 
 	function renderGrippy() {
@@ -212,6 +215,7 @@ function CitationRow(props: CitationRowProps) {
 			onDragStart={handleDragStart}
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
+			onDragEnd={handleDragEnd}
 		>
 			{sortBy === "ordinal" && renderGrippy()}
 			<div
