@@ -6,6 +6,7 @@ import Wikicite from "./wikicite";
 import _ = require("lodash");
 import { ParsableReference } from "./indexer";
 import ItemWrapper from "./itemWrapper";
+import { WorkFilterParameters } from "openalex-sdk/dist/src/types/workFilterParameters";
 
 interface TranslatedReference {
 	/**
@@ -101,6 +102,7 @@ export default class Lookup {
 
 		// Extract the best identifiers for lookup
 		performance.mark("start-identifier-extraction");
+		ztoolkit.log("Extracting identifiers for lookup");
 		const bestIdentifiers = Lookup.getBestIdentifiers(parsableItemsWithIDs);
 
 		// Deduplicate identifiers (should be unique already, but just in case)
@@ -146,6 +148,7 @@ export default class Lookup {
 
 		// Process identifiers by type
 		performance.mark("start-translation");
+		ztoolkit.log("Translating identifiers");
 		for (const [type, entries] of Object.entries(groupedIdentifiers)) {
 			const pidType = type as PIDType;
 
@@ -157,6 +160,20 @@ export default class Lookup {
 				case "DOI":
 				case "PMID":
 				case "PMCID":
+					translationPromises.push(
+						Lookup.processBatchIdentifiers(
+							pidType,
+							90,
+							entries,
+							options,
+							limiter,
+							Lookup.fetchOpenAlexBatch,
+						),
+					);
+					break;
+
+				// ArXiv identifiers are processed through OpenAlex by mapping their ids to DOIs. Consider using arXiv's API directly, but it might be slow.
+				case "arXiv":
 					translationPromises.push(
 						Lookup.processBatchIdentifiers(
 							pidType,
@@ -206,6 +223,7 @@ export default class Lookup {
 
 		// Wait for all translations to complete
 		const allResults = await Promise.all(translationPromises);
+		ztoolkit.log("All translations completed");
 		performance.mark("end-translation");
 		performance.measure(
 			"translation",
@@ -215,6 +233,7 @@ export default class Lookup {
 
 		// Collect translated references and failed PIDs
 		performance.mark("start-translation-processing");
+		ztoolkit.log("Processing translations");
 		const parsedReferences: ParsedReference[] = [];
 		const failedIdentifiers: PID[] = [];
 
@@ -242,6 +261,7 @@ export default class Lookup {
 			);
 			return false;
 		}
+		ztoolkit.log("Translations processed");
 		performance.mark("end-translation-processing");
 		performance.measure(
 			"translation-processing",
@@ -501,14 +521,29 @@ export default class Lookup {
 
 		try {
 			// Build the request parameters
-			const ids = entries.map((entry) => ({
-				[type.toLowerCase()]: entry.pid.id,
-			}));
-
-			const doi = entries.map((entry) => entry.pid.id);
+			let filter: WorkFilterParameters;
+			switch (type) {
+				case "DOI":
+					filter = { doi: entries.map((entry) => entry.pid.id) };
+					break;
+				case "arXiv":
+					filter = {
+						doi: entries.map(
+							(entry) => "10.48550/arXiv." + entry.pid.id,
+						),
+					};
+					break;
+				default: {
+					const ids = entries.map((entry) => ({
+						[type.toLowerCase()]: entry.pid.id,
+					}));
+					filter = { ids };
+					break;
+				}
+			}
 
 			const params: SearchParameters = {
-				filter: type === "DOI" ? { doi } : { ids },
+				filter: filter,
 				retriveAllPages: true,
 			};
 

@@ -195,6 +195,7 @@ export abstract class IndexerBase<Ref> {
 		autoLinkCitations: boolean = true,
 	) {
 		performance.mark("start-fetch-citations");
+		ztoolkit.log("Fetching citations for source items...");
 		const libraryID = sourceItems[0].item.libraryID;
 
 		// Filter items with fetchable identifiers
@@ -262,6 +263,7 @@ export abstract class IndexerBase<Ref> {
 
 		// Get results from indexer
 		performance.mark("start-get-indexed-works");
+		ztoolkit.log("Fetching indexed works...");
 		const indexedWorks: IndexedWork<Ref>[] = [];
 		for (const [pidType, pids] of Object.entries(groupedIdentifiers)) {
 			const chunkedPids = _.chunk(pids, this.preferredChunkSize);
@@ -403,6 +405,7 @@ export abstract class IndexerBase<Ref> {
 		);
 
 		performance.mark("start-parsing-references");
+		ztoolkit.log("Parsing references...");
 		let parsedReferences: ParsedReference[] = [];
 		try {
 			parsedReferences = await this.parseReferences(
@@ -485,6 +488,7 @@ export abstract class IndexerBase<Ref> {
 		// Proceed to update the source items
 		// Note: inspired by the syncItemCitationsWithWikidata method in citations.ts
 		performance.mark("start-updating-items");
+		ztoolkit.log("Updating items...");
 		let matcher: Matcher;
 		if (autoLinkCitations) {
 			matcher = new Matcher(libraryID);
@@ -521,6 +525,7 @@ export abstract class IndexerBase<Ref> {
 			sourceItem.addCitations(citations);
 			sourceItem.endBatch();
 		}
+		ztoolkit.log("Items updated.");
 		performance.mark("end-updating-items");
 		performance.measure(
 			"updating-items",
