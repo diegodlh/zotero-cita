@@ -106,8 +106,15 @@ export default class Lookup {
 		const bestIdentifiers = Lookup.getBestIdentifiers(parsableItemsWithIDs);
 
 		// Deduplicate identifiers (should be unique already, but just in case)
-		const uniqueIdentifiers = _.uniqWith(bestIdentifiers, (a, b) =>
-			PID.isEqual(a.pid, b.pid),
+		const uniqueIdentifiers = _.uniqWith(
+			bestIdentifiers.map((entry) => {
+				return {
+					primaryID: entry.primaryID,
+					pid: entry.pid,
+					comparable: entry.pid.comparable,
+				};
+			}),
+			(a, b) => a.comparable === b.comparable,
 		);
 		const duplicateCount =
 			bestIdentifiers.length - uniqueIdentifiers.length;
@@ -132,6 +139,10 @@ export default class Lookup {
 		const limiter = new Bottleneck({
 			maxConcurrent: 5,
 			minTime: 200, // Adjust as needed based on API rate limits
+		});
+		const openAlexLimit = new Bottleneck({
+			maxConcurrent: 5,
+			minTime: 100, // 10 request per second
 		});
 
 		const options: ZoteroTranslators.TranslateOptions = {
@@ -374,6 +385,7 @@ export default class Lookup {
 			type: PIDType,
 			entries: { primaryID: string; pid: PID }[],
 			options: ZoteroTranslators.TranslateOptions,
+			batchID: number,
 		) => Promise<{ translated: TranslatedReference[]; failed: PID[] }>,
 	): Promise<{ translated: TranslatedReference[]; failed: PID[] }> {
 		const translatedReferences: TranslatedReference[] = [];
@@ -383,10 +395,9 @@ export default class Lookup {
 
 		// Process all batches in parallel
 		const batchPromises = batches.map(async (batch, index) => {
-			performance.mark(`start-translation-batch-${type}-${index}`);
 			try {
 				const { translated: items, failed } = await limiter.schedule(
-					() => batchFetcher(type, batch, options),
+					() => batchFetcher(type, batch, options, index),
 				);
 				translatedReferences.push(...items);
 				failedPIDs.push(...failed);
@@ -397,12 +408,6 @@ export default class Lookup {
 					new Error(`Failed to process batch - ${error}`),
 				);
 			}
-			performance.mark(`end-translation-batch-${type}-${index}`);
-			performance.measure(
-				`translation-batch-${type}-${index}`,
-				`start-translation-batch-${type}-${index}`,
-				`end-translation-batch-${type}-${index}`,
-			);
 		});
 
 		// Wait for all batch promises to resolve
@@ -515,9 +520,12 @@ export default class Lookup {
 		type: PIDType,
 		entries: { primaryID: string; pid: PID }[],
 		options: ZoteroTranslators.TranslateOptions,
+		batchID: number,
 	): Promise<{ translated: TranslatedReference[]; failed: PID[] }> {
 		const translatedReferences: TranslatedReference[] = [];
 		const failedPIDs: PID[] = [];
+
+		performance.mark(`start-openalex-batch-${type}-${batchID}`);
 
 		try {
 			// Build the request parameters
@@ -600,6 +608,12 @@ export default class Lookup {
 				new Error(`Failed to fetch OpenAlex batch - ${error}`),
 			);
 		}
+		performance.mark(`end-openalex-batch-${type}-${batchID}`);
+		performance.measure(
+			`openalex-batch-${type}-${batchID}`,
+			`start-openalex-batch-${type}-${batchID}`,
+			`end-openalex-batch-${type}-${batchID}`,
+		);
 
 		return { translated: translatedReferences, failed: failedPIDs };
 	}

@@ -7,23 +7,37 @@ import {
 } from "openalex-sdk/dist/src/types/work";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
-import _ = require("lodash");
+import Bottleneck from "bottleneck";
 
 export default class OpenAlex extends IndexerBase<string> {
 	indexerName = "OpenAlex";
 
 	openAlexSDK = new OpenAlexSDK("cita@duck.com");
 
-	supportedPIDs: PIDType[] = ["OpenAlex", "DOI", "MAG", "PMID", "PMCID"];
+	supportedPIDs: PIDType[] = [
+		"OpenAlex",
+		"DOI",
+		"MAG",
+		"PMID",
+		"PMCID",
+		"arXiv",
+	];
 
-	maxConcurrent: number = 1;
-	maxRPS: number = 10;
+	limiter = new Bottleneck({
+		maxConcurrent: 5,
+		minTime: 1000 / 10, // 10 requests per second
+	});
+
 	requiresGroupedIdentifiers: boolean = true;
 	preferredChunkSize: number = 90;
 
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		// TODO: support getting for multiple items
-		const identifier = item.getBestPID(this.supportedPIDs);
+		let identifier = item.getBestPID(this.supportedPIDs);
+
+		if (identifier && identifier.type === "arXiv") {
+			identifier = new PID("DOI", `10.48550/arXiv.${identifier.cleanID}`);
+		}
 
 		if (identifier) {
 			const work = await this.openAlexSDK.work(
@@ -47,10 +61,19 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
 	 */
 	async getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<string>[]> {
+		ztoolkit.log("OpenAlex getIndexedWorks", identifiers);
 		const pidType = identifiers[0].type; // Should all be the same per chunk
 		let searchParams: SearchParameters;
 		if (pidType === "DOI") {
 			const dois = identifiers.map((id) => id.id);
+			searchParams = {
+				filter: { doi: dois },
+				retriveAllPages: true,
+			};
+		} else if (pidType === "arXiv") {
+			const dois = identifiers.map(
+				(id) => `10.48550/arXiv.${id.cleanID}`,
+			);
 			searchParams = {
 				filter: { doi: dois },
 				retriveAllPages: true,

@@ -43,14 +43,10 @@ export interface ParsableReference<R> {
 }
 
 export abstract class IndexerBase<Ref> {
-	maxRPS: number = 1000; // Requests per second
-	maxConcurrent: number = 100; // Maximum concurrent requests
-
-	// Initialize Bottleneck for rate limiting (max 50 requests per second)
-	limiter = new Bottleneck({
-		minTime: 1 / this.maxRPS,
-		maxConcurrent: this.maxConcurrent,
-	});
+	/**
+	 * Rate limiter to use for requests.
+	 */
+	abstract limiter: Bottleneck;
 
 	/**
 	 * Name of the indexer to be displayed.
@@ -264,22 +260,29 @@ export abstract class IndexerBase<Ref> {
 		// Get results from indexer
 		performance.mark("start-get-indexed-works");
 		ztoolkit.log("Fetching indexed works...");
-		const indexedWorks: IndexedWork<Ref>[] = [];
-		for (const [pidType, pids] of Object.entries(groupedIdentifiers)) {
-			const chunkedPids = _.chunk(pids, this.preferredChunkSize);
-			for (const chunk of chunkedPids) {
-				const chunkedWorks = await this.limiter.schedule(() =>
-					this.getIndexedWorks(chunk).catch((error) => {
-						Zotero.log(
-							`Error fetching indexedWorks with ${this.indexerName} and id type ${pidType}: ${error}`,
-							"error",
-						);
-						return [] as IndexedWork<Ref>[];
-					}),
-				);
-				indexedWorks.push(...chunkedWorks);
-			}
-		}
+		const batchIdentifiers = Object.entries(groupedIdentifiers).flatMap(
+			([pidType, pids]) => _.chunk(pids, this.preferredChunkSize),
+		);
+
+		const batchPromises = batchIdentifiers.map(
+			async (batch, index): Promise<IndexedWork<Ref>[]> => {
+				try {
+					// Because OpenCitations does not support multiple identifiers in a single request, the limiter should be used within getIndexedWorks, not here
+					const works = await this.getIndexedWorks(batch);
+					return works;
+				} catch (error) {
+					Zotero.log(
+						`Error fetching indexedWorks with ${this.indexerName} in batch ${index}: ${error}`,
+						"error",
+					);
+					return [] as IndexedWork<Ref>[];
+				}
+				// TODO: update progress here?
+			},
+		);
+
+		// Wait for all batch promises to resolve
+		const indexedWorks = (await Promise.all(batchPromises)).flat();
 		performance.mark("end-get-indexed-works");
 		performance.measure(
 			"get-indexed-works",

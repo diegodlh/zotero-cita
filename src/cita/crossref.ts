@@ -3,6 +3,7 @@ import ItemWrapper from "./itemWrapper";
 import Wikicite, { debug } from "./wikicite";
 import PID from "./PID";
 import { ParsedReference } from "./zotLookup";
+import Bottleneck from "bottleneck";
 
 interface CrossrefFilterResponse {
 	status: string;
@@ -66,8 +67,11 @@ export default class Crossref extends IndexerBase<Reference> {
 
 	supportedPIDs: PIDType[] = ["DOI"];
 
-	maxRPS: number = 50; // Requests per second
-	maxConcurrent: number = 5; // Maximum concurrent requests
+	limiter = new Bottleneck({
+		maxConcurrent: 5,
+		minTime: 1000 / 50, // 50 requests per second
+	});
+
 	preferredChunkSize: number = 50;
 	requiresGroupedIdentifiers: boolean = false; // Will only be DOI anyway
 
@@ -141,8 +145,8 @@ export default class Crossref extends IndexerBase<Reference> {
 			responseType: "json",
 		};
 
-		const response = await Zotero.HTTP.request("GET", url, options).catch(
-			(e) => {
+		const response = await this.limiter.schedule(() =>
+			Zotero.HTTP.request("GET", url, options).catch((e) => {
 				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
 				if (e.status == 429) {
 					// Extract rate limit headers
@@ -156,7 +160,7 @@ export default class Crossref extends IndexerBase<Reference> {
 						`Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Current limit: ${rateLimitLimit} requests per ${rateLimitInterval}s`,
 					);
 				}
-			},
+			}),
 		);
 
 		const works =

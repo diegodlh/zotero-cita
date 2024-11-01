@@ -157,6 +157,8 @@ export default class PID {
 
 	static isEqual(a: PID, b: PID): boolean {
 		if (a.type !== b.type) return false;
-		return a.comparable !== null && a.comparable === b.comparable;
+		const aComp = a.comparable;
+		const bComp = b.comparable;
+		return aComp !== null && aComp === bComp;
 	}
 }

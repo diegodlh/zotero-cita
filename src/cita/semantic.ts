@@ -4,6 +4,7 @@ import ItemWrapper from "./itemWrapper";
 import * as prefs from "../cita/preferences";
 import { getPref } from "../utils/prefs";
 import PID from "./PID";
+import Bottleneck from "bottleneck";
 
 interface SemanticPaper {
 	paperId: string;
@@ -50,6 +51,12 @@ export default class Semantic extends IndexerBase<Reference> {
 
 	maxRPS: number = 1; // Request per second
 	maxConcurrent: number = 1; // Maximum concurrent requests
+
+	limiter = new Bottleneck({
+		maxConcurrent: 1,
+		minTime: 1000 / 1, // 1 request per second
+	});
+
 	preferredChunkSize: number = 100; // Could support up to 500 items, but only 9999 citations per request
 	requiresGroupedIdentifiers: boolean = false;
 
@@ -67,22 +74,22 @@ export default class Semantic extends IndexerBase<Reference> {
 				},
 				responseType: "json",
 			};
-			const response = await Zotero.HTTP.request(
-				"GET",
-				url,
-				options,
-			).catch((e) => {
-				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
-				if (e.status == 429) {
-					throw new Error(
-						`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
+			const response = await this.limiter.schedule(() =>
+				Zotero.HTTP.request("GET", url, options).catch((e) => {
+					debug(
+						`Couldn't access URL: ${url}. Got status ${e.status}.`,
 					);
-				} else if (e.status == 403) {
-					throw new Error(
-						`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,
-					);
-				}
-			});
+					if (e.status == 429) {
+						throw new Error(
+							`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
+						);
+					} else if (e.status == 403) {
+						throw new Error(
+							`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,
+						);
+					}
+				}),
+			);
 			const paper = response?.response
 				? (response?.response as SemanticPaper)
 				: null;

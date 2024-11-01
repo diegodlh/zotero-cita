@@ -2,6 +2,7 @@ import { IndexedWork, IndexerBase, ParsableReference } from "./indexer";
 import Wikicite, { debug } from "./wikicite";
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
+import Bottleneck from "bottleneck";
 
 interface OCWork {
 	title: string;
@@ -29,6 +30,11 @@ interface OCCitation {
 
 export default class OpenCitations extends IndexerBase<OCCitation> {
 	indexerName = "Open Citations";
+
+	limiter = new Bottleneck({
+		maxConcurrent: 5, // No official limits given...
+		minTime: 1000 / 5,
+	});
 
 	/**
 	 * Supported PIDs for OpenCitations
