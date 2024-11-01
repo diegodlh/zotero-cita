@@ -67,13 +67,13 @@ export default class OpenCitations extends IndexerBase<OCCitation> {
 				},
 				responseType: "json",
 			};
-			const response = await Zotero.HTTP.request(
-				"GET",
-				url,
-				options,
-			).catch((e) => {
-				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
-			});
+			const response = await this.limiter.schedule(() =>
+				Zotero.HTTP.request("GET", url, options).catch((e) => {
+					debug(
+						`Couldn't access URL: ${url}. Got status ${e.status}.`,
+					);
+				}),
+			);
 
 			const foundWork = (response?.response as OCWork[])[0];
 			if (foundWork) {

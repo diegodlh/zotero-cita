@@ -1377,10 +1377,15 @@ class ZoteroOverlay {
 		items: Zotero.Item[],
 	): boolean {
 		const indexer = new IndexerType();
-		return items.some((item) => {
-			const sourceItem = new SourceItemWrapper(item, prefs.getStorage());
-			return indexer.canFetchCitations(sourceItem);
-		});
+		return items
+			.filter((item) => item.isRegularItem())
+			.some((item) => {
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				return indexer.canFetchCitations(sourceItem);
+			});
 	}
 
 	refreshZoteroPopup(menuName: MenuSelectionType, doc: Document) {

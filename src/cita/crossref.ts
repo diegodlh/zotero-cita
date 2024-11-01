@@ -147,7 +147,6 @@ export default class Crossref extends IndexerBase<Reference> {
 
 		const response = await this.limiter.schedule(() =>
 			Zotero.HTTP.request("GET", url, options).catch((e) => {
-				debug(`Couldn't access URL: ${url}. Got status ${e.status}.`);
 				if (e.status == 429) {
 					// Extract rate limit headers
 					const rateLimitLimit =
@@ -159,6 +158,8 @@ export default class Crossref extends IndexerBase<Reference> {
 					throw new Error(
 						`Received a 429 rate limit response from Crossref (https://github.com/CrossRef/rest-api-doc#rate-limits). Try getting references for fewer items at a time. Current limit: ${rateLimitLimit} requests per ${rateLimitInterval}s`,
 					);
+				} else {
+					throw e;
 				}
 			}),
 		);

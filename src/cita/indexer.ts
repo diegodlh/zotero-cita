@@ -152,13 +152,13 @@ export abstract class IndexerBase<Ref> {
 					);
 				} else {
 					Zotero.log(
-						`Could not find indexed work for ${sourceItem.title} (${sourcePID.comparable})`,
+						`Could not match indexed work with ${sourceItem.title} (${sourcePID.comparable})`,
 					);
 					lostSourceItems.push(sourceItem);
 				}
 			} else {
 				Zotero.log(
-					`Could not find indexed work for ${sourceItem.title} (${sourcePID.comparable})`,
+					`Could not match indexed work with ${sourceItem.title} (${sourcePID.comparable})`,
 				);
 				lostSourceItems.push(sourceItem);
 			}
@@ -623,7 +623,7 @@ export abstract class IndexerBase<Ref> {
 		const totalParsed = parsedReferences.length;
 
 		Zotero.log(`Had ${totalReferences} references to parse. Split into ${refsWithIds.length} lookup identifiers, ${rawDataCount} references with raw data, and ${unparseableCount} references with neither data nor identifier. Tally: ${refsWithIds.length + rawDataCount + unparseableCount} out of ${totalReferences} references.
-Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicateCount} duplicates. Tally: ${successfulIdentifiers + failCount} out of ${refsWithIds.length} identifiers.
+Successfully parsed ${successfulIdentifiers} identifiers, failed to parse ${failCount}, found ${duplicateCount} duplicates. Tally: ${successfulIdentifiers + failCount + duplicateCount} out of ${refsWithIds.length} identifiers.
 Manually parsed ${manuallyParsedCount} references out of ${rawDataCount}.
 Grand total: ${totalParsed} out of ${totalReferences} references.`);
 

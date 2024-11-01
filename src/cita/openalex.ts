@@ -40,9 +40,11 @@ export default class OpenAlex extends IndexerBase<string> {
 		}
 
 		if (identifier) {
-			const work = await this.openAlexSDK.work(
-				identifier.id,
-				identifier.type.toLowerCase() as ExternalIdsWork,
+			const work = await this.limiter.schedule(() =>
+				this.openAlexSDK.work(
+					identifier.id,
+					identifier.type.toLowerCase() as ExternalIdsWork,
+				),
 			);
 			const cleaned = work.id.replace(/https?:\/\/openalex.org\//, "");
 			const pids: PID[] = [new PID("OpenAlex", cleaned)];
@@ -61,7 +63,6 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @returns {Promise<IndexedWork<string>[]>} list of references, or [] if none.
 	 */
 	async getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<string>[]> {
-		ztoolkit.log("OpenAlex getIndexedWorks", identifiers);
 		const pidType = identifiers[0].type; // Should all be the same per chunk
 		let searchParams: SearchParameters;
 		if (pidType === "DOI") {
@@ -98,7 +99,7 @@ export default class OpenAlex extends IndexerBase<string> {
 				references: work.referenced_works
 					? OpenAlex.mapReferences(work.referenced_works)
 					: [],
-				identifiers: OpenAlex.mapIdentifiers(work),
+				identifiers: OpenAlex.mapWorkToIdentifiers(work),
 				primaryID: work.id,
 			};
 		});
@@ -122,9 +123,15 @@ export default class OpenAlex extends IndexerBase<string> {
 	 * @param {Work} work - OpenAlex work to map.
 	 * @returns {PID[]} PIDs mapped from the work.
 	 */
-	private static mapIdentifiers(work: Work): PID[] {
+	private static mapWorkToIdentifiers(work: Work): PID[] {
 		const pids: PID[] = [];
-		if (work.doi) pids.push(new PID("DOI", work.doi));
+		if (work.doi) {
+			pids.push(new PID("DOI", work.doi));
+			if (work.doi.startsWith("10.48550/arXiv."))
+				pids.push(
+					new PID("arXiv", work.doi.replace("10.48550/arXiv.", "")),
+				);
+		}
 		if (work.ids?.pmid) pids.push(new PID("PMID", `${work.ids.pmid}`));
 		if (work.ids?.mag) pids.push(new PID("MAG", `${work.ids.mag}`));
 		if (work.ids?.openalex)
