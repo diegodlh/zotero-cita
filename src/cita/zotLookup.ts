@@ -148,7 +148,7 @@ export default class Lookup {
 		});
 		const openAlexLimiter = new Bottleneck({
 			maxConcurrent: 5,
-			minTime: 150, // 10 request per second
+			minTime: 120, // A little less than 10 requests per second
 		});
 
 		const options: ZoteroTranslators.TranslateOptions = {

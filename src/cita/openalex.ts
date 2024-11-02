@@ -97,7 +97,10 @@ export default class OpenAlex extends IndexerBase<string> {
 		return works.map((work): IndexedWork<string> => {
 			return {
 				references: work.referenced_works
-					? OpenAlex.mapReferences(work.referenced_works)
+					? // Filter out self-references (very rare, but here's an example: https://api.openalex.org/works/W2963003673)
+						OpenAlex.mapReferences(work.referenced_works).filter(
+							(ref) => ref.primaryID !== work.id,
+						)
 					: [],
 				identifiers: OpenAlex.mapWorkToIdentifiers(work),
 				primaryID: work.id,
