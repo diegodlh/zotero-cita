@@ -458,7 +458,7 @@ export abstract class IndexerBase<Ref> {
 		// Build finalPairings: map from sourceItemKey to parsed references
 		const finalPairings = new Map<
 			string,
-			{ primaryID: string; item: Zotero.Item }[]
+			{ primaryID: string; item: Zotero.Item; oci?: string }[]
 		>();
 
 		for (const [
@@ -477,6 +477,7 @@ export abstract class IndexerBase<Ref> {
 				finalPairings.get(sourceItemKey)!.push({
 					primaryID: refKey,
 					item: parsedItem,
+					oci: parsableReference.oci,
 				});
 			}
 		}
@@ -495,7 +496,11 @@ export abstract class IndexerBase<Ref> {
 			})
 			.filter((entry) => entry !== null) as {
 			sourceItem: SourceItemWrapper;
-			itemsToAdd: { primaryID: string; item: Zotero.Item }[];
+			itemsToAdd: {
+				primaryID: string;
+				item: Zotero.Item;
+				oci?: string;
+			}[];
 		}[];
 		performance.mark("end-building-final-map");
 		performance.measure(
@@ -537,7 +542,10 @@ export abstract class IndexerBase<Ref> {
 					await newCitation.autoLink(matcher!);
 				}
 
-				// TODO: add OCIs
+				// Add OCI if available
+				if (parsedRef.oci) {
+					newCitation.addOCI(parsedRef.oci);
+				}
 
 				citations.push(newCitation);
 			}
