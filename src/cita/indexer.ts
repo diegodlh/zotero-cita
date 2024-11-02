@@ -133,11 +133,14 @@ export abstract class IndexerBase<Ref> {
 			{ sourceItem, pid: sourcePID },
 		] of zotKeyToSourceItem.entries()) {
 			const comparable = sourcePID.comparable;
+			let matched = false;
+
 			if (comparable && indexedWorksMap.has(comparable)) {
 				keyToIndexedWork.set(
 					zoteroKey,
 					indexedWorksMap.get(comparable)!,
 				);
+				matched = true;
 			} else if (comparable && sourcePID.type === "OpenAlex") {
 				// We try to match items that supplied an OpenAlex key with indexed works that have a MAG key
 				// This is mostly done for Semantic Scholar, which doesn't directly support OpenAlex keys
@@ -150,13 +153,26 @@ export abstract class IndexerBase<Ref> {
 						zoteroKey,
 						indexedWorksMap.get(comparableMAGKey)!,
 					);
-				} else {
-					Zotero.log(
-						`Could not find indexed work matching with ${sourceItem.title} (${sourcePID.comparable})`,
-					);
-					lostSourceItems.push(sourceItem);
+					matched = true;
 				}
-			} else {
+			} else if (comparable && sourcePID.type === "DOI") {
+				// We try to match items that supplied a DOI with indexed works that have an arXiv key
+				// This is mostly done for Semantic Scholar, which doesn't directly support arXiv DOIs
+				const comparableArXivKey = new PID("arXiv", sourcePID.cleanID!)
+					.comparable;
+				if (
+					comparableArXivKey &&
+					indexedWorksMap.has(comparableArXivKey)
+				) {
+					keyToIndexedWork.set(
+						zoteroKey,
+						indexedWorksMap.get(comparableArXivKey)!,
+					);
+					matched = true;
+				}
+			}
+
+			if (!matched) {
 				Zotero.log(
 					`Could not find indexed work matching with ${sourceItem.title} (${sourcePID.comparable})`,
 				);
