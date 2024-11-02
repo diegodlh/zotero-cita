@@ -857,7 +857,10 @@ class ZoteroOverlay {
 			debug("Edit cancelled by user.");
 			return;
 		}
-		if (this._sourceItem.getPID("QID") && item.getExtraField("QID")) {
+		if (
+			this._sourceItem.getPID("QID") &&
+			Wikicite.getExtraField(item, "QID").values.length
+		) {
 			debug(
 				"Source and target items have QIDs! Offer syncing to Wikidata.",
 			);

@@ -235,7 +235,7 @@ export default class ItemWrapper {
 					_pid = this.item.getField(type);
 				} else {
 					// Also get DOI for unsupported types
-					_pid = this.item.getExtraField(type);
+					_pid = Wikicite.getExtraField(this.item, type).values[0];
 				}
 				break;
 			case "arXiv": {
@@ -243,12 +243,12 @@ export default class ItemWrapper {
 				if (field && field.startsWith("arXiv:")) {
 					_pid = field.replace("arXiv:", "");
 				} else {
-					_pid = this.item.getExtraField("arXiv");
+					_pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
 				}
 				break;
 			}
 			default:
-				_pid = this.item.getExtraField(type);
+				_pid = Wikicite.getExtraField(this.item, type).values[0];
 		}
 		if (_pid) {
 			const pid = new PID(type, _pid);
