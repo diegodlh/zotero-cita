@@ -62,22 +62,44 @@ export default class Semantic extends IndexerBase<Reference> {
 
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		const identifier = item.getBestPID(this.supportedPIDs);
+		let paper: SemanticPaper | null = null;
 
 		if (identifier) {
 			const url = `https://api.semanticscholar.org/graph/v1/paper/${Semantic.mapLookupIDToString(identifier)}?fields=externalIds`;
-			// FIXME: for reasons beyond my comprehension, the plugin won't start if I use the prefs.getSemanticAPIKey() function (or any other function from preferences.ts)
-			const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
-			const options = {
-				headers: {
-					"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
-					"X-API-Key": apiKey,
-				},
-				responseType: "json",
-			};
-			const response = await this.makeRequest("GET", url, options);
-			const paper = response?.response
+			const response = await this.makeRequest("GET", url);
+			paper = response?.response
 				? (response?.response as SemanticPaper)
 				: null;
+		} else {
+			// We use search
+			const url = `https://api.semanticscholar.org/graph/v1/paper/search/match?query=${item.title}`;
+			const reqStart = performance.now();
+			const response = await this.makeRequest("GET", url);
+			const reqEnd = performance.now();
+			const paperMatch =
+				response?.response?.data &&
+				Array.isArray(response.response.data)
+					? (response.response.data as SemanticPaper[])[0]
+					: null;
+			if (paperMatch) {
+				const paperId = paperMatch.paperId;
+				const paperUrl = `https://api.semanticscholar.org/graph/v1/paper/${paperId}?fields=externalIds`;
+				const delay = Math.max(1000 - (reqEnd - reqStart), 0); // Ensure at least 1 second between requests
+				if (delay)
+					await this.limiter.schedule(
+						() =>
+							new Promise((resolve) =>
+								setTimeout(resolve, delay),
+							),
+					); // Add delay
+				const paperResponse = await this.makeRequest("GET", paperUrl);
+				paper = paperResponse?.response
+					? (paperResponse?.response as SemanticPaper)
+					: null;
+			}
+		}
+
+		if (paper) {
 			const externalIds = paper?.externalIds;
 			if (externalIds) {
 				const pids: PID[] = [
@@ -129,17 +151,11 @@ export default class Semantic extends IndexerBase<Reference> {
 		// Semantic-specific logic for fetching references
 		const paperIdentifiers = identifiers.map(Semantic.mapLookupIDToString);
 		const url = `https://api.semanticscholar.org/graph/v1/paper/batch?fields=references,externalIds,title,references.externalIds,references.title`;
-		// FIXME: same as above
-		const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
-		const options = {
-			headers: {
-				"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
-				"X-API-Key": apiKey,
-			},
-			responseType: "json",
-			body: JSON.stringify({ ids: paperIdentifiers }),
-		};
-		const response = await this.makeRequest("POST", url, options);
+		const response = await this.makeRequest(
+			"POST",
+			url,
+			JSON.stringify({ ids: paperIdentifiers }),
+		);
 		const semanticPaper = Array.isArray(response?.response)
 			? (response.response as (SemanticPaper | null)[])
 			: [];
@@ -159,8 +175,17 @@ export default class Semantic extends IndexerBase<Reference> {
 	private async makeRequest(
 		method: string,
 		url: string,
-		options: any,
+		body?: string,
 	): Promise<XMLHttpRequest> {
+		const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
+		const options = {
+			headers: {
+				"User-Agent": `${Wikicite.getUserAgent()} mailto:cita@duck.com`,
+				"X-API-Key": apiKey,
+			},
+			responseType: "json",
+			body: body,
+		};
 		return await this.limiter.schedule(() =>
 			Zotero.HTTP.request(method, url, options).catch((e) => {
 				if (e.status === 429) {

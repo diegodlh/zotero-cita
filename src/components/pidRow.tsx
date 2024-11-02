@@ -99,7 +99,7 @@ function PIDRow(props: PIDRowProps) {
 							"wikicite.citations-pane.pid-row.fetch-pid",
 							props.type,
 						)}
-						imgSrc={`chrome://zotero/skin/16/universal/sync.svg`}
+						imgSrc={`chrome://zotero/skin/20/universal/magnifier.svg`}
 					/>
 				)}
 				{url && (

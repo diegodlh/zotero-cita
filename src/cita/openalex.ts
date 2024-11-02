@@ -8,6 +8,8 @@ import {
 import ItemWrapper from "./itemWrapper";
 import PID from "./PID";
 import Bottleneck from "bottleneck";
+import Wikicite from "./wikicite";
+import { config } from "../../package.json";
 
 export default class OpenAlex extends IndexerBase<string> {
 	indexerName = "OpenAlex";
@@ -39,13 +41,56 @@ export default class OpenAlex extends IndexerBase<string> {
 			identifier = new PID("DOI", `10.48550/arXiv.${identifier.cleanID}`);
 		}
 
+		let work: Work | false = false;
 		if (identifier) {
-			const work = await this.limiter.schedule(() =>
+			work = await this.limiter.schedule(() =>
 				this.openAlexSDK.work(
 					identifier.id,
 					identifier.type.toLowerCase() as ExternalIdsWork,
 				),
 			);
+		} else {
+			// We use search
+			const works = await this.limiter.schedule(() =>
+				this.openAlexSDK.works({
+					searchField: "title",
+					search: item.title,
+					retriveAllPages: true,
+				}),
+			);
+
+			if (works.results.length === 1) work = works.results[0];
+			else {
+				const choices = works.results.map((work) => {
+					const authors = work.authorships
+						?.map((author) => author.raw_author_name)
+						.join(", ");
+					return `${work.display_name} - ${authors}`;
+				});
+				const args = {
+					choices: choices,
+					message: Wikicite.formatString(
+						"wikicite.wikidata.reconcile.approx.message",
+						[
+							item.title,
+							Zotero.ItemTypes.getLocalizedString(item.type),
+						],
+					),
+					addon: addon,
+				};
+				const selected: { value: number } = { value: 0 };
+				const result = Services.prompt.select(
+					window as mozIDOMWindowProxy,
+					"Multiple matches found",
+					"Select the item most closely matching",
+					choices,
+					selected,
+				);
+				if (result) work = works.results[selected.value];
+			}
+		}
+
+		if (work) {
 			const cleaned = work.id.replace(/https?:\/\/openalex.org\//, "");
 			const pids: PID[] = [new PID("OpenAlex", cleaned)];
 			if (work.doi) pids.push(new PID("DOI", work.doi));
