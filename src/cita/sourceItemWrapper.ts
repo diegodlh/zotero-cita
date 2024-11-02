@@ -392,36 +392,22 @@ class SourceItemWrapper extends ItemWrapper {
 		if (!Array.isArray(citations)) citations = [citations];
 		if (citations.length) {
 			this.loadCitations();
-			const existingTargetDOIs = new Set(
+			const existingPIDs = new Set(
 				this._citations
-					.map((citation) => citation.target.doi)
-					.filter((id): id is DOI => id !== undefined),
+					.flatMap((citation) => citation.target.getAllPIDs())
+					.map((pid) => pid.comparable)
+					.filter((pid): pid is string => pid !== undefined),
 			);
-			const existingTargetISBNs = new Set(
-				this._citations
-					.map((citation) => citation.target.isbn)
-					.filter((id): id is string => id !== undefined)
-					.flatMap((isbnList) => isbnList.split(" ")),
-			);
-			// Filter out items whose DOI or ISBN are part of the existing citations
-			// TODO: expand exclusion to other identifiers and/or use matcher
+			// Filter out items that are already in the list
 			citations = citations.filter((citation) => {
-				// Exclude if DOI already exists
+				// Exclude if any PID already exists
 				if (
-					citation.target.doi &&
-					existingTargetDOIs.has(citation.target.doi)
+					citation.target
+						.getAllPIDs()
+						.some((pid) => existingPIDs.has(pid.comparable || ""))
 				)
 					return false;
-				// Exclude if ISBN already exists
-				if (
-					citation.target.isbn &&
-					citation.target.isbn
-						.split(" ")
-						.some((item) => existingTargetISBNs.has(item))
-				)
-					return false;
-
-				return true;
+				else return true;
 			});
 
 			// Filter out identical items (might be slow)
