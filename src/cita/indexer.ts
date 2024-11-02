@@ -152,13 +152,13 @@ export abstract class IndexerBase<Ref> {
 					);
 				} else {
 					Zotero.log(
-						`Could not match indexed work with ${sourceItem.title} (${sourcePID.comparable})`,
+						`Could not find indexed work matching with ${sourceItem.title} (${sourcePID.comparable})`,
 					);
 					lostSourceItems.push(sourceItem);
 				}
 			} else {
 				Zotero.log(
-					`Could not match indexed work with ${sourceItem.title} (${sourcePID.comparable})`,
+					`Could not find indexed work matching with ${sourceItem.title} (${sourcePID.comparable})`,
 				);
 				lostSourceItems.push(sourceItem);
 			}

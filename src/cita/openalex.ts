@@ -127,9 +127,12 @@ export default class OpenAlex extends IndexerBase<string> {
 		const pids: PID[] = [];
 		if (work.doi) {
 			pids.push(new PID("DOI", work.doi));
-			if (work.doi.startsWith("10.48550/arXiv."))
+			if (work.doi.startsWith("https://doi.org/10.48550/arxiv."))
 				pids.push(
-					new PID("arXiv", work.doi.replace("10.48550/arXiv.", "")),
+					new PID(
+						"arXiv",
+						work.doi.replace("https://doi.org/10.48550/arxiv.", ""),
+					),
 				);
 		}
 		if (work.ids?.pmid) pids.push(new PID("PMID", `${work.ids.pmid}`));

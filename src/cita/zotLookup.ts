@@ -105,23 +105,29 @@ export default class Lookup {
 		ztoolkit.log("Extracting identifiers for lookup");
 		const bestIdentifiers = Lookup.getBestIdentifiers(parsableItemsWithIDs);
 
-		// Deduplicate identifiers (should be unique already, but just in case)
-		const uniqueIdentifiers = _.uniqWith(
-			bestIdentifiers.map((entry) => {
-				return {
-					primaryID: entry.primaryID,
-					pid: entry.pid,
-					comparable: entry.pid.comparable,
-				};
-			}),
-			(a, b) => a.comparable === b.comparable,
-		);
-		const duplicateCount =
-			bestIdentifiers.length - uniqueIdentifiers.length;
+		// Identifiers should be unique already since they were disambiguated by primaryID beforehand
+		// For large quantities of identifiers, the very few duplicates we might have are not worth the overhead of checking for them
+		// const uniqWith = <T>(arr: T[], fn: (a: T, b: T) => boolean) =>
+		// 	arr.filter(
+		// 		(element, index) =>
+		// 			arr.findIndex((step) => fn(element, step)) === index,
+		// 	);
+		// const uniqueIdentifiers = uniqWith(
+		// 	bestIdentifiers.map((entry) => {
+		// 		return {
+		// 			primaryID: entry.primaryID,
+		// 			pid: entry.pid,
+		// 			comparable: entry.pid.comparable,
+		// 		};
+		// 	}),
+		// 	(a, b) => a.comparable === b.comparable,
+		// );
+		// const duplicateCount =
+		// 	bestIdentifiers.length - uniqueIdentifiers.length;
 
 		// Group identifiers by type for batch processing
 		const groupedIdentifiers = _.groupBy(
-			uniqueIdentifiers,
+			bestIdentifiers,
 			(entry) => entry.pid.type,
 		);
 		const counts = Object.entries(groupedIdentifiers)
@@ -140,9 +146,9 @@ export default class Lookup {
 			maxConcurrent: 5,
 			minTime: 200, // Adjust as needed based on API rate limits
 		});
-		const openAlexLimit = new Bottleneck({
+		const openAlexLimiter = new Bottleneck({
 			maxConcurrent: 5,
-			minTime: 100, // 10 request per second
+			minTime: 150, // 10 request per second
 		});
 
 		const options: ZoteroTranslators.TranslateOptions = {
@@ -171,27 +177,14 @@ export default class Lookup {
 				case "DOI":
 				case "PMID":
 				case "PMCID":
+				case "arXiv": // ArXiv identifiers are processed through OpenAlex by mapping their ids to DOIs. Consider using arXiv's API directly, but it might be slow.
 					translationPromises.push(
 						Lookup.processBatchIdentifiers(
 							pidType,
 							90,
 							entries,
 							options,
-							limiter,
-							Lookup.fetchOpenAlexBatch,
-						),
-					);
-					break;
-
-				// ArXiv identifiers are processed through OpenAlex by mapping their ids to DOIs. Consider using arXiv's API directly, but it might be slow.
-				case "arXiv":
-					translationPromises.push(
-						Lookup.processBatchIdentifiers(
-							pidType,
-							90,
-							entries,
-							options,
-							limiter,
+							openAlexLimiter,
 							Lookup.fetchOpenAlexBatch,
 						),
 					);
@@ -280,7 +273,7 @@ export default class Lookup {
 			"end-translation-processing",
 		);
 
-		return { parsedReferences, duplicateCount };
+		return { parsedReferences, duplicateCount: 0 };
 	}
 
 	/**
@@ -525,10 +518,9 @@ export default class Lookup {
 		const translatedReferences: TranslatedReference[] = [];
 		const failedPIDs: PID[] = [];
 
-		performance.mark(`start-openalex-batch-${type}-${batchID}`);
-
 		try {
 			// Build the request parameters
+			performance.mark(`start-openalex-batch-${type}-${batchID}-fetch`);
 			let filter: WorkFilterParameters;
 			switch (type) {
 				case "DOI":
@@ -558,16 +550,32 @@ export default class Lookup {
 			// Fetch works from OpenAlex
 			const sdk = new OpenAlex("cita@duck.com");
 			const works = await sdk.works(params);
+			performance.mark(`end-openalex-batch-${type}-${batchID}-fetch`);
+			performance.measure(
+				`openalex-batch-${type}-${batchID}-fetch`,
+				`start-openalex-batch-${type}-${batchID}-fetch`,
+				`end-openalex-batch-${type}-${batchID}-fetch`,
+			);
 
 			// Convert the works to Zotero items
+			performance.mark(
+				`start-openalex-batch-${type}-${batchID}-translate`,
+			);
 			const apiJSON = JSON.stringify(works);
 			const translator = new Zotero.Translate.Import();
 			translator.setTranslator("faa53754-fb55-4658-9094-ae8a7e0409a2"); // OpenAlex JSON
 			translator.setString(apiJSON);
 
 			const items = await translator.translate(options);
+			performance.mark(`end-openalex-batch-${type}-${batchID}-translate`);
+			performance.measure(
+				`openalex-batch-${type}-${batchID}-translate`,
+				`start-openalex-batch-${type}-${batchID}-translate`,
+				`end-openalex-batch-${type}-${batchID}-translate`,
+			);
 
 			// Map items back to primary IDs
+			performance.mark(`start-openalex-batch-${type}-${batchID}-map`);
 			for (const item of items) {
 				// FIXME: this is hacky
 				let pidValue = Lookup.getIdentifierFromItem(
@@ -601,6 +609,12 @@ export default class Lookup {
 					failedPIDs.push(entry.pid);
 				}
 			}
+			performance.mark(`end-openalex-batch-${type}-${batchID}-map`);
+			performance.measure(
+				`openalex-batch-${type}-${batchID}-map`,
+				`start-openalex-batch-${type}-${batchID}-map`,
+				`end-openalex-batch-${type}-${batchID}-map`,
+			);
 		} catch (error) {
 			// If the batch request fails, consider all entries as failed
 			failedPIDs.push(...entries.map((entry) => entry.pid));
@@ -608,12 +622,6 @@ export default class Lookup {
 				new Error(`Failed to fetch OpenAlex batch - ${error}`),
 			);
 		}
-		performance.mark(`end-openalex-batch-${type}-${batchID}`);
-		performance.measure(
-			`openalex-batch-${type}-${batchID}`,
-			`start-openalex-batch-${type}-${batchID}`,
-			`end-openalex-batch-${type}-${batchID}`,
-		);
 
 		return { translated: translatedReferences, failed: failedPIDs };
 	}
