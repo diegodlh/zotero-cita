@@ -54,6 +54,11 @@ export abstract class IndexerBase<Ref> {
 	abstract indexerName: string;
 
 	/**
+	 * The indexer's own PID.
+	 */
+	abstract indexerPID: PIDType;
+
+	/**
 	 * Supported PIDs for the indexer.
 	 */
 	abstract supportedPIDs: PIDType[];
@@ -69,7 +74,18 @@ export abstract class IndexerBase<Ref> {
 	abstract getIndexedWorks(identifiers: PID[]): Promise<IndexedWork<Ref>[]>;
 
 	/**
-	 * Optional function to parse references manually.
+	 * Optional method to search for a work in the indexer.
+	 * @param {ItemWrapper} item - Item to search for.
+	 * @param {boolean} allowSelection - Whether to allow the user to select a work.
+	 * @returns {Promise<IndexedWork | null>} Indexed work found.
+	 */
+	searchIndexedWork?(
+		item: ItemWrapper,
+		allowSelection: boolean,
+	): Promise<IndexedWork<Ref> | null>;
+
+	/**
+	 * Optional method to parse references manually.
 	 * @param {ParsableReference<Ref>[]} references - Reference
 	 * @returns {Zotero.Item[]} Zotero items parsed from the references.
 	 */
@@ -81,36 +97,56 @@ export abstract class IndexerBase<Ref> {
 	 * Filter source items with supported UIDs.
 	 * @param sourceItems Selected items to filter depending on the indexer.
 	 */
-	filterItemsWithSupportedIdentifiers(
-		sourceItems: SourceItemWrapper[],
-	): Map<string, { sourceItem: SourceItemWrapper; pid: PID }> {
+	filterItemsWithSupportedIdentifiers<T extends ItemWrapper>(
+		sourceItems: T[],
+	): {
+		itemsWithIDsMap: Map<string, { sourceItem: T; pid: PID }>;
+		itemsWithoutIDsMap: Map<string, T>;
+	} {
 		// The key here is the item's Zotero key
-		const itemsMap = new Map<
-			string,
-			{ sourceItem: SourceItemWrapper; pid: PID }
-		>();
+		const itemsWithIDsMap = new Map<string, { sourceItem: T; pid: PID }>();
+		const itemsWithoutIDsMap = new Map<string, T>();
 
 		for (const item of sourceItems) {
 			const pid = item.getBestPID(this.supportedPIDs);
 			if (pid) {
-				itemsMap.set(item.item.key, { sourceItem: item, pid });
+				itemsWithIDsMap.set(item.item.key, { sourceItem: item, pid });
+			} else {
+				itemsWithoutIDsMap.set(item.item.key, item);
 			}
 		}
 
-		return itemsMap;
+		return { itemsWithIDsMap, itemsWithoutIDsMap };
+	}
+
+	groupAndChunkIdentifiers<T extends ItemWrapper>(
+		itemMap: Map<string, { sourceItem: T; pid: PID }>,
+	): PID[][] {
+		const identifiers = Array.from(itemMap.values()).map(({ pid }) => pid);
+
+		let groupedIdentifiers: { [key: string]: PID[] };
+		if (this.requiresGroupedIdentifiers) {
+			groupedIdentifiers = _.groupBy(identifiers, (pid) => pid.type);
+		} else {
+			groupedIdentifiers = { mixed: identifiers };
+		}
+
+		return Object.entries(groupedIdentifiers).flatMap(([pidType, pids]) =>
+			_.chunk(pids, this.preferredChunkSize),
+		);
 	}
 
 	/**
-	 * Match identifiers to indexed works.
-	 * @param pidToSourceItem Map of identifiers to source items.
+	 * Match source items to indexed works.
+	 * @param zotKeyToSourceItem Map of Zotero keys to source item and PID.
 	 * @param indexedWorks List of indexed works.
 	 * @returns Map of Zotero key to IndexedWork.
 	 */
-	matchIdentifiers(
+	matchItemsToIndexedWorks<T extends ItemWrapper>(
 		zotKeyToSourceItem: Map<
 			string,
 			{
-				sourceItem: SourceItemWrapper;
+				sourceItem: T;
 				pid: PID;
 			}
 		>,
@@ -127,7 +163,7 @@ export abstract class IndexerBase<Ref> {
 					});
 			}),
 		);
-		const lostSourceItems: SourceItemWrapper[] = [];
+		const lostSourceItems: T[] = [];
 		for (const [
 			zoteroKey,
 			{ sourceItem, pid: sourcePID },
@@ -211,7 +247,7 @@ export abstract class IndexerBase<Ref> {
 		const libraryID = sourceItems[0].item.libraryID;
 
 		// Filter items with fetchable identifiers
-		const zotKeyToSourceItemMap =
+		const { itemsWithIDsMap: zotKeyToSourceItemMap } =
 			this.filterItemsWithSupportedIdentifiers(sourceItems);
 		performance.mark("end-filter-items");
 		performance.measure(
@@ -262,24 +298,13 @@ export abstract class IndexerBase<Ref> {
 		);
 
 		// Group and chunk identifiers
-		const identifiers = Array.from(zotKeyToSourceItemMap.values()).map(
-			({ pid }) => pid,
+		const batchIdentifiers = this.groupAndChunkIdentifiers(
+			zotKeyToSourceItemMap,
 		);
-
-		let groupedIdentifiers: { [key: string]: PID[] };
-		if (this.requiresGroupedIdentifiers) {
-			groupedIdentifiers = _.groupBy(identifiers, (pid) => pid.type);
-		} else {
-			groupedIdentifiers = { mixed: identifiers };
-		}
 
 		// Get results from indexer
 		performance.mark("start-get-indexed-works");
 		ztoolkit.log("Fetching indexed works...");
-		const batchIdentifiers = Object.entries(groupedIdentifiers).flatMap(
-			([pidType, pids]) => _.chunk(pids, this.preferredChunkSize),
-		);
-
 		const batchPromises = batchIdentifiers.map(
 			async (batch, index): Promise<IndexedWork<Ref>[]> => {
 				try {
@@ -308,7 +333,7 @@ export abstract class IndexerBase<Ref> {
 
 		// Map results
 		performance.mark("start-matching-identifiers");
-		const keyToIndexedWorkMap = this.matchIdentifiers(
+		const keyToIndexedWorkMap = this.matchItemsToIndexedWorks(
 			zotKeyToSourceItemMap,
 			indexedWorks,
 		);
@@ -339,6 +364,8 @@ export abstract class IndexerBase<Ref> {
 			return;
 		}
 
+		progress.updateLine("done", `Found ${citationsToBeAdded} citations.`);
+
 		// Report
 		ztoolkit.log(
 			`Of ${sourceItems.length} source items, ${zotKeyToSourceItemMap.size} had identifiers compatible with ${this.indexerName}. Found ${indexedWorks.length} items on ${this.indexerName} (${itemsToBeUpdated} with references) and matched ${keyToIndexedWorkMap.size} of them to source items. Found ${citationsToBeAdded} citations in total.`,
@@ -367,7 +394,7 @@ export abstract class IndexerBase<Ref> {
 		}
 
 		// Parse the references and add them to the items
-		progress.updateLine(
+		progress.newLine(
 			"loading",
 			Wikicite.formatString(
 				"wikicite.indexer.get-citations.parsing",
@@ -414,15 +441,11 @@ export abstract class IndexerBase<Ref> {
 			parsableReferenceMap.values(),
 		).map((entry) => entry.parsableReference);
 
-		// Parse all references at once
-		progress.updateLine(
-			"loading",
-			Wikicite.formatString(
-				"wikicite.indexer.get-citations.parsing",
-				this.indexerName,
-			),
+		ztoolkit.log(
+			`Check: ${parsableReferenceMap.size} vs ${uniqueParsableReferences.length}.`,
 		);
 
+		// Parse all references at once
 		performance.mark("start-parsing-references");
 		ztoolkit.log("Parsing references...");
 		let parsedReferences: ParsedReference[] = [];
@@ -447,6 +470,10 @@ export abstract class IndexerBase<Ref> {
 			"start-parsing-references",
 			"end-parsing-references",
 		);
+
+		progress.updateLine("done", "References parsed.");
+
+		progress.newLine("loading", "Updating items...");
 
 		// Build a map from primaryID to parsed item
 		performance.mark("start-building-final-map");
@@ -653,5 +680,105 @@ Grand total: ${totalParsed} out of ${totalReferences} references.`);
 
 		// Return parsed references
 		return parsedReferences;
+	}
+
+	async fetchMultiplePIDs(items: ItemWrapper[]): Promise<void> {
+		// Filter out items that already have the indexer's PID
+		const itmesWithoutIndexerID = items.filter(
+			(item) => !item.getPID(this.indexerPID),
+		);
+
+		const {
+			itemsWithIDsMap: itemsWithIDs,
+			itemsWithoutIDsMap: itemsToSearch,
+		} = this.filterItemsWithSupportedIdentifiers(itmesWithoutIndexerID);
+
+		ztoolkit.log(
+			`Fetching PIDs on ${this.indexerName} for ${itemsWithIDs.size} items with identifiers and searching for ${itemsToSearch.size} items...`,
+		);
+
+		const batchIdentifiers = this.groupAndChunkIdentifiers(itemsWithIDs);
+		const batchPromises = batchIdentifiers.map(
+			async (batch, index): Promise<IndexedWork<Ref>[]> => {
+				try {
+					// Because OpenCitations does not support multiple identifiers in a single request, the limiter should be used within getIndexedWorks, not here
+					const works = await this.getIndexedWorks(batch);
+					return works;
+				} catch (error) {
+					Zotero.log(
+						`Error fetching indexedWorks with ${this.indexerName} in batch ${index}: ${error}`,
+						"error",
+					);
+					return [] as IndexedWork<Ref>[];
+				}
+			},
+		);
+
+		// Wait for all batch promises to resolve
+		const indexedWorks = (await Promise.all(batchPromises)).flat();
+		const matchingWorks = this.matchItemsToIndexedWorks(
+			itemsWithIDs,
+			indexedWorks,
+		);
+
+		for (const [zotKey, indexedWork] of matchingWorks) {
+			const item = itemsWithIDs.get(zotKey);
+			if (item) {
+				indexedWork.identifiers.forEach((pid) => {
+					// Only set the PID if it's not already set or if it's the one we were actually fetching/refreshing
+					if (
+						pid.type === this.indexerPID ||
+						!item.sourceItem.getPID(pid.type)
+					)
+						try {
+							item.sourceItem.setPID(
+								pid.type,
+								pid.cleanID || pid.id,
+								true,
+							);
+						} catch (e) {
+							// To avoid breaking the loop in case one type is unsupported (ISBN in particular)
+							Zotero.logError(e as Error);
+						}
+				});
+			}
+		}
+
+		// Search for items without IDs
+		if (!this.searchIndexedWork) return;
+		await Promise.all(
+			Array.from(itemsToSearch.values()).map(async (item) => {
+				const work = (await this.searchIndexedWork!(
+					item,
+					false,
+				)) as IndexedWork<Ref>;
+				if (work) {
+					ztoolkit.log(
+						`Found work for ${item.title} on ${this.indexerName}`,
+					);
+					work.identifiers.forEach((pid) => {
+						// Only set the PID if it's not already set or if it's the one we were actually fetching/refreshing
+						if (
+							pid.type === this.indexerPID ||
+							!item.getPID(pid.type)
+						)
+							try {
+								item.setPID(
+									pid.type,
+									pid.cleanID || pid.id,
+									true,
+								);
+							} catch (e) {
+								// To avoid breaking the loop in case one type is unsupported (ISBN in particular)
+								Zotero.logError(e as Error);
+							}
+					});
+				} else {
+					ztoolkit.log(
+						`No work found for ${item.title} on ${this.indexerName}`,
+					);
+				}
+			}),
+		);
 	}
 }

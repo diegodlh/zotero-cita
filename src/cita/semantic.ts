@@ -1,4 +1,4 @@
-import Wikicite, { debug } from "./wikicite";
+import Wikicite from "./wikicite";
 import { IndexedWork, IndexerBase, ParsableReference } from "./indexer";
 import ItemWrapper from "./itemWrapper";
 import * as prefs from "../cita/preferences";
@@ -38,6 +38,7 @@ interface ExternalIDS {
 
 export default class Semantic extends IndexerBase<Reference> {
 	indexerName = "Semantic Scholar";
+	indexerPID: PIDType = "CorpusID";
 
 	supportedPIDs: PIDType[] = [
 		"CorpusID",
@@ -54,66 +55,95 @@ export default class Semantic extends IndexerBase<Reference> {
 
 	limiter = new Bottleneck({
 		maxConcurrent: 1,
-		minTime: 1000 / 1, // 1 request per second
+		minTime: 1000 / 1, // 1 request per second (not strictly necessary due to the reservoir)
+
+		// Allow max 1 request per 1 second window
+		reservoir: 1,
+		reservoirRefreshAmount: 1,
+		reservoirRefreshInterval: 1100, // 1 second
 	});
 
 	preferredChunkSize: number = 100; // Could support up to 500 items, but only 9999 citations per request
 	requiresGroupedIdentifiers: boolean = false;
 
+	constructor() {
+		super();
+		this.limiter.on("failed", async (error, info) => {
+			ztoolkit.log(`Request failed with error: ${error}`);
+			ztoolkit.log(`Request failed with info: ${JSON.stringify(info)}`);
+		});
+		this.limiter.on("error", (error) => {
+			ztoolkit.log(`Request error: ${error}`);
+		});
+		this.limiter.on("debug", (message) => {
+			ztoolkit.log(`Request debug message: ${message}`);
+		});
+	}
+
+	destructor() {
+		this.limiter.stop();
+		this.limiter.disconnect();
+	}
+
 	async fetchPIDs(item: ItemWrapper): Promise<PID[] | null> {
 		const identifier = item.getBestPID(this.supportedPIDs);
-		let paper: SemanticPaper | null = null;
+		let work: IndexedWork<Reference> | null = null;
 
 		if (identifier) {
 			const url = `https://api.semanticscholar.org/graph/v1/paper/${Semantic.mapLookupIDToString(identifier)}?fields=externalIds`;
 			const response = await this.makeRequest("GET", url);
-			paper = response?.response
+			const paper = response?.response
 				? (response?.response as SemanticPaper)
 				: null;
+			if (paper) {
+				work = {
+					references: [],
+					identifiers: Semantic.mapIdentifiers(paper.externalIds),
+					primaryID: paper.paperId,
+				};
+			}
 		} else {
 			// We use search
-			const url = `https://api.semanticscholar.org/graph/v1/paper/search/match?query=${item.title}`;
-			const reqStart = performance.now();
-			const response = await this.makeRequest("GET", url);
-			const reqEnd = performance.now();
-			const paperMatch =
-				response?.response?.data &&
-				Array.isArray(response.response.data)
-					? (response.response.data as SemanticPaper[])[0]
-					: null;
-			if (paperMatch) {
-				const paperId = paperMatch.paperId;
-				const paperUrl = `https://api.semanticscholar.org/graph/v1/paper/${paperId}?fields=externalIds`;
-				const delay = Math.max(1000 - (reqEnd - reqStart), 0); // Ensure at least 1 second between requests
-				if (delay)
-					await this.limiter.schedule(
-						() =>
-							new Promise((resolve) =>
-								setTimeout(resolve, delay),
-							),
-					); // Add delay
-				const paperResponse = await this.makeRequest("GET", paperUrl);
-				paper = paperResponse?.response
-					? (paperResponse?.response as SemanticPaper)
-					: null;
-			}
+			work = await this.searchIndexedWork(item, true);
 		}
 
-		if (paper) {
-			const externalIds = paper?.externalIds;
-			if (externalIds) {
-				const pids: PID[] = [
-					new PID("CorpusID", `${externalIds.CorpusId}`),
-				];
-				if (externalIds.DOI) pids.push(new PID("DOI", externalIds.DOI));
-				if (externalIds.ArXiv)
-					pids.push(new PID("arXiv", externalIds.ArXiv));
-				if (externalIds.PubMed)
-					pids.push(new PID("PMID", externalIds.PubMed));
-				if (externalIds.PubMedCentral)
-					pids.push(new PID("PMCID", externalIds.PubMedCentral));
-				if (externalIds.MAG) pids.push(new PID("MAG", externalIds.MAG));
-				return pids;
+		return work?.identifiers || null;
+	}
+
+	async searchIndexedWork(
+		item: ItemWrapper,
+		allowSelection: boolean,
+	): Promise<IndexedWork<Reference> | null> {
+		if (!item.title) return null;
+		const url = `https://api.semanticscholar.org/graph/v1/paper/search/match?query=${item.title}`;
+		const response = await this.makeRequest(
+			"GET",
+			url,
+			undefined,
+			`semantic-search-${item.title}`,
+		);
+		const paperMatch =
+			response?.response?.data && Array.isArray(response.response.data)
+				? (response.response.data as SemanticPaper[])[0]
+				: null;
+		if (paperMatch) {
+			const paperId = paperMatch.paperId;
+			const paperUrl = `https://api.semanticscholar.org/graph/v1/paper/${paperId}?fields=externalIds`;
+			const paperResponse = await this.makeRequest(
+				"GET",
+				paperUrl,
+				undefined,
+				`semantic-paper-${paperId}`,
+			);
+			const paper = paperResponse?.response
+				? (paperResponse?.response as SemanticPaper)
+				: null;
+			if (paper) {
+				return {
+					references: [],
+					identifiers: Semantic.mapIdentifiers(paper.externalIds),
+					primaryID: paper.paperId,
+				};
 			}
 		}
 
@@ -176,6 +206,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		method: string,
 		url: string,
 		body?: string,
+		jobID?: string,
 	): Promise<XMLHttpRequest> {
 		const apiKey = getPref("semantickey"); //prefs.getSemanticAPIKey();
 		const options = {
@@ -186,12 +217,14 @@ export default class Semantic extends IndexerBase<Reference> {
 			responseType: "json",
 			body: body,
 		};
-		return await this.limiter.schedule(() =>
+		return await this.limiter.schedule({ id: jobID }, () =>
 			Zotero.HTTP.request(method, url, options).catch((e) => {
 				if (e.status === 429) {
-					throw new Error(
-						`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
-					);
+					Zotero.logError(e);
+					// throw new Error(
+					// 	`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
+					// );
+					throw e;
 				} else if (e.status === 403) {
 					throw new Error(
 						`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,

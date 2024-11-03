@@ -43,6 +43,8 @@ const ITEM_PANE_COLUMN_IDS = {
 
 declare type MenuFunction =
 	| "fetchQIDs"
+	| "fetchPIDsFromIndexer.OpenAlex"
+	| "fetchPIDsFromIndexer.Semantic Scholar"
 	| "syncWithWikidata"
 	| "getFromIndexer.Crossref"
 	| "getFromIndexer.Semantic Scholar"
@@ -473,7 +475,18 @@ class ZoteroOverlay {
 		}
 	}
 
-	async getMultipleFromIndexer<Ref>(
+	async getPIDsFromIndexer<Ref>(
+		menuName: MenuSelectionType,
+		IndexerType: new () => IndexerBase<Ref>,
+	) {
+		const items = await this.getSelectedItems(menuName, true);
+		if (items.length) {
+			const indexer = new IndexerType();
+			indexer.fetchMultiplePIDs(items);
+		}
+	}
+
+	async getCitationsFromIndexer<Ref>(
 		menuName: MenuSelectionType,
 		IndexerType: new () => IndexerBase<Ref>,
 	) {
@@ -1470,22 +1483,30 @@ class ZoteroOverlay {
 			(menuName: MenuSelectionType) => void
 		> = new Map([
 			["fetchQIDs", () => this.fetchQIDs(menuName)],
+			[
+				"fetchPIDsFromIndexer.OpenAlex",
+				() => this.getPIDsFromIndexer(menuName, OpenAlex),
+			],
+			[
+				"fetchPIDsFromIndexer.Semantic Scholar",
+				() => this.getPIDsFromIndexer(menuName, Semantic),
+			],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
 			[
 				"getFromIndexer.Crossref",
-				() => this.getMultipleFromIndexer(menuName, Crossref),
+				() => this.getCitationsFromIndexer(menuName, Crossref),
 			],
 			[
 				"getFromIndexer.Semantic Scholar",
-				() => this.getMultipleFromIndexer(menuName, Semantic),
+				() => this.getCitationsFromIndexer(menuName, Semantic),
 			],
 			[
 				"getFromIndexer.OpenAlex",
-				() => this.getMultipleFromIndexer(menuName, OpenAlex),
+				() => this.getCitationsFromIndexer(menuName, OpenAlex),
 			],
 			[
 				"getFromIndexer.OpenCitations",
-				() => this.getMultipleFromIndexer(menuName, OpenCitations),
+				() => this.getCitationsFromIndexer(menuName, OpenCitations),
 			],
 			["getFromAttachments", () => this.getFromAttachments(menuName)],
 			["addAsCitations", () => this.addAsCitations(menuName)],

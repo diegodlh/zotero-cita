@@ -30,6 +30,7 @@ interface OCCitation {
 
 export default class OpenCitations extends IndexerBase<OCCitation> {
 	indexerName = "Open Citations";
+	indexerPID: PIDType = "OMID";
 
 	limiter = new Bottleneck({
 		maxConcurrent: 5, // No official limits given...

@@ -64,6 +64,7 @@ interface Query {
 
 export default class Crossref extends IndexerBase<Reference> {
 	indexerName = "Crossref";
+	indexerPID: PIDType = "DOI";
 
 	supportedPIDs: PIDType[] = ["DOI"];
 
