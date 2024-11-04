@@ -42,14 +42,14 @@ const ITEM_PANE_COLUMN_IDS = {
 };
 
 declare type MenuFunction =
-	| "fetchQIDs"
-	| "fetchPIDsFromIndexer.OpenAlex"
-	| "fetchPIDsFromIndexer.Semantic Scholar"
+	| "getIdentifiers.QID"
+	| "getIdentifiers.OpenAlex"
+	| "getIdentifiers.CorpusID"
 	| "syncWithWikidata"
-	| "getFromIndexer.Crossref"
-	| "getFromIndexer.Semantic Scholar"
-	| "getFromIndexer.OpenAlex"
-	| "getFromIndexer.OpenCitations"
+	| "getCitations.Crossref"
+	| "getCitations.Semantic Scholar"
+	| "getCitations.OpenAlex"
+	| "getCitations.OpenCitations"
 	| "getFromAttachments"
 	| "addAsCitations"
 	| "localCitationNetwork"
@@ -1436,25 +1436,25 @@ class ZoteroOverlay {
 			}
 			// Enable indexer citation lookup when appropriate identifiers are present
 			doc.getElementById(
-				"wikicite-itemsubmenu-getFromIndexer.Crossref",
+				"wikicite-itemsubmenu-getCitations.Crossref",
 			)!.setAttribute(
 				"disabled",
 				this.enableIndexer(Crossref, items) ? "false" : "true",
 			);
 			doc.getElementById(
-				"wikicite-itemsubmenu-getFromIndexer.Semantic Scholar",
+				"wikicite-itemsubmenu-getCitations.Semantic Scholar",
 			)!.setAttribute(
 				"disabled",
 				this.enableIndexer(Semantic, items) ? "false" : "true",
 			);
 			doc.getElementById(
-				"wikicite-itemsubmenu-getFromIndexer.OpenAlex",
+				"wikicite-itemsubmenu-getCitations.OpenAlex",
 			)!.setAttribute(
 				"disabled",
 				this.enableIndexer(OpenAlex, items) ? "false" : "true",
 			);
 			doc.getElementById(
-				"wikicite-itemsubmenu-getFromIndexer.OpenCitations",
+				"wikicite-itemsubmenu-getCitations.OpenCitations",
 			)!.setAttribute(
 				"disabled",
 				this.enableIndexer(OpenCitations, items) ? "false" : "true",
@@ -1478,42 +1478,89 @@ class ZoteroOverlay {
 		menuName: MenuSelectionType,
 		IDPrefix: string,
 	): MenuitemOptions[] {
+		const options: MenuitemOptions[] = [];
+
+		// Fetching menu items
+		const fetchSubmenus: MenuitemOptions[] = [];
+		const fetchPIDs: Map<
+			MenuFunction,
+			(menuName: MenuSelectionType) => void
+		> = new Map([
+			["getIdentifiers.QID", () => this.fetchQIDs(menuName)],
+			[
+				"getIdentifiers.OpenAlex",
+				() => this.getPIDsFromIndexer(menuName, OpenAlex),
+			],
+			[
+				"getIdentifiers.CorpusID",
+				() => this.getPIDsFromIndexer(menuName, Semantic),
+			],
+		]);
+		for (const [functionName, func] of fetchPIDs) {
+			const menuFunc = this.zoteroMenuItem(
+				menuName,
+				functionName,
+				func,
+				IDPrefix,
+			);
+			fetchSubmenus.push(menuFunc);
+		}
+		options.push({
+			tag: "menu",
+			id: IDPrefix + "getIdentifiers",
+			label: Wikicite.getString(`wikicite.submenu.get-identifiers`),
+			children: fetchSubmenus,
+		});
+
+		// Get from citations menu item
+		const citationsSubmenus: MenuitemOptions[] = [];
+		const getCitations: Map<
+			MenuFunction,
+			(menuName: MenuSelectionType) => void
+		> = new Map([
+			[
+				"getCitations.Crossref",
+				() => this.getCitationsFromIndexer(menuName, Crossref),
+			],
+			[
+				"getCitations.Semantic Scholar",
+				() => this.getCitationsFromIndexer(menuName, Semantic),
+			],
+			[
+				"getCitations.OpenAlex",
+				() => this.getCitationsFromIndexer(menuName, OpenAlex),
+			],
+			[
+				"getCitations.OpenCitations",
+				() => this.getCitationsFromIndexer(menuName, OpenCitations),
+			],
+		]);
+		for (const [functionName, func] of getCitations) {
+			const menuFunc = this.zoteroMenuItem(
+				menuName,
+				functionName,
+				func,
+				IDPrefix,
+			);
+			citationsSubmenus.push(menuFunc);
+		}
+		options.push({
+			tag: "menu",
+			id: IDPrefix + "getCitations",
+			label: Wikicite.getString(`wikicite.submenu.get-citations`),
+			children: citationsSubmenus,
+		});
+
+		// Regular items
 		const menuFunctions: Map<
 			MenuFunction,
 			(menuName: MenuSelectionType) => void
 		> = new Map([
-			["fetchQIDs", () => this.fetchQIDs(menuName)],
-			[
-				"fetchPIDsFromIndexer.OpenAlex",
-				() => this.getPIDsFromIndexer(menuName, OpenAlex),
-			],
-			[
-				"fetchPIDsFromIndexer.Semantic Scholar",
-				() => this.getPIDsFromIndexer(menuName, Semantic),
-			],
 			["syncWithWikidata", () => this.syncWithWikidata(menuName)],
-			[
-				"getFromIndexer.Crossref",
-				() => this.getCitationsFromIndexer(menuName, Crossref),
-			],
-			[
-				"getFromIndexer.Semantic Scholar",
-				() => this.getCitationsFromIndexer(menuName, Semantic),
-			],
-			[
-				"getFromIndexer.OpenAlex",
-				() => this.getCitationsFromIndexer(menuName, OpenAlex),
-			],
-			[
-				"getFromIndexer.OpenCitations",
-				() => this.getCitationsFromIndexer(menuName, OpenCitations),
-			],
 			["getFromAttachments", () => this.getFromAttachments(menuName)],
 			["addAsCitations", () => this.addAsCitations(menuName)],
 			["localCitationNetwork", () => this.localCitationNetwork(menuName)],
 		]);
-
-		const options: MenuitemOptions[] = [];
 		for (const [functionName, func] of menuFunctions) {
 			if (
 				menuName === "collection" &&
@@ -1560,12 +1607,11 @@ class ZoteroOverlay {
 		IDPrefix: string,
 	) {
 		let label: string;
-		if (functionName.includes("getFromIndexer.")) {
-			const indexerName = functionName.split(".")[1];
-			label = Wikicite.formatString(
-				"wikicite.submenu.get-from-indexer",
-				indexerName,
-			);
+		if (
+			functionName.includes("getCitations.") ||
+			functionName.includes("getIdentifiers.")
+		) {
+			label = functionName.split(".")[1];
 		} else label = Wikicite.getString(`wikicite.submenu.${functionName}`);
 		const menuOptions: MenuitemOptions = {
 			tag: "menuitem",
