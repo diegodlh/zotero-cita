@@ -49,7 +49,21 @@ class SourceItemWrapper extends ItemWrapper {
 		return this._batch;
 	}
 
-	set citations(citations: any[]) {
+	formatNoteWithString(note: Zotero.Item, data: string, index?: number) {
+		if (!note) {
+			note = new Zotero.Item("note");
+			note.libraryID = this.item.libraryID;
+			note.parentKey = this.item.key;
+		}
+		note.setNote(
+			`<h1>Citations${index !== undefined ? index.toString().padStart(3, "0") : ""}</h1>\n` +
+				"<p>Do not edit this note manually!</p>" +
+				`<pre>${data}</pre>`,
+		);
+		note.saveTx();
+	}
+
+	set citations(citations: Citation[]) {
 		// fix performance was undefined, only accessible when building for node
 		// const t0 = performance.now();
 		if (this._storage === "extra") {
@@ -66,29 +80,40 @@ class SourceItemWrapper extends ItemWrapper {
 			Wikicite.setExtraField(this.item, "citation", jsonCitations);
 			this.saveHandler();
 		} else if (this._storage === "note") {
-			let note = Wikicite.getCitationsNote(this.item);
 			if (!citations.length) {
-				if (note) {
-					note.eraseTx();
-				}
+				Wikicite.getCitationsNotes(this.item).forEach((note) =>
+					note.eraseTx(),
+				);
 				return;
 			}
-			if (!note) {
-				note = new Zotero.Item("note");
-				note.libraryID = this.item.libraryID;
-				note.parentKey = this.item.key;
-			}
+
 			// use Option to escape HTML characters here (eg. <), otherwise parsing the HTML will fail #178
 			// Option was undefined, but window.Option worked.
 			const jsonCitations = new window.Option(
 				JSON.stringify(citations, replacer, 2),
 			).innerHTML;
-			note.setNote(
-				"<h1>Citations</h1>\n" +
-					"<p>Do not edit this note manually!</p>" +
-					`<pre>${jsonCitations}</pre>`,
-			);
-			note.saveTx();
+
+			const maxLengthNote = 100000;
+			const numNotes = Math.ceil(jsonCitations.length / maxLengthNote);
+
+			if (numNotes == 1) {
+				this.formatNoteWithString(
+					Wikicite.getCitationsNote(this.item),
+					jsonCitations,
+				);
+			} else {
+				for (let noteIndex = 0; noteIndex < numNotes; noteIndex++) {
+					const note = Wikicite.getCitationsNote(
+						this.item,
+						noteIndex,
+					);
+					const data = jsonCitations.substring(
+						noteIndex * maxLengthNote,
+						(noteIndex + 1) * maxLengthNote,
+					);
+					this.formatNoteWithString(note, data, noteIndex);
+				}
+			}
 		}
 		this._citations = citations;
 		// debug(`Saving citations to source item took ${performance.now() - t0}`);
@@ -109,6 +134,7 @@ class SourceItemWrapper extends ItemWrapper {
 			Wikicite.setExtraField(this.item, "citation", jsonCitations);
 			await this.item.save();
 		} else if (this._storage === "note") {
+			// fix: update this to match above
 			let note = Wikicite.getCitationsNote(this.item);
 			if (!citations.length) {
 				if (note) {
@@ -229,23 +255,31 @@ class SourceItemWrapper extends ItemWrapper {
 				}
 			});
 		} else if (this._storage === "note") {
-			const note = Wikicite.getCitationsNote(this.item);
-			if (note) {
+			const notes = Wikicite.getCitationsNotes(this.item);
+			if (notes.length > 0) {
 				let parser;
-				try {
-					parser = new DOMParser();
-				} catch {
-					// Workaround fix Pubpeer compatibility issue #41
-					// @ts-ignore Components.classes[] isn't support by the types
-					parser = Components.classes[
-						"@mozilla.org/xmlextras/domparser;1"
-						// @ts-ignore the types don't include nsIDOMParser
-					].createInstance(Components.interfaces.nsIDOMParser);
-				}
-				const doc = parser.parseFromString(note.getNote(), "text/html");
-				const rawCitations = JSON.parse(
-					doc.getElementsByTagName("pre")[0].textContent,
-				);
+				const citationsString = notes
+					.map((note) => {
+						try {
+							parser = new DOMParser();
+						} catch {
+							// Workaround fix Pubpeer compatibility issue #41
+							// @ts-ignore Components.classes[] isn't support by the types
+							parser = Components.classes[
+								"@mozilla.org/xmlextras/domparser;1"
+								// @ts-ignore the types don't include nsIDOMParser
+							].createInstance(
+								Components.interfaces.nsIDOMParser,
+							);
+						}
+						const doc = parser.parseFromString(
+							note.getNote(),
+							"text/html",
+						);
+						return doc.getElementsByTagName("pre")[0].textContent;
+					})
+					.join("");
+				const rawCitations = JSON.parse(citationsString);
 				// Fixme: Creating Citation objects takes most of the time
 				citations.push(
 					...rawCitations.map(
