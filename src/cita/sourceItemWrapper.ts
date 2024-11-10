@@ -12,6 +12,7 @@ import Lookup from "./zotLookup";
 import * as _ from "lodash";
 import PID from "./PID";
 import { IndexerBase } from "./indexer";
+import { splitStringIntoChunks } from "../utils/stringUtils";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -60,10 +61,10 @@ class SourceItemWrapper extends ItemWrapper {
 				"<p>Do not edit this note manually!</p>" +
 				`<pre>${data}</pre>`,
 		);
-		note.saveTx();
+		return note;
 	}
 
-	set citations(citations: Citation[]) {
+	async setCitations(citations: Citation[]) {
 		// fix performance was undefined, only accessible when building for node
 		// const t0 = performance.now();
 		if (this._storage === "extra") {
@@ -80,10 +81,15 @@ class SourceItemWrapper extends ItemWrapper {
 			Wikicite.setExtraField(this.item, "citation", jsonCitations);
 			this.saveHandler();
 		} else if (this._storage === "note") {
+			// delete citations
 			if (!citations.length) {
-				Wikicite.getCitationsNotes(this.item).forEach((note) =>
-					note.eraseTx(),
-				);
+				const citationNotes = Wikicite.getCitationsNotes(this.item);
+				// do this in a transaction so all notes get erased at once and callbacks aren't triggered in the middle
+				await Zotero.DB.executeTransaction(async function () {
+					for (const note of citationNotes) {
+						await note.erase();
+					}
+				});
 				return;
 			}
 
@@ -93,73 +99,39 @@ class SourceItemWrapper extends ItemWrapper {
 				JSON.stringify(citations, replacer, 2),
 			).innerHTML;
 
-			const maxLengthNote = 100000;
-			const numNotes = Math.ceil(jsonCitations.length / maxLengthNote);
+			const maxNoteLength = 100000; // https://forums.zotero.org/discussion/comment/402195/#Comment_402195
 
-			if (numNotes == 1) {
+			if (jsonCitations.length <= maxNoteLength) {
 				this.formatNoteWithString(
 					Wikicite.getCitationsNote(this.item),
 					jsonCitations,
-				);
+				).saveTx();
 			} else {
-				for (let noteIndex = 0; noteIndex < numNotes; noteIndex++) {
+				const citationNotes = splitStringIntoChunks(
+					jsonCitations,
+					maxNoteLength,
+				).map((noteData, noteIndex) => {
 					const note = Wikicite.getCitationsNote(
 						this.item,
 						noteIndex,
 					);
-					const data = jsonCitations.substring(
-						noteIndex * maxLengthNote,
-						(noteIndex + 1) * maxLengthNote,
-					);
-					this.formatNoteWithString(note, data, noteIndex);
-				}
+					return this.formatNoteWithString(note, noteData, noteIndex);
+				});
+				// do this in a transaction so all notes get saved at once and callbacks aren't triggered in the middle
+				await Zotero.DB.executeTransaction(async function () {
+					for (const note of citationNotes) {
+						await note.save();
+					}
+				});
 			}
+			this._citations = citations;
+			this.item.saveTx();
 		}
-		this._citations = citations;
 		// debug(`Saving citations to source item took ${performance.now() - t0}`);
 	}
 
-	async setCitations(citations: any[]) {
-		if (this._storage === "extra") {
-			const jsonCitations = citations.map((citation) => {
-				let json = JSON.stringify(
-					citation,
-					replacer,
-					1, // insert 1 whitespace into the output JSON
-				);
-				json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
-				json = json.replace(/\n/g, ""); // remove line-breaks
-				return json;
-			});
-			Wikicite.setExtraField(this.item, "citation", jsonCitations);
-			await this.item.save();
-		} else if (this._storage === "note") {
-			// fix: update this to match above
-			let note = Wikicite.getCitationsNote(this.item);
-			if (!citations.length) {
-				if (note) {
-					await note.erase();
-				}
-				return;
-			}
-			if (!note) {
-				note = new Zotero.Item("note");
-				note.libraryID = this.item.libraryID;
-				note.parentKey = this.item.key;
-			}
-			const jsonCitations = JSON.stringify(citations, replacer, 2);
-			note.setNote(
-				"<h1>Citations</h1>\n" +
-					"<p>Do not edit this note manually!</p>" +
-					`<pre>${jsonCitations}</pre>`,
-			);
-			await note.save();
-		}
-		this._citations = citations;
-	}
-
-	deleteCitations() {
-		this.citations = [];
+	async deleteCitations() {
+		await this.setCitations([]);
 	}
 
 	get corruptCitations() {
@@ -232,8 +204,8 @@ class SourceItemWrapper extends ItemWrapper {
 	loadCitations(compare = true) {
 		if (this.batch) return;
 		// const t0 = performance.now();
-		const citations = [];
-		const corruptCitations: any[] = [];
+		const citations: Citation[] = [];
+		const corruptCitations: string[] = [];
 		if (this._storage === "extra") {
 			const rawCitations = Wikicite.getExtraField(
 				this.item,
@@ -279,26 +251,18 @@ class SourceItemWrapper extends ItemWrapper {
 						return doc.getElementsByTagName("pre")[0].textContent;
 					})
 					.join("");
-				const rawCitations = JSON.parse(citationsString);
-				// Fixme: Creating Citation objects takes most of the time
-				citations.push(
-					...rawCitations.map(
-						(rawCitation: any) => new Citation(rawCitation, this),
-					),
-				);
-				// const items = await Promise.all(rawCitations.map((rawCitation) => {
-				//     return new Promise((resolve) => {
-				//         const zoteroItem = new Zotero.Item();
-				//         const jsonItem = rawCitation.item;
-				//         zoteroItem.fromJSON(jsonItem);
-				//         resolve(zoteroItem);
-				//     });
-				// }))
-				// rawCitations.forEach((rawCitation, index) => {
-				//     rawCitations[index].item = items[index]
-				// })
+				try {
+					const rawCitations = JSON.parse(citationsString);
 
-				// Fixme: support corrupt note citations
+					citations.push(
+						...rawCitations.map(
+							(rawCitation: any) =>
+								new Citation(rawCitation, this),
+						),
+					);
+				} catch (error) {
+					debug("Couldn't parse citations from note!");
+				}
 			}
 		}
 		if (compare) {
@@ -309,13 +273,10 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 		this._citations = citations;
 		if (corruptCitations.length) {
-			this.citations = this._citations;
+			this.setCitations(this._citations);
 			this.corruptCitations =
 				this.corruptCitations.concat(corruptCitations);
 		}
-		// debug(
-		// 	`Getting citations from source item took ${performance.now() - t0}`,
-		// );
 	}
 
 	/**
@@ -345,7 +306,7 @@ class SourceItemWrapper extends ItemWrapper {
 			debug("Skipping saveCitations because batch mode is on");
 			return;
 		}
-		this.citations = this._citations;
+		this.setCitations(this._citations);
 		if (this.newRelations) {
 			debug("Saving new item relations to source item");
 			this.item.saveTx({
@@ -374,15 +335,6 @@ class SourceItemWrapper extends ItemWrapper {
 		if (!noSave) this.saveCitations();
 	}
 
-	// async new() {
-	//     let citation = new Citation({item: {itemType: 'journalArticle'}, ocis: []}, this);
-	//     let newCitation = await this.openEditor(citation);
-	//     // if this.source.qid && newCitation.item.qid, offer to sync to Wikidata?
-	//     if (this.add(newCitation)) {
-	//         this.save();
-	//     }
-	// }
-
 	/*
 	 * Return citations matching the id provided.
 	 * @param {String} id - ID must be matched.
@@ -393,7 +345,7 @@ class SourceItemWrapper extends ItemWrapper {
 		id: number | string,
 		idType: "index" | "doi" | "isbn" | "qid",
 	) {
-		const citations = [];
+		const citations: Citation[] = [];
 		const indices: number[] = [];
 		if (idType === "index") {
 			citations.push(this.citations[id as number]);

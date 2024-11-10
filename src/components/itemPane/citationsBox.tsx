@@ -120,7 +120,7 @@ function CitationsBox(props: CitationsBoxProps) {
 
 		const newCitations = props.sourceItem.citations;
 		newCitations[index] = citation;
-		props.sourceItem.citations = newCitations;
+		props.sourceItem.setCitations(newCitations);
 	}
 
 	async function handleCitationDelete(index: number) {
@@ -174,7 +174,7 @@ function CitationsBox(props: CitationsBoxProps) {
 		const [movedCitation] = newCitations.splice(dragIndex, 1);
 		newCitations.splice(dropIndex, 0, movedCitation);
 		setCitations(newCitations);
-		props.sourceItem.citations = newCitations;
+		props.sourceItem.setCitations(newCitations);
 
 		// Reset hover effects
 		// Block and reset hover effects on the rows by adding and then removing the noHover class
