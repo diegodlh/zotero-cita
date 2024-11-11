@@ -139,35 +139,27 @@ export default class LCN {
 
 					// collect item's unique identifiers (including name) and clean
 					// them, to make sure the same item always gets the same tmp key
-					const cleanDOI = Zotero.Utilities.cleanDOI(
-						citation.target.doi!,
-					);
-					const cleanISBN = Zotero.Utilities.cleanISBN(
-						citation.target.isbn!,
-					);
-					const qid = citation.target.qid;
-					const uids = {
-						doi: cleanDOI && cleanDOI.toUpperCase(),
-						isbn: cleanISBN,
-						occ: citation.target.omid, // Fixme: provide OMID cleaning function
-						qid: qid && qid.toUpperCase(),
-						// based on Zotero.Duplicates.prototype._findDuplicates'
-						// normalizeString function
-						title: Zotero.Utilities.removeDiacritics(
-							citation.target.title,
-						)
-							// Convert (ASCII) punctuation to spaces
-							.replace(/[ !-/:-@[-`{-~]+/g, " ")
-							.trim()
-							.toLowerCase(),
-					};
+					const uids = citation.target
+						.getAllPIDs()
+						.map((pid) => pid.comparable) // DOI, ISBN, etc., already in type:value format and cleaned
+						.filter((uid) => uid !== undefined); // remove nulls
+					// based on Zotero.Duplicates.prototype._findDuplicates'
+					// normalizeString function
+					const cleanTitle = Zotero.Utilities.removeDiacritics(
+						citation.target.title,
+					)
+						// Convert (ASCII) punctuation to spaces
+						.replace(/[ !-/:-@[-`{-~]+/g, " ")
+						.trim()
+						.toLowerCase();
+					uids.push(`title:${cleanTitle}`);
 
 					// retrieve tmp keys already given to this item,
 					// i.e., the target item of another source item's citation
 					// had one or more of the same uids or title
 					const tmpKeys: Set<string> = new Set();
-					for (const [key, value] of Object.entries(uids)) {
-						const tmpKey = tmpKeyMap.get(`${key}:${value}`);
+					for (const value of uids) {
+						const tmpKey = tmpKeyMap.get(value);
 						if (tmpKey) tmpKeys.add(tmpKey);
 					}
 
@@ -205,8 +197,8 @@ export default class LCN {
 					}
 
 					// save key to the map of temp keys
-					for (const [key, value] of Object.entries(uids)) {
-						if (value) tmpKeyMap.set(`${key}:${value}`, tmpKey);
+					for (const value of uids) {
+						if (value) tmpKeyMap.set(value, tmpKey);
 					}
 
 					// add temp key to the citation's target

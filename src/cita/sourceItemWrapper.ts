@@ -241,7 +241,7 @@ class SourceItemWrapper extends ItemWrapper {
 								"@mozilla.org/xmlextras/domparser;1"
 								// @ts-ignore the types don't include nsIDOMParser
 							].createInstance(
-								Components.interfaces.nsIDOMParser,
+								(Components.interfaces as any).nsIDOMParser,
 							);
 						}
 						const doc = parser.parseFromString(
