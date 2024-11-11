@@ -234,7 +234,7 @@ function CitationsBox(props: CitationsBoxProps) {
 				{/* Citations now have a hash based on their JSON object (not stringfy), which allows better identification of the rows by React */}
 				{sortedIndices.map((index) => (
 					<CitationRow
-						key={citations[index].hash}
+						key={citations[index].uuid}
 						citation={citations[index]}
 						citationsLength={citations.length}
 						index={index}

@@ -7,6 +7,7 @@ import WikidataButton from "./wikidataButton";
 import ZoteroButton from "./zoteroButton";
 import Citation from "../../cita/citation";
 import useResizeObserver from "@react-hook/resize-observer";
+import { useInView } from "react-intersection-observer";
 import { debounce } from "lodash";
 
 interface CitationRowProps {
@@ -78,21 +79,31 @@ function CitationRow(props: CitationRowProps) {
 		}
 	}, [citation, maxLineCount]);
 
-	// Calculate line counts when component mounts or when dependencies change
-	useEffect(calculateLineCount, [citation, maxLineCount]);
-
-	// Recalculate line counts on resize
-	useResizeObserver(containerRef, debounce(calculateLineCount, 100));
-
+	// Function to calculate the number of lines in the label element
+	// and update the lineCount state accordingly
 	function calculateLineCount() {
 		if (labelRef.current) {
 			const computedStyle = window.getComputedStyle(labelRef.current);
 			const lineHeight = parseFloat(computedStyle?.lineHeight || "1");
 			const elementHeight = labelRef.current.offsetHeight;
 			const calculatedLineCount = Math.round(elementHeight / lineHeight);
-			setLineCount(calculatedLineCount);
+			setLineCount(calculatedLineCount); // Update the state with the calculated line count
 		}
 	}
+
+	// Intersection Observer to detect when the row becomes visible
+	const [_ref, inView, entry] = useInView({
+		/* Optional options */
+		threshold: 0.1,
+		onChange(inView, entry) {
+			if (inView) {
+				calculateLineCount();
+			}
+		},
+	});
+
+	// Recalculate line counts on resize
+	useResizeObserver(containerRef, debounce(calculateLineCount, 100));
 
 	// MARK: Drag and drop handling
 

@@ -7,7 +7,6 @@ import Matcher from "./matcher";
 import OCI, { OCIPIDType } from "../oci";
 import Progress from "./progress";
 import { EntityId } from "wikibase-sdk";
-import objectHash = require("object-hash");
 
 /** Class representing a citation */
 class Citation {
@@ -21,12 +20,7 @@ class Citation {
 		supplierName: string;
 		valid: boolean;
 	}[];
-
-	get hash(): string {
-		const json = this.toJSON();
-		const hash = objectHash(json);
-		return hash;
-	}
+	readonly uuid: string;
 
 	/**
 	 * Create a citation.
@@ -99,6 +93,9 @@ class Citation {
 		// this.series_ordinal;
 		// // crosref does provide a citation key which seems to have some ordinal information
 		// // but I say to leave this out for now
+
+		// generate a unique identifier for this citation
+		this.uuid = crypto.randomUUID();
 	}
 
 	addCreator(creatorType: any, creatorName: string) {
