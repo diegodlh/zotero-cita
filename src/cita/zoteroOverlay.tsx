@@ -56,39 +56,6 @@ declare type MenuFunction =
 	| "deleteCitations";
 
 declare type MenuSelectionType = "item" | "collection";
-// declare const Components: any;
-
-// Components.utils.import("resource://gre/modules/AddonManager.jsm");
-// Components.utils.import("resource://zotero/config.js");
-
-// // needed as a separate function, because zoteroOverlay.refreshZoteroPopup refers to `this`, and a bind would make it
-// // two separate functions in add/remove eventlistener
-// function refreshItemSubmenu() {
-//     zoteroOverlay.refreshZoteroPopup('item', document);
-// }
-// function refreshCollectionSubmenu() {
-//     zoteroOverlay.refreshZoteroPopup('collection', document);
-// }
-
-// function refreshCitationsPane(event: Event) {
-//     // if (event.target !== 'zotero-view-item') {
-//     //     zoteroOverlay.refreshCitationsPane(document, event.target);
-//     // }
-//     let target;
-//     if (event) {
-//         target = event.target;
-//     } else {
-//         // if listener is called via an object's runListeners method,
-//         // it is called without an event,
-//         // but with the object as the listener's this value
-//         target = { id: this.id }
-//     }
-//     zoteroOverlay.refreshCitationsPane(document, target);
-// }
-
-// function updateCitationsBoxSize() {
-//     zoteroOverlay.updateCitationsBoxSize(document);
-// }
 
 class ZoteroOverlay {
 	qidColumnID?: string | false;
@@ -96,15 +63,11 @@ class ZoteroOverlay {
 	_sourceItem?: SourceItemWrapper;
 	_citationIndex?: number;
 	preferenceUpdateObservers?: symbol[];
+
 	/******************************************/
 	// Window load handling
 	/******************************************/
 	constructor(win: Window) {
-		// retrieve and set addon version
-		// AddonManager.getAddonByID(Wikicite.id, (addon: any) => {
-		//     Wikicite.version = addon.version
-		// });
-
 		this.setDefaultPreferences();
 
 		this.fullOverlay();
@@ -113,7 +76,7 @@ class ZoteroOverlay {
 
 		this.addPreferenceUpdateObservers();
 
-		// // refresh item and collection submenus each time they show
+		// refresh item and collection submenus each time they show
 		window.document
 			.getElementById("zotero-itemmenu")
 			?.addEventListener(
@@ -121,7 +84,6 @@ class ZoteroOverlay {
 				(event) => this.refreshZoteroPopup("item", window.document),
 				false,
 			);
-		// ?.addEventListener("popupshowing", refreshItemSubmenu, false);
 		window.document
 			.getElementById("zotero-collectionmenu")
 			?.addEventListener(
@@ -130,43 +92,8 @@ class ZoteroOverlay {
 					this.refreshZoteroPopup("collection", window.document),
 				false,
 			);
-		// ?.addEventListener("popupshowing", refreshCollectionSubmenu, false);
-
-		// // document.getElementById('zotero-view-tabbox').addEventListener('select', refreshCitationsPane, false);
-		// document.getElementById('zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
-		// Zotero.uiReadyPromise.then(
-		//     () => {
-		//         debug('Adding refreshCitationsPane listener to ZoteroPane.itemsView "select" listeners');
-		//         ZoteroPane.itemsView.onSelect.addListener(refreshCitationsPane);
-		//     }
-		// );
-
-		// // Update citations box list height...
-		// // Fixme: Try and solve this using CSS alone!
-		// // ...when window resizes,
-		// window.addEventListener('resize', updateCitationsBoxSize);
-		// // ...splitter is moved,
-		// document.getElementById('zotero-items-splitter').addEventListener('mousemove', updateCitationsBoxSize, false);
-		// document.getElementById('zotero-items-splitter').addEventListener('command', updateCitationsBoxSize, false);
-		// // ...layout is changed
-		// const observer = new MutationObserver(
-		//     (mutationsList, observer) => {
-		//         for (const mutation of mutationsList) {
-		//             if (mutation.attributeName == 'orient') {
-		//                 updateCitationsBoxSize();
-		//             }
-		//         }
-		//     }
-		// );
-		// observer.observe(
-		//     document.getElementById('zotero-layout-switcher'),
-		//     { attributes: true }
-		// );
-		// this.switcherObserver = observer;
 
 		this.installTranslators();
-
-		// this.addNewTabListener()
 	}
 
 	unload() {
@@ -176,36 +103,7 @@ class ZoteroOverlay {
 
 		this.removePreferenceUpdateObservers();
 
-		// // This event listener is never added
-		// // var toolsPopup = document.getElementById('menu_ToolsPopup')
-		// // toolsPopup.removeEventListener('popupshowing',
-		// //     zoteroOverlay.prefsSeparatorListener, false)
-		// document.getElementById('zotero-itemmenu').removeEventListener(
-		//     'popupshowing', refreshItemSubmenu, false
-		// );
-		// document.getElementById('zotero-collectionmenu').removeEventListener(
-		//     'popupshowing', refreshCollectionSubmenu, false
-		// );
-		// document.getElementById('zotero-editpane-tabs').removeEventListener('select', refreshCitationsPane, false)
-		// // todo: find a better way to remove event listener
-		// // https://groups.google.com/g/zotero-dev/c/_HDsAc5HPac
-		// let itemsViewSelectListeners;
-		// if (ZoteroPane.itemsView._listeners) {
-		//     itemsViewSelectListeners = ZoteroPane.itemsView._listeners.select
-		// } else if (ZoteroPane.itemsView._events && ZoteroPane.itemsView._events.select) {
-		//     // JSX-ified ZoteroPane
-		//     itemsViewSelectListeners = ZoteroPane.itemsView._events.select.listeners
-		// }
-		// if (itemsViewSelectListeners) {
-		//     debug('Removing refreshCitationsPane listener from ZoteroPane.itemsView "select" event listeners');
-		//     itemsViewSelectListeners.delete(refreshCitationsPane);
-		// }
-		// window.removeEventListener('resize', updateCitationsBoxSize);
-		// document.getElementById('zotero-items-splitter').removeEventListener('mousemove', updateCitationsBoxSize, false);
-		// document.getElementById('zotero-items-splitter').removeEventListener('command', updateCitationsBoxSize, false);
-		// this.switcherObserver.disconnect();
 		this.uninstallTranslators();
-		// this.removeNewTabListener()
 	}
 
 	/******************************************/
@@ -295,52 +193,9 @@ class ZoteroOverlay {
 	}
 
 	/******************************************/
-	// Notifiers
-	/******************************************/
-	// Listen for the creation of a new PDF reader tab, then add the citations menu to it
-
-	// addNewTabListener () {
-	//     this.notifierID = Zotero.Notifier.registerObserver(this.tabEventCallback, ["tab"])
-	// },
-
-	// removeNewTabListener () {
-	//     Zotero.Notifier.unregisterObserver(this.notifierID);
-	// },
-
-	// Approach from Zotero PDF Translate
-	// https://github.com/windingwind/zotero-pdf-translate/blob/307b6e4169a925d4152a0dc0bb88fdeba238222e/src/events.ts#L21
-	tabEventCallback() {
-		// async notify (event: string, type: string, ids: string[], extraData: { [key: string]: any }) {
-		//     // adding the Citations menu when selecting a tab for the first time seems
-		//     // more robust than doing it when the tab is created
-		//     if (event == "select" && type == "tab" && extraData[ids[0]].type == "reader") {
-		//         let reader = Zotero.Reader.getByTabID(ids[0]);
-		//         let delayCount = 0;
-		//         // Wait for the reader tab to be ready
-		//         while (!reader && delayCount < 10) {
-		//             await Zotero.Promise.delay(100);
-		//             reader = Zotero.Reader.getByTabID(ids[0]);
-		//             delayCount++;
-		//         }
-		//         await reader?._initPromise;
-		//         // Only add a citations tab if the PDF has a parent item to add citations to
-		//         if (Zotero.Items.get(reader.itemID).parentItem) {
-		//             const pdfReaderTabbox = document.getElementById(`${ids[0]}-context`).querySelector(".zotero-view-tabbox") as HTMLElement;
-		//             // only add the citations pane and refresh listener to this tab if they aren't already
-		//             if (!pdfReaderTabbox.querySelector('#citations-pane')) {
-		//                 zoteroOverlay.citationsPane(document, pdfReaderTabbox);
-		//                 pdfReaderTabbox.querySelector('.zotero-editpane-tabs').addEventListener('select', refreshCitationsPane, false);
-		//             }
-		//         }
-		//     }
-		// }
-	}
-
-	/******************************************/
 	// Translators
 	/******************************************/
 	// based on Better BibTex translators
-
 	async installTranslators() {
 		// Wait until Zotero.Translators is ready
 		await Zotero.Schema.schemaUpdatePromise;
@@ -880,24 +735,10 @@ class ZoteroOverlay {
 		}
 		citation.target.item = item;
 
-		// Make sure the component updates even before changes are saved to the item
-		// setCitations(
-		//   // sourceItem.citations  // this doesn't work because sourceItem.citation object's reference hasn't changed
-		//   // () => sourceItem.citations  // works only one time per render - possibly because the function itself doesn't change
-		//   [...sourceItem.citations]  // works
-		// );
-		// Problem is if I do this [...citations], the citations passed down to CitationsBox
-		// are not the citations of the CitationsList here. Therefore, if I implement methods
-		// in the Citation class to modify themselves, they won't work.
-
 		// This will save changes to the item's extra field
 		// The modified item observer above will be triggered.
 		// This will update the sourceItem ref, and the component's state.
 		this._sourceItem.addCitations(citation);
-		// props.sourceItem.save();
-		// Unexpectedly, this also triggers the zotero-items-tree `select` event
-		// which in turn runs zoteroOverlay's refreshCitationsPaneMethod.
-		// However, as props.item will not have changed, component will not update.
 	}
 
 	// FIXME: for all popups, eventListeners don't seem to work after extension reload
