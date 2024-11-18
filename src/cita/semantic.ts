@@ -219,18 +219,20 @@ export default class Semantic extends IndexerBase<Reference> {
 		};
 		return await this.limiter.schedule({ id: jobID }, () =>
 			Zotero.HTTP.request(method, url, options).catch((e) => {
-				if (e.status === 429) {
-					Zotero.logError(e);
-					// throw new Error(
-					// 	`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
-					// );
-					throw e;
-				} else if (e.status === 403) {
-					throw new Error(
-						`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,
-					);
-				} else {
-					throw e;
+				// Note: a 400 (Bad Request) response is returned if none of the IDs are found
+				switch (e.status) {
+					case 403:
+						throw new Error(
+							`Received a 403 Forbidden response from Semantic Scholar. Check that your API key is valid.`,
+						);
+					case 429:
+						Zotero.logError(e);
+						// throw new Error(
+						// 	`Received a 429 rate limit response from Semantic Scholar. Try getting references for fewer items at a time, or use an API key.`,
+						// );
+						throw e;
+					default:
+						throw e;
 				}
 			}),
 		);
