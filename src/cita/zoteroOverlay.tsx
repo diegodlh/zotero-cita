@@ -33,8 +33,6 @@ const TRANSLATOR_LABELS = [
 	"OpenAlex JSON",
 	"OpenAlex",
 	"Crossref REST",
-	// TODO: Consider removing as it has been merged into zotero/translators long ago
-	"zotkat/Wikidata QuickStatements",
 ];
 
 const ITEM_PANE_COLUMN_IDS = {
