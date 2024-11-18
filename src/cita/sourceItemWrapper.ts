@@ -1,15 +1,18 @@
 import Wikicite, { debug } from "./wikicite";
 import Citation from "./citation";
 import Citations from "./citations";
-import Crossref from "./crossref";
 import Extraction from "./extract";
 import ItemWrapper from "./itemWrapper";
 import Matcher from "./matcher";
-import OpenCitations from "./opencitations";
 import Progress from "./progress";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
 import { StorageType } from "./preferences";
+import Lookup from "./zotLookup";
+import * as _ from "lodash";
+import PID from "./PID";
+import { IndexerBase } from "./indexer";
+import { splitStringIntoChunks } from "../utils/stringUtils";
 
 // replacer function for JSON.stringify
 function replacer(key: string, value: any) {
@@ -47,7 +50,21 @@ class SourceItemWrapper extends ItemWrapper {
 		return this._batch;
 	}
 
-	set citations(citations: any[]) {
+	formatNoteWithString(note: Zotero.Item, data: string, index?: number) {
+		if (!note) {
+			note = new Zotero.Item("note");
+			note.libraryID = this.item.libraryID;
+			note.parentKey = this.item.key;
+		}
+		note.setNote(
+			`<h1>Citations${index !== undefined ? index.toString().padStart(3, "0") : ""}</h1>\n` +
+				"<p>Do not edit this note manually!</p>" +
+				`<pre>${data}</pre>`,
+		);
+		return note;
+	}
+
+	async setCitations(citations: Citation[]) {
 		// fix performance was undefined, only accessible when building for node
 		// const t0 = performance.now();
 		if (this._storage === "extra") {
@@ -64,70 +81,57 @@ class SourceItemWrapper extends ItemWrapper {
 			Wikicite.setExtraField(this.item, "citation", jsonCitations);
 			this.saveHandler();
 		} else if (this._storage === "note") {
-			let note = Wikicite.getCitationsNote(this.item);
+			// delete citations
 			if (!citations.length) {
-				if (note) {
-					note.eraseTx();
-				}
+				const citationNotes = Wikicite.getCitationsNotes(this.item);
+				// do this in a transaction so all notes get erased at once and callbacks aren't triggered in the middle
+				await Zotero.DB.executeTransaction(async function () {
+					for (const note of citationNotes) {
+						await note.erase();
+					}
+				});
 				return;
 			}
-			if (!note) {
-				note = new Zotero.Item("note");
-				note.libraryID = this.item.libraryID;
-				note.parentKey = this.item.key;
-			}
+
 			// use Option to escape HTML characters here (eg. <), otherwise parsing the HTML will fail #178
 			// Option was undefined, but window.Option worked.
 			const jsonCitations = new window.Option(
 				JSON.stringify(citations, replacer, 2),
 			).innerHTML;
-			note.setNote(
-				"<h1>Citations</h1>\n" +
-					"<p>Do not edit this note manually!</p>" +
-					`<pre>${jsonCitations}</pre>`,
-			);
-			note.saveTx();
+
+			const maxNoteLength = 100000; // https://forums.zotero.org/discussion/comment/402195/#Comment_402195
+
+			if (jsonCitations.length <= maxNoteLength) {
+				this.formatNoteWithString(
+					Wikicite.getCitationsNote(this.item),
+					jsonCitations,
+				).saveTx();
+			} else {
+				const citationNotes = splitStringIntoChunks(
+					jsonCitations,
+					maxNoteLength,
+				).map((noteData, noteIndex) => {
+					const note = Wikicite.getCitationsNote(
+						this.item,
+						noteIndex,
+					);
+					return this.formatNoteWithString(note, noteData, noteIndex);
+				});
+				// do this in a transaction so all notes get saved at once and callbacks aren't triggered in the middle
+				await Zotero.DB.executeTransaction(async function () {
+					for (const note of citationNotes) {
+						await note.save();
+					}
+				});
+			}
+			this._citations = citations;
+			this.item.saveTx();
 		}
-		this._citations = citations;
 		// debug(`Saving citations to source item took ${performance.now() - t0}`);
 	}
 
-	async setCitations(citations: any[]) {
-		if (this._storage === "extra") {
-			const jsonCitations = citations.map((citation) => {
-				let json = JSON.stringify(
-					citation,
-					replacer,
-					1, // insert 1 whitespace into the output JSON
-				);
-				json = json.replace(/^ +/gm, " "); // remove all but the first space for each line
-				json = json.replace(/\n/g, ""); // remove line-breaks
-				return json;
-			});
-			Wikicite.setExtraField(this.item, "citation", jsonCitations);
-			await this.item.save();
-		} else if (this._storage === "note") {
-			let note = Wikicite.getCitationsNote(this.item);
-			if (!citations.length) {
-				if (note) {
-					await note.erase();
-				}
-				return;
-			}
-			if (!note) {
-				note = new Zotero.Item("note");
-				note.libraryID = this.item.libraryID;
-				note.parentKey = this.item.key;
-			}
-			const jsonCitations = JSON.stringify(citations, replacer, 2);
-			note.setNote(
-				"<h1>Citations</h1>\n" +
-					"<p>Do not edit this note manually!</p>" +
-					`<pre>${jsonCitations}</pre>`,
-			);
-			await note.save();
-		}
-		this._citations = citations;
+	async deleteCitations() {
+		await this.setCitations([]);
 	}
 
 	get corruptCitations() {
@@ -200,8 +204,8 @@ class SourceItemWrapper extends ItemWrapper {
 	loadCitations(compare = true) {
 		if (this.batch) return;
 		// const t0 = performance.now();
-		const citations = [];
-		const corruptCitations: any[] = [];
+		const citations: Citation[] = [];
+		const corruptCitations: string[] = [];
 		if (this._storage === "extra") {
 			const rawCitations = Wikicite.getExtraField(
 				this.item,
@@ -223,42 +227,42 @@ class SourceItemWrapper extends ItemWrapper {
 				}
 			});
 		} else if (this._storage === "note") {
-			const note = Wikicite.getCitationsNote(this.item);
-			if (note) {
+			const notes = Wikicite.getCitationsNotes(this.item);
+			if (notes.length > 0) {
 				let parser;
+				const citationsString = notes
+					.map((note) => {
+						try {
+							parser = new DOMParser();
+						} catch {
+							// Workaround fix Pubpeer compatibility issue #41
+							// @ts-ignore Components.classes[] isn't support by the types
+							parser = Components.classes[
+								"@mozilla.org/xmlextras/domparser;1"
+								// @ts-ignore the types don't include nsIDOMParser
+							].createInstance(
+								(Components.interfaces as any).nsIDOMParser,
+							);
+						}
+						const doc = parser.parseFromString(
+							note.getNote(),
+							"text/html",
+						);
+						return doc.getElementsByTagName("pre")[0].textContent;
+					})
+					.join("");
 				try {
-					parser = new DOMParser();
-				} catch {
-					// Workaround fix Pubpeer compatibility issue #41
-					// @ts-ignore Components.classes[] isn't support by the types
-					parser = Components.classes[
-						"@mozilla.org/xmlextras/domparser;1"
-						// @ts-ignore the types don't include nsIDOMParser
-					].createInstance(Components.interfaces.nsIDOMParser);
-				}
-				const doc = parser.parseFromString(note.getNote(), "text/html");
-				const rawCitations = JSON.parse(
-					doc.getElementsByTagName("pre")[0].textContent,
-				);
-				// Fixme: Creating Citation objects takes most of the time
-				citations.push(
-					...rawCitations.map(
-						(rawCitation: any) => new Citation(rawCitation, this),
-					),
-				);
-				// const items = await Promise.all(rawCitations.map((rawCitation) => {
-				//     return new Promise((resolve) => {
-				//         const zoteroItem = new Zotero.Item();
-				//         const jsonItem = rawCitation.item;
-				//         zoteroItem.fromJSON(jsonItem);
-				//         resolve(zoteroItem);
-				//     });
-				// }))
-				// rawCitations.forEach((rawCitation, index) => {
-				//     rawCitations[index].item = items[index]
-				// })
+					const rawCitations = JSON.parse(citationsString);
 
-				// Fixme: support corrupt note citations
+					citations.push(
+						...rawCitations.map(
+							(rawCitation: any) =>
+								new Citation(rawCitation, this),
+						),
+					);
+				} catch (error) {
+					debug("Couldn't parse citations from note!");
+				}
 			}
 		}
 		if (compare) {
@@ -269,13 +273,10 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 		this._citations = citations;
 		if (corruptCitations.length) {
-			this.citations = this._citations;
+			this.setCitations(this._citations);
 			this.corruptCitations =
 				this.corruptCitations.concat(corruptCitations);
 		}
-		// debug(
-		// 	`Getting citations from source item took ${performance.now() - t0}`,
-		// );
 	}
 
 	/**
@@ -305,7 +306,7 @@ class SourceItemWrapper extends ItemWrapper {
 			debug("Skipping saveCitations because batch mode is on");
 			return;
 		}
-		this.citations = this._citations;
+		this.setCitations(this._citations);
 		if (this.newRelations) {
 			debug("Saving new item relations to source item");
 			this.item.saveTx({
@@ -334,15 +335,6 @@ class SourceItemWrapper extends ItemWrapper {
 		if (!noSave) this.saveCitations();
 	}
 
-	// async new() {
-	//     let citation = new Citation({item: {itemType: 'journalArticle'}, ocis: []}, this);
-	//     let newCitation = await this.openEditor(citation);
-	//     // if this.source.qid && newCitation.item.qid, offer to sync to Wikidata?
-	//     if (this.add(newCitation)) {
-	//         this.save();
-	//     }
-	// }
-
 	/*
 	 * Return citations matching the id provided.
 	 * @param {String} id - ID must be matched.
@@ -353,7 +345,7 @@ class SourceItemWrapper extends ItemWrapper {
 		id: number | string,
 		idType: "index" | "doi" | "isbn" | "qid",
 	) {
-		const citations = [];
+		const citations: Citation[] = [];
 		const indices: number[] = [];
 		if (idType === "index") {
 			citations.push(this.citations[id as number]);
@@ -374,7 +366,7 @@ class SourceItemWrapper extends ItemWrapper {
 	/*
 	 * @param {Boolean} batch - Do not update or save citations at the beginning and at the end.
 	 */
-	addCitations(citations: any) {
+	addCitations(citations: Citation[] | Citation) {
 		// Fixme: apart from one day implementing possible duplicates
 		// here I have to check other UUIDs too (not only QID)
 		// and if they overlap, add the new OCIs provided only
@@ -386,6 +378,39 @@ class SourceItemWrapper extends ItemWrapper {
 		if (!Array.isArray(citations)) citations = [citations];
 		if (citations.length) {
 			this.loadCitations();
+			if (this._citations.length) {
+				// Only look for duplicates if there are existing citations
+				const existingPIDs = new Set(
+					this._citations
+						.flatMap((citation) => citation.target.getAllPIDs())
+						.map((pid) => pid.comparable)
+						.filter((pid): pid is string => pid !== undefined),
+				);
+				// Filter out items that are already in the list
+				citations = citations.filter((citation) => {
+					// Exclude if any PID already exists
+					if (
+						citation.target
+							.getAllPIDs()
+							.some((pid) =>
+								existingPIDs.has(pid.comparable || ""),
+							)
+					)
+						return false;
+					else return true;
+				});
+
+				// Filter out identical items (might be slow)
+				citations = _.differenceWith(
+					citations,
+					this._citations,
+					(a, b) =>
+						_.isEqual(
+							a.target.item.toJSON(),
+							b.target.item.toJSON(),
+						),
+				);
+			}
 			this._citations = this._citations.concat(citations);
 			this.saveCitations();
 		}
@@ -446,7 +471,7 @@ class SourceItemWrapper extends ItemWrapper {
 		options: { clean?: boolean; skipCitation?: Citation },
 	) {
 		const citedPIDs = this.citations.reduce(
-			(citedPIDs: string[], citation: Citation) => {
+			(citedPIDs: PID[], citation: Citation) => {
 				if (
 					options.skipCitation == undefined ||
 					citation !== options.skipCitation
@@ -474,7 +499,7 @@ class SourceItemWrapper extends ItemWrapper {
 			skipCitation?: Citation;
 		},
 	) {
-		const cleanPID = Wikicite.cleanPID(type, value);
+		const cleanPID = new PID(type, value).cleaned();
 		let conflict = "";
 		if (cleanPID) {
 			const cleanCitingPID = this.getPID(type, true);
@@ -524,32 +549,8 @@ class SourceItemWrapper extends ItemWrapper {
 	// if provided, sync to wikidata, export to croci, etc, only for that citation
 	// if not, do it for all
 
-	getFromCrossref() {
-		Crossref.getCitations();
-		// fail if item doesn't have a DOI specified
-		// In general I would say to try and get DOI with another plugin if not available locally
-		// call the crossref api
-		// the zotero-citationcounts already calls crossref for citations. Check it
-		// call this.add multiple times, or provide an aray
-		// if citation retrieved has doi, check if citation already exists locally
-		// if yes, set providers.crossref to true
-		// decide whether to ignore citations retrieved without doi
-		// or if I will check if they exist already using other fields (title, etc)
-
-		// offer to automatically get QID from wikidata for target items
-		// using Wikidata.getQID(items)
-
-		// offer to automatically link to zotero items
-	}
-
-	getFromOcc() {
-		// What does getting from OpenCitations mean anyway?
-		// Will it get it from all indices? Or only for items in OCC?
-		// What about CROCI? I need DOI to get it from them,
-		// But they may not be available from crossref
-		// Maybe add Get from CROCI? Should I add get from Dryad too?
-		OpenCitations.getCitations();
-		//
+	getFrom<T>(indexer: IndexerBase<T>) {
+		indexer.addCitationsToItems([this]);
 	}
 
 	syncWithWikidata(citationIndex?: number) {
@@ -771,6 +772,22 @@ class SourceItemWrapper extends ItemWrapper {
 		}
 	}
 
+	async parseCitationIdentifiers(identifiers: PID[]): Promise<Citation[]> {
+		await Zotero.Schema.schemaUpdatePromise;
+		// look up each identifier asynchronously in parallel - multiple web requests
+		// can run at the same time, so this speeds things up a lot #141
+
+		const items = await Lookup.lookupIdentifiers(identifiers);
+
+		const citations = items
+			? items.map((item) => {
+					return new Citation({ item: item, ocis: [] }, this);
+				})
+			: [];
+
+		return citations;
+	}
+
 	// import citation by identifier (DOI/ISBN/ArXiV/PMID...)
 	// - also supports multiple items (but only one type at once)
 	async addCitationsByIdentifier() {
@@ -788,9 +805,23 @@ class SourceItemWrapper extends ItemWrapper {
 		);
 
 		if (retVals.text !== undefined) {
-			const identifiers = Zotero.Utilities.extractIdentifiers(
+			const _identifiers = Zotero.Utilities.extractIdentifiers(
 				retVals.text,
 			);
+
+			const identifiers = _identifiers
+				.map((identifier) => {
+					if ("DOI" in identifier)
+						return new PID("DOI", identifier.DOI);
+					if ("ISBN" in identifier)
+						return new PID("ISBN", identifier.ISBN);
+					if ("PMID" in identifier)
+						return new PID("PMID", identifier.PMID);
+					if ("arXiv" in identifier)
+						return new PID("arXiv", identifier.arXiv);
+					else return null;
+				})
+				.filter((identifier): identifier is PID => identifier !== null);
 
 			const progress = new Progress(
 				"loading",
@@ -800,41 +831,8 @@ class SourceItemWrapper extends ItemWrapper {
 			);
 			try {
 				if (identifiers.length > 0) {
-					await Zotero.Schema.schemaUpdatePromise;
-					// look up each identifier asynchronously in parallel - multiple web requests
-					// can run at the same time, so this speeds things up a lot #141
-					let citations = await Promise.all(
-						identifiers.map(async (identifier) => {
-							const translation = new Zotero.Translate.Search();
-							translation.setIdentifier(identifier);
-
-							let jsonItems;
-							try {
-								// set libraryID to false so we don't save this item in the Zotero library
-								jsonItems = await translation.translate({
-									libraryID: false,
-								});
-							} catch {
-								// `translation.translate` throws an error if no item was found for an identifier.
-								// Catch these errors so we don't abort the `Promise.all`.
-								debug(
-									`No items returned for identifier: ${identifier}`,
-								);
-							}
-							if (jsonItems && jsonItems.length > 0) {
-								const jsonItem = jsonItems[0];
-								const newItem = new Zotero.Item(
-									jsonItem.itemType,
-								);
-								newItem.fromJSON(jsonItem);
-								return new Citation(
-									{ item: newItem, ocis: [] },
-									this,
-								);
-							} else return false; // no item added
-						}),
-					);
-					citations = citations.filter(Boolean); // filter out if no item found
+					const citations =
+						await this.parseCitationIdentifiers(identifiers);
 
 					if (citations.length) {
 						this.addCitations(citations);
@@ -874,7 +872,7 @@ class SourceItemWrapper extends ItemWrapper {
 	}
 
 	exportToCroci(citationIndex?: number) {
-		OpenCitations.exportCitations();
+		//OpenCitations.exportCitations();
 	}
 }
 

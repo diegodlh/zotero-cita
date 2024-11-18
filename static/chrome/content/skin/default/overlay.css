@@ -2,122 +2,211 @@
 	height: 16px;
 }
 
-#citations-pane {
+#citations-pane,
+#pid-pane {
 	display: flex;
 }
-#citations-box-container {
+
+#citations-box-container,
+#pid-box-container {
 	flex-grow: 1;
 	display: flex;
 }
-.citations-box {
+
+.citations-box,
+.pid-box {
 	flex-grow: 1;
 	width: 330px;
 }
-.citations-box .citations-box-header {
+
+.citations-box-list-container .drag-hidden-citation {
+	opacity: 0;
+}
+
+.citations-box-list-container {
 	display: flex;
-	padding-left: 10px;
-	align-items: center;
+	flex-direction: column;
+	padding-inline-start: 12px;
 }
-.citations-box .citations-box-header button {
-	min-width: 79px;
-	margin: 5px 6px 3px;
-	padding-top: 1px;
-	padding-bottom: 1px;
-	color: ButtonText;
-	text-shadow: none;
-	font-size: inherit;
-}
-.citations-box .citations-box-count {
-	margin-right: 5px;
-}
-.citations-box ul.citations-box-list {
-	list-style: none;
-	margin: 0;
-	padding: 2px 0 0;
-	overflow-y: clip;
-}
-.citations-box ul.citations-box-list > li {
+
+.citations-box-list-container .row {
 	display: flex;
-	margin: 3px 6px;
-	align-items: center;
-	height: 1.5em;
+	gap: 4px;
+	align-items: flex-start;
+	padding-block: 2px; /* Comfortable style */
+	/* Extend clickable area for hover and drag */
+	margin-left: -20px;
+	padding-left: 20px;
 }
-.citations-box ul.citations-box-list > li button {
-	border: 0;
-	background: none;
-	padding: 1px;
-	/* this lets us edit the fill property of the included SVGs with CSS */
-	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
-	fill: var(--fill-secondary);
-	height: 100%;
+
+[zoteroUIDensity="comfortable"] .citations-box-list-container .row {
+	padding-block: 2px;
 }
-.citations-box ul.citations-box-list > li button :hover {
+
+.citations-box-list-container .row .box {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	padding-inline-start: 4px;
+	overflow: hidden;
+	border-radius: 5px;
+	flex: 1;
+}
+
+.citations-box-list-container .row .box:not([disabled]):hover {
 	background-color: var(--fill-quinary);
 }
-.citations-box ul.citations-box-list > li button:disabled {
-	filter: grayscale(100%) opacity(50%);
-}
-.citations-box .editable-container {
-	flex-grow: 1;
-	margin: 0 2px;
-	/* width: 282px; */
-	/* making this smaller makes things look good */
-	width: 100px;
-}
-.citations-box ul.citations-box-list > li .editable-container {
-	padding: 0 1px;
-}
-.citations-box input.editable-control {
-	width: 100px;
-	font-family: inherit;
+
+.citations-box-list-container .row .box:not([disabled]):active {
+	background-color: var(--fill-quarternary);
 }
 
-.citations-box-footer {
-	padding: 10px;
+.citations-box-list-container .row .box .icon {
+	height: calc(1.3333333333 * var(--zotero-font-size));
+	padding-block: 2px;
 }
 
-img.light {
-	filter: opacity(50%);
+.citations-box-list-container .row .box .label {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 10;
+	line-clamp: 10;
+	width: 0; /* Allows the label to shrink */
+	flex: 1;
+	overflow: hidden;
+	padding-block: 2px;
 }
 
-ul.pid-list {
-	list-style: none;
-	padding-left: 0;
+.citations-box-list-container .row toolbarbutton,
+.citations-box-list-container .row .toolbarbutton {
+	margin-inline-start: auto;
+	display: flex;
+	box-sizing: border-box;
 }
 
-ul.pid-list > li {
-	align-items: center;
+.citations-box-list-container .row .toolbarbutton-icon,
+.pid-list .meta-row .toolbarbutton-icon {
+	fill: currentColor;
+	width: 16px;
+	height: 16px;
+}
+
+.citations-box-list-container toolbarbutton.zotero-clicky-grippy,
+.citations-box-list-container .toolbarbutton.zotero-clicky-grippy {
+	/* hang grippy hang on the left side of the row, clickable area of row is extended with padding/margin combo */
+	margin-left: -20px;
+	position: absolute;
+}
+
+.citations-box-list-container
+	.row:not(:hover):not(:focus-within)
+	.show-on-hover,
+.citations-box-list-container .row.noHover .show-on-hover,
+.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover,
+.pid-list .meta-row.noHover .show-on-hover {
+	clip-path: inset(50%);
+}
+
+.citations-box-list-container
+	.row:not(:hover):not(:focus-within)
+	.show-on-hover.no-display,
+.citations-box-list-container .row.noHover .show-on-hover.no-display,
+.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover.no-display,
+.pid-list .meta-row.noHover .show-on-hover.no-display {
+	width: 0;
+	height: 0;
+	padding: 0;
+	position: absolute;
+}
+
+.pid-list {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	column-gap: 8px;
+	row-gap: 2px;
+	width: inherit;
+}
+
+.pid-list .meta-row {
+	display: grid;
+	grid-template-columns: subgrid;
+	grid-column: span 2;
+}
+
+.pid-list .meta-row.hidden {
+	display: none;
+}
+
+.pid-list .meta-row .meta-data {
+	width: 0;
+	min-width: 100%;
 	display: flex;
 }
 
-ul.pid-list > li > label {
-	width: 30px;
+.pid-list .meta-row .meta-data toolbarbutton,
+.pid-list .meta-row .meta-data .toolbarbutton {
+	margin-inline-start: 4px;
 }
 
-ul.pid-list > li input {
+.toolbarbutton {
+	border-radius: 5px;
+	appearance: none;
+	flex-shrink: 0;
+	margin: 0;
+	color: var(--fill-secondary);
+	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
+	background-color: rgba(0, 0, 0, 0);
+}
+
+.toolbarbutton.zotero-clicky {
+	width: 20px;
+	height: 20px;
+}
+
+.pid-list .meta-row editable-text {
+	flex: 1;
+	max-width: 100%;
+}
+
+.pid-list .meta-row editable-text .input {
+	min-width: 0;
+}
+
+.pid-list .meta-row .meta-label {
+	display: flex;
+	font-weight: normal;
+	text-align: end;
+	color: var(--fill-secondary);
+}
+
+.pid-list .meta-row .meta-label[fieldname^="creator"] {
+	justify-content: space-between;
+	align-items: center;
+}
+
+.pid-list .meta-row .meta-label > label {
+	margin-top: 2px;
+}
+
+[zoteroUIDensity="comfortable"] .pid-list .meta-row .meta-label > label {
+	margin-top: 3px;
+}
+
+.pid-list .meta-row .key {
 	width: 100%;
 }
 
-ul.pid-list > li * {
-	margin-left: 2px;
-	margin-right: 2px;
-}
-
-ul.pid-list > li button {
-	border: 0;
-	background: none;
+.pid-list .meta-row toolbarbutton,
+.pid-list .meta-row .toolbarbutton {
+	outline: var(--color-focus-outer-border) solid
+		var(--width-focus-outer-border); /* Equivalent to focus-ring */
+	appearance: none;
+	-moz-appearance: none;
+	align-self: center;
+	height: auto;
+	width: auto;
 	padding: 1px;
-	margin-left: 15px;
-}
-
-ul.pid-list > li .editable-container {
-	flex-grow: 1;
-}
-
-ul.pid-list .editable-content {
-	min-height: 1em;
-}
-
-.pid-label.pointer:hover {
-	cursor: pointer !important;
+	border-radius: 2px;
+	display: flex;
+	box-sizing: border-box;
 }

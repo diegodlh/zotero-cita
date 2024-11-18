@@ -27,6 +27,22 @@ export function initialiseSortBy() {
 	initialiseDefaultPref(SORT_BY_PREF_KEY, "ordinal");
 }
 
+export const SEMANTIC_API_PREF_KEY = "semantickey";
+export function getSemanticAPIKey_() {
+	return getPref(SEMANTIC_API_PREF_KEY) as string;
+}
+export function initialiseSemanticAPIKey() {
+	initialiseDefaultPref(SEMANTIC_API_PREF_KEY, "");
+}
+
+export const LINECOUNT_PREF_KEY = "linecount";
+export function getLineCount() {
+	return getPref(LINECOUNT_PREF_KEY) as number;
+}
+export function initialiseLineCount() {
+	initialiseDefaultPref(LINECOUNT_PREF_KEY, 10);
+}
+
 // Functions
 export async function migrateStorageLocation(
 	from: StorageType,
@@ -40,46 +56,43 @@ export async function migrateStorageLocation(
 	);
 	const failedItemTitles: string[] = [];
 	try {
-		await Zotero.DB.executeTransaction(
-			async function () {
-				let loadedItems = 0;
-				let migratedItems = 0;
-				const items = (
-					await Zotero.Items.getAll(Zotero.Libraries.userLibraryID)
-				).filter((item: any) => item.isRegularItem());
-				const wrappers = [];
-				for (const item of items) {
-					try {
-						wrappers.push(new SourceItemWrapper(item, from));
-					} catch (e) {
-						debug(e as string);
-						failedItemTitles.push(item.getField("title"));
-					}
-					progress.updateLine(
-						"loading",
-						Wikicite.formatString(
-							"wikicite.prefs.citation-storage.progress.loaded-n-items",
-							[++loadedItems, items.length],
-						),
-					);
+		await Zotero.DB.executeTransaction(async function () {
+			let loadedItems = 0;
+			let migratedItems = 0;
+			const items = (
+				await Zotero.Items.getAll(Zotero.Libraries.userLibraryID)
+			).filter((item: any) => item.isRegularItem());
+			const wrappers = [];
+			for (const item of items) {
+				try {
+					wrappers.push(new SourceItemWrapper(item, from));
+				} catch (e) {
+					debug(e as string);
+					failedItemTitles.push(item.getField("title"));
 				}
-				if (failedItemTitles.length > 0) {
-					throw new Error("Failed to migrate some items");
-				}
-				for (const wrapper of wrappers) {
-					await wrapper.migrateCitations(to);
-					progress.updateLine(
-						"loading",
-						Wikicite.formatString(
-							"wikicite.prefs.citation-storage.progress.migrated-n-items",
-							[++migratedItems, items.length],
-						),
-					);
-				}
-				setStorage(to);
-			},
-			{ skipDateModifiedUpdate: true, skipSelect: true },
-		);
+				progress.updateLine(
+					"loading",
+					Wikicite.formatString(
+						"wikicite.prefs.citation-storage.progress.loaded-n-items",
+						[++loadedItems, items.length],
+					),
+				);
+			}
+			if (failedItemTitles.length > 0) {
+				throw new Error("Failed to migrate some items");
+			}
+			for (const wrapper of wrappers) {
+				await wrapper.migrateCitations(to);
+				progress.updateLine(
+					"loading",
+					Wikicite.formatString(
+						"wikicite.prefs.citation-storage.progress.migrated-n-items",
+						[++migratedItems, items.length],
+					),
+				);
+			}
+			setStorage(to);
+		});
 		progress.updateLine(
 			"done",
 			Wikicite.getString("wikicite.prefs.citation-storage.progress.done"),

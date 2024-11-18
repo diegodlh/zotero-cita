@@ -1,4 +1,4 @@
-import { BasicTool } from "zotero-plugin-toolkit/dist/basic";
+import { BasicTool } from "zotero-plugin-toolkit";
 import Addon from "./addon";
 import { config } from "../package.json";
 
@@ -7,6 +7,8 @@ const basicTool = new BasicTool();
 if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
 	defineGlobal("window");
 	defineGlobal("document");
+	defineGlobal("console");
+	defineGlobal("performance");
 	defineGlobal("ZoteroPane");
 	defineGlobal("Zotero_Tabs");
 	_globalThis.addon = new Addon();
