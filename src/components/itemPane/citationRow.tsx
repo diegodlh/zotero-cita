@@ -9,6 +9,7 @@ import Citation from "../../cita/citation";
 import useResizeObserver from "@react-hook/resize-observer";
 import { useInView } from "react-intersection-observer";
 import { debounce } from "lodash";
+import Wikicite from "../../cita/wikicite";
 
 interface CitationRowProps {
 	citation: Citation;
@@ -45,7 +46,7 @@ function CitationRow(props: CitationRowProps) {
 	} = props;
 
 	const removeStr = Zotero.getString("general.remove");
-	const optionsStr = "Open context menu";
+	const optionsStr = Wikicite.getString("wikicite.global.open-context-menu");
 
 	const item = citation.target.item;
 	const label = citation.target.getLabel();
