@@ -1,5 +1,5 @@
 [submodule "translators/zotkat"]
-	path = static/chrome/content/translators/zotkat
+	path = translators/zotkat
 	url = https://github.com/UB-Mannheim/zotkat.git
 [submodule "Local-Citation-Network"]
 	path = Local-Citation-Network
