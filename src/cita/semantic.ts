@@ -55,12 +55,12 @@ export default class Semantic extends IndexerBase<Reference> {
 
 	limiter = new Bottleneck({
 		maxConcurrent: 1,
-		minTime: 1000 / 1, // 1 request per second (not strictly necessary due to the reservoir)
+		minTime: 1100 / 1, // 1 request per 1.1 second (not strictly necessary due to the reservoir)
 
 		// Allow max 1 request per 1 second window
 		reservoir: 1,
 		reservoirRefreshAmount: 1,
-		reservoirRefreshInterval: 1100, // 1 second
+		reservoirRefreshInterval: 1100, // 1.1 second
 	});
 
 	preferredChunkSize: number = 100; // Could support up to 500 items, but only 9999 citations per request
@@ -115,7 +115,7 @@ export default class Semantic extends IndexerBase<Reference> {
 		allowSelection: boolean,
 	): Promise<IndexedWork<Reference> | null> {
 		if (!item.title) return null;
-		const url = `https://api.semanticscholar.org/graph/v1/paper/search/match?query=${item.title}`;
+		const url = `https://api.semanticscholar.org/graph/v1/paper/search/match?query=${encodeURIComponent(item.title)}`;
 		const response = await this.makeRequest(
 			"GET",
 			url,

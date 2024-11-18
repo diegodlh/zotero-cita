@@ -64,7 +64,7 @@ export default class OpenAlex extends IndexerBase<string> {
 		const works = await this.limiter.schedule(() =>
 			this.openAlexSDK.works({
 				searchField: "title",
-				search: item.title,
+				search: encodeURIComponent(item.title),
 				perPage: 10,
 				retriveAllPages: false,
 			}),
