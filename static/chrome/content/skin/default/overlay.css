@@ -159,6 +159,11 @@
 	background-color: rgba(0, 0, 0, 0);
 }
 
+.toolbarbutton.zotero-clicky {
+	width: 20px;
+	height: 20px;
+}
+
 .pid-list .meta-row editable-text {
 	flex: 1;
 	max-width: 100%;
