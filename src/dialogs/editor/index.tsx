@@ -4,6 +4,7 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import Citation from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
+import { compareSemVer } from "semver-parser";
 
 let citation: Citation;
 ({
@@ -45,7 +46,18 @@ window.addEventListener("load", () => {
 	newItem = new ItemWrapper();
 	newItem.fromJSON(citation.target.toJSON());
 
-	const itemBox = document.getElementById("citation-editor-item-box")!;
+	const container = document.getElementById(
+		"citation-editor-item-box-container",
+	)!;
+	// "item-box" was renamed to "info-box" in Zotero 7.0.10. We compare to 7.0.9 to include the beta versions.
+	const tagName =
+		compareSemVer(Zotero.version, "7.0.9") === 1 ? "info-box" : "item-box";
+	const itemBox = document.createElementNS(
+		"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+		tagName,
+	);
+	itemBox.setAttribute("id", "citation-editor-item-box");
+	container.appendChild(itemBox);
 
 	// itemBox.removeCreator is calling itemBox.item.saveTx
 	// even if itemBox.saveOnEdit is set to false;
