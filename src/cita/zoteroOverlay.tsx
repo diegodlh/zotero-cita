@@ -585,7 +585,6 @@ class ZoteroOverlay {
 					l10nID: "section-button-add",
 					icon: "chrome://zotero/skin/16/universal/plus.svg",
 					onClick: (props) => {
-						Zotero.log(this._sourceItem!.getLabel());
 						sectionAddMenu.openPopup(
 							(props.event as CustomEvent).detail.button,
 							"after_end",
