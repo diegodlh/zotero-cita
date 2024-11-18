@@ -76,7 +76,6 @@ Cita is collaboratively translated at translatewiki.net. Would you like to help 
 Cita depends on:
 
 -   maxlath's [wikibase-edit](https://github.com/maxlath/wikibase-edit) & [wikibase-sdk](https://github.com/maxlath/wikibase-sdk)
--   Philipp Zumstein's [QuickStatements translator for Zotero](https://github.com/UB-Mannheim/zotkat)
 -   Tim Wölfle's [Local Citation Network](https://timwoelfle.github.io/Local-Citation-Network/)
 -   [React](https://reactjs.org/)
 
