@@ -5,6 +5,7 @@ import ItemWrapper from "../cita/itemWrapper";
 import Wikicite, { debug } from "../cita/wikicite";
 import PID from "../cita/PID";
 import ToolbarButton from "./itemPane/toolbarButton";
+import { set } from "lodash";
 
 interface PIDRowProps {
 	autosave: boolean;
@@ -19,8 +20,19 @@ interface PIDRowProps {
 function PIDRow(props: PIDRowProps) {
 	const [value, setValue] = useState(props.item.getPID(props.type));
 	const [url, setUrl] = useState(props.item.getPidUrl(props.type));
+	const [showRow, setShowRow] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const rowRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		// We set this only once on the first render
+		// Show the row if the PID has a value, the type is QID, or DOI is a valid field
+		setShowRow(
+			!!value ||
+				props.type === "QID" ||
+				(props.type === "DOI" && props.item.isValidField(props.type)),
+		);
+	}, []);
 
 	useEffect(() => {
 		setValue(props.item.getPID(props.type));
@@ -49,6 +61,7 @@ function PIDRow(props: PIDRowProps) {
 
 	function deletePid() {
 		handleCommit("");
+		setShowRow(false);
 		props.pidDidChange?.();
 	}
 
@@ -61,12 +74,6 @@ function PIDRow(props: PIDRowProps) {
 	async function onOpenLink(url: string, e: React.MouseEvent) {
 		Zotero.launchURL(url);
 	}
-
-	// show the row if the PID has a value, the type is QID, or DOI is a valid field
-	const showRow =
-		value ||
-		props.type === "QID" ||
-		(props.type === "DOI" && props.item.isValidField(props.type));
 
 	return (
 		<div
