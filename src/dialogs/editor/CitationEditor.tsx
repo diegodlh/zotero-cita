@@ -128,6 +128,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 						item={props.item}
 						key={pidType}
 						type={pidType}
+						pidTypes={pidTypes}
 						validate={props.checkCitationPID}
 					/>
 				))}

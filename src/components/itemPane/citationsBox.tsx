@@ -271,6 +271,7 @@ function CitationsBox(props: CitationsBoxProps) {
 								item={props.sourceItem}
 								key={pidType}
 								type={pidType}
+								pidTypes={pidTypes}
 								validate={(type: PIDType, value: string) =>
 									props.sourceItem.checkPID(type, value, {
 										alert: true,
@@ -281,30 +282,6 @@ function CitationsBox(props: CitationsBoxProps) {
 							/>
 						))
 					}
-					{pidTypes.some(
-						(pidType: PIDType) =>
-							props.sourceItem.getPID(pidType) == null &&
-							!["QID", "DOI"].includes(pidType),
-					) && (
-						<div id="pid-row-add-btn">
-							<button
-								onClick={(event: React.MouseEvent) => {
-									event.preventDefault();
-									(
-										document.getElementById(
-											"pid-row-add-menu",
-										) as unknown as XULMenuPopupElement
-									)?.openPopupAtScreen(
-										window.screenX + event.clientX,
-										window.screenY + event.clientY,
-										true,
-									);
-								}}
-							>
-								+
-							</button>
-						</div>
-					)}
 				</div>
 			</div>
 		</div>

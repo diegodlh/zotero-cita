@@ -1154,24 +1154,6 @@ class ZoteroOverlay {
 									`pid-row-add-${pidType}`,
 								) as unknown as XULMenuItemElement
 							).hidden = true;
-							if (
-								// if all the menu items are hidden (ie. all the rows are shown) - hide the + button
-								Array.from(
-									document.getElementById("pid-row-add-menu")!
-										.children!,
-								).every(
-									(menuItem) =>
-										(
-											menuItem as unknown as XULMenuItemElement
-										).hidden,
-								)
-							) {
-								(
-									document.getElementById(
-										"pid-row-add-btn",
-									) as HTMLDivElement
-								).hidden = true;
-							}
 						},
 					},
 					isHidden: () => {

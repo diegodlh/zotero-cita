@@ -11,6 +11,7 @@ interface PIDRowProps {
 	editable: boolean;
 	item: ItemWrapper;
 	type: PIDType;
+	pidTypes: PIDType[];
 	validate: (type: PIDType, value: string) => boolean;
 }
 
@@ -43,6 +44,10 @@ function PIDRow(props: PIDRowProps) {
 			// but second time (via props.item) might take some time
 			setValue(props.item.getPID(props.type));
 		}
+	}
+
+	function deletePid() {
+		handleCommit("");
 	}
 
 	async function onFetch(e: React.MouseEvent) {
@@ -90,7 +95,38 @@ function PIDRow(props: PIDRowProps) {
 						onBlur={(event) => handleCommit(event.target.value)}
 					/>,
 				)}
-				{props.item.canFetchPid(props.type) && (
+				<ToolbarButton
+					className="zotero-clicky zotero-clicky-minus show-on-hover no-display"
+					tabIndex={0}
+					onClick={deletePid}
+					title={Zotero.getString("general.remove")}
+					imgSrc="chrome://zotero/skin/16/universal/minus-circle.svg"
+				/>
+				{props.pidTypes.some(
+					(pidType: PIDType) =>
+						props.item.getPID(pidType) == null &&
+						!["QID", "DOI"].includes(pidType),
+				) && (
+					<ToolbarButton
+						className="zotero-clicky zotero-clicky-plus show-on-hover no-display"
+						tabIndex={0}
+						onClick={(event: React.MouseEvent) => {
+							event.preventDefault();
+							(
+								document.getElementById(
+									"pid-row-add-menu",
+								) as unknown as XULMenuPopupElement
+							)?.openPopupAtScreen(
+								window.screenX + event.clientX,
+								window.screenY + event.clientY,
+								true,
+							);
+						}}
+						title={Zotero.getString("general.create")}
+						imgSrc="chrome://zotero/skin/16/universal/plus-circle.svg"
+					/>
+				)}
+				{props.item.canFetchPid(props.type) && !value?.id && (
 					<ToolbarButton
 						className="zotero-clicky show-on-hover no-display"
 						tabIndex={0}
