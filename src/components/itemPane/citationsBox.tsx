@@ -1,45 +1,36 @@
 /* License */
 import * as React from "react";
-import { useEffect, useState } from "react";
-import * as PropTypes from "prop-types";
+import { useEffect, useState, useRef } from "react";
 import Wikicite, { debug } from "../../cita/wikicite";
 import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
-import WikidataButton from "./wikidataButton";
-import ZoteroButton from "./zoteroButton";
 import { config } from "../../../package.json";
+import CitationRow from "./citationRow";
 
-function CitationsBox(props: {
+interface CitationsBoxProps {
 	editable: boolean;
 	sortBy: string;
 	sourceItem: SourceItemWrapper;
+	maxLineCount: number;
 	onItemPopup: (event: React.MouseEvent) => void;
 	onCitationPopup: (event: React.MouseEvent, index: number) => void;
-}) {
+}
+
+function CitationsBox(props: CitationsBoxProps) {
 	const [citations, setCitations] = useState([] as Citation[]);
 	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
-
-	const removeStr = Zotero.getString("general.remove");
+	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
-		setPidTypes(props.sourceItem.getPIDTypes());
+		setPidTypes(props.sourceItem.validPIDTypes);
 		setHasAttachments(
 			Boolean(props.sourceItem.item.getAttachments().length),
 		);
 	}, [props.sourceItem]);
-
-	useEffect(() => {
-		// update citations box height when pid types are updated
-		// and pid rows are rendered below
-		// todo: do we still need to do this?
-		// window.WikiciteChrome.zoteroOverlay.updateCitationsBoxSize(
-		// 	window.document,
-		// );
-	}, [pidTypes]);
 
 	useEffect(() => {
 		const items: {
@@ -97,61 +88,20 @@ function CitationsBox(props: {
 		window.openDialog(
 			`chrome://${config.addonRef}/content/citationEditor.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable,width=300,height=500",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=380,height=500",
 			args,
 			retVals,
 		);
 		return retVals.item;
 	}
 
-	function handleCitationAdd() {
-		const citation = new Citation(
-			{
-				item: {
-					itemType: "journalArticle", // Fixme: maybe replace with a const
-				},
-				ocis: [],
-			},
-			props.sourceItem,
-		);
-		const item = openEditor(citation);
-		if (!item) {
-			debug("Edit cancelled by user.");
-			return;
-		}
-		if (
-			props.sourceItem.getPID("QID") &&
-			Wikicite.getExtraField(item, "QID").values[0]
-		) {
-			debug(
-				"Source and target items have QIDs! Offer syncing to Wikidata.",
-			);
-		}
-		citation.target.item = item;
-
-		// Make sure the component updates even before changes are saved to the item
-		// setCitations(
-		//   // sourceItem.citations  // this doesn't work because sourceItem.citation object's reference hasn't changed
-		//   // () => sourceItem.citations  // works only one time per render - possibly because the function itself doesn't change
-		//   [...sourceItem.citations]  // works
-		// );
-		// Problem is if I do this [...citations], the citations passed down to CitationsBox
-		// are not the citations of the CitationsList here. Therefore, if I implement methods
-		// in the Citation class to modify themselves, they won't work.
-
-		// This will save changes to the item's extra field
-		// The modified item observer above will be triggered.
-		// This will update the sourceItem ref, and the component's state.
-		props.sourceItem.addCitations(citation);
-		// props.sourceItem.save();
-		// Unexpectedly, this also triggers the zotero-items-tree `select` event
-		// which in turn runs zoteroOverlay's refreshCitationsPaneMethod.
-		// However, as props.item will not have changed, component will not update.
-	}
-
 	function handleCitationEdit(index: number) {
 		const citation = citations[index];
 		const item = openEditor(citation);
+
+		// Reset focus
+		(document.activeElement as HTMLElement | XULElement).blur();
+
 		// Fixme: I don't like that I'm repeating code from addCitation
 		// tagsBox has a single updateTags method instead
 		if (!item) {
@@ -170,7 +120,7 @@ function CitationsBox(props: {
 
 		const newCitations = props.sourceItem.citations;
 		newCitations[index] = citation;
-		props.sourceItem.citations = newCitations;
+		props.sourceItem.setCitations(newCitations);
 	}
 
 	async function handleCitationDelete(index: number) {
@@ -219,12 +169,29 @@ function CitationsBox(props: {
 		await props.sourceItem.deleteCitation(index, sync);
 	}
 
-	function handleCitationMove(index: number, shift: number) {
-		const newCitations = props.sourceItem.citations;
-		const citation = newCitations.splice(index, 1)[0];
-		const newIndex = index + shift;
-		newCitations.splice(newIndex, 0, citation);
-		props.sourceItem.citations = newCitations;
+	function handleCitationMove(dragIndex: number, dropIndex: number) {
+		const newCitations = Array.from(citations);
+		const [movedCitation] = newCitations.splice(dragIndex, 1);
+		newCitations.splice(dropIndex, 0, movedCitation);
+		setCitations(newCitations);
+		props.sourceItem.setCitations(newCitations);
+
+		// Reset hover effects
+		// Block and reset hover effects on the rows by adding and then removing the noHover class
+		document
+			.querySelectorAll(".citations-box-list-container .row")
+			.forEach((row) => {
+				(row as HTMLElement).classList.add("noHover");
+			});
+
+		const removeHoverBlock = () => {
+			const noHoverRows = document.querySelectorAll(
+				".citations-box-list-container .row.noHover",
+			);
+			noHoverRows.forEach((el) => el.classList.remove("noHover"));
+			document.removeEventListener("mousemove", removeHoverBlock);
+		};
+		document.addEventListener("mousemove", removeHoverBlock);
 	}
 
 	function handleCitationSync(index: number) {
@@ -261,140 +228,27 @@ function CitationsBox(props: {
 		}
 	}
 
-	function renderCitationRow(citation: Citation, index: number) {
-		const item = citation.target.item;
-		const isFirstCitation = index === 0;
-		const isLastCitation = index === citations.length - 1;
-		const label = citation.target.getLabel();
-		return (
-			<li className="citation" key={index}>
-				<img
-					className="cita-icon"
-					src={Zotero.ItemTypes.getImageSrc(item.itemType)}
-					title={Zotero.ItemTypes.getLocalizedString(item.itemType)}
-				/>
-				<div className="editable-container" title={label}>
-					<div
-						className="editable"
-						onClick={() => handleCitationEdit(index)}
-					>
-						<div className="zotero-clicky editable-content">
-							{label}
-						</div>
-					</div>
-				</div>
-				{props.editable && (
-					// https://github.com/babel/babel-sublime/issues/368
-					<>
-						<ZoteroButton citation={citation} />
-						<WikidataButton
-							citation={citation}
-							onClick={() => handleCitationSync(index)}
-						/>
-						<button
-							disabled={
-								isFirstCitation || props.sortBy !== "ordinal"
-							}
-							onClick={() => handleCitationMove(index, -1)}
-						>
-							<img
-								className="cita-icon"
-								title="Move up"
-								src={`chrome://zotero/skin/citation-up.png`}
-							/>
-						</button>
-						<button
-							disabled={
-								isLastCitation || props.sortBy !== "ordinal"
-							}
-							onClick={() => handleCitationMove(index, +1)}
-						>
-							<img
-								className="cita-icon"
-								title="Move down"
-								src={`chrome://zotero/skin/citation-down.png`}
-							/>
-						</button>
-						<button
-							title={removeStr}
-							onClick={() => handleCitationDelete(index)}
-							tabIndex={-1}
-						>
-							<img
-								alt={removeStr}
-								className="cita-icon"
-								title={removeStr}
-								src="chrome://zotero/skin/16/universal/minus-circle.svg"
-							/>
-						</button>
-						<button
-							onClick={(event) =>
-								props.onCitationPopup(event, index)
-							}
-						>
-							<img
-								className="cita-icon"
-								src="chrome://zotero/skin/16/universal/options.svg"
-							/>
-						</button>
-					</>
-				)}
-			</li>
-		);
-	}
-
 	return (
 		<div className="citations-box">
-			<div className="citations-box-header">
-				<div className="citations-box-count">
-					{Wikicite.formatString(
-						"wikicite.citations-pane.citations.count",
-						citations.length,
-					)}
-				</div>
-				{props.editable && (
-					<div>
-						<button onClick={() => handleCitationAdd()}>
-							{Wikicite.getString("wikicite.citations-pane.add")}
-						</button>
-					</div>
-				)}
-				{
-					<button onClick={(event) => props.onItemPopup(event)}>
-						{Wikicite.getString("wikicite.citations-pane.more")}
-					</button>
-				}
-				{/* fix: button is broken */}
-				{/* <Button
-					icon={
-						<span>
-							<img
-								height="16px"
-								src="chrome://cita/skin/wikicite.png"
-							/>
-						</span>
-					}
-					className="citations-box-actions"
-					isMenu={true}
-					onClick={props.onItemPopup}
-					// todo: localise
-					text="More"
-					// text="wikicite.citations-pane.more"
-					title=""
-					size="sm"
-				/> */}
-			</div>
-			<div className="citations-box-list-container">
-				<ul className="citations-box-list">
-					{/* Fixme: do not use index as React key - reorders will be slow!
-                    https://reactjs.org/docs/reconciliation.html#keys
-                    What about using something like bibtex keys?*/}
-					{/* Maybe in the future the index of the Citation in the CitationList
-                    will be a property of the Citation itself */}
-					{sortedIndices.map((index) =>
-						renderCitationRow(citations[index], index),
-					)}
-				</ul>
+			<div className="citations-box-list-container" ref={containerRef}>
+				{/* Citations now have a hash based on their JSON object (not stringfy), which allows better identification of the rows by React */}
+				{sortedIndices.map((index) => (
+					<CitationRow
+						key={citations[index].uuid}
+						citation={citations[index]}
+						citationsLength={citations.length}
+						index={index}
+						editable={props.editable}
+						sortBy={props.sortBy}
+						maxLineCount={props.maxLineCount}
+						containerRef={containerRef}
+						handleCitationEdit={handleCitationEdit}
+						handleCitationDelete={handleCitationDelete}
+						handleCitationSync={handleCitationSync}
+						handleCitationMove={handleCitationMove}
+						onCitationPopup={props.onCitationPopup}
+					/>
+				))}
 				{/* I understand this bit here makes TAB create a new tag
                 { props.editable && <span
                     tabIndex="0"
@@ -402,43 +256,8 @@ function CitationsBox(props: {
                 /> }
                  */}
 			</div>
-			<div className="citations-box-footer">
-				<ul id="citations-box-pids" className="pid-list">
-					{
-						// Fixme: to avoid parsing the extra field multiple times
-						// (once per non-natively supported pid; e.g., QID, OCC)
-						// consider having a pidBox component and
-						// redefining Wikicite.getExtraField to allow multiple fieldnames as input
-						// and return a fieldName: [values]} object instead
-						pidTypes.map((pidType: PIDType) => (
-							<PIDRow
-								autosave={true}
-								editable={props.editable}
-								item={props.sourceItem}
-								key={pidType}
-								type={pidType}
-								validate={(type: PIDType, value: string) =>
-									props.sourceItem.checkPID(type, value, {
-										alert: true,
-										// fix: this once we know how
-										// parentWindow: window,
-									})
-								}
-							/>
-						))
-					}
-				</ul>
-			</div>
 		</div>
 	);
 }
-
-CitationsBox.propTypes = {
-	editable: PropTypes.bool,
-	sortBy: PropTypes.string,
-	sourceItem: PropTypes.instanceOf(SourceItemWrapper),
-	onItemPopup: PropTypes.func,
-	onCitationPopup: PropTypes.func,
-};
 
 export default CitationsBox;

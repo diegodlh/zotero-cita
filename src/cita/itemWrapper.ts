@@ -2,8 +2,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import Crossref from "./crossref";
+import OpenAlex from "./openalex";
+import OpenCitations from "./opencitations";
+import Progress from "./progress";
+import Semantic from "./semantic";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
+import PID from "./PID";
 
 // maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
@@ -63,16 +69,16 @@ export default class ItemWrapper {
 	// this.place; // for books?
 
 	// UUIDs
-	get doi(): string | undefined {
-		return this.getPID("DOI");
+	get doi(): DOI | undefined {
+		return this.getPID("DOI")?.id as DOI;
 	}
 
-	set doi(doi: string) {
+	set doi(doi: DOI) {
 		this.setPID("DOI", doi);
 	}
 
 	get isbn(): string | undefined {
-		return this.getPID("ISBN");
+		return this.getPID("ISBN")?.id;
 	}
 
 	set isbn(isbn: string) {
@@ -80,42 +86,42 @@ export default class ItemWrapper {
 	}
 
 	get qid(): QID | undefined {
-		return this.getPID("QID") as QID;
+		return this.getPID("QID")?.id as QID;
 	}
 
 	set qid(qid: QID) {
 		this.setPID("QID", qid);
 	}
 
-	// OpenCitations Corpus Internal Identifier
-	get occ(): string | undefined {
-		return this.getPID("OCC");
+	get omid(): OMID | undefined {
+		return this.getPID("OMID")?.id as OMID;
 	}
 
-	set occ(occ: string) {
-		this.setPID("OCC", occ);
+	set omid(omid: OMID) {
+		this.setPID("OMID", omid);
 	}
 
-	get url() {
+	get url(): string | null {
 		const url = this.item.getField("url");
 		return (
 			url ||
 			this.getPidUrl("QID") ||
 			this.getPidUrl("DOI") ||
-			this.getPidUrl("OCC")
+			this.getPidUrl("OMID")
 		);
 	}
 
-	getPIDTypes() {
-		const allTypes: PIDType[] = ["DOI", "ISBN", "QID", "OCC"];
+	get validPIDTypes(): PIDType[] {
 		const pidTypes: PIDType[] = [];
-		for (const type of allTypes) {
-			// don't need this because we enforce that it's uppercase already
-			// type = type.toUpperCase();
+		for (const type of PID.showable) {
 			switch (type) {
-				case "DOI":
 				case "ISBN":
 					if (this.isValidField(type)) {
+						pidTypes.push(type);
+					}
+					break;
+				case "arXiv":
+					if (this.item.itemType === "preprint") {
 						pidTypes.push(type);
 					}
 					break;
@@ -126,87 +132,183 @@ export default class ItemWrapper {
 		return pidTypes;
 	}
 
+	canFetchPid(type: PIDType) {
+		return PID.fetchable.includes(type);
+	}
+
 	async fetchPID(type: PIDType, autosave = true) {
-		let pid;
+		if (!this.canFetchPid(type)) {
+			Services.prompt.alert(
+				window as mozIDOMWindowProxy,
+				Wikicite.getString("wikicite.global.unsupported"),
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.unsupported",
+					type,
+				),
+			);
+			return;
+		}
+
+		// QID fetching has its own progress handling
+		if (type === "QID") {
+			const qids = await Wikidata.reconcile([this]);
+			const qid = qids?.get(this);
+			if (qid) {
+				const pid = new PID("QID", qid);
+				this.setPID(pid.type, pid.cleanID || pid.id, autosave);
+			}
+			return;
+		}
+
+		const progress = new Progress(
+			"loading",
+			Wikicite.formatString(
+				"wikicite.item-wrapper.fetch-pid.loading",
+				type,
+			),
+		);
+		let pids: PID[] = [];
 		switch (type) {
-			case "QID": {
-				const qids = await Wikidata.reconcile([this]);
-				pid = qids?.get(this);
+			case "OMID": {
+				const _pids = await new OpenCitations().fetchPIDs(this);
+				if (_pids) pids = _pids;
 				break;
 			}
-			default:
-				Services.prompt.alert(
-					window as mozIDOMWindowProxy,
-					Wikicite.getString("wikicite.global.unsupported"),
-					Wikicite.formatString(
-						"wikicite.item-wrapper.fetch-pid.unsupported",
-						type.toUpperCase(),
-					),
-				);
+			case "DOI": {
+				const doi = await new Crossref().fetchDOI(this);
+				if (doi) pids = [doi];
+				break;
+			}
+			case "OpenAlex": {
+				const _pids = await new OpenAlex().fetchPIDs(this);
+				if (_pids) pids = _pids;
+				break;
+			}
+			case "CorpusID": {
+				const _pids = await new Semantic().fetchPIDs(this);
+				if (_pids) pids = _pids;
+				break;
+			}
 		}
-		if (pid) {
-			this.setPID(type, pid, autosave);
+		if (pids && pids.length) {
+			progress.updateLine(
+				"done",
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.done",
+					type,
+				),
+			);
+			progress.close();
+			pids.forEach((pid) => {
+				// Only set the PID if it's not already set or if it's the one we were actually fetching/refreshing
+				if (!this.getPID(pid.type) || type === pid.type)
+					try {
+						this.setPID(pid.type, pid.cleanID || pid.id, autosave);
+					} catch (e) {
+						// To avoid breaking the loop in case one type is unsupported (ISBN in particular)
+						Zotero.logError(e as Error);
+					}
+			});
+		} else {
+			progress.updateLine(
+				"error",
+				Wikicite.formatString(
+					"wikicite.item-wrapper.fetch-pid.error",
+					type,
+				),
+			);
+			progress.close();
 		}
 	}
 
 	/*
-	 * Get PID (QID, DOI, ISBN, OCC) from item. If it doesn't have this PID, return undefined
+	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return undefined
 	 */
-	getPID(type: PIDType, clean = false) {
-		let pid: string | undefined;
+	getPID(type: PIDType, clean = false): PID | null {
+		let _pid: string;
 		switch (type) {
-			case "DOI":
 			case "ISBN":
-				pid = this.item.getField(type);
+				_pid = this.item.getField(type);
 				break;
+			case "DOI":
+				if (this.isValidField(type)) {
+					_pid = this.item.getField(type);
+				} else {
+					// Also get DOI for unsupported types
+					_pid = Wikicite.getExtraField(this.item, type).values[0];
+				}
+				break;
+			case "arXiv": {
+				const field = this.item.getField("archiveID");
+				if (field && field.startsWith("arXiv:")) {
+					_pid = field.replace("arXiv:", "");
+				} else {
+					_pid = Wikicite.getExtraField(this.item, "arXiv").values[0];
+				}
+				break;
+			}
 			default:
-				pid = Wikicite.getExtraField(this.item, type).values[0]; // this could be undefined
+				_pid = Wikicite.getExtraField(this.item, type).values[0];
 		}
-		if (clean && pid !== undefined) {
-			pid = Wikicite.cleanPID(type, pid) || undefined;
+		if (_pid) {
+			const pid = new PID(type, _pid);
+			if (clean) return pid.cleaned();
+			return pid;
 		}
-		return pid;
+		return null;
+	}
+
+	/**
+	 * Return the first available PID from a list of PID types.
+	 * @param item Item wrapper to get the PID from.
+	 * @param pidTypes List of PID types to check for, by order of preference.
+	 * @returns PID or null if none available
+	 */
+	getBestPID(pidTypes: PIDType[]): PID | null {
+		for (const type of pidTypes) {
+			const pid = this.getPID(type, true); // Already clean them up
+			if (pid) return pid;
+		}
+
+		return null;
+	}
+
+	getAllPIDs(): PID[] {
+		const pids: PID[] = [];
+		for (const type of PID.allTypes) {
+			const pid = this.getPID(type, true);
+			if (pid) pids.push(pid);
+		}
+		return pids;
 	}
 
 	getPidUrl(type: PIDType) {
 		const cleanPID = this.getPID(type, true);
 		let url;
-		if (cleanPID) {
-			switch (type) {
-				case "DOI":
-					url =
-						"https://doi.org/" +
-						// From Zotero's itembox.xml:
-						// Encode some characters that are technically valid in DOIs,
-						// though generally not used. '/' doesn't need to be encoded.
-						cleanPID
-							.replace(/#/g, "%23")
-							.replace(/\?/g, "%3f")
-							.replace(/%/g, "%25")
-							.replace(/"/g, "%22");
-					break;
-				case "OCC":
-					url = "https://opencitations.net/corpus/br/" + cleanPID;
-					break;
-				case "QID":
-					url = "https://www.wikidata.org/wiki/" + cleanPID;
-					break;
-				default:
-			}
-		}
-		return url;
+		return cleanPID ? cleanPID.url : null;
 	}
 
 	setPID(type: PIDType, value: string, save = true) {
 		switch (type) {
-			case "DOI":
 			case "ISBN":
 				if (this.isValidField(type)) {
 					this.item.setField(type, value);
 				} else {
-					throw new Error(
-						`Unsupported PID ${type} for item type ${this.type}`,
-					);
+					throw new Error("ISBN not supported for this item type");
+				}
+				break;
+			case "DOI":
+				if (this.isValidField(type)) {
+					this.item.setField(type, value);
+				} else {
+					Wikicite.setExtraField(this.item, type, [value]);
+				}
+				break;
+			case "arXiv":
+				if (this.isValidField("archiveID")) {
+					this.item.setField("archiveID", "arXiv:" + value);
+				} else {
+					Wikicite.setExtraField(this.item, type, [value]);
 				}
 				break;
 			default:

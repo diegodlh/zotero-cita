@@ -75,6 +75,12 @@ export default {
 				return Zotero.Utilities.cleanISBN(value);
 			case "QID":
 				return Wikidata.cleanQID(value);
+			case "OMID":
+				return Wikidata.cleanOMID(value);
+			case "arXiv":
+				return Wikidata.cleanArXiv(value);
+			case "OpenAlex":
+				return Wikidata.cleanOpenAlex(value);
 			default:
 				return value;
 		}
@@ -127,7 +133,11 @@ export default {
 	 * @param {string} fieldName - The name of the extra field that wants to be set.
 	 * @param {String[]} values - An array of values for the field that wants to be set.
 	 */
-	setExtraField: function (item: any, fieldName: string, values: string[]) {
+	setExtraField: function (
+		item: Zotero.Item,
+		fieldName: string,
+		values: string[],
+	) {
 		let { newExtra } = this.getExtraField(item, fieldName);
 		for (const value of values) {
 			if (value) {
@@ -138,15 +148,27 @@ export default {
 		item.setField("extra", newExtra);
 	},
 
-	/*
-	 * Return Citations note
+	/**
+	 * Get a citations note for an item
+	 * @param item the Zotero item to get the note for
+	 * @param index (optional) if provided, get the citations note with that number (called "Citations{index:03d}"). Otherwise get the only citations (called "Citations")
+	 * @returns the desired citation note for the item
 	 */
-	getCitationsNote: function (item: Zotero.Item) {
+	getCitationsNote: function (item: Zotero.Item, index?: number) {
+		const noteTitle =
+			index !== undefined
+				? `Citations${index.toString().padStart(3, "0")}`
+				: "Citations";
 		// Fixme: consider moving to SourceItemWrapper
 		const notes = Zotero.Items.get(item.getNotes()).filter(
-			(note: any) => note.getNoteTitle() === "Citations",
+			(note) => note.getNoteTitle() === noteTitle,
 		);
 		if (notes.length > 1) {
+			Zotero.logError(
+				new Error(
+					`Multiple citations notes found for item ${item.key}`,
+				),
+			);
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				this.getString("wikicite.global.name"),
@@ -156,6 +178,21 @@ export default {
 			);
 		}
 		return notes[0];
+	},
+
+	/**
+	 * Get all citations notes for an item, sorted
+	 * @param item the Zotero item to get all the notes for
+	 * @returns list of citation notes, sorted by their title
+	 */
+	getCitationsNotes: function (item: Zotero.Item) {
+		// Fixme: consider moving to SourceItemWrapper
+		const notes = Zotero.Items.get(item.getNotes())
+			.filter((note) => note.getNoteTitle().startsWith("Citations"))
+			.sort((note1, note2) =>
+				note1.getNoteTitle() < note2.getNoteTitle() ? -1 : 1,
+			);
+		return notes;
 	},
 
 	getString: function (name: string) {

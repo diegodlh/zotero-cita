@@ -4,7 +4,7 @@ import Wikidata, { CitesWorkClaim } from "./wikidata";
 import ItemWrapper from "./itemWrapper";
 import SourceItemWrapper from "./sourceItemWrapper";
 import Matcher from "./matcher";
-import OCI from "../oci";
+import OCI, { OCIPIDType } from "../oci";
 import Progress from "./progress";
 import { EntityId } from "wikibase-sdk";
 
@@ -15,11 +15,12 @@ class Citation {
 	ocis: {
 		citingId: string;
 		citedId: string;
-		idType: "qid" | "doi" | "occ";
+		idType: OCIPIDType;
 		oci: string;
 		supplierName: string;
 		valid: boolean;
 	}[];
+	readonly uuid: string;
 
 	/**
 	 * Create a citation.
@@ -92,6 +93,9 @@ class Citation {
 		// this.series_ordinal;
 		// // crosref does provide a citation key which seems to have some ordinal information
 		// // but I say to leave this out for now
+
+		// generate a unique identifier for this citation
+		this.uuid = crypto.randomUUID();
 	}
 
 	addCreator(creatorType: any, creatorName: string) {
@@ -114,8 +118,8 @@ class Citation {
 		try {
 			newOci = OCI.getOci(
 				supplier,
-				this.source[idType]!,
-				this.target[idType]!,
+				this.source.getPID(idType)!.id,
+				this.target.getPID(idType)!.id,
 			);
 		} catch {
 			//
@@ -330,7 +334,7 @@ class Citation {
 			return;
 		}
 
-		if (item.libraryID !== this.source.item.libraryID) {
+		if (item.libraryID && item.libraryID !== this.source.item.libraryID) {
 			Services.prompt.alert(
 				window as mozIDOMWindowProxy,
 				"",

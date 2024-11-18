@@ -1,23 +1,38 @@
 import PIDRow from "../../components/pidRow";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import * as PropTypes from "prop-types";
 import ItemWrapper from "../../cita/itemWrapper";
+import Lookup from "../../cita/zotLookup";
+import { debug } from "../../cita/wikicite";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
-// Fixme: as a Citation Editor (not a target item editor)
-// consider providing at least some read only information about the citation
-// such as label of the source item, OCIs, and Zotero link status
-const CitationEditor = (props: {
+interface CitationEditorProps {
 	checkCitationPID: (type: PIDType, value: string) => boolean;
 	item: ItemWrapper;
 	itemBox: any;
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onSave: () => void;
-}) => {
-	const [pidTypes, setPidTypes] = useState(props.item.getPIDTypes());
+}
+
+// Fixme: as a Citation Editor (not a target item editor)
+// consider providing at least some read only information about the citation
+// such as label of the source item, OCIs, and Zotero link status
+const CitationEditor = (props: CitationEditorProps) => {
+	const [pidTypes, setPidTypes] = useState(props.item.validPIDTypes);
+
+	async function onRefresh() {
+		const pid = props.item.getBestPID(Lookup.pidsSupportedForImport);
+		if (pid) {
+			const fetchedItem = await Lookup.lookupIdentifiers([pid]);
+			if (fetchedItem && fetchedItem.length) {
+				props.item.item = fetchedItem[0];
+				// FIXME: this still doesn't work
+				props.itemBox._forceRenderAll();
+			}
+		}
+	}
 
 	useEffect(() => {
 		// const addCreatorRow = props.itemBox.addCreatorRow.bind(props.itemBox);
@@ -83,10 +98,10 @@ const CitationEditor = (props: {
 		} catch (error: any) {
 			alert(error);
 		}
-	}, []);
+	}, [props.item]);
 
 	function onItemTypeChange() {
-		setPidTypes(props.item.getPIDTypes());
+		setPidTypes(props.item.validPIDTypes);
 		setHiddenFields(props.item.item.itemTypeID);
 		props.itemBox._forceRenderAll(); // need to force a new render
 	}
@@ -105,7 +120,7 @@ const CitationEditor = (props: {
 
 	return (
 		<div id="citation-editor-footer" box-orient="vertical">
-			<ul className="pid-list">
+			<div className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow
 						autosave={false}
@@ -113,11 +128,19 @@ const CitationEditor = (props: {
 						item={props.item}
 						key={pidType}
 						type={pidType}
+						pidTypes={pidTypes}
 						validate={props.checkCitationPID}
 					/>
 				))}
-			</ul>
+			</div>
 			<div id="citation-editor-buttons">
+				<button
+					onClick={() => {
+						onRefresh();
+					}}
+				>
+					{props.getString("wikicite.editor.refresh")}
+				</button>
 				<button onClick={props.onCancel}>
 					{props.getString("wikicite.editor.cancel")}
 				</button>
@@ -127,15 +150,6 @@ const CitationEditor = (props: {
 			</div>
 		</div>
 	);
-};
-
-CitationEditor.propTypes = {
-	checkCitationPID: PropTypes.func,
-	item: PropTypes.instanceOf(ItemWrapper),
-	itemBox: PropTypes.object,
-	getString: PropTypes.func,
-	onCancel: PropTypes.func,
-	onSave: PropTypes.func,
 };
 
 export default CitationEditor;

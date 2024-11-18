@@ -1,6 +1,5 @@
 // import Wikicite from "./wikicite";
 
-declare const Services: any;
 declare global {
 	interface Document {
 		WikiciteXULRootElements: string[];
@@ -66,6 +65,64 @@ class WikiciteChrome {
 				elem?.parentNode?.removeChild(elem);
 			}
 		}
+	};
+
+	static createXULMenuPopup = function (
+		doc: Document,
+		menuPopupID: string,
+		//menuPopupAttributes?: { [id: string]: string },
+		//menuPopupListeners?: { [id: string]: (event: Event) => any },
+		menuItems?: {
+			attributes?: { [id: string]: string };
+			listeners?: { [id: string]: (event: Event) => any };
+			isDisabled?: (event: Event) => boolean;
+			isHidden?: (event: Event) => boolean;
+		}[],
+	) {
+		const menuPopup = doc.createXULElement(
+			"menupopup",
+		) as XULMenuPopupElement;
+		menuPopup.setAttribute("id", menuPopupID);
+		// for (const attribute in menuPopupAttributes) {
+		// 	menuPopup.setAttribute(attribute, menuPopupAttributes[attribute]);
+		// }
+		// for (const listener in menuPopupListeners) {
+		// 	menuPopup.addEventListener(listener, menuPopupListeners[listener]);
+		// }
+		if (menuItems) {
+			for (const menuItemDetails of menuItems) {
+				const menuItem = doc.createXULElement(
+					"menuitem",
+				) as XULMenuItemElement;
+				for (const attribute in menuItemDetails["attributes"]) {
+					menuItem.setAttribute(
+						attribute,
+						menuItemDetails["attributes"][attribute],
+					);
+				}
+				for (const listener in menuItemDetails["listeners"]) {
+					menuItem.addEventListener(
+						listener,
+						menuItemDetails["listeners"][listener],
+					);
+				}
+				if (menuItemDetails.isDisabled) {
+					menuPopup.addEventListener("popupshowing", (ev: Event) => {
+						const disabled = menuItemDetails.isDisabled!(ev);
+						menuItem.disabled = disabled;
+					});
+				}
+				if (menuItemDetails.isHidden) {
+					menuPopup.addEventListener("popupshowing", (ev: Event) => {
+						const hidden = menuItemDetails.isHidden!(ev);
+						menuItem.hidden = hidden;
+					});
+				}
+				menuPopup.appendChild(menuItem);
+			}
+		}
+		WikiciteChrome.registerXUL(menuPopupID, doc);
+		return menuPopup;
 	};
 }
 

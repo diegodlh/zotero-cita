@@ -106,14 +106,14 @@ export default class {
 				continue;
 			}
 			const queryProps: QueryProperties[] = [];
-			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi!);
+			const cleanDOI = Zotero.Utilities.cleanDOI(item.doi || "");
 			if (cleanDOI) {
 				queryProps.push({
 					pid: properties.doi,
 					v: cleanDOI.toUpperCase(),
 				});
 			}
-			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn!);
+			const cleanISBN = Zotero.Utilities.cleanISBN(item.isbn || "");
 			if (cleanISBN) {
 				queryProps.push({
 					pid: [properties.isbn10, properties.isbn13].join("|"),
@@ -428,6 +428,32 @@ export default class {
 		if (qid[0] !== "Q") qid = "Q" + qid;
 		if (!qid.match(/^Q\d+$/)) qid = "";
 		return qid;
+	}
+
+	static cleanOMID(omid: string) {
+		omid = omid.toLowerCase().trim();
+		if (omid.substring(0, 3) !== "br/") omid = "br/" + omid;
+		if (!omid.match(/^br\/\d+$/)) omid = "";
+		return omid;
+	}
+
+	static cleanArXiv(arXiv: string) {
+		const arXiv_RE =
+			/\b(([-A-Za-z.]+\/\d{7}|\d{4}\.\d{4,5})(?:v(\d+))?)(?!\d)/g; // 1: full ID, 2: ID without version, 3: version #
+		const m = arXiv_RE.exec(arXiv);
+		if (m) {
+			const cleanArXiv = m[2];
+			return cleanArXiv;
+		}
+
+		return "";
+	}
+
+	static cleanOpenAlex(openAlex: string) {
+		openAlex = openAlex.toUpperCase().trim();
+		if (openAlex[0] !== "W") openAlex = "W" + openAlex;
+		if (!openAlex.match(/^W\d+$/)) openAlex = "";
+		return openAlex;
 	}
 
 	/**

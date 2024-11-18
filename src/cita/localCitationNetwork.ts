@@ -6,6 +6,17 @@ import Wikicite from "./wikicite";
 import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 
+function replacer(_key: any, value: any) {
+	if (value instanceof Map) {
+		return {
+			dataType: "Map",
+			value: Array.from(value.entries()), // or with spread: value: [...value]
+		};
+	} else {
+		return value;
+	}
+}
+
 export default class LCN {
 	items: Zotero.Item[];
 	itemMap: Map<
@@ -22,7 +33,7 @@ export default class LCN {
 			journal: string;
 			references: (string | undefined)[];
 			abstract: string;
-			url: string | undefined;
+			url: string | null;
 		}
 	>;
 	inputKeys: string[];
@@ -128,35 +139,27 @@ export default class LCN {
 
 					// collect item's unique identifiers (including name) and clean
 					// them, to make sure the same item always gets the same tmp key
-					const cleanDOI = Zotero.Utilities.cleanDOI(
-						citation.target.doi!,
-					);
-					const cleanISBN = Zotero.Utilities.cleanISBN(
-						citation.target.isbn!,
-					);
-					const qid = citation.target.qid;
-					const uids = {
-						doi: cleanDOI && cleanDOI.toUpperCase(),
-						isbn: cleanISBN,
-						occ: citation.target.occ, // Fixme: provide OCC cleaning function
-						qid: qid && qid.toUpperCase(),
-						// based on Zotero.Duplicates.prototype._findDuplicates'
-						// normalizeString function
-						title: Zotero.Utilities.removeDiacritics(
-							citation.target.title,
-						)
-							// Convert (ASCII) punctuation to spaces
-							.replace(/[ !-/:-@[-`{-~]+/g, " ")
-							.trim()
-							.toLowerCase(),
-					};
+					const uids = citation.target
+						.getAllPIDs()
+						.map((pid) => pid.comparable) // DOI, ISBN, etc., already in type:value format and cleaned
+						.filter((uid) => uid !== undefined); // remove nulls
+					// based on Zotero.Duplicates.prototype._findDuplicates'
+					// normalizeString function
+					const cleanTitle = Zotero.Utilities.removeDiacritics(
+						citation.target.title,
+					)
+						// Convert (ASCII) punctuation to spaces
+						.replace(/[ !-/:-@[-`{-~]+/g, " ")
+						.trim()
+						.toLowerCase();
+					uids.push(`title:${cleanTitle}`);
 
 					// retrieve tmp keys already given to this item,
 					// i.e., the target item of another source item's citation
 					// had one or more of the same uids or title
 					const tmpKeys: Set<string> = new Set();
-					for (const [key, value] of Object.entries(uids)) {
-						const tmpKey = tmpKeyMap.get(`${key}:${value}`);
+					for (const value of uids) {
+						const tmpKey = tmpKeyMap.get(value);
 						if (tmpKey) tmpKeys.add(tmpKey);
 					}
 
@@ -175,15 +178,27 @@ export default class LCN {
 						// if one matching key found, use that one
 						tmpKey = [...tmpKeys][0];
 					} else {
+						// FIXME: when error is thrown here, progress does not disappear
+						// FIXME: should account for cases where there a DOI (section) + ISBN (book) or at least signal them
 						// finding more than one matching key should be unexpected
-						throw Error(
-							"UIDs of a citation target item should not refer to different temporary item keys",
+						Zotero.log(`Current item: ${wrappedItem.title}`);
+						Zotero.log(
+							`Current citation: ${citation.target.title}`,
 						);
+						Zotero.log(`UIDs: ${JSON.stringify(uids)}`);
+						Zotero.log(`tmpKeys: ${JSON.stringify([...tmpKeys])}`);
+						Zotero.log(
+							`Map: ${JSON.stringify(tmpKeyMap, replacer)}`,
+						);
+						/*throw Error(
+					"UIDs of a citation target item should not refer to different temporary item keys",
+					);*/
+						tmpKey = [...tmpKeys][0];
 					}
 
 					// save key to the map of temp keys
-					for (const [key, value] of Object.entries(uids)) {
-						if (value) tmpKeyMap.set(`${key}:${value}`, tmpKey);
+					for (const value of uids) {
+						if (value) tmpKeyMap.set(value, tmpKey);
 					}
 
 					// add temp key to the citation's target
