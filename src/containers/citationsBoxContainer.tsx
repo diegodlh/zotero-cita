@@ -206,7 +206,12 @@ function CitationsBoxContainer(props: {
 	}
 
 	return (
-		<ErrorBoundary fallback={<div>Something went wrong</div>}>
+		<ErrorBoundary
+			fallback={<div>Something went wrong</div>}
+			onError={(error, info) =>
+				Zotero.log(`Error: ${error}, Info: ${info}`, "error")
+			}
+		>
 			<CitationsBox
 				editable={props.editable}
 				sortBy={sortBy}

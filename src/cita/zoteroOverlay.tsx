@@ -22,6 +22,7 @@ import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
 import PID from "./PID";
 import { IndexerBase } from "./indexer";
+import PIDBoxContainer from "../containers/pidBoxContainer";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -505,6 +506,7 @@ class ZoteroOverlay {
 
 		// Add Citations tab to item pane
 		this.citationsPane();
+		this.pidPane();
 
 		this.addOverlayStyleSheet();
 	}
@@ -515,6 +517,10 @@ class ZoteroOverlay {
 		// Unmount React roots
 		for (const rootID in this.citationBoxRoots) {
 			this.citationBoxRoots[rootID].unmount();
+			window.document.getElementById(rootID)?.remove();
+		}
+		for (const rootID in this.pidBoxRoots) {
+			this.pidBoxRoots[rootID].unmount();
 			window.document.getElementById(rootID)?.remove();
 		}
 	}
@@ -537,6 +543,10 @@ class ZoteroOverlay {
 	}
 
 	citationBoxRoots: {
+		[id: string]: Root;
+	} = {};
+
+	pidBoxRoots: {
 		[id: string]: Root;
 	} = {};
 
@@ -677,6 +687,94 @@ class ZoteroOverlay {
 				}
 
 				setL10nArgs(`{"citationCount": "${citationCount}"}`);
+			},
+			onItemChange: ({ item, setEnabled }) => {
+				setEnabled(item.isRegularItem());
+			},
+		});
+	}
+
+	async pidPane() {
+		const pidAddMenu = document.getElementById(
+			"pid-row-add-menu",
+		) as unknown as XULMenuPopupElement;
+
+		Zotero.ItemPaneManager.registerSection({
+			paneID: "zotero-editpane-pid-tab",
+			pluginID: config.addonID,
+			header: {
+				l10nID: getLocaleID("wikicite_pid-pane_label"),
+				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
+			},
+			sidenav: {
+				l10nID: getLocaleID("wikicite_pid-pane_tooltiptext"),
+				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
+			},
+			bodyXHTML: `<html:div id="pid-box-container" xmlns:html="http://www.w3.org/1999/xhtml"></html:div>`,
+			sectionButtons: [
+				{
+					type: "add-pid",
+					l10nID: "section-button-add",
+					icon: "chrome://zotero/skin/16/universal/plus.svg",
+					onClick: (props) => {
+						pidAddMenu.openPopup(
+							(props.event as CustomEvent).detail.button,
+							"after_end",
+						);
+					},
+				},
+			],
+			onInit: ({ body }) => {
+				const tab_id: string =
+					body.parentElement!.parentElement!.parentElement!
+						.parentElement!.parentElement!.parentElement!.id;
+				this.pidBoxRoots[tab_id] = createRoot(
+					body.firstChild! as Element,
+				);
+			},
+			onRender: ({ body, item, setSectionButtonStatus }) => {
+				window.MozXULElement.insertFTLIfNeeded(
+					`${config.addonRef}-addon.ftl`,
+				);
+
+				if (!item.isRegularItem()) {
+					return;
+				}
+				const tab_id: string =
+					body.parentElement!.parentElement!.parentElement!
+						.parentElement!.parentElement!.parentElement!.id;
+				this.pidBoxRoots[tab_id].render(
+					<PIDBoxContainer
+						key={"pidBox-" + item.id}
+						item={item}
+						onPIDChange={(hidden) => {
+							setSectionButtonStatus("add-pid", {
+								disabled: hidden,
+								hidden: hidden,
+							});
+						}}
+						editable={
+							ZoteroPane.collectionsView
+								? ZoteroPane.collectionsView.editable
+								: true
+						}
+					/>,
+				);
+
+				const sourceItem = new SourceItemWrapper(
+					item,
+					prefs.getStorage(),
+				);
+				const showAddPIDButton = sourceItem.validPIDTypes.some(
+					(pidType: PIDType) =>
+						sourceItem.getPID(pidType) == null &&
+						!["QID", "DOI"].includes(pidType),
+				);
+
+				setSectionButtonStatus("add-pid", {
+					disabled: !item.isEditable() || !showAddPIDButton,
+					hidden: !item.isEditable() || !showAddPIDButton,
+				});
 			},
 			onItemChange: ({ item, setEnabled }) => {
 				setEnabled(item.isRegularItem());
@@ -1154,6 +1252,25 @@ class ZoteroOverlay {
 									`pid-row-add-${pidType}`,
 								) as unknown as XULMenuItemElement
 							).hidden = true;
+							if (
+								// if all the menu items are hidden (ie. all the rows are shown) - hide the + button
+								Array.from(
+									document.getElementById("pid-row-add-menu")!
+										.children!,
+								).every(
+									(menuItem) =>
+										(
+											menuItem as unknown as XULMenuItemElement
+										).hidden,
+								)
+							) {
+								const addPIDButton =
+									document.getElementsByClassName(
+										"add-pid", // The "type" of the section button
+									)[0] as unknown as XULButtonElement;
+								addPIDButton.hidden = true;
+								addPIDButton.disabled = true;
+							}
 						},
 					},
 					isHidden: () => {

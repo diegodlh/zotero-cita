@@ -256,34 +256,6 @@ function CitationsBox(props: CitationsBoxProps) {
                 /> }
                  */}
 			</div>
-			<div className="citations-box-footer">
-				<div id="citations-box-pids" className="pid-list">
-					{
-						// Fixme: to avoid parsing the extra field multiple times
-						// (once per non-natively supported pid; e.g., QID, OMID)
-						// consider having a pidBox component and
-						// redefining Wikicite.getExtraField to allow multiple fieldnames as input
-						// and return a fieldName: [values]} object instead
-						pidTypes.map((pidType: PIDType) => (
-							<PIDRow
-								autosave={true}
-								editable={props.editable}
-								item={props.sourceItem}
-								key={pidType}
-								type={pidType}
-								pidTypes={pidTypes}
-								validate={(type: PIDType, value: string) =>
-									props.sourceItem.checkPID(type, value, {
-										alert: true,
-										// fix: this once we know how
-										// parentWindow: window,
-									})
-								}
-							/>
-						))
-					}
-				</div>
-			</div>
 		</div>
 	);
 }

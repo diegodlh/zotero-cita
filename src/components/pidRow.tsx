@@ -12,6 +12,7 @@ interface PIDRowProps {
 	item: ItemWrapper;
 	type: PIDType;
 	pidTypes: PIDType[];
+	pidDidChange?: () => void;
 	validate: (type: PIDType, value: string) => boolean;
 }
 
@@ -48,6 +49,7 @@ function PIDRow(props: PIDRowProps) {
 
 	function deletePid() {
 		handleCommit("");
+		props.pidDidChange?.();
 	}
 
 	async function onFetch(e: React.MouseEvent) {
@@ -102,7 +104,7 @@ function PIDRow(props: PIDRowProps) {
 					title={Zotero.getString("general.remove")}
 					imgSrc="chrome://zotero/skin/16/universal/minus-circle.svg"
 				/>
-				{props.pidTypes.some(
+				{/*props.pidTypes.some(
 					(pidType: PIDType) =>
 						props.item.getPID(pidType) == null &&
 						!["QID", "DOI"].includes(pidType),
@@ -125,7 +127,7 @@ function PIDRow(props: PIDRowProps) {
 						title={Zotero.getString("general.create")}
 						imgSrc="chrome://zotero/skin/16/universal/plus-circle.svg"
 					/>
-				)}
+				)*/}
 				{props.item.canFetchPid(props.type) && !value?.id && (
 					<ToolbarButton
 						className="zotero-clicky show-on-hover no-display"
