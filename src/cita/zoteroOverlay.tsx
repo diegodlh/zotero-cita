@@ -704,11 +704,11 @@ class ZoteroOverlay {
 			pluginID: config.addonID,
 			header: {
 				l10nID: getLocaleID("wikicite_pid-pane_label"),
-				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
+				icon: `chrome://${config.addonRef}/content/skin/default/pid-small.svg`,
 			},
 			sidenav: {
 				l10nID: getLocaleID("wikicite_pid-pane_tooltiptext"),
-				icon: `chrome://${config.addonRef}/content/skin/default/cita-small.svg`,
+				icon: `chrome://${config.addonRef}/content/skin/default/pid-small.svg`,
 			},
 			bodyXHTML: `<html:div id="pid-box-container" xmlns:html="http://www.w3.org/1999/xhtml"></html:div>`,
 			sectionButtons: [
