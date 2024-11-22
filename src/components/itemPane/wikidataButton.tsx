@@ -2,6 +2,7 @@ import * as React from "react";
 import Citation from "../../cita/citation";
 import { config } from "../../../package.json";
 import ToolbarButton from "./toolbarButton";
+import Wikicite from "../../cita/wikicite";
 
 interface WikidataButtonProps {
 	citation: Citation;
@@ -16,19 +17,20 @@ function WikidataButton(props: WikidataButtonProps) {
 	let imgSrc = `chrome://${config.addonRef}/content/skin/default/wikidata-`;
 	if (oci) {
 		if (oci.valid) {
-			title = "See in OpenCitations";
+			title = Wikicite.getString("wikicite.citation-menu.oci");
 			imgSrc += "tick";
 		} else {
-			title = "Identifier mismatch";
+			title = Wikicite.getString("wikicite.oci.mismatch.title");
 			imgSrc += "cross";
 		}
 	} else {
 		if (syncable) {
-			title = "Sync citation with Wikidata";
+			title = Wikicite.getString("wikicite.citation-menu.sync-wikidata");
 			imgSrc += "sync";
 		} else {
-			title =
-				"Both source and target items must have QID to sync to Wikidata";
+			title = Wikicite.getString(
+				"wikicite.citation-menu.sync-wikidata.both-qid-required",
+			);
 			imgSrc += "light";
 		}
 	}
