@@ -63,10 +63,7 @@ window.addEventListener("load", () => {
 	// even if itemBox.saveOnEdit is set to false;
 	// overwrite saveTx as workaround
 	newItem.item.saveTx = () => (itemBox as any)._forceRenderAll();
-	//Zotero.log(`Custom element: ${window.customElements.get("toolbarbutton")}`);
-	/*window.customElements.define("toolbarbutton", ToolbarButton as any, {
-		extends: "button",
-	});*/
+
 	const root = createRoot(document.getElementById("root")!);
 	root.render(
 		<CitationEditor
