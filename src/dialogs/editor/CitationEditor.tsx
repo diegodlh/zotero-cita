@@ -89,12 +89,16 @@ const CitationEditor = (props: CitationEditorProps) => {
 			// remove the collapsible section:
 			// item box contains
 			// <collapsible section>
-			//     <head/>
+			//     <head>
+			//         <title-box/>
+			//         <popupset/> <!-- keep this for the title-related popups to work -->
+			//		   <toolbarbutton/>
+			//     </head>
 			//     <body/>
 			// </collapsible section>
-			(
-				props.itemBox.firstChild!.firstChild! as HTMLElement
-			).style.display = "none";
+			(props.itemBox as XULElement)
+				.querySelectorAll(".head > :not(popupset)") // keep the popupset for the title-related popups to work
+				.forEach((el) => ((el as HTMLElement).style.display = "none"));
 		} catch (error: any) {
 			alert(error);
 		}
