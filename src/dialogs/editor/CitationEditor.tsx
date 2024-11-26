@@ -28,7 +28,9 @@ const CitationEditor = (props: CitationEditorProps) => {
 			const fetchedItem = await Lookup.lookupIdentifiers([pid]);
 			if (fetchedItem && fetchedItem.length) {
 				props.item.item = fetchedItem[0];
-				// FIXME: this still doesn't work
+				// Reset saveTX to prevent saving the item
+				props.item.item.saveTx = () => props.itemBox._forceRenderAll();
+				props.itemBox.item = props.item.item;
 				props.itemBox._forceRenderAll();
 			}
 		}
