@@ -10,7 +10,8 @@ import PropTypes from 'prop-types';
 const visibleBaseFieldNames = [
     'title',
     'publicationTitle',
-    'date'
+    'date',
+    'language'
 ];
 
 // Fixme: as a Citation Editor (not a target item editor)
