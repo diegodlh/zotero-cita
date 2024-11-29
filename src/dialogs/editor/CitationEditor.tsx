@@ -129,15 +129,15 @@ const CitationEditor = (props: CitationEditorProps) => {
 
 	return (
 		<div id="citation-editor-footer" box-orient="vertical">
-			<h4>
-				{"Identifiers"}
+			<div id="pid-header">
+				<h4>{"Identifiers"}</h4>
 				<ToolbarButton
 					className="zotero-clicky"
 					tabIndex={1}
 					title="Add"
 					imgSrc="chrome://zotero/skin/16/universal/plus.svg"
 				/>
-			</h4>
+			</div>
 			<div className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow

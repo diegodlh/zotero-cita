@@ -12,7 +12,13 @@ window#citation-editor {
 }
 
 #citation-editor h4 {
-	margin-block: 0em;
+	margin-block-start: 0.75em;
+	margin-block-end: auto;
+}
+
+#pid-header {
+	display: flex;
+	justify-content: space-between;
 }
 
 div#citation-editor-container {
@@ -30,11 +36,8 @@ div#citation-editor-footer {
 	width: 100%;
 }
 
-div#citation-editor-footer > .pid-list {
-	margin-bottom: 10px;
-}
-
 div#citation-editor-buttons {
+	margin-top: 10px;
 	text-align: right;
 }
 
