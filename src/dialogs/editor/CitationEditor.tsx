@@ -5,6 +5,7 @@ import ItemWrapper from "../../cita/itemWrapper";
 import Lookup from "../../cita/zotLookup";
 import { debug } from "../../cita/wikicite";
 import ToolbarButton from "../../components/itemPane/toolbarButton";
+import Wikicite from "../../cita/wikicite";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
@@ -127,17 +128,25 @@ const CitationEditor = (props: CitationEditorProps) => {
 			.concat(["dateAdded", "dateModified"]);
 	}
 
+	const pidAddMenu = document.getElementById(
+		"pid-row-add-menu",
+	) as unknown as XULPopupElement;
+
 	return (
 		<div id="citation-editor-footer" box-orient="vertical">
 			<div id="pid-header">
 				<h4>{"Identifiers"}</h4>
 				<ToolbarButton
-					className="zotero-clicky"
+					className="zotero-clicky add-pid"
 					tabIndex={1}
-					title="Add"
+					title={Wikicite.getString("wikicite.editor.add")}
 					imgSrc="chrome://zotero/skin/16/universal/plus.svg"
+					onClick={(event) => {
+						pidAddMenu.openPopup(event.currentTarget, "after_end");
+					}}
 				/>
 			</div>
+			{/* TODO: consider replacing with PIDBox */}
 			<div className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow
@@ -151,12 +160,24 @@ const CitationEditor = (props: CitationEditorProps) => {
 					/>
 				))}
 			</div>
+			{/* <PIDBox
+				editable={true}
+				sourceItem={props.item}
+				onPIDChange={(hidden) => {
+					const addPIDButton = document.getElementsByClassName(
+						"add-pid", // The "type" of the section button
+					)[0] as unknown as XULButtonElement;
+					addPIDButton.hidden = hidden;
+					addPIDButton.disabled = hidden;
+				}}
+				validate={props.checkCitationPID}
+			/> */}
 			<div className="citation-source-info">
 				<h4>{"Source"}</h4>
 				<div className="citations-box-list-container">
 					<div className="row">
 						{/* We disable the hover effects this way */}
-						<div className="box" {...{ disabled: "true" }}>
+						<div className="box" {...{ disabled: true }}>
 							<span
 								className="icon icon-css icon-item-type"
 								data-item-type={props.sourceType}

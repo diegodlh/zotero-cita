@@ -769,7 +769,7 @@ class ZoteroOverlay {
 				const showAddPIDButton = sourceItem.validPIDTypes.some(
 					(pidType: PIDType) =>
 						sourceItem.getPID(pidType) == null &&
-						!["QID", "DOI"].includes(pidType),
+						!PID.alwaysShown.includes(pidType),
 				);
 
 				setSectionButtonStatus("add-pid", {
@@ -1231,7 +1231,7 @@ class ZoteroOverlay {
 		mainWindow.appendChild(citationMenu);
 	}
 
-	/** Popup meu for adding new PID rows */
+	/** Popup menu for adding new PID rows */
 	pidRowPopupMenu(doc: Document, mainWindow: Element) {
 		const pidRowMenu = WikiciteChrome.createXULMenuPopup(
 			doc,

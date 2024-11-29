@@ -3,6 +3,7 @@ import * as React from "react";
 import { useEffect, useState, useRef } from "react";
 import PIDRow from "../pidRow";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
+import PID from "../../cita/PID";
 
 interface PIDBoxProps {
 	editable: boolean;
@@ -11,8 +12,7 @@ interface PIDBoxProps {
 }
 
 function PIDBox(props: PIDBoxProps) {
-	const alwaysShownPIDTypes: PIDType[] = ["DOI", "QID"];
-	const [pidTypes, setPIDTypes] = useState(alwaysShownPIDTypes);
+	const [pidTypes, setPIDTypes] = useState(PID.alwaysShown);
 
 	useEffect(() => {
 		setPIDTypes(props.sourceItem.validPIDTypes);
@@ -22,7 +22,7 @@ function PIDBox(props: PIDBoxProps) {
 		const extraPIDsToShow = pidTypes.some(
 			(pidType: PIDType) =>
 				props.sourceItem.getPID(pidType) == null &&
-				!["QID", "DOI"].includes(pidType),
+				!PID.alwaysShown.includes(pidType),
 		);
 		props.onPIDChange(!extraPIDsToShow);
 	}

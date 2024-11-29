@@ -147,6 +147,8 @@ export default class PID {
 		// Don't show PMID or PMCID because we can't fetch citations from them
 	];
 
+	static readonly alwaysShown: PIDType[] = ["DOI", "QID"];
+
 	static readonly fetchable: PIDType[] = [
 		"QID",
 		"OMID",

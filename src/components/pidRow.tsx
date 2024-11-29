@@ -61,7 +61,9 @@ function PIDRow(props: PIDRowProps) {
 
 	function deletePid() {
 		handleCommit("");
-		setShowRow(false);
+		if (!PID.alwaysShown.includes(props.type)) {
+			setShowRow(false);
+		}
 		props.pidDidChange?.();
 	}
 
@@ -111,30 +113,6 @@ function PIDRow(props: PIDRowProps) {
 					title={Zotero.getString("general.remove")}
 					imgSrc="chrome://zotero/skin/16/universal/minus-circle.svg"
 				/>
-				{/*props.pidTypes.some(
-					(pidType: PIDType) =>
-						props.item.getPID(pidType) == null &&
-						!["QID", "DOI"].includes(pidType),
-				) && (
-					<ToolbarButton
-						className="zotero-clicky zotero-clicky-plus show-on-hover no-display"
-						tabIndex={0}
-						onClick={(event: React.MouseEvent) => {
-							event.preventDefault();
-							(
-								document.getElementById(
-									"pid-row-add-menu",
-								) as unknown as XULMenuPopupElement
-							)?.openPopupAtScreen(
-								window.screenX + event.clientX,
-								window.screenY + event.clientY,
-								true,
-							);
-						}}
-						title={Zotero.getString("general.create")}
-						imgSrc="chrome://zotero/skin/16/universal/plus-circle.svg"
-					/>
-				)*/}
 				{props.item.canFetchPid(props.type) && !value?.id && (
 					<ToolbarButton
 						className="zotero-clicky show-on-hover no-display"
