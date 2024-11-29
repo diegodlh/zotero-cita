@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ItemWrapper from "../../cita/itemWrapper";
 import Lookup from "../../cita/zotLookup";
 import { debug } from "../../cita/wikicite";
+import ToolbarButton from "../../components/itemPane/toolbarButton";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
@@ -11,6 +12,8 @@ interface CitationEditorProps {
 	checkCitationPID: (type: PIDType, value: string) => boolean;
 	item: ItemWrapper;
 	itemBox: any;
+	sourceLabel: string;
+	sourceType: Zotero.Item.ItemType;
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onSave: () => void;
@@ -126,6 +129,15 @@ const CitationEditor = (props: CitationEditorProps) => {
 
 	return (
 		<div id="citation-editor-footer" box-orient="vertical">
+			<h4>
+				{"Identifiers"}
+				<ToolbarButton
+					className="zotero-clicky"
+					tabIndex={1}
+					title="Add"
+					imgSrc="chrome://zotero/skin/16/universal/plus.svg"
+				/>
+			</h4>
 			<div className="pid-list">
 				{pidTypes.map((pidType: PIDType) => (
 					<PIDRow
@@ -138,6 +150,21 @@ const CitationEditor = (props: CitationEditorProps) => {
 						validate={props.checkCitationPID}
 					/>
 				))}
+			</div>
+			<div className="citation-source-info">
+				<h4>{"Source"}</h4>
+				<div className="citations-box-list-container">
+					<div className="row">
+						{/* We disable the hover effects this way */}
+						<div className="box" {...{ disabled: "true" }}>
+							<span
+								className="icon icon-css icon-item-type"
+								data-item-type={props.sourceType}
+							></span>
+							<span className="label">{props.sourceLabel}</span>
+						</div>
+					</div>
+				</div>
 			</div>
 			<div id="citation-editor-buttons">
 				<button

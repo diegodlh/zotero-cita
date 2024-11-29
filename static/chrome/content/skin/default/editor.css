@@ -8,6 +8,11 @@ window#citation-editor {
 	--editable-text-padding-block: 4px;
 	--editable-text-tight-padding-inline: 4px;
 	--editable-text-tight-padding-block: 2px;
+	--zotero-font-size: 1rem;
+}
+
+#citation-editor h4 {
+	margin-block: 0em;
 }
 
 div#citation-editor-container {

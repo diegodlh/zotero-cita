@@ -16,6 +16,8 @@ let citation: Citation;
 } = (window as any).arguments[0]);
 const retVals: { item?: Zotero.Item } = (window as any).arguments[1];
 let newItem: ItemWrapper;
+let sourceLabel: string;
+let sourceType: Zotero.Item.ItemType;
 
 function onCancel() {
 	retVals.item = undefined;
@@ -45,10 +47,15 @@ window.addEventListener("load", () => {
 	document.title = Wikicite.getString("wikicite.editor.title");
 	newItem = new ItemWrapper();
 	newItem.fromJSON(citation.target.toJSON());
+	sourceLabel = citation.source.getLabel();
+	sourceType = citation.source.item.itemType;
 
 	const container = document.getElementById(
 		"citation-editor-item-box-container",
 	)!;
+	const itemBoxLabel = document.createElement("h4");
+	itemBoxLabel.textContent = "Target"; //Wikicite.getString("wikicite.editor.title");
+	container.appendChild(itemBoxLabel);
 	// "item-box" was renamed to "info-box" in Zotero 7.0.10. We compare to 7.0.9 to include the beta versions.
 	const tagName =
 		compareSemVer(Zotero.version, "7.0.9") === 1 ? "info-box" : "item-box";
@@ -69,6 +76,8 @@ window.addEventListener("load", () => {
 		<CitationEditor
 			checkCitationPID={checkPID}
 			item={newItem}
+			sourceLabel={sourceLabel}
+			sourceType={sourceType}
 			itemBox={itemBox}
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}

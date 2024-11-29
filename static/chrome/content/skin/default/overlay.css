@@ -85,7 +85,8 @@
 }
 
 .citations-box-list-container .row .toolbarbutton-icon,
-.pid-list .meta-row .toolbarbutton-icon {
+.pid-list .meta-row .toolbarbutton-icon,
+.citation-editor-footer .toolbarbutton-icon {
 	fill: currentColor;
 	width: 16px;
 	height: 16px;
