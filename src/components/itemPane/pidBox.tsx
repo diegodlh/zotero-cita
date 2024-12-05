@@ -1,7 +1,6 @@
 /* License */
 import * as React from "react";
 import PIDRow from "../pidRow";
-import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import PID from "../../cita/PID";
 import ItemWrapper from "../../cita/itemWrapper";
 import Citation from "../../cita/citation";
