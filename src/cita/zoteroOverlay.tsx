@@ -689,10 +689,12 @@ class ZoteroOverlay {
 				setL10nArgs(`{"citationCount": "${citationCount}"}`);
 			},
 			onItemChange: ({ item, setEnabled }) => {
-				this.setSourceItem(
-					new SourceItemWrapper(item, prefs.getStorage()),
-				);
 				setEnabled(item.isRegularItem());
+				if (item.isRegularItem()) {
+					this.setSourceItem(
+						new SourceItemWrapper(item, prefs.getStorage()),
+					);
+				}
 			},
 		});
 	}
