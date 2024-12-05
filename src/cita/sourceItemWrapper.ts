@@ -498,7 +498,7 @@ class SourceItemWrapper extends ItemWrapper {
 			parentWindow?: Window;
 			skipCitation?: Citation;
 		},
-	) {
+	): boolean {
 		const cleanPID = new PID(type, value).cleaned();
 		let conflict = "";
 		if (cleanPID) {

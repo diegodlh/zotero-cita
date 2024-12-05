@@ -61,6 +61,8 @@ class ZoteroOverlay {
 	numCitationsColumnID?: string | false;
 	_sourceItem?: SourceItemWrapper;
 	_citationIndex?: number;
+	_shownPIDs = new Set<PIDType>();
+	pidChangeCallback?: (shownPIDs: Set<PIDType>) => void;
 	preferenceUpdateObservers?: symbol[];
 
 	/******************************************/
@@ -748,7 +750,7 @@ class ZoteroOverlay {
 					<PIDBoxContainer
 						key={"pidBox-" + item.id}
 						item={item}
-						onPIDChange={(hidden) => {
+						onNoPIDsLeftToShow={(hidden) => {
 							setSectionButtonStatus("add-pid", {
 								disabled: hidden,
 								hidden: hidden,
@@ -761,23 +763,9 @@ class ZoteroOverlay {
 						}
 					/>,
 				);
-
-				const sourceItem = new SourceItemWrapper(
-					item,
-					prefs.getStorage(),
-				);
-				const showAddPIDButton = sourceItem.validPIDTypes.some(
-					(pidType: PIDType) =>
-						sourceItem.getPID(pidType) == null &&
-						!PID.alwaysShown.includes(pidType),
-				);
-
-				setSectionButtonStatus("add-pid", {
-					disabled: !item.isEditable() || !showAddPIDButton,
-					hidden: !item.isEditable() || !showAddPIDButton,
-				});
 			},
 			onItemChange: ({ item, setEnabled }) => {
+				// setSourceItem is already called for the citations pane
 				setEnabled(item.isRegularItem());
 			},
 		});
@@ -1236,7 +1224,7 @@ class ZoteroOverlay {
 		const pidRowMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
 			"pid-row-add-menu",
-			PID.showable.map((pidType) => {
+			[...PID.showable].map((pidType) => {
 				return {
 					attributes: {
 						id: `pid-row-add-${pidType}`,
@@ -1245,43 +1233,14 @@ class ZoteroOverlay {
 					listeners: {
 						command: (event: Event) => {
 							event.preventDefault();
-							document
-								.getElementById(`pid-row-${pidType}`)!
-								.classList.remove("hidden");
-							(
-								document.getElementById(
-									`pid-row-add-${pidType}`,
-								) as unknown as XULMenuItemElement
-							).hidden = true;
-							if (
-								// if all the menu items are hidden (ie. all the rows are shown) - hide the + button
-								Array.from(
-									document.getElementById("pid-row-add-menu")!
-										.children!,
-								).every(
-									(menuItem) =>
-										(
-											menuItem as unknown as XULMenuItemElement
-										).hidden,
-								)
-							) {
-								const addPIDButton =
-									document.getElementsByClassName(
-										"add-pid", // The "type" of the section button
-									)[0] as unknown as XULButtonElement;
-								addPIDButton.hidden = true;
-								addPIDButton.disabled = true;
-							}
+							this.showPID(pidType);
 						},
 					},
 					isHidden: () => {
+						// If the PID row is already shown or the source item doesn't support it, hide the menu item
 						return (
-							!this._sourceItem!.validPIDTypes.includes(
-								pidType,
-							) ||
-							!document
-								.getElementById(`pid-row-${pidType}`)
-								?.classList.contains("hidden")
+							this._shownPIDs.has(pidType) ||
+							!this._sourceItem!.validPIDTypes.has(pidType)
 						);
 					},
 				};
@@ -1294,6 +1253,27 @@ class ZoteroOverlay {
 	// Fixme: make zoteroOverlay a class and this a getter/setter property
 	setSourceItem(sourceItem: SourceItemWrapper) {
 		this._sourceItem = sourceItem;
+	}
+
+	// Used only to sync the state from React to the overlay
+	setShownPIDs(pidTypes: Set<PIDType>) {
+		this._shownPIDs = pidTypes;
+	}
+
+	showPID(pidType: PIDType) {
+		this._shownPIDs.add(pidType);
+		this.notifyPIDChanges();
+	}
+
+	// Method to register a callback for PID changes
+	onPIDChange(callback?: (pidTypes: Set<PIDType>) => void) {
+		this.pidChangeCallback = callback;
+	}
+
+	notifyPIDChanges() {
+		if (this.pidChangeCallback) {
+			this.pidChangeCallback(this._shownPIDs);
+		}
 	}
 
 	setCitationIndex(citationIndex: number) {

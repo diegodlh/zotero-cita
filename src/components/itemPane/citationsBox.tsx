@@ -19,14 +19,12 @@ interface CitationsBoxProps {
 
 function CitationsBox(props: CitationsBoxProps) {
 	const [citations, setCitations] = useState([] as Citation[]);
-	const [pidTypes, setPidTypes] = useState([] as PIDType[]);
 	const [sortedIndices, setSortedIndices] = useState([] as number[]);
 	const [hasAttachments, setHasAttachments] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
-		setPidTypes(props.sourceItem.validPIDTypes);
 		setHasAttachments(
 			Boolean(props.sourceItem.item.getAttachments().length),
 		);

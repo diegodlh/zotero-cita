@@ -10,6 +10,7 @@ import Semantic from "./semantic";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 import PID from "./PID";
+import "core-js/proposals/set-methods-v2";
 
 // maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
@@ -111,29 +112,50 @@ export default class ItemWrapper {
 		);
 	}
 
-	get validPIDTypes(): PIDType[] {
-		const pidTypes: PIDType[] = [];
-		for (const type of PID.showable) {
+	/**
+	 * All PID Types that are valid for the item type
+	 */
+	get validPIDTypes(): Set<PIDType> {
+		const pidTypes = new Set<PIDType>();
+		for (const type of PID.allTypes) {
 			switch (type) {
 				case "ISBN":
 					if (this.isValidField(type)) {
-						pidTypes.push(type);
+						pidTypes.add(type);
 					}
 					break;
 				case "arXiv":
 					if (this.item.itemType === "preprint") {
-						pidTypes.push(type);
+						pidTypes.add(type);
 					}
 					break;
 				default:
-					pidTypes.push(type);
+					pidTypes.add(type);
 			}
 		}
 		return pidTypes;
 	}
 
+	/**
+	 * All PID Types that the item has a PID for
+	 */
+	get availablePIDTypes(): Set<PIDType> {
+		const pidTypes = new Set<PIDType>();
+		for (const type of PID.allTypes) {
+			if (this.getPID(type)) pidTypes.add(type);
+		}
+		return pidTypes;
+	}
+
+	/**
+	 * All PID Types that the item has a PID for and are valid for the item type
+	 */
+	get validAvailablePIDTypes(): Set<PIDType> {
+		return this.validPIDTypes.intersection(this.availablePIDTypes);
+	}
+
 	canFetchPid(type: PIDType) {
-		return PID.fetchable.includes(type);
+		return PID.fetchable.has(type);
 	}
 
 	async fetchPID(type: PIDType, autosave = true) {

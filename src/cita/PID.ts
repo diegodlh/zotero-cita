@@ -123,7 +123,7 @@ export default class PID {
 		return rawID ? `${this.type}:${rawID}` : undefined;
 	}
 
-	static readonly allTypes: PIDType[] = [
+	static readonly allTypes: Set<PIDType> = new Set([
 		"DOI",
 		"ISBN",
 		"QID",
@@ -134,9 +134,9 @@ export default class PID {
 		"CorpusID",
 		"PMID",
 		"PMCID",
-	];
+	]);
 
-	static readonly showable: PIDType[] = [
+	static readonly showable: Set<PIDType> = new Set([
 		"DOI",
 		"ISBN",
 		"QID",
@@ -145,17 +145,17 @@ export default class PID {
 		"OpenAlex",
 		"CorpusID",
 		// Don't show PMID or PMCID because we can't fetch citations from them
-	];
+	]);
 
-	static readonly alwaysShown: PIDType[] = ["DOI", "QID"];
+	static readonly alwaysShown: Set<PIDType> = new Set(["DOI", "QID"]);
 
-	static readonly fetchable: PIDType[] = [
+	static readonly fetchable: Set<PIDType> = new Set([
 		"QID",
 		"OMID",
 		"OpenAlex",
 		"DOI",
 		"CorpusID",
-	];
+	]);
 
 	static isEqual(a: PID, b: PID): boolean {
 		if (a.type !== b.type) return false;

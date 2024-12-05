@@ -5,17 +5,31 @@ import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 import { ErrorBoundary } from "react-error-boundary";
 import PIDBox from "../components/itemPane/pidBox.js";
+import "core-js/proposals/set-methods-v2";
+import PID from "../cita/PID.js";
+import ZoteroOverlay from "../cita/zoteroOverlay.js";
 
 function PIDBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
-	onPIDChange: (hidden: boolean) => void;
+	onNoPIDsLeftToShow: (hidden: boolean) => void;
 }) {
 	const [sourceItem, setSourceItem] = useState(
 		// If the initial state is the result of an expensive computation,
 		// one may provide a function instead, which will be executed only on the initial render.
 		() => new SourceItemWrapper(props.item, prefs.getStorage()),
 	);
+
+	// PID visibility state (single source of truth)
+	const [shownPIDs, setShownPIDs] = useState(new Set<PIDType>());
+
+	// Display all PIDs that are showable, available, and valid for the item, as well as those that should always be shown
+	useEffect(() => {
+		const initialShown = PID.alwaysShown.union(
+			PID.showable.intersection(sourceItem.validAvailablePIDTypes),
+		);
+		setShownPIDs(initialShown);
+	}, [sourceItem]);
 
 	useEffect(() => {
 		const observer = {
@@ -63,11 +77,31 @@ function PIDBoxContainer(props: {
 		};
 	}, [props.item]);
 
+	// Sync state with Zotero overlay
 	useEffect(() => {
-		Zotero[config.addonInstance].data.zoteroOverlay.setSourceItem(
-			sourceItem,
-		);
-	}, [sourceItem]);
+		const zoteroOverlay = Zotero[config.addonInstance].data
+			.zoteroOverlay as ZoteroOverlay;
+		zoteroOverlay.setShownPIDs(shownPIDs);
+
+		// Register a callback to sync overlay changes back to React.
+		const handlePIDChange = (updatedShownPIDs: Set<PIDType>) => {
+			setShownPIDs(new Set(updatedShownPIDs)); // Update React state with overlay changes.
+		};
+
+		zoteroOverlay.onPIDChange(handlePIDChange);
+
+		// We handle the case where no PIDs are left to show in the PIDBox component itself
+		const noPIDsLeftToShow =
+			sourceItem.validPIDTypes
+				.intersection(PID.showable)
+				.difference(shownPIDs).size === 0;
+		props.onNoPIDsLeftToShow(noPIDsLeftToShow);
+
+		return () => {
+			// Cleanup if necessary
+			zoteroOverlay.onPIDChange(undefined); // Deregister callback when component unmounts.
+		};
+	}, [shownPIDs]);
 
 	return (
 		<ErrorBoundary
@@ -78,8 +112,11 @@ function PIDBoxContainer(props: {
 		>
 			<PIDBox
 				editable={props.editable}
-				sourceItem={sourceItem}
-				onPIDChange={props.onPIDChange}
+				autosave={true}
+				item={sourceItem}
+				shownPIDs={shownPIDs}
+				setShownPIDs={setShownPIDs}
+				checkPID={sourceItem.checkPID}
 			/>
 		</ErrorBoundary>
 	);

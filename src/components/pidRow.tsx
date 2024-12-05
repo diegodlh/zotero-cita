@@ -5,34 +5,21 @@ import ItemWrapper from "../cita/itemWrapper";
 import Wikicite, { debug } from "../cita/wikicite";
 import PID from "../cita/PID";
 import ToolbarButton from "./itemPane/toolbarButton";
-import { set } from "lodash";
 
 interface PIDRowProps {
 	autosave: boolean;
 	editable: boolean;
 	item: ItemWrapper;
 	type: PIDType;
-	pidTypes: PIDType[];
-	pidDidChange?: () => void;
+	removePIDRow: (type: PIDType) => void;
 	validate: (type: PIDType, value: string) => boolean;
 }
 
 function PIDRow(props: PIDRowProps) {
 	const [value, setValue] = useState(props.item.getPID(props.type));
 	const [url, setUrl] = useState(props.item.getPidUrl(props.type));
-	const [showRow, setShowRow] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const rowRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		// We set this only once on the first render
-		// Show the row if the PID has a value, the type is QID, or DOI is a valid field
-		setShowRow(
-			!!value ||
-				props.type === "QID" ||
-				(props.type === "DOI" && props.item.isValidField(props.type)),
-		);
-	}, []);
 
 	useEffect(() => {
 		setValue(props.item.getPID(props.type));
@@ -61,10 +48,7 @@ function PIDRow(props: PIDRowProps) {
 
 	function deletePid() {
 		handleCommit("");
-		if (!PID.alwaysShown.includes(props.type)) {
-			setShowRow(false);
-		}
-		props.pidDidChange?.();
+		props.removePIDRow(props.type);
 	}
 
 	async function onFetch(e: React.MouseEvent) {
@@ -78,11 +62,7 @@ function PIDRow(props: PIDRowProps) {
 	}
 
 	return (
-		<div
-			className={`meta-row${showRow ? "" : " hidden"}`}
-			id={`pid-row-${props.type}`}
-			ref={rowRef}
-		>
+		<div className={`meta-row`} id={`pid-row-${props.type}`} ref={rowRef}>
 			<div className="meta-label">
 				<label className="key pid-label">{props.type}</label>
 			</div>
@@ -110,7 +90,11 @@ function PIDRow(props: PIDRowProps) {
 					className="zotero-clicky zotero-clicky-minus show-on-hover no-display"
 					tabIndex={0}
 					onClick={deletePid}
-					title={Zotero.getString("general.remove")}
+					title={
+						PID.alwaysShown.has(props.type)
+							? Zotero.getString("general.delete")
+							: Zotero.getString("general.remove")
+					}
 					imgSrc="chrome://zotero/skin/16/universal/minus-circle.svg"
 				/>
 				{props.item.canFetchPid(props.type) && !value?.id && (

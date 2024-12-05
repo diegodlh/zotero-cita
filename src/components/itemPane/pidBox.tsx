@@ -1,30 +1,35 @@
 /* License */
 import * as React from "react";
-import { useEffect, useState, useRef } from "react";
 import PIDRow from "../pidRow";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import PID from "../../cita/PID";
+import ItemWrapper from "../../cita/itemWrapper";
+import Citation from "../../cita/citation";
 
 interface PIDBoxProps {
 	editable: boolean;
-	sourceItem: SourceItemWrapper;
-	onPIDChange: (hidden: boolean) => void;
+	autosave: boolean;
+	item: ItemWrapper;
+	readonly shownPIDs: Set<PIDType>;
+	setShownPIDs: React.Dispatch<React.SetStateAction<Set<PIDType>>>;
+	checkPID: (
+		type: PIDType,
+		value: string,
+		options: {
+			alert: boolean;
+			parentWindow?: Window;
+			skipCitation?: Citation;
+		},
+	) => boolean;
 }
 
 function PIDBox(props: PIDBoxProps) {
-	const [pidTypes, setPIDTypes] = useState(PID.alwaysShown);
-
-	useEffect(() => {
-		setPIDTypes(props.sourceItem.validPIDTypes);
-	}, [props.sourceItem]);
-
-	function pidDidChange() {
-		const extraPIDsToShow = pidTypes.some(
-			(pidType: PIDType) =>
-				props.sourceItem.getPID(pidType) == null &&
-				!PID.alwaysShown.includes(pidType),
-		);
-		props.onPIDChange(!extraPIDsToShow);
+	// Remove a PID from the list of shown PIDs
+	function removePIDRow(pidType: PIDType) {
+		if (PID.alwaysShown.has(pidType)) return;
+		const newShownPIDs = props.shownPIDs;
+		newShownPIDs.delete(pidType);
+		props.setShownPIDs(new Set(newShownPIDs));
 	}
 
 	return (
@@ -36,17 +41,16 @@ function PIDBox(props: PIDBoxProps) {
 					// consider having a pidBox component and
 					// redefining Wikicite.getExtraField to allow multiple fieldnames as input
 					// and return a fieldName: [values]} object instead
-					pidTypes.map((pidType: PIDType) => (
+					[...props.shownPIDs].map((pidType: PIDType) => (
 						<PIDRow
-							autosave={true}
+							autosave={props.autosave}
 							editable={props.editable}
-							item={props.sourceItem}
+							item={props.item}
 							key={pidType}
 							type={pidType}
-							pidTypes={pidTypes}
-							pidDidChange={pidDidChange}
+							removePIDRow={removePIDRow}
 							validate={(type: PIDType, value: string) =>
-								props.sourceItem.checkPID(type, value, {
+								props.checkPID(type, value, {
 									alert: true,
 									// fix: this once we know how
 									// parentWindow: window,

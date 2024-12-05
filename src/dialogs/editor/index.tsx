@@ -21,6 +21,8 @@ const retVals: { item?: Zotero.Item } = (window as any).arguments[1];
 let newItem: ItemWrapper;
 let sourceLabel: string;
 let sourceType: Zotero.Item.ItemType;
+let _shownPIDs: Set<PIDType>;
+let pidChangeCallback: ((pidTypes: Set<PIDType>) => void) | undefined;
 
 function onCancel() {
 	retVals.item = undefined;
@@ -56,7 +58,7 @@ function pidRowPopupMenu(
 	const pidRowMenu = WikiciteChrome.createXULMenuPopup(
 		doc,
 		"pid-row-add-menu",
-		PID.showable.map((pidType) => {
+		[...PID.showable].map((pidType) => {
 			return {
 				attributes: {
 					id: `pid-row-add-${pidType}`,
@@ -65,40 +67,14 @@ function pidRowPopupMenu(
 				listeners: {
 					command: (event: Event) => {
 						event.preventDefault();
-						document
-							.getElementById(`pid-row-${pidType}`)!
-							.classList.remove("hidden");
-						(
-							document.getElementById(
-								`pid-row-add-${pidType}`,
-							) as unknown as XULMenuItemElement
-						).hidden = true;
-						if (
-							// if all the menu items are hidden (ie. all the rows are shown) - hide the + button
-							Array.from(
-								document.getElementById("pid-row-add-menu")!
-									.children!,
-							).every(
-								(menuItem) =>
-									(menuItem as unknown as XULMenuItemElement)
-										.hidden,
-							)
-						) {
-							const addPIDButton =
-								document.getElementsByClassName(
-									"add-pid", // The "type" of the section button
-								)[0] as unknown as XULButtonElement;
-							addPIDButton.hidden = true;
-							addPIDButton.disabled = true;
-						}
+						showPID(pidType);
 					},
 				},
 				isHidden: () => {
+					// If the PID row is already shown or the source item doesn't support it, hide the menu item
 					return (
-						!sourceItem!.validPIDTypes.includes(pidType) ||
-						!document
-							.getElementById(`pid-row-${pidType}`)
-							?.classList.contains("hidden")
+						_shownPIDs.has(pidType) ||
+						!sourceItem!.validPIDTypes.has(pidType)
 					);
 				},
 			};
@@ -106,6 +82,27 @@ function pidRowPopupMenu(
 	);
 
 	mainWindow.appendChild(pidRowMenu);
+}
+
+// Used only to sync the state from React to the overlay
+function setShownPIDs(pidTypes: Set<PIDType>) {
+	_shownPIDs = pidTypes;
+}
+
+function showPID(pidType: PIDType) {
+	_shownPIDs.add(pidType);
+	notifyPIDChanges();
+}
+
+// Method to register a callback for PID changes
+function onPIDChange(callback?: (pidTypes: Set<PIDType>) => void) {
+	pidChangeCallback = callback;
+}
+
+function notifyPIDChanges() {
+	if (pidChangeCallback) {
+		pidChangeCallback(_shownPIDs);
+	}
 }
 
 window.addEventListener("load", () => {
@@ -151,6 +148,8 @@ window.addEventListener("load", () => {
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}
 			onSave={onSave}
+			editorOnPIDChange={onPIDChange}
+			editorSetShownPIDs={setShownPIDs}
 		/>,
 	);
 });
