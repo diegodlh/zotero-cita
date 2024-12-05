@@ -183,7 +183,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 				item={props.item}
 				shownPIDs={shownPIDs}
 				setShownPIDs={setShownPIDs}
-				checkPID={props.checkCitationPID}
+				checkPID={(type, value) => props.checkCitationPID(type, value)}
 			/>
 			<div className="citation-source-info">
 				<h4>{"Source"}</h4>

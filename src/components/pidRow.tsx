@@ -101,7 +101,7 @@ function PIDRow(props: PIDRowProps) {
 					<ToolbarButton
 						className="zotero-clicky show-on-hover no-display"
 						tabIndex={0}
-						onClick={onFetch}
+						onClick={(e) => onFetch(e)}
 						title={Wikicite.formatString(
 							"wikicite.citations-pane.pid-row.fetch-pid",
 							props.type,

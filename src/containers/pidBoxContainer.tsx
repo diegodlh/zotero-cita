@@ -116,7 +116,9 @@ function PIDBoxContainer(props: {
 				item={sourceItem}
 				shownPIDs={shownPIDs}
 				setShownPIDs={setShownPIDs}
-				checkPID={sourceItem.checkPID}
+				checkPID={(type, value, options) => {
+					return sourceItem.checkPID(type, value, options);
+				}}
 			/>
 		</ErrorBoundary>
 	);
