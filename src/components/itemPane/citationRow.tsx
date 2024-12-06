@@ -72,12 +72,7 @@ function CitationRow(props: CitationRowProps) {
 
 	// Clamp citation labels to maxLineCount lines initially
 	useEffect(() => {
-		if (labelRef.current) {
-			labelRef.current.style.setProperty(
-				"-webkit-line-clamp",
-				maxLineCount.toString(),
-			);
-		}
+		resetLineCount();
 	}, [citation, maxLineCount]);
 
 	// Function to calculate the number of lines in the label element
@@ -107,8 +102,6 @@ function CitationRow(props: CitationRowProps) {
 	useResizeObserver(containerRef, debounce(calculateLineCount, 100));
 
 	// MARK: Drag and drop handling
-
-	const ref = useRef<HTMLDivElement>(null);
 
 	// Drag handlers
 	const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -221,7 +214,6 @@ function CitationRow(props: CitationRowProps) {
 	return (
 		<div
 			className="row"
-			ref={ref}
 			onMouseEnter={freezeLineCount}
 			onMouseLeave={resetLineCount}
 			onDragStart={handleDragStart}
