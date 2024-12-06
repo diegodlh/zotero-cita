@@ -2,7 +2,6 @@
 import * as React from "react";
 import { useEffect, useState, useRef } from "react";
 import Wikicite, { debug } from "../../cita/wikicite";
-import PIDRow from "../pidRow";
 import Citation from "../../cita/citation";
 import SourceItemWrapper from "../../cita/sourceItemWrapper";
 import { config } from "../../../package.json";
@@ -19,55 +18,53 @@ interface CitationsBoxProps {
 
 function CitationsBox(props: CitationsBoxProps) {
 	const [citations, setCitations] = useState([] as Citation[]);
-	const [sortedIndices, setSortedIndices] = useState([] as number[]);
-	const [hasAttachments, setHasAttachments] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		setCitations(props.sourceItem.citations);
-		setHasAttachments(
-			Boolean(props.sourceItem.item.getAttachments().length),
-		);
 	}, [props.sourceItem]);
 
-	useEffect(() => {
+	function sortIndices(sortBy: string, citations: Citation[]) {
 		const items: {
 			index: number;
 			value: string | number | Date | undefined;
-		}[] = props.sourceItem.citations.map(
-			(citation: Citation, index: number) => {
-				let value;
-				switch (props.sortBy) {
-					case "ordinal": {
-						value = index;
-						break;
-					}
-					case "authors": {
-						value = citation.target.item.getField("firstCreator");
-						break;
-					}
-					case "date": {
-						const date = Zotero.Date.strToISO(
-							citation.target.item.getField("date"),
-						);
-						if (date) {
-							// strToISO could return a string or false
-							value = new Date(date);
-						}
-						break;
-					}
-					case "title": {
-						value = citation.target.title;
-						break;
-					}
-					default:
+		}[] = citations.map((citation: Citation, index: number) => {
+			let value;
+			switch (sortBy) {
+				case "ordinal": {
+					value = index;
+					break;
 				}
-				return { index: index, value: value };
-			},
-		);
+				case "authors": {
+					value = citation.target.item.getField("firstCreator");
+					break;
+				}
+				case "date": {
+					const date = Zotero.Date.strToISO(
+						citation.target.item.getField("date"),
+					);
+					if (date) {
+						// strToISO could return a string or false
+						value = new Date(date);
+					}
+					break;
+				}
+				case "title": {
+					value = citation.target.title;
+					break;
+				}
+				default:
+			}
+			return { index: index, value: value };
+		});
 		items.sort((a, b) => (a.value! > b.value! ? 1 : -1));
-		setSortedIndices(items.map((item) => item.index));
-	}, [props.sortBy, props.sourceItem]);
+		return items.map((item) => item.index);
+	}
+
+	const sortedIndices = React.useMemo(
+		() => sortIndices(props.sortBy, citations),
+		[props.sortBy, citations],
+	);
 
 	/**
 	 * Opens the citation editor window.
