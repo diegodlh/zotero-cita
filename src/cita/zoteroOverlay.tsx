@@ -1263,7 +1263,13 @@ class ZoteroOverlay {
 	}
 
 	showPID(pidType: PIDType) {
-		this._shownPIDs.add(pidType);
+		const newSet = this._shownPIDs;
+		newSet.add(pidType);
+
+		// We do this in a roundabout way to preserve the order of the PID rows (because the sets are actually ordered)
+		this._shownPIDs = PID.showable.difference(
+			PID.showable.difference(newSet),
+		);
 		this.notifyPIDChanges();
 	}
 

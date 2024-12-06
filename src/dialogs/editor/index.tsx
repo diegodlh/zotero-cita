@@ -90,7 +90,11 @@ function setShownPIDs(pidTypes: Set<PIDType>) {
 }
 
 function showPID(pidType: PIDType) {
-	_shownPIDs.add(pidType);
+	const newSet = _shownPIDs;
+	newSet.add(pidType);
+
+	// We do this in a roundabout way to preserve the order of the PID rows (because the sets are actually ordered)
+	_shownPIDs = PID.showable.difference(PID.showable.difference(newSet));
 	notifyPIDChanges();
 }
 

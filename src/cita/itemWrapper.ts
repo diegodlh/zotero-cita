@@ -158,6 +158,11 @@ export default class ItemWrapper {
 		return PID.fetchable.has(type);
 	}
 
+	/**
+	 * Fetch a PID for the item.
+	 * @param type The PID type to fetch
+	 * @param autosave Whether to save the item after fetching the PID
+	 */
 	async fetchPID(type: PIDType, autosave = true) {
 		if (!this.canFetchPid(type)) {
 			Services.prompt.alert(

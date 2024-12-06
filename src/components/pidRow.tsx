@@ -21,13 +21,15 @@ function PIDRow(props: PIDRowProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
-		// update the value of the input to match the new PID
-		const pid = props.item.getPID(props.type);
-		setPIDValue(pid);
-		if (inputRef.current) {
-			inputRef.current.value = pid?.id || "";
-		}
+		setPIDValue(props.item.getPID(props.type));
 	}, [props.item, props.type]);
+
+	useEffect(() => {
+		// update the value of the input to match the new PID
+		if (inputRef.current) {
+			inputRef.current.value = pidValue?.id || "";
+		}
+	}, [pidValue]);
 
 	function handleCommit(newPid: string) {
 		if (newPid !== pidValue?.id) {

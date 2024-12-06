@@ -23,13 +23,13 @@ function PIDBoxContainer(props: {
 	// PID visibility state (single source of truth)
 	const [shownPIDs, setShownPIDs] = useState(new Set<PIDType>());
 
-	// Display all PIDs that are showable, available, and valid for the item, as well as those that should always be shown
+	// Display all PIDs that are showable, available, and valid for the item type, as well as those that should always be shown
 	useEffect(() => {
 		const initialShown = PID.alwaysShown.union(
 			PID.showable.intersection(sourceItem.validAvailablePIDTypes),
 		);
 		setShownPIDs(initialShown);
-	}, [sourceItem]);
+	}, [sourceItem.type]);
 
 	useEffect(() => {
 		const observer = {
