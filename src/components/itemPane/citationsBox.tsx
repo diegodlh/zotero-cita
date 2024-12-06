@@ -17,12 +17,8 @@ interface CitationsBoxProps {
 }
 
 function CitationsBox(props: CitationsBoxProps) {
-	const [citations, setCitations] = useState([] as Citation[]);
+	const citations = props.sourceItem.citations;
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		setCitations(props.sourceItem.citations);
-	}, [props.sourceItem]);
 
 	function sortIndices(sortBy: string, citations: Citation[]) {
 		const items: {
@@ -103,14 +99,6 @@ function CitationsBox(props: CitationsBoxProps) {
 			debug("Edit cancelled by user.");
 			return;
 		}
-		if (
-			props.sourceItem.getPID("QID") &&
-			Wikicite.getExtraField(item, "QID").values[0]
-		) {
-			debug(
-				"Source and target items have QIDs! Offer syncing to Wikidata.",
-			);
-		}
 		citation.target.item = item;
 
 		const newCitations = props.sourceItem.citations;
@@ -168,7 +156,6 @@ function CitationsBox(props: CitationsBoxProps) {
 		const newCitations = Array.from(citations);
 		const [movedCitation] = newCitations.splice(dragIndex, 1);
 		newCitations.splice(dropIndex, 0, movedCitation);
-		setCitations(newCitations);
 		props.sourceItem.setCitations(newCitations);
 
 		// Reset hover effects
@@ -189,40 +176,6 @@ function CitationsBox(props: CitationsBoxProps) {
 		document.addEventListener("mousemove", removeHoverBlock);
 	}
 
-	function handleCitationSync(index: number) {
-		// Fixme: consider making this a Citation method
-		const citation = citations[index];
-		const syncable = citation.source.qid && citation.target.qid;
-		const oci = citation.getOCI("wikidata");
-		if (oci) {
-			if (oci.valid) {
-				citation.resolveOCI("wikidata");
-			} else {
-				// oci is invalid, i.e., citing or cited id do not match with
-				// local source or target id
-				Services.prompt.alert(
-					window as mozIDOMWindowProxy,
-					Wikicite.getString("wikicite.oci.mismatch.title"),
-					Wikicite.formatString("wikicite.oci.mismatch.message", [
-						oci.supplierName.charAt(0).toUpperCase() +
-							oci.supplierName.slice(1),
-						oci.idType.toUpperCase(),
-						oci.citingId,
-						oci.citedId,
-					]),
-				);
-			}
-		} else if (syncable) {
-			props.sourceItem.syncWithWikidata(index);
-		} else {
-			Services.prompt.alert(
-				window as mozIDOMWindowProxy,
-				Wikicite.getString("wikicite.citation.sync.error"),
-				Wikicite.getString("wikicite.citation.sync.error.qid"),
-			);
-		}
-	}
-
 	return (
 		<div className="citations-box">
 			<div className="citations-box-list-container" ref={containerRef}>
@@ -239,7 +192,6 @@ function CitationsBox(props: CitationsBoxProps) {
 						containerRef={containerRef}
 						handleCitationEdit={handleCitationEdit}
 						handleCitationDelete={handleCitationDelete}
-						handleCitationSync={handleCitationSync}
 						handleCitationMove={handleCitationMove}
 						onCitationPopup={props.onCitationPopup}
 					/>

@@ -21,7 +21,6 @@ interface CitationRowProps {
 	containerRef: React.RefObject<HTMLDivElement>;
 	handleCitationEdit: (index: number) => void;
 	handleCitationDelete: (index: number) => void;
-	handleCitationSync: (index: number) => void;
 	handleCitationMove: (
 		draggedIndex: number,
 		destinationIndex: number,
@@ -40,7 +39,6 @@ function CitationRow(props: CitationRowProps) {
 		containerRef,
 		handleCitationEdit,
 		handleCitationDelete,
-		handleCitationSync,
 		handleCitationMove,
 		onCitationPopup,
 	} = props;
@@ -242,7 +240,7 @@ function CitationRow(props: CitationRowProps) {
 					<LinkButton citation={citation} />
 					<WikidataButton
 						citation={citation}
-						onClick={() => handleCitationSync(index)}
+						onClick={() => citation.wikidataSync()}
 					/>
 					{/* Remove button */}
 					<ToolbarButton
