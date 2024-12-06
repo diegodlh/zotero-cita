@@ -69,12 +69,17 @@
 .citations-box-list-container .row .box .label {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 10;
-	line-clamp: 10;
+	-webkit-line-clamp: var(--line-clamp, 10);
+	line-clamp: var(--line-clamp, 10);
 	width: 0; /* Allows the label to shrink */
 	flex: 1;
 	overflow: hidden;
 	padding-block: 2px;
+}
+
+.citations-box-list-container .row:hover .box .label {
+	-webkit-line-clamp: var(--hover-line-clamp, 10);
+	line-clamp: var(--hover-line-clamp, 10);
 }
 
 .citations-box-list-container .row toolbarbutton,

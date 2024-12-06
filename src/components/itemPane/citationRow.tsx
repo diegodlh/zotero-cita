@@ -53,25 +53,20 @@ function CitationRow(props: CitationRowProps) {
 	const labelRef = useRef<HTMLSpanElement>(null);
 	const [lineCount, setLineCount] = useState(maxLineCount);
 
-	// Event handlers for line count
-	const freezeLineCount = () => {
+	// Apply lineClamp styles via inline style (CSS variables)
+	useEffect(() => {
 		labelRef.current?.style.setProperty(
-			"-webkit-line-clamp",
+			"--hover-line-clamp",
 			lineCount.toString(),
 		);
-	};
+	}, [lineCount]);
 
-	const resetLineCount = () => {
+	useEffect(() => {
 		labelRef.current?.style.setProperty(
-			"-webkit-line-clamp",
+			"--line-clamp",
 			maxLineCount.toString(),
 		);
-	};
-
-	// Clamp citation labels to maxLineCount lines initially
-	useEffect(() => {
-		resetLineCount();
-	}, [citation, maxLineCount]);
+	}, [maxLineCount]);
 
 	// Function to calculate the number of lines in the label element
 	// and update the lineCount state accordingly
@@ -85,7 +80,7 @@ function CitationRow(props: CitationRowProps) {
 		}
 	}
 
-	// Intersection Observer to detect when the row becomes visible
+	// Recalculate line count when the label becomes visible
 	const [_ref, inView, entry] = useInView({
 		/* Optional options */
 		threshold: 0.1,
@@ -212,8 +207,6 @@ function CitationRow(props: CitationRowProps) {
 	return (
 		<div
 			className="row"
-			onMouseEnter={freezeLineCount}
-			onMouseLeave={resetLineCount}
 			onDragStart={handleDragStart}
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
