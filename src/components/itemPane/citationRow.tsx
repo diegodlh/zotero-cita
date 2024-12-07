@@ -81,7 +81,7 @@ function CitationRow(props: CitationRowProps) {
 	}
 
 	// Recalculate line count when the label becomes visible
-	const [_ref, inView, entry] = useInView({
+	const [rowRef, inView, entry] = useInView({
 		/* Optional options */
 		threshold: 0.1,
 		onChange(inView, entry) {
@@ -92,7 +92,14 @@ function CitationRow(props: CitationRowProps) {
 	});
 
 	// Recalculate line counts on resize
-	useResizeObserver(containerRef, debounce(calculateLineCount, 100));
+	useResizeObserver(
+		containerRef,
+		debounce(() => {
+			if (inView) {
+				calculateLineCount();
+			}
+		}, 200),
+	);
 
 	// MARK: Drag and drop handling
 
@@ -211,6 +218,7 @@ function CitationRow(props: CitationRowProps) {
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 			onDragEnd={handleDragEnd}
+			ref={rowRef}
 		>
 			{sortBy === "ordinal" && renderGrippy()}
 			<div
