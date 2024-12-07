@@ -26,6 +26,7 @@ function LinkButton(props: { citation: Citation }) {
 						`chrome://${config.addonRef}/content/skin/default/unlink.svg`
 					: "chrome://zotero/skin/16/universal/link.svg"
 			}
+			tabIndex={0}
 			onClick={linkUnlinkItem}
 			title={(key ? "Unlink" : "Link") + " Zotero item"}
 		/>

@@ -40,6 +40,7 @@ function WikidataButton(props: WikidataButtonProps) {
 		<ToolbarButton
 			className="zotero-clicky show-on-hover no-display"
 			onClick={props.onClick}
+			tabIndex={0}
 			imgSrc={imgSrc}
 			title={title}
 		/>

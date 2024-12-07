@@ -165,7 +165,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 				{showAddButton && (
 					<ToolbarButton
 						className="zotero-clicky add-pid"
-						tabIndex={1}
+						tabIndex={0}
 						title={Wikicite.getString("wikicite.editor.add")}
 						imgSrc="chrome://zotero/skin/16/universal/plus.svg"
 						onClick={(event) => {
