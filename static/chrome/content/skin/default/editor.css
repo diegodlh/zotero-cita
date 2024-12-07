@@ -21,20 +21,6 @@ window#citation-editor {
 	justify-content: space-between;
 }
 
-#pid-header .toolbarbutton {
-	outline: var(--color-focus-outer-border) solid
-		var(--width-focus-outer-border); /* Equivalent to focus-ring */
-	appearance: none;
-	-moz-appearance: none;
-	align-self: center;
-	height: auto;
-	width: auto;
-	padding: 1px;
-	border-radius: 2px;
-	display: flex;
-	box-sizing: border-box;
-}
-
 div#citation-editor-container {
 	display: grid;
 	height: 100%;

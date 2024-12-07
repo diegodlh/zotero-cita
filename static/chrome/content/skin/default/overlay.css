@@ -82,7 +82,6 @@
 	line-clamp: var(--hover-line-clamp, 10);
 }
 
-.citations-box-list-container .row toolbarbutton,
 .citations-box-list-container .row .toolbarbutton {
 	margin-inline-start: auto;
 	display: flex;
@@ -97,7 +96,6 @@
 	height: 16px;
 }
 
-.citations-box-list-container toolbarbutton.zotero-clicky-grippy,
 .citations-box-list-container .toolbarbutton.zotero-clicky-grippy {
 	/* hang grippy hang on the left side of the row, clickable area of row is extended with padding/margin combo */
 	margin-left: -20px;
@@ -149,7 +147,6 @@
 	display: flex;
 }
 
-.pid-list .meta-row .meta-data toolbarbutton,
 .pid-list .meta-row .meta-data .toolbarbutton {
 	margin-inline-start: 4px;
 }
@@ -202,17 +199,33 @@
 	width: 100%;
 }
 
-.pid-list .meta-row toolbarbutton,
-.pid-list .meta-row .toolbarbutton {
-	outline: var(--color-focus-outer-border) solid
-		var(--width-focus-outer-border); /* Equivalent to focus-ring */
+.pid-list .meta-row .toolbarbutton,
+#pid-header .toolbarbutton {
+	/* Needed to have the outline appear on all platforms */
 	appearance: none;
 	-moz-appearance: none;
 	align-self: center;
+	/* Make all buttons tighter to not stretch the rows */
 	height: auto;
 	width: auto;
 	padding: 1px;
 	border-radius: 2px;
 	display: flex;
 	box-sizing: border-box;
+}
+
+.pid-list .meta-row .toolbarbutton:focus-visible,
+#pid-header .toolbarbutton:focus-visible {
+	@media (-moz-platform: windows) {
+		outline: var(--color-focus-outer-border) solid
+			var(--width-focus-outer-border);
+		outline-offset: var(--width-focus-border);
+		box-shadow: 0 0 0 var(--width-focus-border) var(--color-focus-border);
+	}
+
+	@media not (-moz-platform: windows) {
+		/* fx115: Necessary to hide default focus ring */
+		outline: none;
+		box-shadow: 0 0 0 var(--width-focus-border) var(--color-focus-border);
+	}
 }
