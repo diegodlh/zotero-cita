@@ -37,6 +37,7 @@
 	"homepage": "https://github.com/diegodlh/zotero-cita",
 	"dependencies": {
 		"@react-hook/resize-observer": "^2.0.2",
+		"core-js": "^3.39.0",
 		"openalex-sdk": "^1.1.6",
 		"prop-types": "^15.7.2",
 		"quickstatements-to-wikibase-edit": "^1.2.1",
@@ -50,6 +51,7 @@
 		"zotero-plugin-toolkit": "^4.0.6"
 	},
 	"devDependencies": {
+		"@types/core-js": "^2.5.8",
 		"@types/language-tags": "^1.0.4",
 		"@types/lodash": "^4.17.9",
 		"@types/node": "^20.10.4",
