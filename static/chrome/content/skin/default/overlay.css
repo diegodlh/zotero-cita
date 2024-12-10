@@ -85,7 +85,7 @@
 
 .citations-box-list-container .cita-toolbarbutton.zotero-clicky-grippy {
 	/* hang grippy hang on the left side of the row, clickable area of row is extended with padding/margin combo */
-	margin-left: -20px;
+	margin-left: -20px !important;
 	position: absolute;
 }
 
