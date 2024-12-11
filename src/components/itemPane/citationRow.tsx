@@ -81,10 +81,10 @@ function CitationRow(props: CitationRowProps) {
 	}
 
 	// Recalculate line count when the label becomes visible
-	const [rowRef, inView, entry] = useInView({
+	const [rowInViewRef, inView, _entry] = useInView({
 		/* Optional options */
 		threshold: 0.1,
-		onChange(inView, entry) {
+		onChange(inView) {
 			if (inView) {
 				calculateLineCount();
 			}
@@ -103,26 +103,24 @@ function CitationRow(props: CitationRowProps) {
 
 	// MARK: Drag and drop handling
 
+	const [draggable, setDraggable] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
+
 	// Drag handlers
 	const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-		const row = e.currentTarget;
-
-		if (row.getAttribute("draggable") !== "true") {
+		if (!draggable) {
 			e.preventDefault();
 			e.stopPropagation();
 			return;
 		}
 
+		setIsDragging(true);
+
 		e.dataTransfer.setData(
 			"application/zotero-citation-index",
 			index.toString(),
 		);
-		e.dataTransfer.setDragImage(row, 15, 15);
-
-		setTimeout(() => {
-			row.classList.add("drag-hidden-citation");
-			row.classList.add("noHover");
-		});
+		e.dataTransfer.setDragImage(e.currentTarget, 15, 15);
 	};
 
 	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -169,15 +167,13 @@ function CitationRow(props: CitationRowProps) {
 		// Update the item after a small delay to avoid blinking
 		setTimeout(() => {
 			handleCitationMove(draggedIndex, destinationIndex);
-		}, 250);
+		}, 25);
 	};
 
 	const handleDragEnd = (e: React.DragEvent<Element>) => {
 		e.preventDefault();
-		// Un-hide the moved citation row
-		document
-			.querySelector(".drag-hidden-citation")
-			?.classList.remove("drag-hidden-citation", "noHover");
+		// Un-hide the dragged citation row
+		setIsDragging(false);
 
 		if (
 			document.activeElement &&
@@ -191,20 +187,12 @@ function CitationRow(props: CitationRowProps) {
 	function renderGrippy() {
 		if (sortBy !== "ordinal") return;
 
-		const handleMouseDown = (e: React.MouseEvent) => {
-			e.currentTarget.closest(".row")?.setAttribute("draggable", "true");
-		};
-
-		const handleMouseUp = (e: React.MouseEvent) => {
-			e.currentTarget.closest(".row")?.setAttribute("draggable", "false");
-		};
-
 		return (
 			<ToolbarButton
 				className="zotero-clicky zotero-clicky-grippy show-on-hover"
 				tabIndex={-1}
-				onMouseDown={handleMouseDown}
-				onMouseUp={handleMouseUp}
+				onMouseDown={() => setDraggable(true)}
+				onMouseUp={() => setDraggable(false)}
 				title="Drag"
 				imgSrc="chrome://zotero/skin/16/universal/grip.svg"
 			/>
@@ -213,12 +201,12 @@ function CitationRow(props: CitationRowProps) {
 
 	return (
 		<div
-			className="row"
+			className={isDragging ? "row drag-hidden-citation noHover" : "row"}
 			onDragStart={handleDragStart}
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 			onDragEnd={handleDragEnd}
-			ref={rowRef}
+			ref={rowInViewRef}
 		>
 			{sortBy === "ordinal" && renderGrippy()}
 			<div
