@@ -16,8 +16,9 @@
 .citations-box,
 .pid-box {
 	flex-grow: 1;
-	width: 330px;
 }
+
+/* Citation box */
 
 .citations-box-list-container .drag-hidden-citation {
 	opacity: 0;
@@ -69,55 +70,26 @@
 .citations-box-list-container .row .box .label {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 10;
-	line-clamp: 10;
+	-webkit-line-clamp: var(--line-clamp, 10);
+	line-clamp: var(--line-clamp, 10);
 	width: 0; /* Allows the label to shrink */
 	flex: 1;
 	overflow: hidden;
 	padding-block: 2px;
 }
 
-.citations-box-list-container .row toolbarbutton,
-.citations-box-list-container .row .toolbarbutton {
-	margin-inline-start: auto;
-	display: flex;
-	box-sizing: border-box;
+.citations-box-list-container .row:hover .box .label {
+	-webkit-line-clamp: var(--hover-line-clamp, 10);
+	line-clamp: var(--hover-line-clamp, 10);
 }
 
-.citations-box-list-container .row .toolbarbutton-icon,
-.pid-list .meta-row .toolbarbutton-icon {
-	fill: currentColor;
-	width: 16px;
-	height: 16px;
-}
-
-.citations-box-list-container toolbarbutton.zotero-clicky-grippy,
-.citations-box-list-container .toolbarbutton.zotero-clicky-grippy {
+.citations-box-list-container .cita-toolbarbutton.zotero-clicky-grippy {
 	/* hang grippy hang on the left side of the row, clickable area of row is extended with padding/margin combo */
-	margin-left: -20px;
+	margin-left: -20px !important;
 	position: absolute;
 }
 
-.citations-box-list-container
-	.row:not(:hover):not(:focus-within)
-	.show-on-hover,
-.citations-box-list-container .row.noHover .show-on-hover,
-.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover,
-.pid-list .meta-row.noHover .show-on-hover {
-	clip-path: inset(50%);
-}
-
-.citations-box-list-container
-	.row:not(:hover):not(:focus-within)
-	.show-on-hover.no-display,
-.citations-box-list-container .row.noHover .show-on-hover.no-display,
-.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover.no-display,
-.pid-list .meta-row.noHover .show-on-hover.no-display {
-	width: 0;
-	height: 0;
-	padding: 0;
-	position: absolute;
-}
+/* PID list */
 
 .pid-list {
 	display: grid;
@@ -143,26 +115,6 @@
 	display: flex;
 }
 
-.pid-list .meta-row .meta-data toolbarbutton,
-.pid-list .meta-row .meta-data .toolbarbutton {
-	margin-inline-start: 4px;
-}
-
-.toolbarbutton {
-	border-radius: 5px;
-	appearance: none;
-	flex-shrink: 0;
-	margin: 0;
-	color: var(--fill-secondary);
-	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
-	background-color: rgba(0, 0, 0, 0);
-}
-
-.toolbarbutton.zotero-clicky {
-	width: 20px;
-	height: 20px;
-}
-
 .pid-list .meta-row editable-text {
 	flex: 1;
 	max-width: 100%;
@@ -179,11 +131,6 @@
 	color: var(--fill-secondary);
 }
 
-.pid-list .meta-row .meta-label[fieldname^="creator"] {
-	justify-content: space-between;
-	align-items: center;
-}
-
 .pid-list .meta-row .meta-label > label {
 	margin-top: 2px;
 }
@@ -196,17 +143,91 @@
 	width: 100%;
 }
 
-.pid-list .meta-row toolbarbutton,
-.pid-list .meta-row .toolbarbutton {
-	outline: var(--color-focus-outer-border) solid
-		var(--width-focus-outer-border); /* Equivalent to focus-ring */
+/* Toolbar buttons */
+
+.cita-toolbarbutton {
+	border-radius: 5px;
+	appearance: none;
+	flex-shrink: 0;
+	margin: 0;
+	color: var(--fill-secondary);
+	-moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
+	background-color: rgba(0, 0, 0, 0);
+}
+
+.pid-list .meta-row .cita-toolbarbutton,
+#pid-header .cita-toolbarbutton {
+	/* This style applies to the toolbarbuttons on the PID rows and in the PID header of the citation editor */
+	/* Needed to have the outline appear on all platforms */
 	appearance: none;
 	-moz-appearance: none;
 	align-self: center;
+	/* Make all buttons tighter to not stretch the rows */
 	height: auto;
 	width: auto;
 	padding: 1px;
 	border-radius: 2px;
 	display: flex;
 	box-sizing: border-box;
+}
+
+@media (-moz-platform: windows) {
+	.cita-toolbarbutton:focus-visible {
+		outline: var(--color-focus-outer-border) solid
+			var(--width-focus-outer-border);
+		outline-offset: var(--width-focus-border);
+		box-shadow: 0 0 0 var(--width-focus-border) var(--color-focus-border);
+	}
+}
+
+@media not (-moz-platform: windows) {
+	.cita-toolbarbutton:focus-visible {
+		/* fx115: Necessary to hide default focus ring */
+		outline: none;
+		box-shadow: 0 0 0 var(--width-focus-border) var(--color-focus-border);
+	}
+}
+
+.pid-list .meta-row .meta-data .cita-toolbarbutton {
+	margin-inline-start: 4px;
+}
+
+.cita-toolbarbutton.zotero-clicky {
+	width: 20px;
+	height: 20px;
+}
+
+.citations-box-list-container .row .cita-toolbarbutton {
+	margin-inline-start: auto;
+	display: flex;
+	box-sizing: border-box;
+}
+
+.cita-toolbarbutton .toolbarbutton-icon {
+	fill: currentColor;
+	width: 16px;
+	height: 16px;
+}
+
+/* Show on hover */
+
+.citations-box-list-container
+	.row:not(:hover):not(:focus-within)
+	.show-on-hover,
+.citations-box-list-container .row.noHover .show-on-hover,
+.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover,
+.pid-list .meta-row.noHover .show-on-hover {
+	clip-path: inset(50%);
+}
+
+.citations-box-list-container
+	.row:not(:hover):not(:focus-within)
+	.show-on-hover.no-display,
+.citations-box-list-container .row.noHover .show-on-hover.no-display,
+.pid-list .meta-row:not(:hover):not(:focus-within) .show-on-hover.no-display,
+.pid-list .meta-row.noHover .show-on-hover.no-display {
+	width: 0;
+	height: 0;
+	padding: 0;
+	position: absolute;
 }

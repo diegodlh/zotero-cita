@@ -28,6 +28,7 @@ function ZoteroButton(props: { citation: Citation }) {
 			<ToolbarButton
 				className="zotero-clicky"
 				imgSrc={"chrome://zotero/skin/16/universal/show-item.svg"}
+				tabIndex={0}
 				onClick={goToLinkedItem}
 				title="Go to linked Zotero item"
 			/>
