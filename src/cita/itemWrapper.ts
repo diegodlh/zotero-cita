@@ -154,6 +154,12 @@ export default class ItemWrapper {
 		return this.validPIDTypes.intersection(this.availablePIDTypes);
 	}
 
+	get allTypesToShow(): Set<PIDType> {
+		return PID.alwaysShown.union(
+			PID.showable.intersection(this.validAvailablePIDTypes),
+		);
+	}
+
 	canFetchPid(type: PIDType) {
 		return PID.fetchable.has(type);
 	}

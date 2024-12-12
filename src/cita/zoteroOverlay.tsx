@@ -634,9 +634,7 @@ class ZoteroOverlay {
 				// so we need to keep track of each separate item pane's root so we can re-render it when the item changes
 				// we do this because each tab (library and every reader) has a unique tab_id that we can get by walking
 				// up the DOM from the body
-				const tab_id: string =
-					body.parentElement!.parentElement!.parentElement!
-						.parentElement!.parentElement!.parentElement!.id;
+				const tab_id: string = body.closest("item-details")!.id;
 				this.citationBoxRoots[tab_id] = createRoot(
 					body.firstChild! as Element,
 				);
@@ -652,9 +650,7 @@ class ZoteroOverlay {
 				if (!item.isRegularItem()) {
 					return;
 				}
-				const tab_id: string =
-					body.parentElement!.parentElement!.parentElement!
-						.parentElement!.parentElement!.parentElement!.id;
+				const tab_id: string = body.closest("item-details")!.id;
 				this.citationBoxRoots[tab_id].render(
 					<CitationsBoxContainer
 						key={"citationsBox-" + item.id}
@@ -730,9 +726,7 @@ class ZoteroOverlay {
 				},
 			],
 			onInit: ({ body }) => {
-				const tab_id: string =
-					body.parentElement!.parentElement!.parentElement!
-						.parentElement!.parentElement!.parentElement!.id;
+				const tab_id: string = body.closest("item-details")!.id;
 				this.pidBoxRoots[tab_id] = createRoot(
 					body.firstChild! as Element,
 				);
@@ -745,9 +739,7 @@ class ZoteroOverlay {
 				if (!item.isRegularItem()) {
 					return;
 				}
-				const tab_id: string =
-					body.parentElement!.parentElement!.parentElement!
-						.parentElement!.parentElement!.parentElement!.id;
+				const tab_id: string = body.closest("item-details")!.id;
 				this.pidBoxRoots[tab_id].render(
 					<PIDBoxContainer
 						key={"pidBox-" + item.id}
