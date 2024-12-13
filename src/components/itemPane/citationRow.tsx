@@ -73,7 +73,22 @@ function CitationRow(props: CitationRowProps) {
 	function calculateLineCount() {
 		if (labelRef.current) {
 			const computedStyle = window.getComputedStyle(labelRef.current);
-			const lineHeight = parseFloat(computedStyle?.lineHeight || "1");
+			const lineHeightStr = computedStyle?.lineHeight;
+			let lineHeight: number;
+			switch (lineHeightStr) {
+				case undefined:
+				case "normal": {
+					// Normal line height is 1.2 times the font size
+					const fontSize = parseFloat(
+						computedStyle?.fontSize || "16px",
+					);
+					lineHeight = fontSize * 1.2;
+					break;
+				}
+				default:
+					lineHeight = parseFloat(lineHeightStr);
+					break;
+			}
 			const elementHeight = labelRef.current.offsetHeight;
 			const calculatedLineCount = Math.round(elementHeight / lineHeight);
 			setLineCount(calculatedLineCount); // Update the state with the calculated line count
