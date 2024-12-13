@@ -2,17 +2,16 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import * as prefs from "../cita/preferences";
-import { config } from "../../package.json";
 import { ErrorBoundary } from "react-error-boundary";
 import PIDBox from "../components/itemPane/pidBox.js";
 import "core-js/proposals/set-methods-v2";
 import PID from "../cita/PID.js";
-import ZoteroOverlay from "../cita/zoteroOverlay.js";
 
 function PIDBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
-	onNoPIDsLeftToShow: (hidden: boolean) => void;
+	tabID: string;
+	setSectionButtonStatus: (hidden: boolean) => void;
 }) {
 	const [sourceItem, setSourceItem] = useState(
 		// If the initial state is the result of an expensive computation,
@@ -21,15 +20,15 @@ function PIDBoxContainer(props: {
 	);
 
 	// PID visibility state (single source of truth)
-	const [shownPIDs, setShownPIDs] = useState(new Set<PIDType>());
-
 	// Display all PIDs that are showable, available, and valid for the item type, as well as those that should always be shown
-	useEffect(() => {
-		const initialShown = PID.alwaysShown.union(
-			PID.showable.intersection(sourceItem.validAvailablePIDTypes),
-		);
-		setShownPIDs(initialShown);
-	}, [sourceItem.type]);
+	const [shownPIDs, setShownPIDs] = useState(sourceItem.allTypesToShow);
+
+	// Reset shownPIDs when the item type changes
+	const [prevType, setPrevType] = useState(sourceItem.type);
+	if (sourceItem.type !== prevType) {
+		setPrevType(sourceItem.type);
+		setShownPIDs(sourceItem.allTypesToShow);
+	}
 
 	useEffect(() => {
 		const observer = {
@@ -77,30 +76,46 @@ function PIDBoxContainer(props: {
 		};
 	}, [props.item]);
 
-	// Sync state with Zotero overlay
+	function addPIDRow(pidType: PIDType) {
+		const currentSet = shownPIDs;
+		currentSet.add(pidType);
+
+		// We do this in a roundabout way to preserve the order of the PID rows (because the sets are actually ordered)
+		const newSet = PID.showable.difference(
+			PID.showable.difference(currentSet),
+		);
+		setShownPIDs(newSet);
+	}
+
+	// Manage the PID add menu
 	useEffect(() => {
-		const zoteroOverlay = Zotero[config.addonInstance].data
-			.zoteroOverlay as ZoteroOverlay;
-		zoteroOverlay.setShownPIDs(shownPIDs);
+		const remainingShowablePIDs = sourceItem.validPIDTypes
+			.intersection(PID.showable)
+			.difference(shownPIDs);
 
-		// Register a callback to sync overlay changes back to React.
-		const handlePIDChange = (updatedShownPIDs: Set<PIDType>) => {
-			setShownPIDs(new Set(updatedShownPIDs)); // Update React state with overlay changes.
-		};
+		const pidAddMenu = document.getElementById(
+			"pid-row-add-menu-" + props.tabID,
+		);
+		if (pidAddMenu) {
+			// Remove all existing menu items
+			while (pidAddMenu.firstChild) {
+				pidAddMenu.removeChild(pidAddMenu.firstChild);
+			}
 
-		zoteroOverlay.onPIDChange(handlePIDChange);
+			// Add a menu item for each PID type that is showable but not yet shown
+			for (const pidType of remainingShowablePIDs) {
+				const menuItem = document.createXULElement("menuitem");
+				menuItem.setAttribute("label", pidType);
+				menuItem.addEventListener("command", () => {
+					addPIDRow(pidType);
+				});
+				pidAddMenu.appendChild(menuItem);
+			}
+		}
 
-		// We handle the case where no PIDs are left to show in the PIDBox component itself
-		const noPIDsLeftToShow =
-			sourceItem.validPIDTypes
-				.intersection(PID.showable)
-				.difference(shownPIDs).size === 0;
-		props.onNoPIDsLeftToShow(noPIDsLeftToShow);
-
-		return () => {
-			// Cleanup if necessary
-			zoteroOverlay.onPIDChange(undefined); // Deregister callback when component unmounts.
-		};
+		// Hide the add-pid button if no PIDs are left to show
+		const hideMenu = remainingShowablePIDs.size === 0;
+		props.setSectionButtonStatus(hideMenu);
 	}, [shownPIDs]);
 
 	return (

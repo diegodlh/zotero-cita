@@ -13,14 +13,12 @@ import SourceItemWrapper from "./sourceItemWrapper";
 import WikiciteChrome from "./wikiciteChrome";
 import Wikidata from "./wikidata";
 import { config } from "../../package.json";
-import ItemWrapper from "./itemWrapper";
 import * as prefs from "./preferences";
 import { Root, createRoot } from "react-dom/client";
 import { initLocale, getLocaleID } from "../utils/locale";
 import { getPrefGlobalName } from "../utils/prefs";
 import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
-import PID from "./PID";
 import { IndexerBase } from "./indexer";
 import PIDBoxContainer from "../containers/pidBoxContainer";
 
@@ -61,8 +59,6 @@ class ZoteroOverlay {
 	numCitationsColumnID?: string | false;
 	_sourceItem?: SourceItemWrapper;
 	_citationIndex?: number;
-	_shownPIDs = new Set<PIDType>();
-	pidChangeCallback?: (shownPIDs: Set<PIDType>) => void;
 	preferenceUpdateObservers?: symbol[];
 
 	/******************************************/
@@ -502,7 +498,6 @@ class ZoteroOverlay {
 		this.itemExportMenu(doc, mainWindow!);
 		this.itemMoreMenu(doc, mainWindow!);
 		this.citationPopupMenu(doc, mainWindow!);
-		this.pidRowPopupMenu(doc, mainWindow!);
 
 		// Add Citations tab to item pane
 		this.citationsPane();
@@ -696,10 +691,6 @@ class ZoteroOverlay {
 	}
 
 	async pidPane() {
-		const pidAddMenu = document.getElementById(
-			"pid-row-add-menu",
-		) as unknown as XULMenuPopupElement;
-
 		Zotero.ItemPaneManager.registerSection({
 			paneID: "zotero-editpane-pid-tab",
 			pluginID: config.addonID,
@@ -717,19 +708,24 @@ class ZoteroOverlay {
 					type: "add-pid",
 					l10nID: "section-button-add",
 					icon: "chrome://zotero/skin/16/universal/plus.svg",
-					onClick: (props) => {
+					onClick: ({ event, body }) => {
+						const tab_id: string = body.closest("item-details")!.id;
+						const pidAddMenu = document.getElementById(
+							"pid-row-add-menu-" + tab_id,
+						) as unknown as XULMenuPopupElement;
 						pidAddMenu.openPopup(
-							(props.event as CustomEvent).detail.button,
+							(event as CustomEvent).detail.button,
 							"after_end",
 						);
 					},
 				},
 			],
-			onInit: ({ body }) => {
+			onInit: ({ body, doc }) => {
 				const tab_id: string = body.closest("item-details")!.id;
 				this.pidBoxRoots[tab_id] = createRoot(
 					body.firstChild! as Element,
 				);
+				this.pidRowPopupMenu(doc, tab_id);
 			},
 			onRender: ({ body, item, setSectionButtonStatus }) => {
 				window.MozXULElement.insertFTLIfNeeded(
@@ -744,7 +740,8 @@ class ZoteroOverlay {
 					<PIDBoxContainer
 						key={"pidBox-" + item.id}
 						item={item}
-						onNoPIDsLeftToShow={(hidden) => {
+						tabID={tab_id}
+						setSectionButtonStatus={(hidden) => {
 							setSectionButtonStatus("add-pid", {
 								disabled: hidden,
 								hidden: hidden,
@@ -1214,31 +1211,11 @@ class ZoteroOverlay {
 	}
 
 	/** Popup menu for adding new PID rows */
-	pidRowPopupMenu(doc: Document, mainWindow: Element) {
+	pidRowPopupMenu(doc: Document, tabID: string) {
+		const mainWindow = doc.getElementById("main-window")!;
 		const pidRowMenu = WikiciteChrome.createXULMenuPopup(
 			doc,
-			"pid-row-add-menu",
-			[...PID.showable].map((pidType) => {
-				return {
-					attributes: {
-						id: `pid-row-add-${pidType}`,
-						label: pidType,
-					},
-					listeners: {
-						command: (event: Event) => {
-							event.preventDefault();
-							this.showPID(pidType);
-						},
-					},
-					isHidden: () => {
-						// If the PID row is already shown or the source item doesn't support it, hide the menu item
-						return (
-							this._shownPIDs.has(pidType) ||
-							!this._sourceItem!.validPIDTypes.has(pidType)
-						);
-					},
-				};
-			}),
+			"pid-row-add-menu-" + tabID,
 		);
 
 		mainWindow.appendChild(pidRowMenu);
@@ -1247,33 +1224,6 @@ class ZoteroOverlay {
 	// Fixme: make zoteroOverlay a class and this a getter/setter property
 	setSourceItem(sourceItem: SourceItemWrapper) {
 		this._sourceItem = sourceItem;
-	}
-
-	// Used only to sync the state from React to the overlay
-	setShownPIDs(pidTypes: Set<PIDType>) {
-		this._shownPIDs = pidTypes;
-	}
-
-	showPID(pidType: PIDType) {
-		const newSet = this._shownPIDs;
-		newSet.add(pidType);
-
-		// We do this in a roundabout way to preserve the order of the PID rows (because the sets are actually ordered)
-		this._shownPIDs = PID.showable.difference(
-			PID.showable.difference(newSet),
-		);
-		this.notifyPIDChanges();
-	}
-
-	// Method to register a callback for PID changes
-	onPIDChange(callback?: (pidTypes: Set<PIDType>) => void) {
-		this.pidChangeCallback = callback;
-	}
-
-	notifyPIDChanges() {
-		if (this.pidChangeCallback) {
-			this.pidChangeCallback(this._shownPIDs);
-		}
 	}
 
 	setCitationIndex(citationIndex: number) {
