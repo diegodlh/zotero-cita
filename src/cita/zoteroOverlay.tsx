@@ -21,6 +21,7 @@ import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
 import { IndexerBase } from "./indexer";
 import PIDBoxContainer from "../containers/pidBoxContainer";
+import { property } from "lodash";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
@@ -507,8 +508,6 @@ class ZoteroOverlay {
 	}
 
 	removeOverlay() {
-		this.removeOverlayStyleSheet();
-
 		// Unmount React roots
 		for (const rootID in this.citationBoxRoots) {
 			this.citationBoxRoots[rootID].unmount();
@@ -522,19 +521,15 @@ class ZoteroOverlay {
 
 	addOverlayStyleSheet() {
 		// todo: it should be possible to just import this and have esbuild work it out
-		// FIXME: the stylesheets are re-added each time the plugin is reloaded
 		// but I couldn't get that to work, so add the CSS manually.
-		const link = window.document.createElement("link");
-		link.id = `${config.addonRef}-overlay-stylesheet`;
-		link.rel = "stylesheet";
-		link.href = `chrome://${config.addonRef}/content/skin/default/overlay.css`;
+		const link = ztoolkit.UI.createElement(window.document, "link", {
+			properties: {
+				id: `${config.addonRef}-overlay-stylesheet`,
+				rel: "stylesheet",
+				href: `chrome://${config.addonRef}/content/skin/default/overlay.css`,
+			},
+		});
 		window.document.documentElement.appendChild(link);
-	}
-
-	removeOverlayStyleSheet() {
-		window.document
-			.getElementById(`${config.addonRef}-overlay-stylesheet`)
-			?.remove();
 	}
 
 	citationBoxRoots: {
