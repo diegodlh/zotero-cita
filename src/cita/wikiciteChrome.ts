@@ -1,11 +1,3 @@
-// import Wikicite from "./wikicite";
-
-declare global {
-	interface Document {
-		WikiciteXULRootElements: string[];
-	}
-}
-
 /******************************************/
 // Initialization
 /******************************************/
@@ -36,13 +28,14 @@ class WikiciteChrome {
 			isHidden?: (event: Event) => boolean;
 		}[],
 	) {
-		const menuPopup = ztoolkit.UI.createElement(doc, "menupopup", {
+		const _ztoolkit = addon.data.ztoolkit;
+		const menuPopup = _ztoolkit.UI.createElement(doc, "menupopup", {
 			id: menuPopupID,
 		});
 
 		if (menuItems) {
 			for (const menuItemDetails of menuItems) {
-				const menuItem = ztoolkit.UI.createElement(doc, "menuitem", {
+				const menuItem = _ztoolkit.UI.createElement(doc, "menuitem", {
 					attributes: menuItemDetails.attributes,
 					listeners:
 						menuItemDetails.listeners &&
