@@ -1,0 +1,72 @@
+diff --git a/node_modules/zotero-plugin-toolkit/dist/managers/menu.d.ts b/node_modules/zotero-plugin-toolkit/dist/managers/menu.d.ts
+index 9ba53ac..8523fab 100644
+--- a/node_modules/zotero-plugin-toolkit/dist/managers/menu.d.ts
++++ b/node_modules/zotero-plugin-toolkit/dist/managers/menu.d.ts
+@@ -86,11 +86,13 @@ declare enum MenuSelector {
+ type MenuitemTagDependentOptions = {
+     tag: "menuitem";
+     getVisibility?: (elem: XUL.MenuItem, ev: Event) => boolean | undefined;
++    isDisabled?: (elem: XUL.MenuItem, ev: Event) => boolean | undefined;
+     type?: "" | "checkbox" | "radio";
+     checked?: boolean;
+ } | {
+     tag: "menu";
+     getVisibility?: (elem: XUL.Menu, ev: Event) => boolean | undefined;
++    isDisabled?: (elem: XUL.Menu, ev: Event) => boolean | undefined;
+     popupId?: string;
+     onpopupshowing?: string;
+     children?: Array<MenuitemOptions>;
+@@ -101,6 +103,7 @@ type MenuitemTagDependentOptions = {
+ } | {
+     tag: "menuseparator";
+     getVisibility?: (elem: XUL.MenuSeparator, ev: Event) => boolean | undefined;
++    isDisabled?: (elem: XUL.MenuSeparator, ev: Event) => boolean | undefined;
+ };
+ interface MenuitemCommonOptions {
+     id?: string;
+diff --git a/node_modules/zotero-plugin-toolkit/dist/managers/menu.js b/node_modules/zotero-plugin-toolkit/dist/managers/menu.js
+index 991ead4..08a0ce0 100644
+--- a/node_modules/zotero-plugin-toolkit/dist/managers/menu.js
++++ b/node_modules/zotero-plugin-toolkit/dist/managers/menu.js
+@@ -139,6 +139,19 @@ export class MenuManager extends ManagerTool {
+                     }
+                 });
+             }
++            if (menuitemOption.isDisabled) {
++                popup?.addEventListener("popupshowing", (ev) => {
++                    const disabled = menuitemOption.isDisabled(menuItem, ev);
++                    if (typeof disabled === "undefined") {
++                        return;
++                    }
++                    if (disabled) {
++                        menuItem.setAttribute("disabled", "true");
++                    } else {
++                        menuItem.removeAttribute("disabled");
++                    }
++                });
++            }
+             if (menuitemOption.tag === "menu") {
+                 const subPopup = this.ui.createElement(doc, "menupopup", {
+                     id: menuitemOption.popupId,
+@@ -152,12 +165,16 @@ export class MenuManager extends ManagerTool {
+             return menuItem;
+         };
+         const topMenuItem = genMenuElement(options);
+-        if (!anchorElement) {
+-            anchorElement = (insertPosition === "after"
+-                ? popup.lastElementChild
+-                : popup.firstElementChild);
++        if (popup.childElementCount) {
++            if (!anchorElement) {
++                anchorElement = (insertPosition === "after"
++                    ? popup.lastElementChild
++                    : popup.firstElementChild);
++            }
++            anchorElement[insertPosition](topMenuItem);
++        } else {
++                popup.appendChild(topMenuItem);
+         }
+-        anchorElement[insertPosition](topMenuItem);
+     }
+     unregister(menuId) {
+         this.getGlobal("document").querySelector(`#${menuId}`)?.remove();

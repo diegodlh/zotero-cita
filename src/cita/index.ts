@@ -1,7 +1,4 @@
-import Citations from "./citations";
-import Wikicite from "./wikicite";
 import WikiciteChrome from "./wikiciteChrome";
-import Wikidata from "./wikidata";
 import zoteroOverlay from "./zoteroOverlay";
 /* global window */
 
