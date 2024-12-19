@@ -10,6 +10,7 @@ if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
 	defineGlobal("console");
 	defineGlobal("performance");
 	defineGlobal("ZoteroPane");
+	defineGlobal("IntersectionObserver");
 	defineGlobal("Zotero_Tabs");
 	_globalThis.addon = new Addon();
 	defineGlobal("ztoolkit", () => {
