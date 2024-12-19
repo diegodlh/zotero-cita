@@ -189,6 +189,7 @@ function CitationRow(props: CitationRowProps) {
 		e.preventDefault();
 		// Un-hide the dragged citation row
 		setIsDragging(false);
+		setDraggable(false);
 
 		if (
 			document.activeElement &&
