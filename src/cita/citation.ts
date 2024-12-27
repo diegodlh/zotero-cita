@@ -252,7 +252,7 @@ class Citation {
 		// I need access to the parent CitationList
 	}
 
-	wikidataSync() {
+	wikidataSync(index: number) {
 		const syncable = this.source.qid && this.target.qid;
 		const oci = this.getOCI("wikidata");
 		if (oci) {
@@ -274,7 +274,7 @@ class Citation {
 				);
 			}
 		} else if (syncable) {
-			//props.sourceItem.syncWithWikidata(index);
+			this.source.syncWithWikidata(index);
 			// Note: this function was taken from CitationRow.tsx
 			// Yet, calling syncWithWikidata with an index is not implemented anyway
 		} else {

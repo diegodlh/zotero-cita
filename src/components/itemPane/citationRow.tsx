@@ -245,7 +245,7 @@ function CitationRow(props: CitationRowProps) {
 					<LinkButton citation={citation} />
 					<WikidataButton
 						citation={citation}
-						onClick={() => citation.wikidataSync()}
+						onClick={() => citation.wikidataSync(index)}
 					/>
 					{/* Remove button */}
 					<ToolbarButton
