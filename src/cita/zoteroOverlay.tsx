@@ -599,6 +599,7 @@ class ZoteroOverlay {
 					},
 				},
 			],
+			// onInit is called once per tab (library and every reader)
 			onInit: ({ body, refresh }) => {
 				// We get a react error if we try to create a root on the same HTML Element more than once
 				// so we need to keep track of each separate item pane's root so we can re-render it when the item changes
@@ -609,6 +610,7 @@ class ZoteroOverlay {
 					body.firstChild! as Element,
 				);
 			},
+			// onRender is called after onInit (once per tab) and, in the library tab only, every time the item changes
 			onRender: ({ body, item, setSectionButtonStatus, setL10nArgs }) => {
 				// Use Fluent for localization
 				// As mentioned in https://groups.google.com/g/zotero-dev/c/wirqnj_EQUQ/m/ud3k0SpMAAAJ
@@ -654,6 +656,7 @@ class ZoteroOverlay {
 
 				setL10nArgs(`{"citationCount": "${citationCount}"}`);
 			},
+			// onItemChange is called every time the item changes (new selection in the library tab or switching reader tabs)
 			onItemChange: ({ item, setEnabled }) => {
 				setEnabled(item.isRegularItem());
 				if (item.isRegularItem()) {
