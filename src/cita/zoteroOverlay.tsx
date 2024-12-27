@@ -1203,28 +1203,32 @@ class ZoteroOverlay {
 	// /******************************************/
 	/** Create XUL for Zotero menu elements */
 	zoteroPopup(menuName: MenuSelectionType, doc: Document) {
-		const showSubmenu = (menu: string) => {
-			if (menu === "collection") {
-				// Show collection submenu for collections and libraries only
-				const collectionTreeRow = ZoteroPane.getCollectionTreeRow();
-				if (
-					collectionTreeRow &&
-					!collectionTreeRow.isCollection() &&
-					!collectionTreeRow.isLibrary() &&
-					!collectionTreeRow.isGroup()
-				) {
-					return false;
+		const showSubmenu = (menu: MenuSelectionType) => {
+			switch (menu) {
+				case "collection": {
+					// Show collection submenu for collections, libraries, and groups only
+					const collectionTreeRow = ZoteroPane.getCollectionTreeRow();
+					if (
+						collectionTreeRow &&
+						!collectionTreeRow.isCollection() &&
+						!collectionTreeRow.isLibrary() &&
+						!collectionTreeRow.isGroup()
+					) {
+						return false;
+					}
+					break;
 				}
+				case "item":
+					// Show item submenu for regular items only
+					if (
+						!ZoteroPane.getSelectedItems().some((item) =>
+							item.isRegularItem(),
+						)
+					) {
+						return false;
+					}
+					break;
 			}
-
-			if (menu === "item") {
-				const items = ZoteroPane.getSelectedItems();
-				// Show item submenu for regular items only
-				if (!items.some((item) => item.isRegularItem())) {
-					return false;
-				}
-			}
-
 			return true;
 		};
 
