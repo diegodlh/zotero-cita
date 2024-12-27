@@ -140,11 +140,11 @@ export default class ItemWrapper {
 	 * All PID Types that the item has a PID for
 	 */
 	get availablePIDTypes(): Set<PIDType> {
-		const pidTypes = new Set<PIDType>();
-		for (const type of PID.allTypes) {
-			if (this.getPID(type)) pidTypes.add(type);
-		}
-		return pidTypes;
+		return new Set(
+			Array.from(PID.allTypes.values()).filter((type: PIDType) =>
+				this.getPID(type),
+			),
+		);
 	}
 
 	/**
@@ -254,8 +254,8 @@ export default class ItemWrapper {
 		}
 	}
 
-	/*
-	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return undefined
+	/**
+	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return null
 	 */
 	getPID(type: PIDType, clean = false): PID | null {
 		let _pid: string;
