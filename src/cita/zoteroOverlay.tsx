@@ -6,7 +6,6 @@ import Semantic from "./semantic";
 import OpenAlex from "./openalex";
 import Extraction from "./extract";
 import LCN from "./localCitationNetwork";
-import OCI from "../oci";
 import OpenCitations from "./opencitations";
 import * as React from "react";
 import SourceItemWrapper from "./sourceItemWrapper";
@@ -15,13 +14,12 @@ import Wikidata from "./wikidata";
 import { config } from "../../package.json";
 import * as prefs from "./preferences";
 import { Root, createRoot } from "react-dom/client";
-import { initLocale, getLocaleID } from "../utils/locale";
+import { getLocaleID } from "../utils/locale";
 import { getPrefGlobalName } from "../utils/prefs";
 import { MenuitemOptions } from "zotero-plugin-toolkit/dist/managers/menu";
 import Citation from "./citation";
 import { IndexerBase } from "./indexer";
 import PIDBoxContainer from "../containers/pidBoxContainer";
-import { property } from "lodash";
 
 const TRANSLATORS_PATH = `chrome://${config.addonRef}/content/translators`;
 const TRANSLATOR_LABELS = [
