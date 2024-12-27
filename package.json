@@ -48,7 +48,7 @@
 		"semver-parser": "^4.1.6",
 		"wikibase-edit": "^7.0.4",
 		"wikibase-sdk": "^10.0.2",
-		"zotero-plugin-toolkit": "^4.0.6"
+		"zotero-plugin-toolkit": "^4.0.14"
 	},
 	"devDependencies": {
 		"@types/core-js": "^2.5.8",

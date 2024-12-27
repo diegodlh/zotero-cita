@@ -60,15 +60,12 @@ function pidRowPopupMenu(
 		"pid-row-add-menu",
 		[...PID.showable].map((pidType) => {
 			return {
-				attributes: {
-					id: `pid-row-add-${pidType}`,
-					label: pidType,
-				},
-				listeners: {
-					command: (event: Event) => {
-						event.preventDefault();
-						showPID(pidType);
-					},
+				tag: "menuitem",
+				id: `pid-row-add-${pidType}`,
+				label: pidType,
+				commandListener: (event: Event) => {
+					event.preventDefault();
+					showPID(pidType);
 				},
 				isHidden: () => {
 					// If the PID row is already shown or the source item doesn't support it, hide the menu item

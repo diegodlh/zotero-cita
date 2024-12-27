@@ -804,54 +804,38 @@ class ZoteroOverlay {
 			[
 				// Add existing Zotero item menu item
 				{
-					attributes: {
-						id: "item-menu-add-zotero",
-						label: Wikicite.getString(
-							"wikicite.item-menu.add-zotero",
-						),
-					},
-					listeners: {
-						command: async () => {
-							const selectedItems = await this.selectZoteroItems(
-								this._sourceItem!.item.libraryID,
-							);
-							const targets = selectedItems.map(
-								(item) =>
-									new SourceItemWrapper(
-										item,
-										prefs.getStorage(),
-									),
-							);
-							this.addTargetsToSources(targets, [
-								this._sourceItem!,
-							]);
-						},
+					tag: "menuitem",
+					id: "item-menu-add-zotero",
+					label: Wikicite.getString("wikicite.item-menu.add-zotero"),
+					commandListener: async () => {
+						const selectedItems = await this.selectZoteroItems(
+							this._sourceItem!.item.libraryID,
+						);
+						const targets = selectedItems.map(
+							(item) =>
+								new SourceItemWrapper(item, prefs.getStorage()),
+						);
+						this.addTargetsToSources(targets, [this._sourceItem!]);
 					},
 				},
 				// Add citations by identifier menu item
 				{
-					attributes: {
-						id: "item-menu-identifier-import",
-						label: Wikicite.getString(
-							"wikicite.item-menu.import-identifier",
-						),
-					},
-					listeners: {
-						command: () =>
-							this._sourceItem!.addCitationsByIdentifier(),
-					},
+					tag: "menuitem",
+					id: "item-menu-identifier-import",
+					label: Wikicite.getString(
+						"wikicite.item-menu.import-identifier",
+					),
+					commandListener: () =>
+						this._sourceItem!.addCitationsByIdentifier(),
 				},
 				// Add item manually menu item
 				{
-					attributes: {
-						id: "item-menu-add-manually",
-						label: Wikicite.getString(
-							"wikicite.item-menu.add-manually",
-						),
-					},
-					listeners: {
-						command: () => this.handleCitationAdd(),
-					},
+					tag: "menuitem",
+					id: "item-menu-add-manually",
+					label: Wikicite.getString(
+						"wikicite.item-menu.add-manually",
+					),
+					commandListener: () => this.handleCitationAdd(),
 				},
 			],
 		);
@@ -861,20 +845,17 @@ class ZoteroOverlay {
 
 	private indexerMenuAttributes<Ref>(
 		IndexerType: new () => IndexerBase<Ref>,
-	) {
+	): MenuitemOptions {
 		const indexer = new IndexerType();
 		return {
+			tag: "menuitem",
 			// TODO: set an indexer id attribute
-			attributes: {
-				id: `item-menu-${indexer.indexerName.toLowerCase().replace(" ", "-")}-get`,
-				label: Wikicite.formatString(
-					"wikicite.item-menu.get-indexer",
-					indexer.indexerName,
-				),
-			},
-			listeners: {
-				command: () => this._sourceItem!.getFrom(indexer),
-			},
+			id: `item-menu-${indexer.indexerName.toLowerCase().replace(" ", "-")}-get`,
+			label: Wikicite.formatString(
+				"wikicite.item-menu.get-indexer",
+				indexer.indexerName,
+			),
+			commandListener: () => this._sourceItem!.getFrom(indexer),
 			isDisabled: () => !indexer.canFetchCitations(this._sourceItem!),
 		};
 	}
@@ -895,27 +876,21 @@ class ZoteroOverlay {
 				this.indexerMenuAttributes(OpenCitations),
 				// Extract from PDF menu item
 				{
-					attributes: {
-						id: "item-menu-pdf-extract",
-						label: Wikicite.getString("wikicite.item-menu.get-pdf"),
-					},
-					listeners: {
-						command: () => this._sourceItem!.getFromPDF(),
-					},
+					tag: "menuitem",
+					id: "item-menu-pdf-extract",
+					label: Wikicite.getString("wikicite.item-menu.get-pdf"),
+					commandListener: () => this._sourceItem!.getFromPDF(),
 					isDisabled: () =>
 						!this._sourceItem!.item.getAttachments().length,
 				},
 				// Import citations menu item
 				{
-					attributes: {
-						id: "item-menu-citations-import",
-						label: Wikicite.getString(
-							"wikicite.item-menu.import-citations",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.importCitations(),
-					},
+					tag: "menuitem",
+					id: "item-menu-citations-import",
+					label: Wikicite.getString(
+						"wikicite.item-menu.import-citations",
+					),
+					commandListener: () => this._sourceItem!.importCitations(),
 				},
 			],
 		);
@@ -931,28 +906,20 @@ class ZoteroOverlay {
 			[
 				// Export to file menu item
 				{
-					attributes: {
-						id: "item-menu-file-export",
-						label: Wikicite.getString(
-							"wikicite.item-menu.export-file",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.exportToFile(),
-					},
+					tag: "menuitem",
+					id: "item-menu-file-export",
+					label: Wikicite.getString("wikicite.item-menu.export-file"),
+					commandListener: () => this._sourceItem!.exportToFile(),
 					isDisabled: () => !this._sourceItem!.citations.length,
 				},
 				// Export to CROCI menu item
 				{
-					attributes: {
-						id: "item-menu-croci-export",
-						label: Wikicite.getString(
-							"wikicite.item-menu.export-croci",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.exportToCroci(),
-					},
+					tag: "menuitem",
+					id: "item-menu-croci-export",
+					label: Wikicite.getString(
+						"wikicite.item-menu.export-croci",
+					),
+					commandListener: () => this._sourceItem!.exportToCroci(),
 					isDisabled: () => !this._sourceItem!.citations.length,
 				},
 			],
@@ -969,41 +936,34 @@ class ZoteroOverlay {
 			[
 				// Sync with Wikidata menu item
 				{
-					attributes: {
-						id: "item-menu-wikidata-sync",
-						label: Wikicite.getString(
-							"wikicite.item-menu.sync-wikidata",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.syncWithWikidata(),
-					},
+					tag: "menuitem",
+					id: "item-menu-wikidata-sync",
+					label: Wikicite.getString(
+						"wikicite.item-menu.sync-wikidata",
+					),
+					commandListener: () => this._sourceItem!.syncWithWikidata(),
 					isDisabled: () => !this._sourceItem!.qid,
 				},
 				// Fetch QIDs menu item
 				{
-					attributes: {
-						id: "item-menu-fetch-citation-qids",
-						label: Wikicite.getString(
-							"wikicite.item-menu.fetch-citation-qids",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.fetchCitationQIDs(),
-					},
+					tag: "menuitem",
+					id: "item-menu-fetch-citation-qids",
+					label: Wikicite.getString(
+						"wikicite.item-menu.fetch-citation-qids",
+					),
+					commandListener: () =>
+						this._sourceItem!.fetchCitationQIDs(),
 					isDisabled: () => !this._sourceItem!.citations.length,
 				},
 				// Auto-link citations menu item
 				{
-					attributes: {
-						id: "item-menu-autolink-citations",
-						label: Wikicite.getString(
-							"wikicite.item-menu.autolink-citations",
-						),
-					},
-					listeners: {
-						command: () => this._sourceItem!.autoLinkCitations(),
-					},
+					tag: "menuitem",
+					id: "item-menu-autolink-citations",
+					label: Wikicite.getString(
+						"wikicite.item-menu.autolink-citations",
+					),
+					commandListener: () =>
+						this._sourceItem!.autoLinkCitations(),
 				},
 			],
 		);
@@ -1052,18 +1012,13 @@ class ZoteroOverlay {
 			[
 				// Sync citations with Wikidata
 				{
-					attributes: {
-						id: "citation-menu-wikidata-sync",
-						label: Wikicite.getString(
-							"wikicite.citation-menu.sync-wikidata",
-						),
-					},
-					listeners: {
-						command: () =>
-							this._sourceItem!.syncWithWikidata(
-								this._citationIndex,
-							),
-					},
+					tag: "menuitem",
+					id: "citation-menu-wikidata-sync",
+					label: Wikicite.getString(
+						"wikicite.citation-menu.sync-wikidata",
+					),
+					commandListener: () =>
+						this._sourceItem!.syncWithWikidata(this._citationIndex),
 					isDisabled: () => {
 						const sourceItem = this._sourceItem;
 						const citation =
@@ -1074,46 +1029,35 @@ class ZoteroOverlay {
 				},
 				// Fetch QIDs for citations
 				{
-					attributes: {
-						id: "citation-menu-fetch-qid",
-						label: Wikicite.getString(
-							"wikicite.citation-menu.fetch-qid",
+					tag: "menuitem",
+					id: "citation-menu-fetch-qid",
+					label: Wikicite.getString(
+						"wikicite.citation-menu.fetch-qid",
+					),
+					commandListener: () =>
+						this._sourceItem!.fetchCitationQIDs(
+							this._citationIndex,
 						),
-					},
-					listeners: {
-						command: () =>
-							this._sourceItem!.fetchCitationQIDs(
-								this._citationIndex,
-							),
-					},
 				},
 				// Export to file
 				{
-					attributes: {
-						id: "citation-menu-file-export",
-						label: Wikicite.getString(
-							"wikicite.citation-menu.export-file",
-						),
-					},
-					listeners: {
-						command: () =>
-							this._sourceItem!.exportToFile(this._citationIndex),
-					},
+					tag: "menuitem",
+					id: "citation-menu-file-export",
+					label: Wikicite.getString(
+						"wikicite.citation-menu.export-file",
+					),
+					commandListener: () =>
+						this._sourceItem!.exportToFile(this._citationIndex),
 				},
 				// Export to Croci
 				{
-					attributes: {
-						id: "citation-menu-croci-export",
-						label: Wikicite.getString(
-							"wikicite.citation-menu.export-croci",
-						),
-					},
-					listeners: {
-						command: () =>
-							this._sourceItem!.exportToCroci(
-								this._citationIndex,
-							),
-					},
+					tag: "menuitem",
+					id: "citation-menu-croci-export",
+					label: Wikicite.getString(
+						"wikicite.citation-menu.export-croci",
+					),
+					commandListener: () =>
+						this._sourceItem!.exportToCroci(this._citationIndex),
 					isDisabled: () => {
 						const sourceItem = this._sourceItem;
 						const citation =
@@ -1236,7 +1180,7 @@ class ZoteroOverlay {
 		ztoolkit.Menu.register(menuName, {
 			tag: "menuseparator",
 			id: `wikicite-${menuName}submenu-separator`,
-			getVisibility: () => showSubmenu(menuName),
+			isHidden: () => !showSubmenu(menuName),
 		});
 
 		const menuItems = this.createMenuItems(
@@ -1249,7 +1193,7 @@ class ZoteroOverlay {
 			id: `wikicite-${menuName}submenu`,
 			label: Wikicite.getString(`wikicite.submenu.label`),
 			children: menuItems,
-			getVisibility: () => showSubmenu(menuName),
+			isHidden: () => !showSubmenu(menuName),
 		});
 	}
 
