@@ -43,7 +43,7 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
 
 	return (
 		<div
-			className={"toolbarbutton " + className}
+			className={"cita-toolbarbutton " + className}
 			onClick={handleClick}
 			tabIndex={tabIndex}
 			onMouseDown={onMouseDown}

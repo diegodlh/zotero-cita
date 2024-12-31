@@ -37,6 +37,7 @@ class Citation {
 			item,
 			ocis,
 			zotero,
+			uuid,
 		}: {
 			item:
 				| Zotero.Item
@@ -48,6 +49,7 @@ class Citation {
 				  };
 			ocis: string[];
 			zotero?: string;
+			uuid?: string;
 		},
 		// index,  // knowing the index in the citationList may be important
 		sourceItem: SourceItemWrapper, // should the parent CitationList (with its source item and methods to save) be passed instead?
@@ -94,8 +96,8 @@ class Citation {
 		// // crosref does provide a citation key which seems to have some ordinal information
 		// // but I say to leave this out for now
 
-		// generate a unique identifier for this citation
-		this.uuid = crypto.randomUUID();
+		// generate a unique identifier for this citation if needed
+		this.uuid = uuid ?? crypto.randomUUID();
 	}
 
 	addCreator(creatorType: any, creatorName: string) {
@@ -235,6 +237,7 @@ class Citation {
 			item: this.target.toJSON(),
 			ocis: this.ocis.map((oci) => oci.oci),
 			zotero: this.target.key,
+			uuid: this.uuid,
 		};
 	}
 
@@ -247,6 +250,40 @@ class Citation {
 		// add wikidata to this.suppliers
 		// how do I save changes to sourceItem extra field now?
 		// I need access to the parent CitationList
+	}
+
+	wikidataSync(index: number) {
+		const syncable = this.source.qid && this.target.qid;
+		const oci = this.getOCI("wikidata");
+		if (oci) {
+			if (oci.valid) {
+				this.resolveOCI("wikidata");
+			} else {
+				// oci is invalid, i.e., citing or cited id do not match with
+				// local source or target id
+				Services.prompt.alert(
+					window as mozIDOMWindowProxy,
+					Wikicite.getString("wikicite.oci.mismatch.title"),
+					Wikicite.formatString("wikicite.oci.mismatch.message", [
+						oci.supplierName.charAt(0).toUpperCase() +
+							oci.supplierName.slice(1),
+						oci.idType.toUpperCase(),
+						oci.citingId,
+						oci.citedId,
+					]),
+				);
+			}
+		} else if (syncable) {
+			this.source.syncWithWikidata(index);
+			// Note: this function was taken from CitationRow.tsx
+			// Yet, calling syncWithWikidata with an index is not implemented anyway
+		} else {
+			Services.prompt.alert(
+				window as mozIDOMWindowProxy,
+				Wikicite.getString("wikicite.citation.sync.error"),
+				Wikicite.getString("wikicite.citation.sync.error.qid"),
+			);
+		}
 	}
 
 	/**

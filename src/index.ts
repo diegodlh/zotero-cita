@@ -10,6 +10,7 @@ if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
 	defineGlobal("console");
 	defineGlobal("performance");
 	defineGlobal("ZoteroPane");
+	defineGlobal("IntersectionObserver"); // Required for row line count management in citationRow.tsx
 	defineGlobal("Zotero_Tabs");
 	_globalThis.addon = new Addon();
 	defineGlobal("ztoolkit", () => {

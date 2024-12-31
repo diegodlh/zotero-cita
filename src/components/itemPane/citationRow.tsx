@@ -21,7 +21,6 @@ interface CitationRowProps {
 	containerRef: React.RefObject<HTMLDivElement>;
 	handleCitationEdit: (index: number) => void;
 	handleCitationDelete: (index: number) => void;
-	handleCitationSync: (index: number) => void;
 	handleCitationMove: (
 		draggedIndex: number,
 		destinationIndex: number,
@@ -40,7 +39,6 @@ function CitationRow(props: CitationRowProps) {
 		containerRef,
 		handleCitationEdit,
 		handleCitationDelete,
-		handleCitationSync,
 		handleCitationMove,
 		onCitationPopup,
 	} = props;
@@ -55,48 +53,53 @@ function CitationRow(props: CitationRowProps) {
 	const labelRef = useRef<HTMLSpanElement>(null);
 	const [lineCount, setLineCount] = useState(maxLineCount);
 
-	// Event handlers for line count
-	const freezeLineCount = () => {
+	// Apply lineClamp styles via inline style (CSS variables)
+	useEffect(() => {
 		labelRef.current?.style.setProperty(
-			"-webkit-line-clamp",
+			"--hover-line-clamp",
 			lineCount.toString(),
 		);
-	};
+	}, [lineCount]);
 
-	const resetLineCount = () => {
+	useEffect(() => {
 		labelRef.current?.style.setProperty(
-			"-webkit-line-clamp",
+			"--line-clamp",
 			maxLineCount.toString(),
 		);
-	};
-
-	// Clamp citation labels to maxLineCount lines initially
-	useEffect(() => {
-		if (labelRef.current) {
-			labelRef.current.style.setProperty(
-				"-webkit-line-clamp",
-				maxLineCount.toString(),
-			);
-		}
-	}, [citation, maxLineCount]);
+	}, [maxLineCount]);
 
 	// Function to calculate the number of lines in the label element
 	// and update the lineCount state accordingly
 	function calculateLineCount() {
 		if (labelRef.current) {
 			const computedStyle = window.getComputedStyle(labelRef.current);
-			const lineHeight = parseFloat(computedStyle?.lineHeight || "1");
+			const lineHeightStr = computedStyle?.lineHeight;
+			let lineHeight: number;
+			switch (lineHeightStr) {
+				case undefined:
+				case "normal": {
+					// Normal line height is 1.2 times the font size
+					const fontSize = parseFloat(
+						computedStyle?.fontSize || "16px",
+					);
+					lineHeight = fontSize * 1.2;
+					break;
+				}
+				default:
+					lineHeight = parseFloat(lineHeightStr);
+					break;
+			}
 			const elementHeight = labelRef.current.offsetHeight;
 			const calculatedLineCount = Math.round(elementHeight / lineHeight);
 			setLineCount(calculatedLineCount); // Update the state with the calculated line count
 		}
 	}
 
-	// Intersection Observer to detect when the row becomes visible
-	const [_ref, inView, entry] = useInView({
+	// Recalculate line count when the label becomes visible
+	const [rowInViewRef, inView, _entry] = useInView({
 		/* Optional options */
 		threshold: 0.1,
-		onChange(inView, entry) {
+		onChange(inView) {
 			if (inView) {
 				calculateLineCount();
 			}
@@ -104,32 +107,35 @@ function CitationRow(props: CitationRowProps) {
 	});
 
 	// Recalculate line counts on resize
-	useResizeObserver(containerRef, debounce(calculateLineCount, 100));
+	useResizeObserver(
+		containerRef,
+		debounce(() => {
+			if (inView) {
+				calculateLineCount();
+			}
+		}, 200),
+	);
 
 	// MARK: Drag and drop handling
 
-	const ref = useRef<HTMLDivElement>(null);
+	const [draggable, setDraggable] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
 
 	// Drag handlers
 	const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-		const row = e.currentTarget;
-
-		if (row.getAttribute("draggable") !== "true") {
+		if (!draggable) {
 			e.preventDefault();
 			e.stopPropagation();
 			return;
 		}
 
+		setIsDragging(true);
+
 		e.dataTransfer.setData(
 			"application/zotero-citation-index",
 			index.toString(),
 		);
-		e.dataTransfer.setDragImage(row, 15, 15);
-
-		setTimeout(() => {
-			row.classList.add("drag-hidden-citation");
-			row.classList.add("noHover");
-		});
+		e.dataTransfer.setDragImage(e.currentTarget, 15, 15);
 	};
 
 	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -176,15 +182,14 @@ function CitationRow(props: CitationRowProps) {
 		// Update the item after a small delay to avoid blinking
 		setTimeout(() => {
 			handleCitationMove(draggedIndex, destinationIndex);
-		}, 250);
+		}, 25);
 	};
 
 	const handleDragEnd = (e: React.DragEvent<Element>) => {
 		e.preventDefault();
-		// Un-hide the moved citation row
-		document
-			.querySelector(".drag-hidden-citation")
-			?.classList.remove("drag-hidden-citation", "noHover");
+		// Un-hide the dragged citation row
+		setIsDragging(false);
+		setDraggable(false);
 
 		if (
 			document.activeElement &&
@@ -198,20 +203,12 @@ function CitationRow(props: CitationRowProps) {
 	function renderGrippy() {
 		if (sortBy !== "ordinal") return;
 
-		const handleMouseDown = (e: React.MouseEvent) => {
-			e.currentTarget.closest(".row")?.setAttribute("draggable", "true");
-		};
-
-		const handleMouseUp = (e: React.MouseEvent) => {
-			e.currentTarget.closest(".row")?.setAttribute("draggable", "false");
-		};
-
 		return (
 			<ToolbarButton
 				className="zotero-clicky zotero-clicky-grippy show-on-hover"
 				tabIndex={-1}
-				onMouseDown={handleMouseDown}
-				onMouseUp={handleMouseUp}
+				onMouseDown={() => setDraggable(true)}
+				onMouseUp={() => setDraggable(false)}
 				title="Drag"
 				imgSrc="chrome://zotero/skin/16/universal/grip.svg"
 			/>
@@ -220,14 +217,12 @@ function CitationRow(props: CitationRowProps) {
 
 	return (
 		<div
-			className="row"
-			ref={ref}
-			onMouseEnter={freezeLineCount}
-			onMouseLeave={resetLineCount}
+			className={isDragging ? "row drag-hidden-citation noHover" : "row"}
 			onDragStart={handleDragStart}
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 			onDragEnd={handleDragEnd}
+			ref={rowInViewRef}
 		>
 			{sortBy === "ordinal" && renderGrippy()}
 			<div
@@ -250,7 +245,7 @@ function CitationRow(props: CitationRowProps) {
 					<LinkButton citation={citation} />
 					<WikidataButton
 						citation={citation}
-						onClick={() => handleCitationSync(index)}
+						onClick={() => citation.wikidataSync(index)}
 					/>
 					{/* Remove button */}
 					<ToolbarButton

@@ -6,6 +6,7 @@ import * as prefs from "../cita/preferences";
 import { config } from "../../package.json";
 import { getPrefGlobalName } from "../utils/prefs.js";
 import { ErrorBoundary } from "react-error-boundary";
+import ZoteroOverlay from "../cita/zoteroOverlay.js";
 
 function CitationsBoxContainer(props: {
 	item: Zotero.Item;
@@ -165,10 +166,11 @@ function CitationsBoxContainer(props: {
 		};
 	}, []);
 
+	// Sync state with Zotero overlay
 	useEffect(() => {
-		Zotero[config.addonInstance].data.zoteroOverlay.setSourceItem(
-			sourceItem,
-		);
+		(
+			Zotero[config.addonInstance].data.zoteroOverlay as ZoteroOverlay
+		).setSourceItem(sourceItem);
 	}, [sourceItem]);
 
 	// Keep citation count up to date

@@ -2,20 +2,33 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import SourceItemWrapper from "../cita/sourceItemWrapper.js";
 import * as prefs from "../cita/preferences";
-import { config } from "../../package.json";
 import { ErrorBoundary } from "react-error-boundary";
 import PIDBox from "../components/itemPane/pidBox.js";
+import "core-js/proposals/set-methods-v2";
+import PID from "../cita/PID.js";
 
 function PIDBoxContainer(props: {
 	item: Zotero.Item;
 	editable: boolean;
-	onPIDChange: (hidden: boolean) => void;
+	tabID: string;
+	setSectionButtonStatus: (hidden: boolean) => void;
 }) {
 	const [sourceItem, setSourceItem] = useState(
 		// If the initial state is the result of an expensive computation,
 		// one may provide a function instead, which will be executed only on the initial render.
 		() => new SourceItemWrapper(props.item, prefs.getStorage()),
 	);
+
+	// PID visibility state (single source of truth)
+	// Display all PIDs that are showable, available, and valid for the item type, as well as those that should always be shown
+	const [shownPIDs, setShownPIDs] = useState(sourceItem.allTypesToShow);
+
+	// Reset shownPIDs when the item type changes
+	const [prevType, setPrevType] = useState(sourceItem.type);
+	if (sourceItem.type !== prevType) {
+		setPrevType(sourceItem.type);
+		setShownPIDs(sourceItem.allTypesToShow);
+	}
 
 	useEffect(() => {
 		const observer = {
@@ -63,11 +76,47 @@ function PIDBoxContainer(props: {
 		};
 	}, [props.item]);
 
-	useEffect(() => {
-		Zotero[config.addonInstance].data.zoteroOverlay.setSourceItem(
-			sourceItem,
+	function addPIDRow(pidType: PIDType) {
+		const currentSet = shownPIDs;
+		currentSet.add(pidType);
+
+		// We do this in a roundabout way to preserve the order of the PID rows (because the sets are actually ordered)
+		const newSet = PID.showable.difference(
+			PID.showable.difference(currentSet),
 		);
-	}, [sourceItem]);
+		setShownPIDs(newSet);
+	}
+
+	// Manage the PID add menu
+	useEffect(() => {
+		const remainingShowablePIDs = sourceItem.validPIDTypes
+			.intersection(PID.showable)
+			.difference(shownPIDs);
+
+		const pidAddMenu = document.getElementById(
+			"pid-row-add-menu-" + props.tabID,
+		);
+		if (pidAddMenu) {
+			// Remove all existing menu items
+			while (pidAddMenu.firstChild) {
+				pidAddMenu.removeChild(pidAddMenu.firstChild);
+			}
+
+			// Add a menu item for each PID type that is showable but not yet shown
+			for (const pidType of remainingShowablePIDs) {
+				const menuItem = document.createXULElement("menuitem");
+				menuItem.setAttribute("label", pidType);
+				menuItem.addEventListener("command", () => {
+					addPIDRow(pidType);
+				});
+				pidAddMenu.appendChild(menuItem);
+			}
+		}
+
+		// Hide the add-pid button if no PIDs are left to show
+		const hideMenu = remainingShowablePIDs.size === 0;
+		props.setSectionButtonStatus(hideMenu);
+	}, [shownPIDs]);
 
 	return (
 		<ErrorBoundary
@@ -78,8 +127,13 @@ function PIDBoxContainer(props: {
 		>
 			<PIDBox
 				editable={props.editable}
-				sourceItem={sourceItem}
-				onPIDChange={props.onPIDChange}
+				autosave={true}
+				item={sourceItem}
+				shownPIDs={shownPIDs}
+				setShownPIDs={setShownPIDs}
+				checkPID={(type, value, options) => {
+					return sourceItem.checkPID(type, value, options);
+				}}
 			/>
 		</ErrorBoundary>
 	);
