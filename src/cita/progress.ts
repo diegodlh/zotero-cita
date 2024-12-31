@@ -1,8 +1,8 @@
 import Wikicite from "./wikicite";
 
 const icons = new Map([
-	["loading", "chrome://zotero/skin/arrow_refresh.png"],
-	["done", "chrome://zotero/skin/tick.png"],
+	["loading", "chrome://zotero/skin/20/universal/sync.svg"],
+	["done", "chrome://zotero/skin/20/universal/success.svg"],
 ]);
 
 const css = `
@@ -10,10 +10,10 @@ const css = `
 	background:url("chrome://zotero-wikicite/content/skin/default/cita.svg") no-repeat center/contain;
 }
 .icon-css.icon-loading {
-	background:url("chrome://zotero/skin/arrow_refresh.png") no-repeat center/contain;
+	background:url("chrome://zotero/skin/20/universal/sync.svg") no-repeat center/contain;
 }
 .icon-css.icon-done {
-	background:url("chrome://zotero/skin/tick.png") no-repeat center/contain;
+	background:url("chrome://zotero/skin/20/universal/success.svg") no-repeat center/contain;
 }
 `;
 

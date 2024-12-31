@@ -10,6 +10,7 @@ import Semantic from "./semantic";
 import Wikicite from "./wikicite";
 import Wikidata from "./wikidata";
 import PID from "./PID";
+import "core-js/proposals/set-methods-v2";
 
 // maybe pass a save handler to the constructor
 // to be run after each setter. This would be the item's saveTx
@@ -111,31 +112,63 @@ export default class ItemWrapper {
 		);
 	}
 
-	get validPIDTypes(): PIDType[] {
-		const pidTypes: PIDType[] = [];
-		for (const type of PID.showable) {
+	/**
+	 * All PID Types that are valid for the item type
+	 */
+	get validPIDTypes(): Set<PIDType> {
+		const pidTypes = new Set<PIDType>();
+		for (const type of PID.allTypes) {
 			switch (type) {
 				case "ISBN":
 					if (this.isValidField(type)) {
-						pidTypes.push(type);
+						pidTypes.add(type);
 					}
 					break;
 				case "arXiv":
 					if (this.item.itemType === "preprint") {
-						pidTypes.push(type);
+						pidTypes.add(type);
 					}
 					break;
 				default:
-					pidTypes.push(type);
+					pidTypes.add(type);
 			}
 		}
 		return pidTypes;
 	}
 
-	canFetchPid(type: PIDType) {
-		return PID.fetchable.includes(type);
+	/**
+	 * All PID Types that the item has a PID for
+	 */
+	get availablePIDTypes(): Set<PIDType> {
+		return new Set(
+			Array.from(PID.allTypes.values()).filter((type: PIDType) =>
+				this.getPID(type),
+			),
+		);
 	}
 
+	/**
+	 * All PID Types that the item has a PID for and are valid for the item type
+	 */
+	get validAvailablePIDTypes(): Set<PIDType> {
+		return this.validPIDTypes.intersection(this.availablePIDTypes);
+	}
+
+	get allTypesToShow(): Set<PIDType> {
+		return PID.alwaysShown.union(
+			PID.showable.intersection(this.validAvailablePIDTypes),
+		);
+	}
+
+	canFetchPid(type: PIDType) {
+		return PID.fetchable.has(type);
+	}
+
+	/**
+	 * Fetch a PID for the item.
+	 * @param type The PID type to fetch
+	 * @param autosave Whether to save the item after fetching the PID
+	 */
 	async fetchPID(type: PIDType, autosave = true) {
 		if (!this.canFetchPid(type)) {
 			Services.prompt.alert(
@@ -221,8 +254,8 @@ export default class ItemWrapper {
 		}
 	}
 
-	/*
-	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return undefined
+	/**
+	 * Get PID (QID, DOI, ISBN, OMID, ...) from item. If it doesn't have this PID, return null
 	 */
 	getPID(type: PIDType, clean = false): PID | null {
 		let _pid: string;
