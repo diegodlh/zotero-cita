@@ -124,9 +124,9 @@ window.addEventListener("load", () => {
 		semVerCompare = compareSemVer(Zotero.version, "7.0.10");
 	} catch (e) {
 		// Zotero.version is not a valid semver string
-		// This may happen when building Zotero from source, so we treat it as if it is at least Zotero 7.0.10
+		// This may happen when installing certain beta versions or building Zotero from source, so we treat it as if it is at least Zotero 7.0.10
 		Zotero.log(
-			`Zotero version (${Zotero.version}) is not a valid semver string - maybe you built it from source? Treating this version of Zotero as at least 7.0.10.`,
+			`Zotero version (${Zotero.version}) is not a valid semver string - maybe you installed a beta version or built it from source? Treating this version of Zotero as at least 7.0.10.`,
 		);
 		semVerCompare = 1;
 	}
