@@ -118,15 +118,15 @@ window.addEventListener("load", () => {
 	const itemBoxLabel = document.createElement("h4");
 	itemBoxLabel.textContent = "Target"; //Wikicite.getString("wikicite.editor.title");
 	container.appendChild(itemBoxLabel);
-	// "item-box" was renamed to "info-box" in Zotero 7.0.10. We compare to 7.0.9 to include the beta versions.
+	// "item-box" was renamed to "info-box" in Zotero 7.0.10, so check if we have at least this version of Zotero.
 	let semVerCompare: number;
 	try {
 		semVerCompare = compareSemVer(Zotero.version, "7.0.10");
 	} catch (e) {
 		// Zotero.version is not a valid semver string
-		// As this may happen in development versions, we will treat it as Zotero 7.0.10
+		// This may happen when building Zotero from source, so we treat it as if it is at least Zotero 7.0.10
 		Zotero.log(
-			`Zotero version (${Zotero.version}) is not a valid semver string. Will treat it as Zotero 7.0.10.`,
+			`Zotero version (${Zotero.version}) is not a valid semver string - maybe you built it from source? Treating this version of Zotero as at least 7.0.10.`,
 		);
 		semVerCompare = 1;
 	}
