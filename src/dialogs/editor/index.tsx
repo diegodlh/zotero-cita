@@ -130,7 +130,7 @@ window.addEventListener("load", () => {
 		);
 		semVerCompare = 1;
 	}
-	const tagName = semVerCompare === 1 ? "info-box" : "item-box";
+	const tagName = semVerCompare >= 0 ? "info-box" : "item-box";
 	const itemBox = document.createElementNS(
 		"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
 		tagName,
