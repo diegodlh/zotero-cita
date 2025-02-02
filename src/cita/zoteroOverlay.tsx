@@ -1306,7 +1306,7 @@ class ZoteroOverlay {
 			if (functionName === "localCitationNetwork") {
 				menuFunc.isDisabled = () =>
 					menuName === "item" &&
-					ZoteroPane.getSelectedItems().length <= 1;
+					ZoteroPane.getSelectedItems().length < 1;
 			}
 			options.push(menuFunc);
 		}
