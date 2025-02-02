@@ -251,6 +251,7 @@ export default class LCN {
 				openItem: this.openItem.bind(this),
 				openUrl: Zotero.launchURL,
 				getString,
+				saveFile,
 			},
 		);
 		// Fixme: this is in fact returning immediately, but for some reason
@@ -271,6 +272,32 @@ function getString(name: string, params: unknown) {
 		string = Wikicite.getString(name);
 	}
 	return string;
+}
+
+/**
+ * Open FilePicker for saving CSV or RIS / JSON (can be re-opened on https://LocalCitationNetwork.github.io)
+ */
+async function saveFile (content: string, filename: string) {
+	const FilePicker = Zotero.getMainWindow().FilePicker;
+	const fp = new FilePicker();
+	fp.init(window, "Save File", fp.modeSave);
+	fp.defaultString = filename;
+	
+	// Filter FilePicker dialogue by filetype, which depends on filename-suffix
+	const typeMatch = filename.match(/\.(\w+)$/);
+	if (typeMatch) {
+		const type = typeMatch[1];
+		fp.appendFilter(type.toUpperCase(), "*." + type);
+		fp.defaultExtension = type;
+	}
+	
+	const rv = await fp.show();
+	if (rv === fp.returnOK || rv === fp.returnReplace) {
+		const file = Zotero.File.pathToFile(fp.file);
+		await Zotero.File.putContentsAsync(file, content);
+		return true;
+	}
+	return false;
 }
 
 /**
