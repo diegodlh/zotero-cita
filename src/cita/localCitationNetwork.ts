@@ -242,7 +242,7 @@ export default class LCN {
 		await Zotero.Promise.delay(100);
 
 		window.openDialog(
-			`chrome://${config.addonRef}/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=` +
+			`chrome://${config.addonRef}/content/Local-Citation-Network/index.html?listOfKeys=` +
 				this.inputKeys.join(","),
 			"",
 			windowFeatures.join(","),
@@ -311,15 +311,22 @@ function parseWrappedItem(wrappedItem: ItemWrapper | SourceItemWrapper) {
 	return {
 		id: wrappedItem.key,
 		doi: wrappedItem.doi,
+		type: wrappedItem.item.itemType,
 		title: wrappedItem.title,
 		authors: authors,
 		year: wrappedItem.item.getField("year"),
+		date: wrappedItem.item.getField("date"),
 		journal: wrappedItem.item.getField("publicationTitle"),
+		volume: wrappedItem.item.getField("volume"),
+		issue: wrappedItem.item.getField("issue"),
+		firstPage: wrappedItem.item.getField("pages")?.split('-')?.[0]?.trim(),
+		lastPage: wrappedItem.item.getField("pages")?.split('-')?.[1]?.trim(),
 		references:
 			"citations" in wrappedItem
 				? wrappedItem.citations.map((citation) => citation.target.key)
 				: [],
 		abstract: wrappedItem.item.getField("abstractNote"),
+		//isRetracted: wrappedItem.???, // TODO not sure how to get boolean retraction status from Zotero
 		url: wrappedItem.url,
 	};
 }
