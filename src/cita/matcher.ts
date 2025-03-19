@@ -380,7 +380,7 @@ function compareCreators(
 	return false;
 }
 
-function normalizeString(str: string) {
+export function normalizeString(str: string) {
 	// Make sure we have a string and not an integer
 	str = String(str);
 

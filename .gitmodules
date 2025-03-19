@@ -1,3 +1,5 @@
 [submodule "Local-Citation-Network"]
 	path = Local-Citation-Network
 	url = https://github.com/LocalCitationNetwork/LocalCitationNetwork.github.io.git
+	branch = cita
+	
