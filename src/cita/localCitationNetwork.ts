@@ -1,5 +1,6 @@
 import ItemWrapper from "./itemWrapper";
 import Matcher from "./matcher";
+import { normalizeString } from "./matcher";
 import Progress from "./progress";
 import SourceItemWrapper from "./sourceItemWrapper";
 import Wikicite from "./wikicite";
@@ -137,24 +138,17 @@ export default class LCN {
 					// given one already (i.e, another source item --that cites the
 					// same target item-- has been processed already)
 
-					// collect item's unique identifiers (including name) and clean
-					// them, to make sure the same item always gets the same tmp key
+					// collect item's unique identifiers (including titleFirstAuthorYear) and clean
+					// them, to make sure the same item always gets the same tmpKey
 					const uids = citation.target
 						.getAllPIDs()
 						.map((pid) => pid.comparable) // DOI, ISBN, etc., already in type:value format and cleaned
 						.filter((uid) => uid !== undefined); // remove nulls
-					// based on Zotero.Duplicates.prototype._findDuplicates'
-					// normalizeString function
-					const cleanTitle = Zotero.Utilities.removeDiacritics(
-						citation.target.title,
-					)
-						// Convert (ASCII) punctuation to spaces
-						.replace(/[ !-/:-@[-`{-~]+/g, " ")
-						.trim()
-						.toLowerCase();
-					uids.push(`title:${cleanTitle}`);
+					uids.push(
+						`titleFirstAuthorYear:${normalizeString(citation.target.title)}.${normalizeString(citation.target.item.getField("firstCreator"))}.${citation.target.item.getField("year")}`,
+					);
 
-					// retrieve tmp keys already given to this item,
+					// retrieve tmpKeys already given to this item,
 					// i.e., the target item of another source item's citation
 					// had one or more of the same uids or title
 					const tmpKeys: Set<string> = new Set();
@@ -206,6 +200,11 @@ export default class LCN {
 					// save citation's target to the item map
 					// Fixme: if itemMap already has tmpKey, do not overwrite
 					// a more complete target item with a less complete one (#72)
+					if (this.itemMap.get(tmpKey)) {
+						Zotero.log(
+							`itemMap for tmpKey ${tmpKey} is being overwritten; old: ${JSON.stringify(this.itemMap.get(tmpKey))}; new: ${JSON.stringify(parseWrappedItem(wrappedItem.citations[i].target))}:`,
+						);
+					}
 					this.itemMap.set(
 						tmpKey,
 						parseWrappedItem(wrappedItem.citations[i].target),
@@ -242,7 +241,7 @@ export default class LCN {
 		await Zotero.Promise.delay(100);
 
 		window.openDialog(
-			`chrome://${config.addonRef}/content/Local-Citation-Network/index.html?API=Cita&listOfKeys=` +
+			`chrome://${config.addonRef}/content/Local-Citation-Network/index.html?listOfKeys=` +
 				this.inputKeys.join(","),
 			"",
 			windowFeatures.join(","),
@@ -251,6 +250,7 @@ export default class LCN {
 				openItem: this.openItem.bind(this),
 				openUrl: Zotero.launchURL,
 				getString,
+				saveFile,
 			},
 		);
 		// Fixme: this is in fact returning immediately, but for some reason
@@ -274,6 +274,32 @@ function getString(name: string, params: unknown) {
 }
 
 /**
+ * Open FilePicker for saving CSV or RIS / JSON (can be re-opened on https://LocalCitationNetwork.github.io)
+ */
+async function saveFile(content: string, filename: string) {
+	const FilePicker = Zotero.getMainWindow().FilePicker;
+	const fp = new FilePicker();
+	fp.init(window, "Save File", fp.modeSave);
+	fp.defaultString = filename;
+
+	// Filter FilePicker dialogue by filetype, which depends on filename-suffix
+	const typeMatch = filename.match(/\.(\w+)$/);
+	if (typeMatch) {
+		const type = typeMatch[1];
+		fp.appendFilter(type.toUpperCase(), "*." + type);
+		fp.defaultExtension = type;
+	}
+
+	const rv = await fp.show();
+	if (rv === fp.returnOK || rv === fp.returnReplace) {
+		const file = Zotero.File.pathToFile(fp.file);
+		await Zotero.File.putContentsAsync(file, content);
+		return true;
+	}
+	return false;
+}
+
+/**
  * Get ItemWrapper and return Data Item as understood by Local Citations Network
  */
 function parseWrappedItem(wrappedItem: ItemWrapper | SourceItemWrapper) {
@@ -284,15 +310,22 @@ function parseWrappedItem(wrappedItem: ItemWrapper | SourceItemWrapper) {
 	return {
 		id: wrappedItem.key,
 		doi: wrappedItem.doi,
+		type: wrappedItem.item.itemType,
 		title: wrappedItem.title,
 		authors: authors,
 		year: wrappedItem.item.getField("year"),
+		date: wrappedItem.item.getField("date"),
 		journal: wrappedItem.item.getField("publicationTitle"),
+		volume: wrappedItem.item.getField("volume"),
+		issue: wrappedItem.item.getField("issue"),
+		firstPage: wrappedItem.item.getField("pages")?.split("-")?.[0]?.trim(),
+		lastPage: wrappedItem.item.getField("pages")?.split("-")?.[1]?.trim(),
 		references:
 			"citations" in wrappedItem
 				? wrappedItem.citations.map((citation) => citation.target.key)
 				: [],
 		abstract: wrappedItem.item.getField("abstractNote"),
+		//isRetracted: wrappedItem.???, // TODO not sure how to get boolean retraction status from Zotero
 		url: wrappedItem.url,
 	};
 }
