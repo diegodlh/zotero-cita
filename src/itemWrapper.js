@@ -188,10 +188,14 @@ export default class ItemWrapper{
     }
 
     setPID(type, value, save=true) {
-        type = type.toUpperCase();
+
+        // the url field type as to be stay in lower case
+        if (type != 'url') {
+            type = type.toUpperCase();
+        }
         switch (type) {
             case 'DOI':
-            case 'ISBN':
+            case 'ISBN', 'url':
                 if (this.isValidField(type)) {
                     this.item.setField(type, value);
                 } else {
