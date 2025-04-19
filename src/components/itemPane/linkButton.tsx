@@ -1,5 +1,5 @@
 import * as React from "react";
-import Citation from "../../cita/citation";
+import { Citation } from "../../cita/citation";
 import { config } from "../../../package.json";
 import ToolbarButton from "./toolbarButton";
 

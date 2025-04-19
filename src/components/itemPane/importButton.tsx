@@ -1,5 +1,5 @@
 import * as React from "react";
-import Citation from "../../cita/citation";
+import { Citation } from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
 import ToolbarButton from "./toolbarButton";
 import PID from "../../cita/PID";

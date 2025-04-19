@@ -3,7 +3,7 @@ import * as React from "react";
 import PIDRow from "../pidRow";
 import PID from "../../cita/PID";
 import ItemWrapper from "../../cita/itemWrapper";
-import Citation from "../../cita/citation";
+import { Citation } from "../../cita/citation";
 
 interface PIDBoxProps {
 	editable: boolean;

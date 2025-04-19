@@ -5,7 +5,7 @@ import ImportButton from "./importButton";
 import LinkButton from "./linkButton";
 import WikidataButton from "./wikidataButton";
 import ZoteroButton from "./zoteroButton";
-import Citation from "../../cita/citation";
+import { Citation } from "../../cita/citation";
 import useResizeObserver from "@react-hook/resize-observer";
 import { useInView } from "react-intersection-observer";
 import { debounce } from "lodash";
