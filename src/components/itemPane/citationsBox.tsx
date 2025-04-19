@@ -79,7 +79,7 @@ function CitationsBox(props: CitationsBoxProps) {
 		window.openDialog(
 			`chrome://${config.addonRef}/content/citationEditor.xhtml`,
 			"",
-			"chrome,dialog=no,modal,centerscreen,resizable,width=380,height=500",
+			"chrome,dialog=no,modal,centerscreen,resizable,width=380,height=600",
 			args,
 			retVals,
 		);
@@ -100,6 +100,7 @@ function CitationsBox(props: CitationsBoxProps) {
 			return;
 		}
 		citation.target.item = item;
+		citation.lastModificationDate = new Date();
 
 		const newCitations = props.sourceItem.citations;
 		newCitations[index] = citation;

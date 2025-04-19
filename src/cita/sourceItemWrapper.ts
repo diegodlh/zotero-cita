@@ -1,5 +1,5 @@
 import Wikicite, { debug } from "./wikicite";
-import Citation from "./citation";
+import { Citation } from "./citation";
 import Citations from "./citations";
 import Extraction from "./extract";
 import ItemWrapper from "./itemWrapper";
@@ -670,7 +670,7 @@ class SourceItemWrapper extends ItemWrapper {
 						newItem.fromJSON(jsonItem);
 
 						const citation = new Citation(
-							{ item: newItem, ocis: [] },
+							{ item: newItem, ocis: [], citationSource: "User" },
 							this,
 						);
 						citations.push(citation);

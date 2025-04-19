@@ -6,6 +6,7 @@ import ToolbarButton from "../../components/itemPane/toolbarButton";
 import Wikicite from "../../cita/wikicite";
 import PID from "../../cita/PID";
 import PIDBox from "../../components/itemPane/pidBox";
+import { CitationSource } from "../../cita/citation";
 
 const visibleBaseFieldNames = ["title", "publicationTitle", "date"];
 
@@ -15,6 +16,9 @@ interface CitationEditorProps {
 	itemBox: any;
 	sourceLabel: string;
 	sourceType: Zotero.Item.ItemType;
+	citationSource: CitationSource;
+	citationCreationDate: string;
+	citationModificationDate: string;
 	getString: (name: string) => string;
 	onCancel: () => void;
 	onSave: () => void;
@@ -186,7 +190,7 @@ const CitationEditor = (props: CitationEditorProps) => {
 				checkPID={(type, value) => props.checkCitationPID(type, value)}
 			/>
 			<div className="citation-source-info">
-				<h4>{"Source"}</h4>
+				<h4>{"Source Item"}</h4>
 				<div className="citations-box-list-container">
 					<div className="row">
 						{/* We disable the hover effects this way */}
@@ -197,6 +201,37 @@ const CitationEditor = (props: CitationEditorProps) => {
 							></span>
 							<span className="label">{props.sourceLabel}</span>
 						</div>
+					</div>
+				</div>
+			</div>
+			<div className="citation-metadata pid-list">
+				<h4>{"Citation Metadata"}</h4>
+				<div className={`meta-row`} id={`citation-row-source`}>
+					<div className="meta-label">
+						<label className="key pid-label">Citation Source</label>
+					</div>
+					<div className="meta-data">
+						<label className="">{props.citationSource}</label>
+					</div>
+				</div>
+				<div className={`meta-row`} id={`citation-row-source`}>
+					<div className="meta-label">
+						<label className="key pid-label">Creation Date</label>
+					</div>
+					<div className="meta-data">
+						<label className="">{props.citationCreationDate}</label>
+					</div>
+				</div>
+				<div className={`meta-row`} id={`citation-row-source`}>
+					<div className="meta-label">
+						<label className="key pid-label">
+							Last Modification Date
+						</label>
+					</div>
+					<div className="meta-data">
+						<label className="">
+							{props.citationModificationDate}
+						</label>
 					</div>
 				</div>
 			</div>

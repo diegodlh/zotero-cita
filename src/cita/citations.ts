@@ -1,6 +1,6 @@
 import Wikidata, { CitesWorkClaim } from "./wikidata";
 import Wikicite, { debug } from "./wikicite";
-import Citation from "./citation";
+import { Citation } from "./citation";
 import Matcher from "./matcher";
 import OCI from "../oci";
 import Progress from "./progress";
@@ -579,6 +579,7 @@ export default class {
 								{
 									item: targetItem,
 									ocis: [oci],
+									citationSource: "WikiData",
 								},
 								sourceItem,
 							);

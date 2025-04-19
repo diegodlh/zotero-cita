@@ -131,11 +131,13 @@
 	color: var(--fill-secondary);
 }
 
-.pid-list .meta-row .meta-label > label {
+.pid-list .meta-row .meta-label > label,
+.pid-list .meta-row .meta-data > label {
 	margin-top: 2px;
 }
 
-[zoteroUIDensity="comfortable"] .pid-list .meta-row .meta-label > label {
+[zoteroUIDensity="comfortable"] .pid-list .meta-row .meta-label > label,
+[zoteroUIDensity="comfortable"] .pid-list .meta-row .meta-data > label {
 	margin-top: 3px;
 }
 

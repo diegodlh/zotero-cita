@@ -8,8 +8,17 @@ import OCI, { OCIPIDType } from "../oci";
 import Progress from "./progress";
 import { EntityId } from "wikibase-sdk";
 
+export type CitationSource =
+	| "Crossref"
+	| "Semantic Scholar"
+	| "OpenAlex"
+	| "Open Citations"
+	| "WikiData"
+	| "User"
+	| "Unknown";
+
 /** Class representing a citation */
-class Citation {
+export class Citation {
 	source: SourceItemWrapper;
 	target: ItemWrapper;
 	ocis: {
@@ -20,25 +29,24 @@ class Citation {
 		supplierName: string;
 		valid: boolean;
 	}[];
+	citationSource: CitationSource;
+	creationDate: Date;
+	lastModificationDate?: Date;
 	readonly uuid: string;
 
 	/**
 	 * Create a citation.
-	 * @param {Object} citation - A Citation literal.
-	 * @param {Zotero.Item} citation.item - The citation's target item literal.
-	 * @param {string} citation.item.key - The citation's target item key, if linked to
-	 *   an item in the library.
-	 * @param {Array} ocis - Array of OpenCitations OCIs.
-	 *   this citation.
+	 * @param {Zotero.Item | object} citationData.item - The citation's target item.
+	 * @param {Array} citationData.ocis - Array of OpenCitations OCIs.
+	 * @param {string?} citationData.zotero - The citation's target item key, if linked to an item in the library.
+	 * @param {string?} citationData.uuid - Unique indentifier for the citation.
+	 * @param {CitationSource?} citationData.citationSource - Where the citation data came from.
+	 * @param {Date?} citationData.creationDate - When the citation was created.
+	 * @param {Date?} citationData.lastModificationDate - When the citation was last updated by the user.
 	 * @param {Zotero.Item} sourceItem - The citation's source item.
 	 */
 	constructor(
-		{
-			item,
-			ocis,
-			zotero,
-			uuid,
-		}: {
+		citationData: {
 			item:
 				| Zotero.Item
 				| {
@@ -50,45 +58,63 @@ class Citation {
 			ocis: string[];
 			zotero?: string;
 			uuid?: string;
+			citationSource?: CitationSource;
+			creationDate?: Date;
+			lastModificationDate?: Date;
 		},
-		// index,  // knowing the index in the citationList may be important
-		sourceItem: SourceItemWrapper, // should the parent CitationList (with its source item and methods to save) be passed instead?
+		sourceItem: SourceItemWrapper,
 	) {
 		// Fixme: improve type checking of the citation object passed as argument
-		if (!item || !ocis) {
+		if (!citationData.item || !citationData.ocis) {
 			throw new Error("Missing item, OCIs, or Zotero key fields!");
 		}
 
 		// this.index = index;
 		this.source = sourceItem;
 
-		if (item instanceof Zotero.Item) {
+		if (citationData.item instanceof Zotero.Item) {
 			this.target = new ItemWrapper(
-				item,
+				citationData.item,
 				this.source.saveCitations.bind(this.source),
 			);
 		} else {
-			if (!item.itemType) {
+			if (!citationData.item.itemType) {
 				// use a default item type if it was not provided in the target item literal
 				// fix: move this default value out to another file or module
-				item.itemType = "journalArticle";
+				citationData.item.itemType = "journalArticle";
 			}
 			this.target = new ItemWrapper(
-				new Zotero.Item(item.itemType),
+				new Zotero.Item(citationData.item.itemType),
 				this.source.saveCitations.bind(this.source),
 			);
-			this.target.fromJSON(item);
+			this.target.fromJSON(citationData.item);
 		}
 
 		this.ocis = [];
-		ocis.forEach((oci) => this.addOCI(oci));
+		citationData.ocis.forEach((oci) => this.addOCI(oci));
 
-		this.target.key = zotero;
+		this.target.key = citationData.zotero;
 		// if a Zotero item key is provided for the target item,
 		// and the target item is a Zotero Item (not a raw citation)
 		// then automatically link the source and target items
-		if (zotero && item instanceof Zotero.Item) {
-			this.linkToZoteroItem(item);
+		if (citationData.zotero && citationData.item instanceof Zotero.Item) {
+			this.linkToZoteroItem(citationData.item);
+		}
+
+		if (citationData.citationSource) {
+			this.citationSource = citationData.citationSource;
+		} else {
+			this.citationSource = "Unknown";
+		}
+
+		if (citationData.creationDate) {
+			this.creationDate = citationData.creationDate;
+		} else {
+			this.creationDate = new Date();
+		}
+
+		if (citationData.lastModificationDate) {
+			this.lastModificationDate = citationData.lastModificationDate;
 		}
 
 		// Issue: Save and upload information about citations order
@@ -97,7 +123,7 @@ class Citation {
 		// // but I say to leave this out for now
 
 		// generate a unique identifier for this citation if needed
-		this.uuid = uuid ?? crypto.randomUUID();
+		this.uuid = citationData.uuid ?? crypto.randomUUID();
 	}
 
 	addCreator(creatorType: any, creatorName: string) {
@@ -237,6 +263,9 @@ class Citation {
 			item: this.target.toJSON(),
 			ocis: this.ocis.map((oci) => oci.oci),
 			zotero: this.target.key,
+			citationSource: this.citationSource,
+			creationDate: this.creationDate,
+			lastModificationDate: this.lastModificationDate,
 			uuid: this.uuid,
 		};
 	}
@@ -422,5 +451,3 @@ class Citation {
 		OCI.resolve(oci.oci);
 	}
 }
-
-export default Citation;

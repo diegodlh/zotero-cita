@@ -2,7 +2,7 @@ import CitationEditor from "./CitationEditor";
 import ItemWrapper from "../../cita/itemWrapper";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import Citation from "../../cita/citation";
+import { Citation } from "../../cita/citation";
 import Wikicite from "../../cita/wikicite";
 import { compareSemVer } from "semver-parser";
 import WikiciteChrome from "../../cita/wikiciteChrome";
@@ -154,6 +154,11 @@ window.addEventListener("load", () => {
 			item={newItem}
 			sourceLabel={sourceLabel}
 			sourceType={sourceType}
+			citationSource={citation.citationSource}
+			citationCreationDate={citation.creationDate.toString()}
+			citationModificationDate={
+				citation.lastModificationDate?.toString() || ""
+			}
 			itemBox={itemBox}
 			getString={(name) => Wikicite.getString(name)}
 			onCancel={onCancel}

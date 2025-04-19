@@ -1,6 +1,6 @@
 import SourceItemWrapper from "./sourceItemWrapper";
 import Progress from "./progress";
-import Citation from "./citation";
+import { Citation, CitationSource } from "./citation";
 import Wikicite, { debug } from "./wikicite";
 import Bottleneck from "bottleneck";
 import ItemWrapper from "./itemWrapper";
@@ -550,7 +550,11 @@ export abstract class IndexerBase<Ref> {
 			const citations: Citation[] = [];
 			for (const parsedRef of itemsToAdd) {
 				const newCitation = new Citation(
-					{ item: parsedRef.item, ocis: [] },
+					{
+						item: parsedRef.item,
+						ocis: [],
+						citationSource: this.indexerName as CitationSource,
+					},
 					sourceItem,
 				);
 
