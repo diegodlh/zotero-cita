@@ -498,21 +498,19 @@ export default class {
 		return response;
 	}
 
-	static copyQuickstatementsCommand(quickstatementsCommand: string) {
-		let copied = false;
-		// copy commands to clipboard
-		try {
-			Zotero.Utilities.Internal.copyTextToClipboard(
-				quickstatementsCommand,
-			);
-			copied = true;
-		} catch {
-			throw new Error("Copy to clipboard failed!");
-		}
+	static quickStatementsToURL(quickstatementsCommand: string) {
+		return (
+			"https://quickstatements.toolforge.org/#/v1=" +
+			quickstatementsCommand
+				.replaceAll("\n", "||")
+				.replaceAll("\t", "|")
+				.replaceAll("/", "%2F")
+		);
+	}
+
+	static launchQuickstatementsCommand(quickstatementsCommand: string) {
 		// launch QuickStatements
-		if (copied) {
-			Zotero.launchURL("https://quickstatements.toolforge.org/#/batch");
-		}
+		Zotero.launchURL(this.quickStatementsToURL(quickstatementsCommand));
 	}
 
 	/**
@@ -649,21 +647,8 @@ export default class {
 					break;
 				}
 				case ResponseType.QUICK_STATEMENTS: {
-					const confirm = Services.prompt.confirm(
-						window as mozIDOMWindowProxy,
-						Wikicite.getString("wikicite.wikidata.create.qs.title"),
-						Wikicite.getString(
-							"wikicite.wikidata.create.qs.message",
-						),
-					);
-					if (confirm) {
-						this.copyQuickstatementsCommand(qsCommands);
-						return undefined; // because we can't know the QID
-					} else {
-						// return null qid (because user cancelled)
-						qid = null;
-					}
-					break;
+					this.launchQuickstatementsCommand(qsCommands);
+					return undefined; // because we can't know the QID
 				}
 				case ResponseType.CANCEL:
 					// cancel
@@ -962,36 +947,24 @@ export default class {
 				}
 				break;
 			case ResponseType.QUICK_STATEMENTS: {
-				const confirm = Services.prompt.confirm(
-					window as mozIDOMWindowProxy,
-					Wikicite.getString("wikicite.wikidata.sync.qs.title"),
-					Wikicite.getString("wikicite.wikidata.create.qs.message"),
-				);
-				if (confirm) {
-					// Convert claims to quickstatements
-					let quickstatementsCommands: string[] = [];
-					for (const qid of Object.keys(citesWorkClaims) as QID[]) {
-						if (!Object.hasOwn(citesWorkClaims, qid)) continue;
+				// Convert claims to quickstatements
+				let quickstatementsCommands: string[] = [];
+				for (const qid of Object.keys(citesWorkClaims) as QID[]) {
+					if (!Object.hasOwn(citesWorkClaims, qid)) continue;
 
-						const element = citesWorkClaims[qid];
+					const element = citesWorkClaims[qid];
 
-						quickstatementsCommands =
-							quickstatementsCommands.concat(
-								element.map((citesWorkClaim) =>
-									citesWorkClaim.toQuickStatements(qid),
-								),
-							);
-					}
-					this.copyQuickstatementsCommand(
-						quickstatementsCommands.join("\n"),
+					quickstatementsCommands = quickstatementsCommands.concat(
+						element.map((citesWorkClaim) =>
+							citesWorkClaim.toQuickStatements(qid),
+						),
 					);
-					for (const id of Object.keys(citesWorkClaims) as QID[]) {
-						results[id] = "quickstatements";
-					}
-				} else {
-					for (const id of Object.keys(citesWorkClaims) as QID[]) {
-						results[id] = "cancelled";
-					}
+				}
+				this.launchQuickstatementsCommand(
+					quickstatementsCommands.join("\n"),
+				);
+				for (const id of Object.keys(citesWorkClaims) as QID[]) {
+					results[id] = "quickstatements";
 				}
 				break;
 			}
@@ -1178,7 +1151,7 @@ export class CitesWorkClaim {
 
 	public toQuickStatements(citingQID: QID) {
 		const action = this.remove ? "-" : "";
-		const quickstatements = `${action}${citingQID} | ${properties.citesWork} | ${this.value}`;
+		const quickstatements = `${action}${citingQID}|${properties.citesWork}|${this.value}`;
 		return quickstatements;
 	}
 }
