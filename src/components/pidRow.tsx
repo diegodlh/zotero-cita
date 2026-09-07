@@ -35,9 +35,13 @@ function PIDRow(props: PIDRowProps) {
 		}
 	}, [pidValue]);
 
-	function handleCommit(newPid: string) {
+	function handleCommit(newPid: string, checkValid: boolean = true) {
 		if (newPid !== pidValue?.id) {
-			if (props.validate && !props.validate(props.type, newPid)) {
+			if (
+				checkValid &&
+				props.validate &&
+				!props.validate(props.type, newPid)
+			) {
 				setInvalidValue(newPid);
 				return;
 			}
@@ -61,7 +65,7 @@ function PIDRow(props: PIDRowProps) {
 	}
 
 	function deletePID() {
-		handleCommit("");
+		handleCommit("", false);
 		props.removePIDRow(props.type);
 	}
 
